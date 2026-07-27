@@ -1,0 +1,27 @@
+# Shared Postgres for the fullstack boilerplate apps.
+#
+#   pnpm docker:db
+#   # or: docker compose -f docker/docker-compose.yml up -d postgres
+#   pnpm migration:run
+#   pnpm seed
+
+name: fullstack
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - '${POSTGRES_PORT:-5434}:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-fullstack}
+    volumes:
+      - ${POSTGRES_DATA_DIR:-../data/postgres}:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s

@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Pre-commit quality gate: ESLint (+ SonarJS) and Prettier on staged files.
+pnpm lint-staged

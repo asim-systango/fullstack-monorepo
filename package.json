@@ -1,0 +1,45 @@
+{
+  "name": "fullstack-boilerplate",
+  "private": true,
+  "packageManager": "pnpm@10.18.1",
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=@fullstack/api --filter=@fullstack/web",
+    "dev:api": "pnpm --filter @fullstack/api dev",
+    "dev:web": "pnpm --filter @fullstack/web dev",
+    "build": "turbo run build --filter=@fullstack/api --filter=@fullstack/web",
+    "lint": "turbo run lint --filter=@fullstack/api --filter=@fullstack/web --filter=@repo/*",
+    "lint:sonar": "eslint \"apps/api/src/**/*.ts\" \"apps/web/**/*.{ts,tsx}\" \"libs/*/src/**/*.{ts,tsx}\" --max-warnings=0",
+    "typecheck": "turbo run typecheck --filter=@fullstack/api --filter=@fullstack/web --filter=@repo/*",
+    "migration:run": "pnpm --filter @fullstack/api migration:run",
+    "migration:generate": "pnpm --filter @fullstack/api migration:generate",
+    "seed": "pnpm --filter @fullstack/api seed",
+    "test": "pnpm --filter @fullstack/api exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api/src|libs/api-client/src)'",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
+    "docker:db": "docker compose -f docker/docker-compose.yml up -d postgres",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "postinstall": "pnpm --filter @repo/env build",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0 --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "eslint": "^9.39.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.2.0",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

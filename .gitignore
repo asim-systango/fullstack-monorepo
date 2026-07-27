@@ -1,0 +1,15 @@
+node_modules
+dist
+.next
+.turbo
+*.tsbuildinfo
+.env
+.env.local
+data/
+coverage
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+.vscode/*
+!.vscode/extensions.json

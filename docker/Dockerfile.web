@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1
+# Stub Dockerfile for the Next web app. Wire multi-stage builds when deploying.
+FROM node:20-alpine AS base
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web ./apps/web
+COPY libs ./libs
+RUN corepack enable && pnpm install --frozen-lockfile
+WORKDIR /app/apps/web
+CMD ["pnpm", "start"]

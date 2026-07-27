@@ -1,0 +1,22 @@
+{
+  "name": "@repo/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/next": "./eslint/next.js"
+  },
+  "files": [
+    "eslint"
+  ],
+  "dependencies": {
+    "eslint-plugin-sonarjs": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "eslint": "^9.22.0",
+    "eslint-config-next": "15.2.4",
+    "typescript-eslint": "^8.26.1"
+  }
+}

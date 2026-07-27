@@ -1,0 +1,12 @@
+name: Deploy
+
+# Stub workflow — wire real deploy targets when environments exist.
+on:
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy stub
+        run: echo "Configure deploy targets for apps/api and apps/web"
