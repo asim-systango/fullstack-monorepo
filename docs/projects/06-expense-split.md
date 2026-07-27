@@ -87,7 +87,7 @@ Plus the shared Must bar in [grading.md](../grading.md).
 ## Definition of done
 
 - Migrations + seed (≥8 realistic rows across core tables)
-- Compose Postgres + project `.env`
+- Compose Postgres + root `.env` + `apps/api/.env`
 - Next + Query + RTK ownership respected
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)

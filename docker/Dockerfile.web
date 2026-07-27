@@ -1,10 +1,22 @@
 # syntax=docker/dockerfile:1
-# Stub Dockerfile for the Next web app. Wire multi-stage builds when deploying.
-FROM node:20-alpine AS base
+# Stub multi-stage build for the Next web app (not used by docker compose).
+FROM node:20-alpine AS deps
 WORKDIR /app
+RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/web ./apps/web
+COPY apps/web/package.json ./apps/web/
 COPY libs ./libs
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+COPY apps/web ./apps/web
+COPY tsconfig.base.json ./
+RUN pnpm --filter @fullstack/web build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+RUN corepack enable
+ENV NODE_ENV=production
+COPY --from=build /app /app
 WORKDIR /app/apps/web
 CMD ["pnpm", "start"]

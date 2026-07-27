@@ -11,14 +11,22 @@
 
 ## Layout
 
-| Path            | Role                                         |
-| --------------- | -------------------------------------------- |
-| `apps/web`      | Next.js App Router UI                        |
-| `apps/api`      | NestJS API (TypeORM + cookie JWT)            |
-| `libs/*`        | Shared packages (`@repo/*`)                  |
-| `tools/scripts` | Instructor tooling (brief generator)         |
-| `docker/`       | Postgres Compose (`docker-compose.yml` only) |
-| `docs/`         | Architecture, ADRs, project briefs           |
+| Path            | Role                                                                     |
+| --------------- | ------------------------------------------------------------------------ |
+| `apps/web`      | Next.js App Router UI                                                    |
+| `apps/api`      | NestJS API (TypeORM + cookie JWT)                                        |
+| `libs/*`        | Shared packages (`@repo/*`) — active + unused stubs (see README)         |
+| `tools/scripts` | Instructor tooling (brief generator)                                     |
+| `docker/`       | Postgres Compose; `Dockerfile.*` stubs exist but are not used by Compose |
+| `docs/`         | Architecture, ADRs, project briefs                                       |
+
+## Boilerplate conventions (do not fight these)
+
+- **Success responses** are wrapped as `{ data: T }`. Prefer `@repo/api-client` (it unwraps); raw `fetch` must unwrap yourself.
+- **Auth:** `JwtAuthGuard` + `RolesGuard` are global. Mark anonymous routes with `@Public()` — JWT is still attempted so `request.user` is set when a cookie is valid. Protected routes (e.g. `GET /auth/me`) require a cookie.
+- **Entities:** name files `*.entity.ts` under `apps/api/src/modules/`, register with `TypeOrmModule.forFeature([...])` (`autoLoadEntities: true`). CLI migrations use the same `*.entity.ts` glob via `data-source.ts`.
+- **Env:** API loads the **first existing** file among `apps/api/.env` then repo-root `.env` (no merge). Put API secrets in `apps/api/.env`. Root `.env` is for Compose (`POSTGRES_*`).
+- **Swagger** (non-production): `http://localhost:3001/docs`.
 
 ## Domain notes
 

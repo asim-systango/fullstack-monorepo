@@ -22,14 +22,14 @@ Seed logins: `admin@fullstack.local` / `user@fullstack.local` / `staff@fullstack
 
 ## How work is organized
 
-| Piece               | Where                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| Nest domain modules | `apps/api/src/modules/`                                                                     |
-| Next UI             | `apps/web/app/`                                                                             |
-| Shared libs         | `libs/` (`@repo/env`, `@repo/api-client`, `@repo/ui`, `@repo/shared-types`, `@repo/config`) |
-| Tools / Docker      | `tools/scripts/`, `docker/docker-compose.yml` (Postgres only)                               |
-| Project briefs      | `docs/projects/`                                                                            |
-| Architecture notes  | [`docs/architecture.md`](docs/architecture.md)                                              |
+| Piece               | Where                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nest domain modules | `apps/api/src/modules/`                                                                                                                     |
+| Next UI             | `apps/web/app/`                                                                                                                             |
+| Shared libs         | `libs/` — active: `@repo/env`, `@repo/api-client`, `@repo/ui`, `@repo/shared-types`, `@repo/config`; stubs: `@repo/database`, `@repo/utils` |
+| Tools / Docker      | `tools/scripts/`, `docker/docker-compose.yml` (Postgres only; `Dockerfile.*` are unused stubs)                                              |
+| Project briefs      | `docs/projects/`                                                                                                                            |
+| Architecture notes  | [`docs/architecture.md`](docs/architecture.md)                                                                                              |
 
 Branch format: **`<dev-name>/<slug>`** (example: `ada/job-portal`). See [submission](docs/submission.md).
 
@@ -78,4 +78,5 @@ Add your domain on top — do not leave the auth-only shell as your final submis
 - Cookie JWT only (no localStorage tokens)
 - Migrations only (`synchronize: false`)
 - Query for server state; RTK for drafts/filters/selection
-- CI: lint + typecheck on PRs
+- CI: `pnpm install --frozen-lockfile`, typecheck, lint, lint:sonar, test
+- Soft-delete on the primary listable resource (see [grading](docs/grading.md))

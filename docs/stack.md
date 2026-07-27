@@ -10,8 +10,10 @@ This monorepo uses the same fullstack stack as the teaching course.
 4. **TanStack Query** owns server lists and mutations (cache + invalidation).
 5. **Redux Toolkit** owns unfinished drafts, selection, and filter chrome only — never Nest entity arrays.
 6. **TypeORM migrations only** — `synchronize: false` in shipped code.
-7. **ValidationPipe** whitelist + forbid non-whitelisted on Nest.
+7. **ValidationPipe** whitelist + forbid non-whitelisted on Nest (errors include `details[].field` for property names).
 8. **Empty ≠ loading ≠ error** in the UI.
+9. **Response envelope** — Nest wraps success as `{ data: T }`; use `@repo/api-client` (or unwrap yourself).
+10. **CORS** — browser origin must match `CORS_ORIGIN` in `apps/api/.env` (cookie credentials).
 
 ## Suggested day plan (5–6 days)
 
@@ -21,7 +23,7 @@ This monorepo uses the same fullstack stack as the teaching course.
 | 2   | Domain CRUD, invariants, list pagination/filters |
 | 3   | Next shell + Query list/mutations                |
 | 4   | RTK drafts/filters + role-aware UI               |
-| 5   | Should-tier features + Compose polish            |
+| 5   | Should-tier features + env/DB polish for demo    |
 | 6   | Buffer: Stretch or demo + `docs/architecture.md` |
 
 ## Seed credentials (boilerplate)

@@ -24,9 +24,11 @@ git checkout -b ada/job-portal
 
 1. `pnpm typecheck`
 2. `pnpm lint`
-3. Migrations + seed run clean
-4. Demo script in the PR body
-5. `docs/architecture.md` filled
+3. `pnpm test`
+4. If you changed dependencies, commit `pnpm-lock.yaml` (`pnpm install --frozen-lockfile` in CI)
+5. Migrations + seed run clean (`pnpm docker:db`, `pnpm migration:run`, `pnpm seed`)
+6. Demo script in the PR body
+7. `docs/architecture.md` filled
 
 ## PR title
 

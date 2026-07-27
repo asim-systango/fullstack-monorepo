@@ -9,6 +9,10 @@ import type { Response } from 'express';
 
 export { AUTH_COOKIE_NAME };
 
+/** Precomputed bcrypt hash so missing users still pay compare cost. */
+const DUMMY_PASSWORD_HASH =
+  '$2b$12$9rX3ejALCFBfmk5yxxVys.SlaZv8.Bx3CLC8EvVif0Z9U.yxXo8uy';
+
 function jwtExpiryToMs(value: string) {
   const trimmed = value.trim();
   const match = /^(\d+)([smhd])?$/.exec(trimmed);
@@ -65,9 +69,9 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
-    if (!user) return null;
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    return ok ? user : null;
+    // Always bcrypt.compare to avoid timing-based email enumeration.
+    const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+    return user && ok ? user : null;
   }
 
   async login(dto: LoginDto, res: Response) {

@@ -1,12 +1,7 @@
-import { Body, Controller, Get, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import {
-  CurrentUser,
-  JwtAuthGuard,
-  Public,
-  RolesGuard,
-} from '../../common/auth/auth.decorators';
+import { CurrentUser, Public } from '../../common/auth/auth.decorators';
 import type { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
@@ -14,7 +9,6 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

@@ -9,7 +9,7 @@
 
 1. Branch `<dev-name>/<slug>` (example: `ada/job-portal`)
 2. Keep diffs scoped to your feature work (+ docs only if asked)
-3. Ensure `pnpm typecheck` and `pnpm lint` pass
+3. Ensure `pnpm typecheck`, `pnpm lint`, and `pnpm test` pass locally (CI also runs `lint:sonar` and installs with `--frozen-lockfile` — commit lockfile changes if you add deps)
 4. Describe demo steps in the PR body
 
 ## Commit messages

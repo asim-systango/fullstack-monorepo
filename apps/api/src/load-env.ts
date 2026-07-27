@@ -3,8 +3,8 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 
 /**
- * Load env from the first existing candidate.
- * Covers local `apps/api/.env` and repo-root `.env`.
+ * Load env from the first existing candidate (no merge).
+ * Prefer `apps/api/.env` for the Nest process; root `.env` is mainly for Compose.
  */
 const candidates = [
   resolve(process.cwd(), 'apps/api/.env'),

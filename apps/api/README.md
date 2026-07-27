@@ -1,13 +1,12 @@
 # Fullstack Nest API — shared boilerplate only.
 
-#
+Included: cookie JWT auth, users, health, ValidationPipe (field-level `details`),
+exception filter, `{ data }` response envelope, TypeORM migrations (users).
 
-# Included: cookie JWT auth, users, health, ValidationPipe, exception filter,
+Your work: add domain modules under `src/modules/` (`*.entity.ts` +
+`TypeOrmModule.forFeature`). Do not put product CRUD in Next Route Handlers.
 
-# response interceptor, TypeORM migrations (users).
+Env: copy `.env.example` → `.env`. Migrations/seed use the same load-env rules
+(first existing of `apps/api/.env` then repo-root `.env`).
 
-#
-
-# Your work: add domain modules under src/modules/ for your assigned project
-
-# (see docs/projects/). Do not put product CRUD in Next Route Handlers.
+Swagger (dev): `http://localhost:3001/docs`

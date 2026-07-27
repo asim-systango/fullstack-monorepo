@@ -7,7 +7,10 @@ import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import {
+  AllExceptionsFilter,
+  validationExceptionFactory,
+} from './common/filters/all-exceptions.filter';
 import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
 
 async function bootstrap() {
@@ -40,6 +43,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: validationExceptionFactory,
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());

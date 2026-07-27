@@ -10,12 +10,12 @@
 
 - [ ] Nest auth: register/login/logout, cookie JWT, ≥2 roles used meaningfully
 - [ ] Distinct domain model (≥2 related entities) with reviewed migrations + seed
-- [ ] List endpoint: pagination + ≥2 filters + soft-delete on the primary listable resource (or document intentional hard-delete in `docs/architecture.md`)
+- [ ] List endpoint: pagination + ≥2 filters + soft-delete (`DeleteDateColumn` / `deletedAt`) on the primary listable resource
 - [ ] One hard domain invariant enforced in service (+ DB constraint when possible)
 - [ ] One multi-entity write in a transaction
 - [ ] Next App Router: layout + list + create/detail flow
 - [ ] Query for server data; RTK for drafts/filters/selection only
-- [ ] `pnpm docker:db` Postgres works; `apps/api/.env` points at the shared DB
+- [ ] `pnpm docker:db` Postgres works (uses root `.env` when present); `apps/api/.env` `DATABASE_URL` points at that DB
 - [ ] Filled `docs/architecture.md` (ownership table + domain notes)
 - [ ] Demo script in the PR body (≤5 minutes)
 

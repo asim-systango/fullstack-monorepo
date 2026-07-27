@@ -49,7 +49,7 @@ Create booking + payment intent (mock status paid) atomically after availability
 - [ ] Hotels + rooms
 - [ ] Availability search by date range
 - [ ] Create booking with conflict check
-- [ ] Cancel booking (soft-delete or status)
+- [ ] Cancel booking (status change; soft-delete still required on the primary listable resource per grading)
 - [ ] Pagination + city/q filters
 
 Plus the shared Must bar in [grading.md](../grading.md).
@@ -86,7 +86,7 @@ Plus the shared Must bar in [grading.md](../grading.md).
 ## Definition of done
 
 - Migrations + seed (≥8 realistic rows across core tables)
-- Compose Postgres + project `.env`
+- Compose Postgres + root `.env` + `apps/api/.env`
 - Next + Query + RTK ownership respected
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)

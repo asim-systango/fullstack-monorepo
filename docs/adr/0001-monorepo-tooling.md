@@ -15,5 +15,6 @@ Use **pnpm workspaces** for package linking and **Turborepo** for task orchestra
 ## Consequences
 
 - Fast installs and clear `workspace:*` boundaries.
-- No Nx dependency or generator plugin surface for learners.
-- Keep the workspace lean: only packages that apps import (`env`, `api-client`, `ui`, `shared-types`, `config`).
+- No Nx dependency for learners. `tools/generators/` is an empty stub (not a generator plugin).
+- Active shared packages apps import: `env`, `api-client`, `ui`, `shared-types`, `config`.
+- Unused stubs also exist under `libs/` (`database`, `utils`) — leave them alone unless the instructor asks.

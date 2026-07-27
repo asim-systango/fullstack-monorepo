@@ -15,8 +15,8 @@
     "seed": "pnpm --filter @fullstack/api seed",
     "test": "pnpm --filter @fullstack/api exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api/src|libs/api-client/src)'",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
-    "docker:db": "docker compose -f docker/docker-compose.yml up -d postgres",
-    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:db": "sh -c 'if [ -f .env ]; then docker compose --env-file .env -f docker/docker-compose.yml up -d postgres; else docker compose -f docker/docker-compose.yml up -d postgres; fi'",
+    "docker:down": "sh -c 'if [ -f .env ]; then docker compose --env-file .env -f docker/docker-compose.yml down; else docker compose -f docker/docker-compose.yml down; fi'",
     "postinstall": "pnpm --filter @repo/env build",
     "prepare": "husky"
   },

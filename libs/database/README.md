@@ -1,7 +1,8 @@
 # @repo/database
 
-TypeORM-oriented shared database package.
+Unused stub. Do not put your project schema here.
 
-For this boilerplate, entities and migrations live in `apps/api/src/database` and
-`apps/api/src/modules/*`. Move shared schema pieces here when a second service
-needs them.
+Entities: `apps/api/src/modules/**/*.entity.ts`  
+Migrations: `apps/api/src/database/migrations/`
+
+Move shared schema pieces here only if a second service needs them (instructor call).

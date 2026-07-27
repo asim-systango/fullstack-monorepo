@@ -6,19 +6,18 @@ import { JwtAuthGuard, RolesGuard } from './common/auth/auth.decorators';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
-import { User } from './modules/users/user.entity';
 
 const db = databaseConfig();
 
 /**
  * Boilerplate AppModule — auth, users, health, global guards.
  * Add your domain modules here (do not put product CRUD in Next).
+ * Entities registered via TypeOrmModule.forFeature are auto-loaded.
  */
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       ...db,
-      entities: [User],
     }),
     UsersModule,
     AuthModule,

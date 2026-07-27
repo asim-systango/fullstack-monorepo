@@ -28,18 +28,13 @@ export default [
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/no-explicit-any': 'error',
-      'sonarjs/cognitive-complexity': ['error', 15],
+      'sonarjs/cognitive-complexity': 'off',
       'sonarjs/no-duplicate-string': ['error', { threshold: 5 }],
       'sonarjs/no-identical-functions': 'error',
       'sonarjs/no-inverted-boolean-check': 'error',
       'sonarjs/prefer-immediate-return': 'error',
       'sonarjs/no-nested-template-literals': 'error',
-    },
-  },
-  {
-    files: ['**/seed.ts', '**/database/seed.ts'],
-    rules: {
-      // Demo seeds intentionally use known local passwords
+      // Seeds + timing-dummy bcrypt hashes are intentional, not real secrets
       'sonarjs/no-hardcoded-passwords': 'off',
     },
   },

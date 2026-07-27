@@ -6,6 +6,7 @@ export function databaseConfig() {
   return {
     type: 'postgres' as const,
     url: env.DATABASE_URL,
+    autoLoadEntities: true,
     synchronize: false,
     migrationsRun: false,
   };
