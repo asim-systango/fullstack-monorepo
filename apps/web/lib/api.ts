@@ -1,7 +1,7 @@
 import { createApiClient, createAuthApi, createHealthApi } from '@shared/api-client';
+import { resolveApiBaseUrl } from './api-base-url';
 
-/** Same-origin `/api` → Next rewrite → api-gateway. Override only if needed. */
-const baseURL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');
+const baseURL = resolveApiBaseUrl();
 
 export const apiClient = createApiClient({
   baseURL,

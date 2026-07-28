@@ -1,3 +1,3 @@
 # @shared/utils
 
-Unused stub shared helpers package. Prefer app-local helpers unless the instructor asks to share code here.
+Unused stub shared helpers package. Prefer app-local helpers until there is a clear cross-app need.

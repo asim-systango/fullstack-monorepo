@@ -12,7 +12,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/database/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/database/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/database/data-source.ts",
-    "test": "jest --config ../../jest.config.cjs --passWithNoTests --testPathPattern=apps/api/src"
+    "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/api/src"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.12",
@@ -26,6 +26,7 @@
     "@shared/http": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "compression": "^1.8.1",
     "dotenv": "^16.4.7",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -38,6 +39,7 @@
     "@nestjs/cli": "^11.0.6",
     "@nestjs/testing": "^11.0.12",
     "@shared/config": "workspace:*",
+    "@types/compression": "^1.8.1",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",

@@ -3,15 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../common/env';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '../users';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import type { Response } from 'express';
 
 export { AUTH_COOKIE_NAME };
-
-/** Precomputed bcrypt hash so missing users still pay compare cost. */
-const DUMMY_PASSWORD_HASH =
-  '$2b$12$9rX3ejALCFBfmk5yxxVys.SlaZv8.Bx3CLC8EvVif0Z9U.yxXo8uy';
 
 function jwtExpiryToMs(value: string) {
   const trimmed = value.trim();
@@ -69,8 +65,11 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
-    // Always bcrypt.compare to avoid timing-based email enumeration.
-    const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+    // Always bcrypt.compare (including missing users) to avoid timing-based email enumeration.
+    const hash =
+      user?.passwordHash ??
+      '$2b$12$N/6IAT14.CPmctktUygdXuFR/ryV4IYaHdV7ilF3IfY2Cpsj/X3q.';
+    const ok = await bcrypt.compare(password, hash);
     return user && ok ? user : null;
   }
 

@@ -90,7 +90,7 @@ Plus the shared Must bar in [grading.md](../grading.md).
 
 - Domain migrations (`pnpm migration:run:api`) + domain seed (≥8 realistic rows); gateway users via `pnpm seed`
 - Compose Postgres + root `.env` + `apps/api-gateway/.env` + `apps/api/.env` + `apps/web/.env.local`
-- Next + Query + RTK ownership respected
+- Next + Query + RTK ownership respected; UI uses `@shared/ui/components` + theme ([frontend.md](../frontend.md))
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)
 

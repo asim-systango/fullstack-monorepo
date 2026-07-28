@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../../common/env';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../../users';
 
 type JwtPayload = { sub: string; email: string; role: string };
 

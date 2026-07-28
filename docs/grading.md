@@ -13,7 +13,7 @@
 - [ ] List endpoint: pagination + ≥2 filters + soft-delete on the main list resource
 - [ ] One hard domain invariant in a service (+ DB constraint when possible)
 - [ ] One multi-entity write in a transaction
-- [ ] Next: layout + list + create/detail
+- [ ] Next: layout + list + create/detail using `@shared/ui/components` (empty ≠ loading ≠ error)
 - [ ] Query for server data; RTK for drafts/filters only
 - [ ] `pnpm docker:db` works; gateway + api share `DATABASE_URL` and `JWT_SECRET`
 - [ ] `docs/architecture.md` filled (ownership + domain notes)

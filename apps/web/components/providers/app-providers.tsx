@@ -5,9 +5,9 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Provider as ReduxProvider } from 'react-redux';
 import { useState, type ReactNode } from 'react';
 import { store } from '@/lib/store';
-import { AuthProvider } from '@/components/auth/auth-provider';
+import { AuthProvider } from '@/components/auth';
 
-export function AppProviders({ children }: { children: ReactNode }) {
+export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(
     () =>
       new QueryClient({

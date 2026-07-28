@@ -1,0 +1,2 @@
+/* Class-based dark mode — toggle `.dark` on <html> when you add a theme switcher. */
+@custom-variant dark (&:where(.dark, .dark *));

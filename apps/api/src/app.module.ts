@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
-import { databaseConfig } from './config/database.config';
-import { JwtAuthGuard, RolesGuard } from './common/auth/auth.decorators';
-import { AuthModule } from './modules/auth/auth.module';
-import { HealthModule } from './modules/health/health.module';
+import { JwtAuthGuard, RolesGuard } from './common/auth';
+import { databaseConfig } from './config';
+import { AuthModule } from './modules/auth';
+import { HealthModule } from './modules/health';
 
 const db = databaseConfig();
 

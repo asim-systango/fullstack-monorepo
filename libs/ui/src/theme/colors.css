@@ -1,0 +1,52 @@
+/*
+  Semantic roles (light / dark).
+  primary = ink · accent = blue (links/focus only).
+*/
+
+:root {
+  --background: var(--paper-100);
+  --foreground: var(--ink-950);
+  --muted: var(--paper-200);
+  --muted-foreground: var(--ink-500);
+  --border: color-mix(in oklch, var(--ink-950) 12%, transparent);
+  --input: color-mix(in oklch, var(--ink-950) 22%, transparent);
+  --ring: var(--blue-500);
+  --card: var(--white);
+  --card-foreground: var(--ink-950);
+  --primary: var(--ink-950);
+  --primary-foreground: var(--paper-50);
+  --secondary: var(--paper-200);
+  --secondary-foreground: var(--ink-900);
+  --accent: var(--blue-600);
+  --accent-foreground: var(--white);
+  --destructive: var(--red-600);
+  --destructive-foreground: var(--white);
+  --success: var(--green-600);
+  --success-foreground: var(--white);
+  --warning: var(--amber-600);
+  --warning-foreground: var(--ink-950);
+}
+
+.dark {
+  --background: var(--ink-950);
+  --foreground: var(--paper-100);
+  --muted: var(--ink-800);
+  --muted-foreground: var(--ink-300);
+  --border: color-mix(in oklch, var(--paper-100) 14%, transparent);
+  --input: color-mix(in oklch, var(--paper-100) 28%, transparent);
+  --ring: var(--blue-400);
+  --card: var(--ink-900);
+  --card-foreground: var(--paper-100);
+  --primary: var(--paper-100);
+  --primary-foreground: var(--ink-950);
+  --secondary: var(--ink-800);
+  --secondary-foreground: var(--paper-100);
+  --accent: var(--blue-400);
+  --accent-foreground: var(--ink-950);
+  --destructive: var(--red-400);
+  --destructive-foreground: var(--ink-950);
+  --success: var(--green-400);
+  --success-foreground: var(--ink-950);
+  --warning: var(--amber-400);
+  --warning-foreground: var(--ink-950);
+}

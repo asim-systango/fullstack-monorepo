@@ -1,5 +1,4 @@
 /**
- * Validation schema lives in `@shared/env` (`gatewayEnvSchema`).
- * Re-export here so Nest config lives under `src/config/`.
+ * Validation schema lives in `@shared/env/gateway` (`gatewayEnvSchema`).
  */
-export { gatewayEnvSchema, loadGatewayEnv, type GatewayEnv } from '@shared/env';
+export { gatewayEnvSchema, loadGatewayEnv, type GatewayEnv } from '@shared/env/gateway';

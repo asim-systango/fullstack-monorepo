@@ -8,21 +8,49 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./filters": {
+      "types": "./dist/filters/index.d.ts",
+      "default": "./dist/filters/index.js"
+    },
+    "./interceptors": {
+      "types": "./dist/interceptors/index.d.ts",
+      "default": "./dist/interceptors/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "default": "./dist/auth/index.js"
+    },
+    "./swagger": {
+      "types": "./dist/swagger/index.d.ts",
+      "default": "./dist/swagger/index.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware/index.d.ts",
+      "default": "./dist/middleware/index.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "build": "pnpm clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"@shared/http: ok\""
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/passport": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
     "rxjs": "^7.8.0"
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.12",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/swagger": "^11.4.6",
     "@types/express": "^5.0.1",
     "@types/node": "^22.13.11",
+    "passport": "^0.7.0",
     "rxjs": "^7.8.2",
     "typescript": "^5.8.3"
   }

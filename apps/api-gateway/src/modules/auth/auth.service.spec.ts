@@ -2,8 +2,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { QueryFailedError } from 'typeorm';
 import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
-import type { User } from '../users/user.entity';
+import { UsersService, type User } from '../users';
 import type { Response } from 'express';
 
 function makeUser(overrides: Partial<User> = {}): User {

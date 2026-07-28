@@ -11,6 +11,7 @@ export default [
       '**/node_modules/**',
       '**/coverage/**',
       '**/*.spec.ts',
+      '**/*.spec.tsx',
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.cjs',
@@ -34,6 +35,7 @@ export default [
       'sonarjs/no-inverted-boolean-check': 'error',
       'sonarjs/prefer-immediate-return': 'error',
       'sonarjs/no-nested-template-literals': 'error',
+      'sonarjs/prefer-read-only-props': 'error',
       // Seeds + timing-dummy bcrypt hashes are intentional, not real secrets
       'sonarjs/no-hardcoded-passwords': 'off',
     },

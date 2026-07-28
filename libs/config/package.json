@@ -5,10 +5,15 @@
   "type": "module",
   "exports": {
     "./eslint/base": "./eslint/base.js",
-    "./eslint/next": "./eslint/next.js"
+    "./eslint/next": "./eslint/next.js",
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/nestjs": "./typescript/nestjs.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./typescript/react-library": "./typescript/react-library.json"
   },
   "files": [
-    "eslint"
+    "eslint",
+    "typescript"
   ],
   "scripts": {
     "lint": "echo \"@shared/config: ok\"",

@@ -1,4 +1,4 @@
-import { loadApiEnv } from '@shared/env';
+import { loadApiEnv } from '@shared/env/api';
 
 /** Database connection settings for Nest TypeORM. */
 export function databaseConfig() {

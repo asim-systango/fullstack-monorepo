@@ -6,8 +6,9 @@
     "dev": "next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
-    "lint": "next lint",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "lint": "eslint --max-warnings=0 .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/web/lib"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@shared/config": "workspace:*",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",

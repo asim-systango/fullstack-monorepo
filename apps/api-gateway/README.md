@@ -12,7 +12,8 @@ pnpm dev:gateway    # from repo root
 - Users migration + seed: `pnpm migration:run` / `pnpm seed` (from repo root)
 - `API_UPSTREAM_URL` → domain API (default `http://localhost:3002`)
 - Same `JWT_SECRET` as `apps/api` (`@app/api`)
-- Shared HTTP helpers: `@shared/http` · env: `@shared/env`
+- Shared HTTP helpers: `@shared/http/filters`, `@shared/http/interceptors` · env: `@shared/env/gateway` / `@shared/env/constants`
+- Prefer folder barrels for app code: `./config`, `./common/auth`, `./modules/auth`
 - Swagger: `http://localhost:3001/docs`
 
 Domain modules go in `apps/api`, not here.

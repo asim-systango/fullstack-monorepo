@@ -2,7 +2,7 @@ import '../load-env';
 import 'reflect-metadata';
 import * as bcrypt from 'bcryptjs';
 import dataSource from './data-source';
-import { User } from '../modules/users/user.entity';
+import { User } from '../modules/users';
 
 async function seed() {
   await dataSource.initialize();

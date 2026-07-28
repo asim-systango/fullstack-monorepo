@@ -1,0 +1,14 @@
+/*
+  @shared/ui design theme — ink/paper system (OKLCH primitives → semantic → recipes).
+  Consumed by apps/web/styles/globals.css after @import "tailwindcss".
+  Keep every @import contiguous at the top of this file (css:S8778).
+*/
+@import './variants.css';
+@import './primitives.css';
+@import './colors.css';
+@import './typography.css';
+@import './radius.css';
+@import './shadows.css';
+@import './motion.css';
+@import './tokens.css';
+@import './components.css';

@@ -16,5 +16,6 @@ Use **pnpm workspaces** for package linking and **Turborepo** for task orchestra
 
 - Fast installs and clear `workspace:*` boundaries.
 - No Nx dependency for learners. `tools/generators/` is an empty stub (not a generator plugin).
-- Active shared packages apps import: `@shared/env`, `@shared/http`, `@shared/api-client`, `@shared/ui`, `@shared/types`, `@shared/config`.
-- Unused stubs also exist under `libs/` (`database`, `utils`) — leave them alone unless the instructor asks.
+- Active shared packages apps import: `@shared/env` (folder: `constants` / `gateway` / `api` / `web`), `@shared/http` (folder: `filters` / `interceptors`), `@shared/api-client`, `@shared/ui` (prefer `@shared/ui/components` + `theme.css` — [frontend.md](../frontend.md)), `@shared/types`, `@shared/config` (`eslint/*`, `typescript/*`).
+- Prefer **folder subpaths** when a lib has real folders (`index.ts` + `package.json` `exports["./folder"]`). Root entrypoints stay as thin re-exports.
+- Unused stubs also exist under `libs/` (`database`, `utils`) — leave them alone until a real shared need appears.

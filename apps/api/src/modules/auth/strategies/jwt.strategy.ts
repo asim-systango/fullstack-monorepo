@@ -1,10 +1,16 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { loadApiEnv } from '../../../common/env';
-import type { JwtUser, UserRole } from '../../../common/auth/jwt-user';
+import type { JwtUser, UserRole } from '../../../common/auth';
 
 type JwtPayload = { sub: string; email: string; role: string };
+
+const ROLES: readonly UserRole[] = ['admin', 'user', 'staff'];
+
+function isUserRole(value: string): value is UserRole {
+  return (ROLES as readonly string[]).includes(value);
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,10 +24,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload): JwtUser {
+    if (!payload.sub || !payload.email || !isUserRole(payload.role)) {
+      throw new UnauthorizedException('Invalid token claims');
+    }
     return {
       id: payload.sub,
       email: payload.email,
-      role: payload.role as UserRole,
+      role: payload.role,
     };
   }
 }

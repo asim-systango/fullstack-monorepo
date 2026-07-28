@@ -1,4 +1,4 @@
 /**
- * Validation schema lives in `@shared/env` (`apiEnvSchema`).
+ * Validation schema lives in `@shared/env/api` (`apiEnvSchema`).
  */
-export { apiEnvSchema, loadApiEnv, type ApiEnv } from '@shared/env';
+export { apiEnvSchema, loadApiEnv, type ApiEnv } from '@shared/env/api';

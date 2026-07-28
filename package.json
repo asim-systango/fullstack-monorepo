@@ -17,7 +17,9 @@
     "build:api": "pnpm --filter @app/api build",
     "build:web": "pnpm --filter @app/web build",
     "lint": "turbo run lint --filter=@app/api-gateway --filter=@app/api --filter=@app/web --filter=@shared/*",
-    "lint:sonar": "eslint \"apps/api-gateway/src/**/*.ts\" \"apps/api/src/**/*.ts\" \"apps/web/**/*.{ts,tsx}\" \"libs/*/src/**/*.{ts,tsx}\" --max-warnings=0",
+    "lint:css": "stylelint \"apps/**/*.css\" \"libs/**/*.css\" --max-warnings=0",
+    "lint:sonar": "eslint \"apps/api-gateway/src/**/*.ts\" \"apps/api/src/**/*.ts\" \"apps/web/**/*.{ts,tsx}\" \"libs/*/src/**/*.{ts,tsx}\" --max-warnings=0 && pnpm lint:css",
+    "lint:all": "pnpm lint && pnpm lint:sonar",
     "typecheck": "turbo run typecheck --filter=@app/api-gateway --filter=@app/api --filter=@app/web --filter=@shared/*",
     "typecheck:gateway": "pnpm --filter @app/api-gateway typecheck",
     "typecheck:api": "pnpm --filter @app/api typecheck",
@@ -28,7 +30,8 @@
     "migration:revert:api": "pnpm --filter @app/api migration:revert",
     "migration:generate": "pnpm --filter @app/api migration:generate",
     "seed": "pnpm --filter @app/api-gateway seed",
-    "test": "pnpm --filter @app/api-gateway exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api-gateway/src|apps/api/src|libs/api-client/src|libs/http/src)'",
+    "test": "pnpm --filter @app/api-gateway exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api-gateway/src|apps/api/src|apps/web/lib|libs/api-client/src|libs/http/src|libs/shared-types/src|libs/ui/src)'",
+    "test:coverage": "pnpm --filter @app/api-gateway exec jest --config ../../jest.config.cjs --coverage --testPathPattern='(apps/api-gateway/src|apps/api/src|apps/web/lib|libs/api-client/src|libs/http/src|libs/shared-types/src|libs/ui/src)'",
     "test:gateway": "pnpm --filter @app/api-gateway test",
     "test:api": "pnpm --filter @app/api test",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
@@ -40,7 +43,11 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix --max-warnings=0 --no-warn-ignored",
+      "eslint --fix --max-warnings=0 --no-warn-ignored --config eslint.config.mjs",
+      "prettier --write"
+    ],
+    "*.css": [
+      "stylelint --fix --max-warnings=0",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [
@@ -50,10 +57,18 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
+    "@shared/config": "workspace:*",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
     "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "6.10.2",
     "husky": "^9.1.7",
+    "jest-environment-jsdom": "^30.4.1",
     "lint-staged": "^17.2.0",
     "prettier": "^3.5.3",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard": "^40.0.0",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },

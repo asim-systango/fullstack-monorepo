@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -e
+# Full-repo SonarJS gate before push (catches issues that never sat in the index).
+pnpm lint:sonar

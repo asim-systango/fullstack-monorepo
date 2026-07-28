@@ -1,0 +1,6 @@
+/* Low elevation — prefer hairline borders for hierarchy. */
+
+@theme {
+  --shadow-sm: 0 1px 2px color-mix(in oklch, var(--ink-950) 6%, transparent);
+  --shadow-md: 0 4px 12px color-mix(in oklch, var(--ink-950) 8%, transparent);
+}

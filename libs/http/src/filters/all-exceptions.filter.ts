@@ -125,6 +125,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message =
         process.env.NODE_ENV === 'production' ? 'Unexpected error' : exception.message;
       this.logger.error(exception.message, exception.stack);
+    } else {
+      this.logger.error('Non-Error exception thrown', String(exception));
     }
 
     const payload: ApiErrorBody = {

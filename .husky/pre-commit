@@ -1,3 +1,6 @@
 #!/usr/bin/env sh
-# Pre-commit quality gate: ESLint (+ SonarJS) and Prettier on staged files.
-pnpm lint-staged
+set -e
+# ESLint (+ SonarJS via eslint-plugin-sonarjs) and Prettier on staged files only.
+# IDE SonarLint warnings are separate — they do not fail this hook unless they
+# also violate eslint-plugin-sonarjs rules on staged *.ts / *.tsx files.
+pnpm exec lint-staged

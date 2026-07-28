@@ -13,7 +13,8 @@ pnpm dev:api    # from repo root
 
 - Domain migrations: `pnpm migration:run:api` / `pnpm migration:generate`
 - Users/auth stay on `apps/api-gateway` (`@app/api-gateway`)
-- Shared HTTP helpers: `@shared/http` · env: `@shared/env`
+- Shared HTTP helpers: `@shared/http/filters`, `@shared/http/interceptors` · env: `@shared/env/api`
+- Prefer folder barrels for app code: `./config`, `./common/auth`, `./modules/health`
 - Smoke: hop 1 `http://localhost:3002/ready` or full path `http://localhost:3000/api/ready` (`pnpm doctor`)
 - Swagger: `http://localhost:3002/docs`
 - Note: browser `/api/health` is the **gateway** health check; domain liveness for proxies is `/ready`

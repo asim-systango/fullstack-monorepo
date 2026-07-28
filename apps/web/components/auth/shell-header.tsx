@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/components/auth/auth-provider';
-import { Button } from '@shared/ui';
+import { useAuth } from './auth-provider';
+import { Button } from '@shared/ui/components';
 
 function AuthNav() {
   const { user, loading, logout } = useAuth();
@@ -14,10 +14,10 @@ function AuthNav() {
   if (user) {
     return (
       <>
-        <span className="text-sm text-muted-foreground">
-          {user.name} ({user.role})
+        <span className="font-mono text-xs text-muted-foreground">
+          {user.name} · {user.role}
         </span>
-        <Button variant="ghost" onClick={() => void logout()}>
+        <Button variant="ghost" size="sm" onClick={() => void logout()}>
           Log out
         </Button>
       </>
@@ -27,24 +27,29 @@ function AuthNav() {
   return (
     <>
       <Link href="/login">Log in</Link>
-      <Link href="/register">Register</Link>
+      <Link
+        href="/register"
+        className="ui-button ui-button-sm ui-button-primary no-underline hover:no-underline"
+      >
+        Register
+      </Link>
     </>
   );
 }
 
-export function ShellHeader({ title }: { title: string }) {
+export function ShellHeader({
+  title,
+  subtitle = 'App starter — add your domain UI here',
+}: Readonly<{ title: string; subtitle?: string }>) {
   return (
-    <header className="mb-7 flex items-center justify-between gap-4 border-b border-border pb-4">
+    <header className="ui-shell-header">
       <div>
-        <h1 className="m-0 text-[1.75rem] font-semibold tracking-tight text-foreground">
-          {title}
-        </h1>
-        <p className="mt-1 mb-0 text-sm text-muted-foreground">
-          App starter — add your domain UI here
-        </p>
+        <h1 className="ui-shell-title">{title}</h1>
+        <p className="ui-shell-subtitle">{subtitle}</p>
       </div>
-      <nav className="flex items-center gap-4 text-sm">
+      <nav className="ui-shell-nav">
         <Link href="/">Home</Link>
+        <Link href="/ui">UI kit</Link>
         <AuthNav />
       </nav>
     </header>

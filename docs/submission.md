@@ -2,11 +2,11 @@
 
 ## What to implement
 
-| Work       | Where                                                                    |
-| ---------- | ------------------------------------------------------------------------ |
-| Domain API | `apps/api/src/modules/`                                                  |
-| UI         | `apps/web/app/` (+ components)                                           |
-| Auth       | Keep on `apps/api-gateway` (don’t move cookie login into the domain API) |
+| Work       | Where                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| Domain API | `apps/api/src/modules/`                                                                       |
+| UI         | `apps/web/app/` (+ components); prefer `@shared/ui/components` — [frontend.md](./frontend.md) |
+| Auth       | Keep on `apps/api-gateway` (don’t move cookie login into the domain API)                      |
 
 Browser calls **`/api` on `:3000`** (rewritten to the gateway). Don’t call `:3002` from the UI.
 

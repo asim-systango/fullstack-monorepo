@@ -48,11 +48,12 @@ Needs **Node ≥ 20**, **pnpm 10.18.1**, and **Docker**.
 
 ## Where you write code
 
-| You build…                                   | Put it in…                                        |
-| -------------------------------------------- | ------------------------------------------------- |
-| Domain API (entities, services, controllers) | `apps/api/src/modules/`                           |
-| UI pages and components                      | `apps/web/app/` and `apps/web/components/`        |
-| Auth / cookie login                          | Already in `apps/api-gateway/` — usually leave it |
+| You build…                                   | Put it in…                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Domain API (entities, services, controllers) | `apps/api/src/modules/`                                                                               |
+| UI pages and app components                  | `apps/web/app/` and `apps/web/components/`                                                            |
+| Shared UI kit (prefer these)                 | `@shared/ui/components` — `@shared/ui/theme.css` · gallery `/ui` · [frontend guide](docs/frontend.md) |
+| Auth / cookie login                          | Already in `apps/api-gateway/` — usually leave it                                                     |
 
 Branch: **`<your-name>/<project-slug>`** (example: `ada/job-portal`). See [submission](docs/submission.md).
 
@@ -83,6 +84,7 @@ pnpm dev:web
 | `pnpm migration:revert` / `:api`   | Revert latest gateway / domain migration                        |
 | `pnpm seed`                        | Seed demo users                                                 |
 | `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
+| `pnpm test:coverage`               | Jest + coverage thresholds (CI gate)                            |
 | `pnpm test:gateway` / `test:api`   | Per-app Jest                                                    |
 | `pnpm build` / `start`             | Production build / run                                          |
 
@@ -96,6 +98,8 @@ Also: `dev:backend`, `build:*`, `start:*`, `typecheck:*` per app.
 | 3001 | API gateway                   |
 | 3002 | Domain API                    |
 | 5434 | Postgres                      |
+
+OpenAPI (non-production): gateway `http://localhost:3001/docs` · domain API `http://localhost:3002/docs`.
 
 If a port is taken, change that app’s `PORT` and keep these in sync: `API_UPSTREAM_URL` (gateway → api), `API_GATEWAY_URL` (web → gateway). Then run `pnpm doctor`.
 
@@ -130,6 +134,7 @@ Column template: [`assignments.example.csv`](assignments.example.csv).
 ## More docs
 
 - [Stack rules](docs/stack.md)
+- [Frontend / UI kit](docs/frontend.md)
 - [Architecture](docs/architecture.md)
 - [Grading](docs/grading.md)
 - [Submission](docs/submission.md)
@@ -142,4 +147,5 @@ Column template: [`assignments.example.csv`](assignments.example.csv).
 - TypeORM migrations only (`synchronize: false`)
 - TanStack Query for server data; RTK for drafts/filters only
 - Soft-delete on the primary listable resource — see [grading](docs/grading.md)
+- Prefer `@shared/ui/components` + theme tokens over one-off styles — see [frontend](docs/frontend.md)
 - Do not submit the auth-only shell; add your domain on top

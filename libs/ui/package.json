@@ -3,11 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.ts",
+    "./components": "./src/components/index.ts",
+    "./theme.css": "./src/theme/index.css"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"@shared/ui: ok\""
+    "lint": "echo \"@shared/ui: ok\"",
+    "test": "jest --config ../../jest.config.cjs --testPathPattern=libs/ui/src"
   },
   "peerDependencies": {
     "react": "^19.0.0",

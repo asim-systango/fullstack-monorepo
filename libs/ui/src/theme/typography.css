@@ -1,0 +1,13 @@
+/*
+  Font stacks + fluid type.
+  --font-ibm-plex-sans / --font-ibm-plex-mono are set by next/font on <html>.
+*/
+
+@theme inline {
+  --font-sans:
+    var(--font-ibm-plex-sans), 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    var(--font-ibm-plex-mono), ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  --text-page-title: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --text-section-title: clamp(1.125rem, 1rem + 0.5vw, 1.35rem);
+}

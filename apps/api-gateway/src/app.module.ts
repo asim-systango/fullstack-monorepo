@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
-import { databaseConfig } from './config/database.config';
-import { JwtAuthGuard, RolesGuard } from './common/auth/auth.decorators';
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { HealthModule } from './modules/health/health.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { JwtAuthGuard, RolesGuard } from './common/auth';
+import { databaseConfig } from './config';
+import { AuthModule } from './modules/auth';
+import { HealthModule } from './modules/health';
+import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
 
@@ -15,6 +16,13 @@ const db = databaseConfig();
  */
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: 120,
+      },
+    ]),
     TypeOrmModule.forRoot({
       ...db,
     }),
@@ -23,6 +31,7 @@ const db = databaseConfig();
     HealthModule,
   ],
   providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

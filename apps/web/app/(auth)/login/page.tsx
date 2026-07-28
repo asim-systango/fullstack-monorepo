@@ -2,22 +2,35 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
-import { Button, Card, Field, TextInput, StatusMessage } from '@shared/ui';
+import { useState, type SyntheticEvent } from 'react';
+import {
+  Button,
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Field,
+  Form,
+  Page,
+  TextInput,
+  StatusMessage,
+} from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader } from '@/components/auth/shell-header';
-import { useAuth } from '@/components/auth/auth-provider';
+import { ShellHeader } from '@/components/auth';
+import { useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
+
+const isProd = process.env.NODE_ENV === 'production';
 
 export default function LoginPage() {
   const router = useRouter();
   const { refresh } = useAuth();
-  const [email, setEmail] = useState('user@demo.local');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
+  const [password, setPassword] = useState(isProd ? '' : 'password123');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
     setError(null);
@@ -33,37 +46,45 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 pb-16 pt-8">
-      <ShellHeader title="Log in" />
+    <Page>
+      <ShellHeader title="Log in" subtitle="Sign in with your demo account" />
       <Card className="max-w-md">
-        <form onSubmit={onSubmit}>
-          <Field label="Email">
+        <CardHeader>
+          <CardTitle>Welcome back</CardTitle>
+          <CardDescription>
+            Primary actions use ink. Links and focus rings use accent blue.
+          </CardDescription>
+        </CardHeader>
+        <Form pending={pending} onSubmit={onSubmit}>
+          <Field label="Email" htmlFor="login-email" required disabled={pending}>
             <TextInput
+              id="login-email"
+              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               autoComplete="email"
             />
           </Field>
-          <Field label="Password">
+          <Field label="Password" htmlFor="login-password" required disabled={pending}>
             <TextInput
+              id="login-password"
+              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
               autoComplete="current-password"
             />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Signing in…' : 'Sign in'}
+          <Button type="submit" loading={pending} loadingText="Signing in…">
+            Sign in
           </Button>
-        </form>
-        <p className="mt-3 text-sm text-muted-foreground">
+        </Form>
+        <p className="mt-4 text-sm text-muted-foreground">
           No account? <Link href="/register">Register</Link>
         </p>
       </Card>
-    </main>
+    </Page>
   );
 }

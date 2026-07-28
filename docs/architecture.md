@@ -28,23 +28,29 @@ Browser → web :3000
 
 ## Folders
 
-| Path               | Role                                                                  |
-| ------------------ | --------------------------------------------------------------------- |
-| `apps/web`         | Next UI (`:3000`) — `@app/web`                                        |
-| `apps/api-gateway` | Auth + BFF (`:3001`) — `@app/api-gateway`                             |
-| `apps/api`         | Domain Nest API (`:3002`) — `@app/api` (**your Must work**)           |
-| `libs/*`           | Shared packages (`@shared/*`) — reusable across any project           |
-| `docker/`          | Compose: Postgres only · deploy stubs: `Dockerfile.{gateway,api,web}` |
-| `docs/projects/`   | Capstone briefs                                                       |
+| Path               | Role                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| `apps/web`         | Next UI (`:3000`) — `@app/web`                                                        |
+| `apps/api-gateway` | Auth + BFF (`:3001`) — `@app/api-gateway`                                             |
+| `apps/api`         | Domain Nest API (`:3002`) — `@app/api` (**your Must work**)                           |
+| `libs/ui`          | Shared UI kit + theme — prefer `@shared/ui/components` ([frontend.md](./frontend.md)) |
+| `libs/*`           | Other shared packages (`@shared/*`) — folder subpaths when folders exist              |
+| `docker/`          | Compose: Postgres only · deploy stubs: `Dockerfile.{gateway,api,web}`                 |
+| `docs/projects/`   | Capstone briefs                                                                       |
 
 Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Conventions
 
-- Responses: `{ data: T }` — `@shared/http` envelope + `@shared/api-client`
+- Responses: `{ data: T }` — `@shared/http` envelope (`@shared/http/filters`, `@shared/http/interceptors`) + `@shared/api-client`
 - Errors: `{ statusCode, error, message, details? }` via shared `AllExceptionsFilter`
 - Browser auth: httpOnly cookie from the gateway (`@Public()` for anonymous routes)
 - Domain API auth: Bearer JWT (gateway forwards the cookie as `Authorization`)
+- Shared auth: `@shared/http/auth` (`JwtAuthGuard`, `RolesGuard`, `@Public` / `@Roles`) — apps re-export via `common/auth`
+- Cookie→Bearer hop: `apps/api-gateway/src/common/proxy-hop.ts` (unit-tested)
+- OpenAPI: `/docs` on gateway (cookie) and domain API (Bearer) via `@shared/http/swagger` — local/dev only
+- UI: `@shared/ui/components` + `@shared/ui/theme.css` — [frontend.md](./frontend.md); gallery at `/ui`
+- Imports: prefer folder subpaths (`@shared/pkg/folder`); Nest apps use folder `index.ts` barrels (`./config`, `./common/auth`, `./modules/auth`); flat packages stay on the package root until a folder exists
 - Entities: `*.entity.ts` under `apps/api/src/modules/`
 - Users migration/seed: gateway · domain migrations: `apps/api`
 - Smoke: `pnpm doctor` (per-hop) or `http://localhost:3000/api/ready`

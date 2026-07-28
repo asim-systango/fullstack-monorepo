@@ -1,0 +1,454 @@
+/*
+  Shared component recipes for @shared/ui — ink/paper.
+  primary = ink · accent = blue (links/focus). Override via className + cn().
+*/
+
+@layer components {
+  /* —— Button —— */
+  .ui-button {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-md text-sm font-medium;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+    transition-property: color, background-color, border-color, opacity, transform;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-button-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  .ui-button-md {
+    @apply px-3.5 py-2;
+  }
+
+  .ui-button-primary {
+    @apply border border-transparent bg-primary text-primary-foreground;
+    @apply hover:bg-[color-mix(in_oklch,var(--primary)_88%,var(--background))];
+  }
+
+  .ui-button-secondary {
+    @apply border border-transparent bg-secondary text-secondary-foreground;
+    @apply hover:bg-[color-mix(in_oklch,var(--secondary)_85%,var(--foreground))];
+  }
+
+  .ui-button-ghost {
+    @apply border border-border bg-transparent text-foreground;
+    @apply hover:bg-muted;
+  }
+
+  .ui-button-danger {
+    @apply border border-transparent bg-destructive text-destructive-foreground;
+    @apply hover:bg-[color-mix(in_oklch,var(--destructive)_88%,var(--background))];
+  }
+
+  .ui-button-loading {
+    @apply gap-2;
+  }
+
+  .ui-button-spinner {
+    @apply shrink-0;
+  }
+
+  .ui-button-spinner .ui-spinner-dot {
+    @apply size-3.5 border-current border-t-transparent;
+  }
+
+  /* —— Card —— */
+  .ui-card {
+    @apply rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm;
+  }
+
+  .ui-card-header {
+    @apply mb-3;
+  }
+
+  .ui-card-title {
+    @apply m-0 text-base font-semibold text-card-foreground;
+  }
+
+  .ui-card-description {
+    @apply mt-1 mb-0 text-sm text-muted-foreground;
+  }
+
+  .ui-card-body {
+    @apply text-sm text-card-foreground;
+  }
+
+  .ui-card-footer {
+    @apply mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3;
+  }
+
+  /* —— Form —— */
+  .ui-form-pending {
+    @apply opacity-95;
+  }
+
+  .ui-field {
+    @apply mb-3 block;
+  }
+
+  .ui-field-disabled {
+    @apply opacity-60;
+  }
+
+  .ui-field-label {
+    @apply mb-1 block text-xs font-medium text-muted-foreground;
+  }
+
+  .ui-field-required {
+    @apply ml-0.5 text-destructive;
+  }
+
+  .ui-field-optional {
+    @apply ml-1 font-normal text-muted-foreground;
+  }
+
+  .ui-field-hint {
+    @apply mt-1 mb-0 text-xs text-muted-foreground;
+  }
+
+  .ui-field-error {
+    @apply mt-1 mb-0 text-xs text-destructive;
+  }
+
+  .ui-input,
+  .ui-select {
+    @apply w-full rounded-md border border-input bg-card px-2.5 py-2 text-sm text-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-input {
+    @apply placeholder:text-muted-foreground read-only:bg-muted;
+  }
+
+  .ui-textarea {
+    @apply min-h-24 w-full resize-y rounded-md border border-input bg-card px-2.5 py-2 text-sm text-foreground;
+    @apply placeholder:text-muted-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50 read-only:bg-muted;
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-control-invalid {
+    @apply border-destructive focus-visible:ring-destructive;
+  }
+
+  .ui-checkbox {
+    @apply mb-3 flex cursor-pointer items-start gap-2 text-sm text-foreground;
+  }
+
+  .ui-checkbox-disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .ui-checkbox-invalid .ui-checkbox-input {
+    @apply outline-2 outline-offset-0 outline-destructive;
+  }
+
+  .ui-checkbox-input {
+    @apply mt-0.5 size-4 shrink-0 rounded-sm border border-input accent-accent;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed;
+  }
+
+  .ui-checkbox-label {
+    @apply leading-snug;
+  }
+
+  /* —— Feedback —— */
+  .ui-status {
+    @apply my-2 text-sm;
+  }
+
+  .ui-status-neutral {
+    @apply text-muted-foreground;
+  }
+
+  .ui-status-error {
+    @apply text-destructive;
+  }
+
+  .ui-status-success {
+    @apply text-success;
+  }
+
+  .ui-badge {
+    @apply inline-flex items-center rounded-sm px-2 py-0.5 font-mono text-xs font-medium;
+  }
+
+  .ui-badge-neutral {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .ui-badge-accent {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .ui-badge-success {
+    @apply bg-success text-success-foreground;
+  }
+
+  .ui-badge-danger {
+    @apply bg-destructive text-destructive-foreground;
+  }
+
+  .ui-alert {
+    @apply block rounded-md border px-3 py-2.5 text-sm;
+  }
+
+  .ui-alert-title {
+    @apply m-0 font-medium;
+  }
+
+  .ui-alert-body {
+    @apply mt-1 text-sm opacity-90;
+  }
+
+  .ui-alert-neutral {
+    @apply border-border bg-muted text-foreground;
+  }
+
+  .ui-alert-info {
+    @apply border-accent/40 bg-accent/10 text-foreground;
+  }
+
+  .ui-alert-success {
+    @apply border-success/40 bg-success/10 text-foreground;
+  }
+
+  .ui-alert-danger {
+    @apply border-destructive/40 bg-destructive/10 text-foreground;
+  }
+
+  .ui-spinner {
+    @apply inline-flex items-center justify-center border-0 bg-transparent p-0;
+  }
+
+  .ui-spinner-sm {
+    @apply size-4;
+  }
+
+  .ui-spinner-md {
+    @apply size-5;
+  }
+
+  .ui-spinner-lg {
+    @apply size-8;
+  }
+
+  .ui-spinner-sm .ui-spinner-dot {
+    @apply size-3;
+  }
+
+  .ui-spinner-md .ui-spinner-dot {
+    @apply size-4;
+  }
+
+  .ui-spinner-lg .ui-spinner-dot {
+    @apply size-6;
+  }
+
+  .ui-spinner-dot {
+    @apply animate-spin rounded-full border-2 border-muted-foreground border-t-accent;
+  }
+
+  .ui-loading {
+    @apply flex items-center gap-2 text-sm text-muted-foreground;
+  }
+
+  .ui-loading-block {
+    @apply justify-center rounded-lg border border-border bg-card px-6 py-10;
+  }
+
+  .ui-loading-label {
+    @apply text-muted-foreground;
+  }
+
+  .ui-skeleton {
+    @apply animate-pulse rounded-md bg-muted;
+  }
+
+  .ui-skeleton-sm {
+    @apply h-4 w-24;
+  }
+
+  .ui-skeleton-md {
+    @apply h-8 w-full;
+  }
+
+  .ui-skeleton-lg {
+    @apply h-24 w-full;
+  }
+
+  .ui-skeleton-line {
+    @apply h-3 w-full;
+  }
+
+  .ui-empty {
+    @apply rounded-xl border border-dashed border-border bg-card/50 px-6 py-10 text-center;
+  }
+
+  .ui-empty-title {
+    @apply m-0 text-base font-semibold text-foreground;
+  }
+
+  .ui-empty-description {
+    @apply mx-auto mt-2 mb-0 max-w-sm text-sm text-muted-foreground;
+  }
+
+  .ui-empty-action {
+    @apply mt-4 flex justify-center;
+  }
+
+  /* —— Layout —— */
+  .ui-page {
+    @apply mx-auto max-w-3xl px-5 pb-16 pt-8;
+  }
+
+  .ui-page-header {
+    @apply mb-6 flex flex-wrap items-start justify-between gap-4;
+  }
+
+  .ui-page-title {
+    @apply m-0 font-semibold tracking-tight text-foreground;
+    font-size: var(--text-page-title);
+  }
+
+  .ui-page-description {
+    @apply mt-1 mb-0 text-sm text-muted-foreground;
+  }
+
+  .ui-page-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .ui-shell-header {
+    @apply mb-7 flex items-center justify-between gap-4 border-b border-border pb-4;
+  }
+
+  .ui-shell-title {
+    @apply m-0 font-semibold tracking-tight text-foreground;
+    font-size: var(--text-page-title);
+  }
+
+  .ui-shell-subtitle {
+    @apply mt-1 mb-0 text-sm text-muted-foreground;
+  }
+
+  .ui-shell-nav {
+    @apply flex items-center gap-4 text-sm;
+  }
+
+  .ui-shell-nav a:not(.ui-button) {
+    @apply text-accent underline-offset-4 hover:underline;
+    transition-property: color;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-shell-nav a.ui-button {
+    @apply no-underline hover:no-underline;
+  }
+
+  .ui-separator {
+    @apply my-6 border-0 border-t border-border;
+  }
+
+  /* —— Dialog / Modal —— */
+  .ui-dialog {
+    @apply m-0 max-h-none max-w-none border-0 bg-transparent p-4 text-foreground;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+  }
+
+  .ui-dialog:not([open]) {
+    display: none;
+  }
+
+  .ui-dialog::backdrop {
+    background: color-mix(in oklch, var(--ink-950) 45%, transparent);
+  }
+
+  .ui-dialog-backdrop {
+    @apply m-0 cursor-default border-0 bg-transparent p-0;
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ui-dialog-panel {
+    @apply relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-md;
+    grid-area: 1 / 1;
+  }
+
+  .ui-dialog-close {
+    @apply absolute top-2 right-2 min-w-8 px-2;
+  }
+
+  .ui-dialog-header {
+    @apply mb-3 pr-8;
+  }
+
+  .ui-dialog-title {
+    @apply m-0 text-base font-semibold text-card-foreground;
+  }
+
+  .ui-dialog-description {
+    @apply mt-1 mb-0 text-sm text-muted-foreground;
+  }
+
+  .ui-dialog-body {
+    @apply text-sm text-card-foreground;
+  }
+
+  .ui-dialog-footer {
+    @apply mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-3;
+  }
+
+  /* —— Table —— */
+  .ui-table-wrap {
+    @apply w-full overflow-x-auto rounded-lg border border-border;
+  }
+
+  .ui-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .ui-thead {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .ui-th {
+    @apply border-b border-border px-3 py-2 font-medium;
+  }
+
+  .ui-td {
+    @apply border-b border-border px-3 py-2 text-foreground;
+  }
+
+  .ui-tr:last-child .ui-td {
+    @apply border-b-0;
+  }
+
+  .ui-tbody .ui-tr:hover {
+    @apply bg-muted/60;
+  }
+
+  /* Screen-reader only */
+  .sr-only {
+    @apply absolute size-px overflow-hidden whitespace-nowrap border-0;
+    margin: -1px;
+    padding: 0;
+    clip-path: inset(50%);
+  }
+}
