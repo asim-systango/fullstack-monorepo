@@ -7,6 +7,8 @@ cp .env.local.example .env.local
 pnpm dev:web    # from repo root
 ```
 
+**Scripts (via root):** `pnpm dev:web` · `build:web` · `start:web` · `typecheck:web`
+
 | Env                                     | Meaning          |
 | --------------------------------------- | ---------------- |
 | `NEXT_PUBLIC_API_URL=/api`              | Browser API base |

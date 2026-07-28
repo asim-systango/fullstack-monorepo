@@ -7,6 +7,8 @@ cp .env.example .env
 pnpm dev:api    # from repo root
 ```
 
+**Scripts (via root):** `pnpm dev:api` · `build:api` · `start:api` · `typecheck:api` · `test:api` · `migration:run:api` · `migration:generate` · `migration:revert:api`
+
 **Your work:** modules under `src/modules/` (`*.entity.ts` + `TypeOrmModule.forFeature`).
 
 - Domain migrations: `pnpm migration:run:api` / `pnpm migration:generate`

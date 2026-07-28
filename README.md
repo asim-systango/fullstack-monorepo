@@ -80,8 +80,10 @@ pnpm dev:web
 | `pnpm migration:run`               | Users table (gateway)                                           |
 | `pnpm migration:run:api`           | Your domain migrations                                          |
 | `pnpm migration:generate`          | Generate a domain migration                                     |
+| `pnpm migration:revert` / `:api`   | Revert latest gateway / domain migration                        |
 | `pnpm seed`                        | Seed demo users                                                 |
 | `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
+| `pnpm test:gateway` / `test:api`   | Per-app Jest                                                    |
 | `pnpm build` / `start`             | Production build / run                                          |
 
 Also: `dev:backend`, `build:*`, `start:*`, `typecheck:*` per app.
