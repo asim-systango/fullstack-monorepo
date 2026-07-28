@@ -1,0 +1,29 @@
+{
+  "name": "@repo/nest-common",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"@repo/nest-common: ok\""
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.0.12",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.11",
+    "rxjs": "^7.8.2",
+    "typescript": "^5.8.3"
+  }
+}

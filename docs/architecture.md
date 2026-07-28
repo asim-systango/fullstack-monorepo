@@ -41,7 +41,8 @@ Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Conventions
 
-- Responses: `{ data: T }` — use `@repo/api-client`
+- Responses: `{ data: T }` — `@repo/nest-common` envelope + `@repo/api-client`
+- Errors: `{ statusCode, error, message, details? }` via shared `AllExceptionsFilter`
 - Browser auth: httpOnly cookie from the gateway (`@Public()` for anonymous routes)
 - Domain API auth: Bearer JWT (gateway forwards the cookie as `Authorization`)
 - Entities: `*.entity.ts` under `apps/api/src/modules/`

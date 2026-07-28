@@ -11,9 +11,9 @@ import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
 import {
   AllExceptionsFilter,
+  ResponseEnvelopeInterceptor,
   validationExceptionFactory,
-} from './common/filters/all-exceptions.filter';
-import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
+} from '@repo/nest-common';
 
 function isGatewayOwnedPath(path: string): boolean {
   return (
@@ -28,6 +28,7 @@ function isGatewayOwnedPath(path: string): boolean {
 async function bootstrap() {
   const appSettings = appConfig();
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');

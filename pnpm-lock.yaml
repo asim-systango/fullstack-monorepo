@@ -58,6 +58,9 @@ importers:
       '@repo/env':
         specifier: workspace:*
         version: link:../../libs/env
+      '@repo/nest-common':
+        specifier: workspace:*
+        version: link:../../libs/nest-common
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -155,6 +158,9 @@ importers:
       '@repo/env':
         specifier: workspace:*
         version: link:../../libs/env
+      '@repo/nest-common':
+        specifier: workspace:*
+        version: link:../../libs/nest-common
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.3
@@ -343,6 +349,24 @@ importers:
       '@types/node':
         specifier: ^22.13.11
         version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  libs/nest-common:
+    devDependencies:
+      '@nestjs/common':
+        specifier: ^11.0.12
+        version: 11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@types/express':
+        specifier: ^5.0.1
+        version: 5.0.6
+      '@types/node':
+        specifier: ^22.13.11
+        version: 22.20.1
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       typescript:
         specifier: ^5.8.3
         version: 5.9.3

@@ -26,12 +26,12 @@
     "migration:run:api": "pnpm --filter @fullstack/api migration:run",
     "migration:generate": "pnpm --filter @fullstack/api migration:generate",
     "seed": "pnpm --filter @fullstack/api-gateway seed",
-    "test": "pnpm --filter @fullstack/api-gateway exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api-gateway/src|apps/api/src|libs/api-client/src)'",
+    "test": "pnpm --filter @fullstack/api-gateway exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api-gateway/src|apps/api/src|libs/api-client/src|libs/nest-common/src)'",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
     "docker:db": "sh -c 'if [ -f .env ]; then docker compose --env-file .env -f docker/docker-compose.yml up -d postgres; else docker compose -f docker/docker-compose.yml up -d postgres; fi'",
     "docker:down": "sh -c 'if [ -f .env ]; then docker compose --env-file .env -f docker/docker-compose.yml down; else docker compose -f docker/docker-compose.yml down; fi'",
     "doctor": "sh tools/scripts/doctor.sh",
-    "postinstall": "pnpm --filter @repo/env build",
+    "postinstall": "pnpm --filter @repo/env build && pnpm --filter @repo/nest-common build",
     "prepare": "husky"
   },
   "lint-staged": {

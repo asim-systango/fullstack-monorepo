@@ -16,5 +16,5 @@ Use **pnpm workspaces** for package linking and **Turborepo** for task orchestra
 
 - Fast installs and clear `workspace:*` boundaries.
 - No Nx dependency for learners. `tools/generators/` is an empty stub (not a generator plugin).
-- Active shared packages apps import: `env`, `api-client`, `ui`, `shared-types`, `config`.
+- Active shared packages apps import: `env`, `nest-common`, `api-client`, `ui`, `shared-types`, `config`.
 - Unused stubs also exist under `libs/` (`database`, `utils`) — leave them alone unless the instructor asks.
