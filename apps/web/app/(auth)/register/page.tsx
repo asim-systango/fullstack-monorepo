@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
-import { Button, Card, Field, TextInput, StatusMessage } from '@repo/ui';
-import { ApiClientError } from '@repo/api-client';
+import { Button, Card, Field, TextInput, StatusMessage } from '@shared/ui';
+import { ApiClientError } from '@shared/api-client';
 import { ShellHeader } from '@/components/auth/shell-header';
 import { useAuth } from '@/components/auth/auth-provider';
 import { authApi } from '@/lib/api';

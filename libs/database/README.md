@@ -1,4 +1,4 @@
-# @repo/database
+# @shared/database
 
 Unused stub. Do not put your project schema here.
 

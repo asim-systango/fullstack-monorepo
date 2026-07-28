@@ -10,7 +10,7 @@ Hard rules for every project.
 6. **Migrations only** — `synchronize: false`. Users: gateway. Domain: `apps/api`.
 7. **ValidationPipe** — whitelist + forbid non-whitelisted.
 8. **UI states** — empty ≠ loading ≠ error.
-9. **Envelope** — success is `{ data: T }` via `@repo/nest-common`; prefer `@repo/api-client` on the web.
+9. **Envelope** — success is `{ data: T }` via `@shared/http`; prefer `@shared/api-client` on the web.
 10. **CORS** — set on the gateway for direct `:3001` tools; the UI path is same-origin via Next.
 
 ## Day plan (5–6 days)

@@ -1,6 +1,6 @@
-import { loadGatewayEnv, type GatewayEnv } from '@repo/env';
+import { loadGatewayEnv, type GatewayEnv } from '@shared/env';
 
-/** Thin app config wrapper around `@repo/env`. */
+/** Thin app config wrapper around `@shared/env`. */
 export function appConfig(): Pick<
   GatewayEnv,
   | 'NODE_ENV'

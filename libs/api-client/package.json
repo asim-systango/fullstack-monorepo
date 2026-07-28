@@ -1,5 +1,5 @@
 {
-  "name": "@repo/api-client",
+  "name": "@shared/api-client",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,10 +8,10 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"@repo/api-client: ok\""
+    "lint": "echo \"@shared/api-client: ok\""
   },
   "dependencies": {
-    "@repo/shared-types": "workspace:*",
+    "@shared/types": "workspace:*",
     "axios": "^1.8.4",
     "zod": "^3.24.2"
   },

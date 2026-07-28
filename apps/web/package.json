@@ -1,5 +1,5 @@
 {
-  "name": "@fullstack/web",
+  "name": "@app/web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",
-    "@repo/api-client": "workspace:*",
-    "@repo/ui": "workspace:*",
+    "@shared/api-client": "workspace:*",
+    "@shared/ui": "workspace:*",
     "@tanstack/react-query": "^5.69.0",
     "@tanstack/react-query-devtools": "^5.69.0",
     "next": "15.2.4",

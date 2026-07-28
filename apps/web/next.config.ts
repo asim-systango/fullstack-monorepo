@@ -10,7 +10,7 @@ const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3001').r
 );
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@repo/ui', '@repo/api-client', '@repo/shared-types'],
+  transpilePackages: ['@shared/ui', '@shared/api-client', '@shared/types'],
   async rewrites() {
     return [
       {

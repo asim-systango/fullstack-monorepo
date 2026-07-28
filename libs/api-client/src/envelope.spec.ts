@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
-import { userSchema } from '@repo/shared-types';
+import { userSchema } from '@shared/types';
 import { createAuthApi, unwrapData } from './index';
 
 const sampleUser = {

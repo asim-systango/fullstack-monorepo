@@ -1,4 +1,4 @@
-import { createApiClient, createAuthApi, createHealthApi } from '@repo/api-client';
+import { createApiClient, createAuthApi, createHealthApi } from '@shared/api-client';
 
 /** Same-origin `/api` → Next rewrite → api-gateway. Override only if needed. */
 const baseURL = (process.env.NEXT_PUBLIC_API_URL ?? '/api').replace(/\/$/, '');

@@ -1,4 +1,4 @@
-import { loadGatewayEnv } from '@repo/env';
+import { loadGatewayEnv } from '@shared/env';
 
 /** Database connection settings for Nest TypeORM. */
 export function databaseConfig() {

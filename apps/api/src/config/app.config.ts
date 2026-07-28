@@ -1,6 +1,6 @@
-import { loadApiEnv, type ApiEnv } from '@repo/env';
+import { loadApiEnv, type ApiEnv } from '@shared/env';
 
-/** Thin app config wrapper around `@repo/env`. */
+/** Thin app config wrapper around `@shared/env`. */
 export function appConfig(): Pick<ApiEnv, 'NODE_ENV' | 'PORT' | 'JWT_SECRET'> {
   const env = loadApiEnv();
   return {

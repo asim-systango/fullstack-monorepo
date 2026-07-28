@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
-import { Button } from '@repo/ui';
+import { Button } from '@shared/ui';
 
 function AuthNav() {
   const { user, loading, logout } = useAuth();

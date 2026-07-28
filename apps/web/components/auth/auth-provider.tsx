@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { User } from '@repo/api-client';
+import type { User } from '@shared/api-client';
 import { authApi } from '@/lib/api';
 
 type AuthContextValue = {

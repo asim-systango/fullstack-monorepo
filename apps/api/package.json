@@ -1,5 +1,5 @@
 {
-  "name": "@fullstack/api",
+  "name": "@app/api",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -22,8 +22,8 @@
     "@nestjs/platform-express": "^11.0.12",
     "@nestjs/swagger": "^11.1.1",
     "@nestjs/typeorm": "^11.0.0",
-    "@repo/env": "workspace:*",
-    "@repo/nest-common": "workspace:*",
+    "@shared/env": "workspace:*",
+    "@shared/http": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.7",
@@ -37,7 +37,7 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.6",
     "@nestjs/testing": "^11.0.12",
-    "@repo/config": "workspace:*",
+    "@shared/config": "workspace:*",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",

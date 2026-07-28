@@ -21,8 +21,8 @@ Browser → web :3000 /api/* → gateway :3001 → api :3002
 Example: `apps/notifications` on `:3003`.
 
 1. Copy the shape of `apps/api` (Nest app, Bearer JWT, `.env` with `PORT=3003` and the **same** `JWT_SECRET`).
-2. Package name like `@fullstack/notifications`.
-3. Run it: `pnpm --filter @fullstack/notifications dev` (optional: add `dev:notifications` in root `package.json`).
+2. Package name like `@app/notifications`.
+3. Run it: `pnpm --filter @app/notifications dev` (optional: add `dev:notifications` in root `package.json`).
 4. On the gateway, proxy a path (e.g. `/notifications`) to `http://localhost:3003`.
 5. Keep the browser on `/api` → gateway. Do not point Next at the new service.
 6. Note ports and paths in your PR / `docs/architecture.md`.

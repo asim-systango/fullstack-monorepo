@@ -20,9 +20,9 @@ module.exports = {
   },
   testEnvironment: 'node',
   moduleNameMapper: {
-    '^@repo/env$': '<rootDir>/libs/env/src/index.ts',
-    '^@repo/nest-common$': '<rootDir>/libs/nest-common/src/index.ts',
-    '^@repo/shared-types$': '<rootDir>/libs/shared-types/src/index.ts',
+    '^@shared/env$': '<rootDir>/libs/env/src/index.ts',
+    '^@shared/http$': '<rootDir>/libs/http/src/index.ts',
+    '^@shared/types$': '<rootDir>/libs/shared-types/src/index.ts',
   },
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/.next/'],
 };

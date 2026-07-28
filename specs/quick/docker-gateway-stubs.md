@@ -13,7 +13,7 @@ Align Docker stubs with the three-app BFF stack: add `Dockerfile.gateway`, refre
 
 ## Acceptance criteria
 
-- [x] Gateway stub builds `@fullstack/api-gateway` (mirrors api stub)
+- [x] Gateway stub builds `@app/api-gateway` (mirrors api stub)
 - [x] Api stub comment reflects domain API, not “the Nest API”
 - [x] Web stub documents/sets build-args for `/api` + gateway rewrite target
 - [x] Compose remains Postgres-only; architecture notes three Dockerfile stubs

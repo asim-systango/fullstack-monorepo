@@ -1,5 +1,5 @@
 {
-  "name": "@repo/nest-common",
+  "name": "@shared/http",
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"@repo/nest-common: ok\""
+    "lint": "echo \"@shared/http: ok\""
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",

@@ -33,7 +33,8 @@ Browser → web :3000
 | `apps/web`         | Next UI (`:3000`)                                                     |
 | `apps/api-gateway` | Auth + BFF (`:3001`)                                                  |
 | `apps/api`         | Domain Nest API (`:3002`) — **your Must work**                        |
-| `libs/*`           | Shared packages (`@repo/*`)                                           |
+| `libs/*`           | Shared packages (`@shared/*`) — project-agnostic scope                |
+| `apps/*`           | Apps (`@app/web`, `@app/api-gateway`, `@app/api`)                     |
 | `docker/`          | Compose: Postgres only · deploy stubs: `Dockerfile.{gateway,api,web}` |
 | `docs/projects/`   | Capstone briefs                                                       |
 
@@ -41,7 +42,7 @@ Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Conventions
 
-- Responses: `{ data: T }` — `@repo/nest-common` envelope + `@repo/api-client`
+- Responses: `{ data: T }` — `@shared/http` envelope + `@shared/api-client`
 - Errors: `{ statusCode, error, message, details? }` via shared `AllExceptionsFilter`
 - Browser auth: httpOnly cookie from the gateway (`@Public()` for anonymous routes)
 - Domain API auth: Bearer JWT (gateway forwards the cookie as `Authorization`)

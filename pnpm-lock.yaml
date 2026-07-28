@@ -55,12 +55,12 @@ importers:
       '@nestjs/typeorm':
         specifier: ^11.0.0
         version: 11.0.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(pg@8.22.0)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)))
-      '@repo/env':
+      '@shared/env':
         specifier: workspace:*
         version: link:../../libs/env
-      '@repo/nest-common':
+      '@shared/http':
         specifier: workspace:*
-        version: link:../../libs/nest-common
+        version: link:../../libs/http
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -95,7 +95,7 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.12
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-express@11.1.28)
-      '@repo/config':
+      '@shared/config':
         specifier: workspace:*
         version: link:../../libs/config
       '@types/express':
@@ -155,12 +155,12 @@ importers:
       '@nestjs/typeorm':
         specifier: ^11.0.0
         version: 11.0.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(pg@8.22.0)(ts-node@10.9.2(@types/node@22.20.1)(typescript@5.9.3)))
-      '@repo/env':
+      '@shared/env':
         specifier: workspace:*
         version: link:../../libs/env
-      '@repo/nest-common':
+      '@shared/http':
         specifier: workspace:*
-        version: link:../../libs/nest-common
+        version: link:../../libs/http
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.3
@@ -204,7 +204,7 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.12
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-express@11.1.28)
-      '@repo/config':
+      '@shared/config':
         specifier: workspace:*
         version: link:../../libs/config
       '@types/bcryptjs':
@@ -252,10 +252,10 @@ importers:
       '@reduxjs/toolkit':
         specifier: ^2.6.1
         version: 2.12.0(react-redux@9.3.0(@types/react@19.2.17)(react@19.2.8)(redux@5.0.1))(react@19.2.8)
-      '@repo/api-client':
+      '@shared/api-client':
         specifier: workspace:*
         version: link:../../libs/api-client
-      '@repo/ui':
+      '@shared/ui':
         specifier: workspace:*
         version: link:../../libs/ui
       '@tanstack/react-query':
@@ -301,7 +301,7 @@ importers:
 
   libs/api-client:
     dependencies:
-      '@repo/shared-types':
+      '@shared/types':
         specifier: workspace:*
         version: link:../shared-types
       axios:
@@ -353,7 +353,7 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  libs/nest-common:
+  libs/http:
     devDependencies:
       '@nestjs/common':
         specifier: ^11.0.12

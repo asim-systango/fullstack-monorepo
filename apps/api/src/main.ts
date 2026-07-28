@@ -10,7 +10,7 @@ import {
   AllExceptionsFilter,
   ResponseEnvelopeInterceptor,
   validationExceptionFactory,
-} from '@repo/nest-common';
+} from '@shared/http';
 
 async function bootstrap() {
   const appSettings = appConfig();

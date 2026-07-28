@@ -11,9 +11,9 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY apps/api ./apps/api
-RUN pnpm --filter @repo/env build \
-  && pnpm --filter @repo/nest-common build \
-  && pnpm --filter @fullstack/api build
+RUN pnpm --filter @shared/env build \
+  && pnpm --filter @shared/http build \
+  && pnpm --filter @app/api build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

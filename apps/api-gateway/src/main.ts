@@ -6,14 +6,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { AUTH_COOKIE_NAME } from '@repo/env';
+import { AUTH_COOKIE_NAME } from '@shared/env';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
 import {
   AllExceptionsFilter,
   ResponseEnvelopeInterceptor,
   validationExceptionFactory,
-} from '@repo/nest-common';
+} from '@shared/http';
 
 function isGatewayOwnedPath(path: string): boolean {
   return (

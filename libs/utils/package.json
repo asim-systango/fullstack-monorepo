@@ -1,5 +1,5 @@
 {
-  "name": "@repo/utils",
+  "name": "@shared/utils",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"@repo/utils: ok\""
+    "lint": "echo \"@shared/utils: ok\""
   },
   "devDependencies": {
     "typescript": "^5.8.3"

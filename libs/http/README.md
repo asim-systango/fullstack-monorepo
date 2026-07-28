@@ -1,4 +1,4 @@
-# @repo/nest-common
+# @shared/http
 
 Shared Nest HTTP helpers used by **api-gateway** and **api**:
 

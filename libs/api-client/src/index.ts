@@ -4,12 +4,7 @@ import axios, {
   type CreateAxiosDefaults,
 } from 'axios';
 import { z } from 'zod';
-import {
-  apiErrorSchema,
-  userSchema,
-  type ApiErrorBody,
-  type User,
-} from '@repo/shared-types';
+import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
 
 export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
 
