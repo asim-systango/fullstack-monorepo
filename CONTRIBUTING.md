@@ -1,7 +1,7 @@
 # Contributing
 
-- **Learners:** your domain in `apps/api` + UI in `apps/web`. Prefer `@shared/ui/components` (theme via `@shared/ui/theme.css`; gallery `/ui`) — [frontend.md](docs/frontend.md). Leave cookie auth on `apps/api-gateway` unless you must extend it.
-- **Instructors:** shared libs, docs, tools, boilerplate.
+- Your domain goes in `apps/api` + UI in `apps/web`. Prefer `@shared/ui/components` (theme via `@shared/ui/theme.css`; gallery `/ui`) — [frontend.md](docs/frontend.md). Leave cookie auth on `apps/api-gateway` unless you must extend it.
+- Keep `libs/` changes scoped — they affect every app.
 - Local stack: copy the four env examples (see root README), then `pnpm docker:db && pnpm dev` and `pnpm doctor`.
 
 ## PRs
@@ -20,7 +20,7 @@ fix(auth): refresh session after register
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 
-Keep `libs/` changes scoped and intentional — they affect every app. Prefer using `@shared/ui/components` in pages over forking shared packages.
+Keep the diff focused. Prefer using `@shared/ui/components` in pages over forking shared packages.
 
 ## Git hooks (Husky)
 

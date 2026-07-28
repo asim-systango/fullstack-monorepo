@@ -1,7 +1,7 @@
 /**
- * Shared database helpers.
- * Entities and migrations are owned by `apps/api` (TypeORM) for this course.
- * Promote shared entities here when multiple services need them.
+ * Shared database helpers stub.
+ * Entities and migrations live in the apps (`apps/api`, gateway users).
+ * Promote shared pieces here only if multiple services need them.
  */
 export const DATABASE_PROVIDER = 'typeorm' as const;
 

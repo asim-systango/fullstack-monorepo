@@ -107,7 +107,7 @@ If a port is taken, change that app’s `PORT` and keep these in sync: `API_UPST
 
 ## Projects (17)
 
-Your assignment is in the instructor’s Google Sheet. Full Must / Should / Stretch live in each brief.
+Pick one project brief below. Full Must / Should / Stretch live in each brief.
 
 | Slug                    | What you build                                         | Brief                                             |
 | ----------------------- | ------------------------------------------------------ | ------------------------------------------------- |
@@ -128,8 +128,6 @@ Your assignment is in the instructor’s Google Sheet. Full Must / Should / Stre
 | `fitness-tracker`       | Workouts, PRs, plans, goals                            | [docs](docs/projects/15-fitness-tracker.md)       |
 | `finance-tracker`       | Accounts, budgets, transactions, goals                 | [docs](docs/projects/16-finance-tracker.md)       |
 | `library-management`    | Titles, copies, borrow/reserve, fines                  | [docs](docs/projects/17-library-management.md)    |
-
-Column template: [`assignments.example.csv`](assignments.example.csv).
 
 ## More docs
 

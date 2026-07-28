@@ -2,7 +2,7 @@
 
 Presentational primitives for `@app/web`. Prefer `import { Button } from '@shared/ui/components'`. Styles come from [`src/theme/`](./src/theme/) via `@shared/ui/theme.css`.
 
-Learner guide: [docs/frontend.md](../../docs/frontend.md). Live gallery: **`/ui`**.
+Guide: [docs/frontend.md](../../docs/frontend.md). Live gallery: **`/ui`**.
 
 ## Components
 

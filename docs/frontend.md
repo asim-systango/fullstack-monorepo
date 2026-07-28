@@ -1,6 +1,6 @@
 # Frontend (web UI)
 
-How learners should build UI in this starter.
+How to build UI in this starter.
 
 ## Where things live
 
@@ -17,18 +17,21 @@ How learners should build UI in this starter.
 
 Prefer **folder subpaths** on `@shared/*` packages (and app-local folders with `index.ts`):
 
-| Pattern       | Example                                                              |
-| ------------- | -------------------------------------------------------------------- |
-| UI components | `import { Button } from '@shared/ui/components'`                     |
-| Theme CSS     | `import '@shared/ui/theme.css'`                                      |
-| HTTP helpers  | `from '@shared/http/filters'` / `@shared/http/interceptors`          |
-| Env by app    | `from '@shared/env/gateway'` / `@shared/env/api` / `@shared/env/web` |
-| Flat packages | `from '@shared/types'` until a real folder exists                    |
-| App-local     | `from '@/components/auth'`                                           |
+| Pattern       | Example                                                                    |
+| ------------- | -------------------------------------------------------------------------- |
+| UI components | `import { Button } from '@shared/ui/components'`                           |
+| Theme CSS     | `import '@shared/ui/theme.css'`                                            |
+| HTTP helpers  | `from '@shared/http/filters'` / `@shared/http/interceptors`                |
+| Shared auth   | `from '@shared/http/auth'` (Nest apps usually re-export via `common/auth`) |
+| Env (Nest)    | `from '@shared/env/gateway'` / `@shared/env/api` / `@shared/env/constants` |
+| Flat packages | `from '@shared/types'` until a real folder exists                          |
+| App-local     | `from '@/components/auth'`                                                 |
 
-Root package entrypoints (e.g. `@shared/ui`) remain as thin re-exports; folder paths are preferred.
+Root package entrypoints (e.g. `@shared/ui`) remain as thin re-exports; prefer the folder paths above.
 
 When you add a new folder under a lib, add `index.ts` and a matching `exports["./folder"]` in that package’s `package.json`.
+
+Optional: `@shared/env/web` validates Next env (`NEXT_PUBLIC_API_URL`, `API_GATEWAY_URL`) if you adopt `loadWebEnv` — the starter ships `.env.local.example` without requiring it.
 
 ## Rules
 

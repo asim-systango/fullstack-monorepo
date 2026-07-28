@@ -1,7 +1,4 @@
-/**
- * App-local auth barrel — re-exports shared guards/decorators so existing
- * `../../common/auth` imports keep working for the starter template.
- */
+/** Re-exports `@shared/http/auth` for app imports (`./common/auth`). */
 export {
   CurrentUser,
   IS_PUBLIC_KEY,

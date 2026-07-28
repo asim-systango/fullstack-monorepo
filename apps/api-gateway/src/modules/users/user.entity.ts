@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** Rename `staff` to a domain role (company, agent, instructor, …). */
+/** Rename `staff` to a domain role (company, agent, coach, …). */
 export type UserRole = 'admin' | 'user' | 'staff';
 
 @Entity({ name: 'users' })

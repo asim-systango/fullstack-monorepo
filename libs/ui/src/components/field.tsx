@@ -10,7 +10,7 @@ import { cn } from '../cn';
 export type FieldProps = Readonly<{
   label: string;
   htmlFor?: string;
-  /** Native form field name (documentation / tooling; wire `name` on the control). */
+  /** Default `name` on the control when the child does not set one. */
   name?: string;
   hint?: string;
   error?: string;
@@ -36,6 +36,7 @@ function resolveDescribedBy(
 
 type EnhanceOpts = Readonly<{
   htmlFor?: string;
+  name?: string;
   required: boolean;
   disabled: boolean;
   error?: string;
@@ -48,7 +49,7 @@ function enhanceFieldControl(child: ReactNode, opts: EnhanceOpts): ReactNode {
     const el = child as ReactElement<Record<string, unknown>>;
     result = cloneElement(el, {
       id: el.props.id ?? opts.htmlFor,
-      name: el.props.name,
+      name: el.props.name ?? opts.name,
       required: el.props.required ?? opts.required,
       disabled: el.props.disabled ?? opts.disabled,
       invalid: el.props.invalid ?? Boolean(opts.error),
@@ -108,6 +109,7 @@ function FieldMessages({ hint, error, hintId, errorId, showHint }: FieldMessages
 export function Field({
   label,
   htmlFor,
+  name,
   hint,
   error,
   required = false,
@@ -123,6 +125,7 @@ export function Field({
   const control = Children.map(children, (child) =>
     enhanceFieldControl(child, {
       htmlFor,
+      name,
       required,
       disabled,
       error,

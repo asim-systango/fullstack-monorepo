@@ -39,8 +39,8 @@ import {
 } from '@shared/ui/components';
 
 /**
- * Learner showcase — every @shared/ui primitive against the ink/paper theme.
- * Prefer these components over one-off styles when building domain pages.
+ * UI kit showcase — shared primitives against the ink/paper theme.
+ * Prefer these components over one-off styles on domain pages.
  */
 export default function UiShowcasePage() {
   const [agree, setAgree] = useState(false);

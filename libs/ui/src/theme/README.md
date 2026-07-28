@@ -2,7 +2,7 @@
 
 CSS-first **ink / paper** design system for Tailwind v4. Import via `@shared/ui/theme.css` from the web app entry stylesheet.
 
-Learner overview: [docs/frontend.md](../../../../docs/frontend.md). Component gallery: web `/ui`.
+Overview: [docs/frontend.md](../../../../docs/frontend.md). Component gallery: web `/ui`.
 
 ## Layers
 

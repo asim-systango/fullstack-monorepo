@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Shared NODE_ENV enum for Nest app env schemas (not a package export). */
+/** Shared NODE_ENV enum for Nest env schemas (internal helper). */
 export const nodeEnv = z
   .enum(['development', 'test', 'production'])
   .default('development');
