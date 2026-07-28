@@ -30,11 +30,10 @@ Browser → web :3000
 
 | Path               | Role                                                                  |
 | ------------------ | --------------------------------------------------------------------- |
-| `apps/web`         | Next UI (`:3000`)                                                     |
-| `apps/api-gateway` | Auth + BFF (`:3001`)                                                  |
-| `apps/api`         | Domain Nest API (`:3002`) — **your Must work**                        |
-| `libs/*`           | Shared packages (`@shared/*`) — project-agnostic scope                |
-| `apps/*`           | Apps (`@app/web`, `@app/api-gateway`, `@app/api`)                     |
+| `apps/web`         | Next UI (`:3000`) — `@app/web`                                        |
+| `apps/api-gateway` | Auth + BFF (`:3001`) — `@app/api-gateway`                             |
+| `apps/api`         | Domain Nest API (`:3002`) — `@app/api` (**your Must work**)           |
+| `libs/*`           | Shared packages (`@shared/*`) — reusable across any project           |
 | `docker/`          | Compose: Postgres only · deploy stubs: `Dockerfile.{gateway,api,web}` |
 | `docs/projects/`   | Capstone briefs                                                       |
 
