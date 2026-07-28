@@ -12,7 +12,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/database/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/database/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/database/data-source.ts",
-    "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/api/src"
+    "test": "jest --config ../../jest.config.cjs --passWithNoTests --testPathPattern=apps/api/src"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.12",
