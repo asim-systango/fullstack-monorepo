@@ -1,23 +1,12 @@
-import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from 'react';
+import { cn } from './cn';
 
-const baseBtn: CSSProperties = {
-  fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
-  fontSize: 14,
-  fontWeight: 500,
-  padding: '8px 14px',
-  borderRadius: 6,
-  border: '1px solid #8d8d8d',
-  background: '#161616',
-  color: '#f4f4f4',
-  cursor: 'pointer',
-};
-
-const ghostBtn: CSSProperties = {
-  ...baseBtn,
-  background: 'transparent',
-  color: '#161616',
-  borderColor: '#8d8d8d',
-};
+export { cn } from './cn';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'ghost';
@@ -26,7 +15,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function Button({
   variant = 'primary',
-  style,
+  className,
   children,
   type = 'button',
   ...rest
@@ -34,7 +23,16 @@ export function Button({
   return (
     <button
       type={type}
-      style={{ ...(variant === 'ghost' ? ghostBtn : baseBtn), ...style }}
+      className={cn(
+        'inline-flex cursor-pointer items-center justify-center rounded-md px-3.5 py-2 text-sm font-medium transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'disabled:pointer-events-none disabled:opacity-50',
+        variant === 'primary' &&
+          'border border-transparent bg-primary text-primary-foreground hover:opacity-90',
+        variant === 'ghost' &&
+          'border border-input bg-transparent text-foreground hover:bg-muted',
+        className,
+      )}
       {...rest}
     >
       {children}
@@ -42,73 +40,99 @@ export function Button({
   );
 }
 
-const cardStyle: CSSProperties = {
-  border: '1px solid #e0e0e0',
-  borderRadius: 8,
-  padding: 16,
-  background: '#ffffff',
-};
-
 export function Card({
   children,
-  style,
+  className,
 }: {
   children: ReactNode;
-  style?: CSSProperties;
+  className?: string;
 }) {
-  return <div style={{ ...cardStyle, ...style }}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
-const labelStyle: CSSProperties = {
-  display: 'block',
-  fontSize: 12,
-  fontWeight: 500,
-  color: '#525252',
-  marginBottom: 4,
-};
-
-const inputStyle: CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '8px 10px',
-  borderRadius: 6,
-  border: '1px solid #8d8d8d',
-  fontSize: 14,
-  fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
-};
-
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <label style={{ display: 'block', marginBottom: 12 }}>
-      <span style={labelStyle}>{label}</span>
+    <label className={cn('mb-3 block', className)}>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );
 }
 
-export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input style={inputStyle} {...props} />;
+export function TextInput({
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={cn(
+        'w-full rounded-md border border-input bg-card px-2.5 py-2 text-sm text-foreground',
+        'placeholder:text-muted-foreground',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
-export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextArea({
+  className,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <textarea style={{ ...inputStyle, minHeight: 88, resize: 'vertical' }} {...props} />
+    <textarea
+      className={cn(
+        'min-h-24 w-full resize-y rounded-md border border-input bg-card px-2.5 py-2 text-sm text-foreground',
+        'placeholder:text-muted-foreground',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
 export function StatusMessage({
   tone = 'neutral',
   children,
+  className,
 }: {
   tone?: 'neutral' | 'error' | 'success';
   children: ReactNode;
+  className?: string;
 }) {
-  const toneColors: Record<'neutral' | 'error' | 'success', string> = {
-    error: '#da1e28',
-    success: '#198038',
-    neutral: '#525252',
-  };
   return (
-    <p style={{ color: toneColors[tone], fontSize: 14, margin: '8px 0' }}>{children}</p>
+    <p
+      className={cn(
+        'my-2 text-sm',
+        tone === 'error' && 'text-destructive',
+        tone === 'success' && 'text-success',
+        tone === 'neutral' && 'text-muted-foreground',
+        className,
+      )}
+      role={tone === 'error' ? 'alert' : undefined}
+    >
+      {children}
+    </p>
   );
 }

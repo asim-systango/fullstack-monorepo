@@ -8,13 +8,13 @@ function AuthNav() {
   const { user, loading, logout } = useAuth();
 
   if (loading) {
-    return <span className="muted">…</span>;
+    return <span className="text-sm text-muted-foreground">…</span>;
   }
 
   if (user) {
     return (
       <>
-        <span className="muted">
+        <span className="text-sm text-muted-foreground">
           {user.name} ({user.role})
         </span>
         <Button variant="ghost" onClick={() => void logout()}>
@@ -34,14 +34,16 @@ function AuthNav() {
 
 export function ShellHeader({ title }: { title: string }) {
   return (
-    <header className="shell-header">
+    <header className="mb-7 flex items-center justify-between gap-4 border-b border-border pb-4">
       <div>
-        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 600 }}>{title}</h1>
-        <p className="muted" style={{ margin: '4px 0 0' }}>
+        <h1 className="m-0 text-[1.75rem] font-semibold tracking-tight text-foreground">
+          {title}
+        </h1>
+        <p className="mt-1 mb-0 text-sm text-muted-foreground">
           App starter — add your domain UI here
         </p>
       </div>
-      <nav className="shell-nav">
+      <nav className="flex items-center gap-4 text-sm">
         <Link href="/">Home</Link>
         <AuthNav />
       </nav>

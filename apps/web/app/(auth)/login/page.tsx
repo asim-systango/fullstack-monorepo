@@ -33,9 +33,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
+    <main className="mx-auto max-w-3xl px-5 pb-16 pt-8">
       <ShellHeader title="Log in" />
-      <Card>
+      <Card className="max-w-md">
         <form onSubmit={onSubmit}>
           <Field label="Email">
             <TextInput
@@ -43,6 +43,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </Field>
           <Field label="Password">
@@ -51,6 +52,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
@@ -58,7 +60,7 @@ export default function LoginPage() {
             {pending ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
-        <p className="muted">
+        <p className="mt-3 text-sm text-muted-foreground">
           No account? <Link href="/register">Register</Link>
         </p>
       </Card>

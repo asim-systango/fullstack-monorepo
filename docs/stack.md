@@ -13,6 +13,7 @@ Hard rules for every project.
 9. **Envelope** — success is `{ data: T }` via `@shared/http`; prefer `@shared/api-client` on the web.
 10. **CORS** — set on the gateway for direct `:3001` tools; the UI path is same-origin via Next.
 11. **Package scopes** — keep `@app/*` / `@shared/*` (do not rename to a product brand).
+12. **Tailwind CSS (web)** — theme tokens in `apps/web/styles/globals.css` (`@theme` + CSS variables). Prefer semantic utilities (`bg-background`, `text-primary`) and `@shared/ui` components. Do not invent one-off colors.
 
 ## Day plan (5–6 days)
 
