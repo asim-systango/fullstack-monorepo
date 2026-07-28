@@ -1,9 +1,9 @@
 # Inventory & Warehouse Management
 
-|                  |                                                                      |
-| ---------------- | -------------------------------------------------------------------- |
-| **Slug**         | `inventory-warehouse`                                                |
-| **Implement in** | `apps/api/` + `apps/web/` on branch `<dev-name>/inventory-warehouse` |
+|                  |                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| **Slug**         | `inventory-warehouse`                                                                             |
+| **Implement in** | `apps/api/` + `apps/web/` (auth on `apps/api-gateway`) on branch `<dev-name>/inventory-warehouse` |
 
 ## Problem
 
@@ -17,7 +17,7 @@ Ops teams track stock across warehouses with transfers, purchase orders, and adj
 
 ## Suggested entities
 
-- `User`
+- Auth `User` is on the gateway — use `userId` FKs; do **not** recreate users/auth in `apps/api`
 - `Warehouse`
 - `Product`
 - `StockLevel`
@@ -89,8 +89,8 @@ Plus the shared Must bar in [grading.md](../grading.md).
 
 ## Definition of done
 
-- Migrations + seed (≥8 realistic rows across core tables)
-- Compose Postgres + root `.env` + `apps/api/.env`
+- Domain migrations (`pnpm migration:run:api`) + domain seed (≥8 realistic rows); gateway users via `pnpm seed`
+- Compose Postgres + root `.env` + `apps/api-gateway/.env` + `apps/api/.env` + `apps/web/.env.local`
 - Next + Query + RTK ownership respected
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)

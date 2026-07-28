@@ -1,9 +1,9 @@
 # CRM System
 
-|                  |                                                      |
-| ---------------- | ---------------------------------------------------- |
-| **Slug**         | `crm`                                                |
-| **Implement in** | `apps/api/` + `apps/web/` on branch `<dev-name>/crm` |
+|                  |                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------- |
+| **Slug**         | `crm`                                                                             |
+| **Implement in** | `apps/api/` + `apps/web/` (auth on `apps/api-gateway`) on branch `<dev-name>/crm` |
 
 ## Problem
 
@@ -17,7 +17,7 @@ Sales teams manage leads, customers, deals in a pipeline, with notes and tasks.
 
 ## Suggested entities
 
-- `User`
+- Auth `User` is on the gateway — use `userId` FKs; do **not** recreate users/auth in `apps/api`
 - `Lead`
 - `Customer`
 - `Deal`
@@ -88,8 +88,8 @@ Plus the shared Must bar in [grading.md](../grading.md).
 
 ## Definition of done
 
-- Migrations + seed (≥8 realistic rows across core tables)
-- Compose Postgres + root `.env` + `apps/api/.env`
+- Domain migrations (`pnpm migration:run:api`) + domain seed (≥8 realistic rows); gateway users via `pnpm seed`
+- Compose Postgres + root `.env` + `apps/api-gateway/.env` + `apps/api/.env` + `apps/web/.env.local`
 - Next + Query + RTK ownership respected
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)

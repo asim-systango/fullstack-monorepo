@@ -2,6 +2,7 @@
 
 - **Learners:** your domain in `apps/api` + UI in `apps/web`. Leave cookie auth on `apps/api-gateway` unless you must extend it.
 - **Instructors:** shared libs, docs, tools, boilerplate.
+- Local stack: copy the four env examples (see root README), then `pnpm docker:db && pnpm dev` and `pnpm doctor`.
 
 ## PRs
 

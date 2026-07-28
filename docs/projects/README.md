@@ -2,6 +2,8 @@
 
 One shared codebase: domain in `apps/api`, UI in `apps/web`, auth on `apps/api-gateway`.
 
+Do **not** recreate users/auth in the domain API — store `userId` FKs and reuse gateway roles. Env: root + `apps/api-gateway/.env` + `apps/api/.env` + `apps/web/.env.local`.
+
 Read your brief fully before coding. Graded against that brief’s Must / Should / Stretch plus [grading](../grading.md), [stack](../stack.md), and [submission](../submission.md).
 
 | #   | Project               | Slug                    | Summary                                     | Brief                               |

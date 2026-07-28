@@ -4,14 +4,13 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
 COPY libs ./libs
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY apps/api ./apps/api
-COPY tsconfig.base.json ./
 RUN pnpm --filter @repo/env build && pnpm --filter @fullstack/api build
 
 FROM node:20-alpine AS runner

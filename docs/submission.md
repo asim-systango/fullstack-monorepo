@@ -24,7 +24,7 @@ git checkout -b ada/job-portal
 2. `pnpm lint`
 3. `pnpm test`
 4. Commit `pnpm-lock.yaml` if you changed deps
-5. `pnpm docker:db` · `pnpm migration:run` · `pnpm seed` (and your domain migrations)
+5. `pnpm docker:db` · `pnpm migration:run` · `pnpm seed` · `pnpm migration:run:api` (plus your domain seed)
 6. `pnpm doctor` (optional but recommended)
 7. Demo script in the PR body
 8. Fill `docs/architecture.md`

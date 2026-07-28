@@ -15,14 +15,14 @@ Hard rules for every project.
 
 ## Day plan (5–6 days)
 
-| Day | Focus                                              |
-| --- | -------------------------------------------------- |
-| 1   | ERD, Nest modules, auth check, migration + seed    |
-| 2   | Domain CRUD, invariants, list + filters            |
-| 3   | Next list / create / detail with Query             |
-| 4   | RTK drafts/filters + roles in UI                   |
-| 5   | Should features + polish polish                    |
-| 6   | Buffer: Stretch, demo, fill `docs/architecture.md` |
+| Day | Focus                                                                                                            |
+| --- | ---------------------------------------------------------------------------------------------------------------- |
+| 1   | ERD, Nest modules, gateway auth check, `migration:run` + `seed` (+ `migration:run:api` when domain tables exist) |
+| 2   | Domain CRUD, invariants, list + filters                                                                          |
+| 3   | Next list / create / detail with Query                                                                           |
+| 4   | RTK drafts/filters + roles in UI                                                                                 |
+| 5   | Should features + polish                                                                                         |
+| 6   | Buffer: Stretch, demo, fill `docs/architecture.md`                                                               |
 
 ## Seed users
 

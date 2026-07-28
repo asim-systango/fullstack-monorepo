@@ -7,10 +7,13 @@ export default function HomePage() {
       <ShellHeader title="Fullstack Boilerplate" />
       <p>
         Shared boilerplate: auth shell, TanStack Query + RTK providers, cookie JWT client.
-        Build your assigned domain against Nest — see <code>docs/projects/</code>.
+        Build your assigned domain against the Nest domain API — see{' '}
+        <code>docs/projects/</code>.
       </p>
       <ul className="muted">
-        <li>Nest owns auth + persistence (cookie JWT).</li>
+        <li>
+          Gateway owns cookie JWT auth; domain API owns persistence (Bearer via gateway).
+        </li>
         <li>TanStack Query owns server lists/mutations.</li>
         <li>RTK owns drafts / filters / selection only.</li>
       </ul>

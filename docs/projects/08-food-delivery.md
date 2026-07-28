@@ -1,9 +1,9 @@
 # Food Delivery Platform
 
-|                  |                                                                |
-| ---------------- | -------------------------------------------------------------- |
-| **Slug**         | `food-delivery`                                                |
-| **Implement in** | `apps/api/` + `apps/web/` on branch `<dev-name>/food-delivery` |
+|                  |                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| **Slug**         | `food-delivery`                                                                             |
+| **Implement in** | `apps/api/` + `apps/web/` (auth on `apps/api-gateway`) on branch `<dev-name>/food-delivery` |
 
 ## Problem
 
@@ -17,7 +17,7 @@ Restaurants publish menus; customers cart and place orders; status progresses th
 
 ## Suggested entities
 
-- `User`
+- Auth `User` is on the gateway — use `userId` FKs; do **not** recreate users/auth in `apps/api`
 - `Restaurant`
 - `MenuItem`
 - `CartItem`
@@ -89,8 +89,8 @@ Plus the shared Must bar in [grading.md](../grading.md).
 
 ## Definition of done
 
-- Migrations + seed (≥8 realistic rows across core tables)
-- Compose Postgres + root `.env` + `apps/api/.env`
+- Domain migrations (`pnpm migration:run:api`) + domain seed (≥8 realistic rows); gateway users via `pnpm seed`
+- Compose Postgres + root `.env` + `apps/api-gateway/.env` + `apps/api/.env` + `apps/web/.env.local`
 - Next + Query + RTK ownership respected
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)

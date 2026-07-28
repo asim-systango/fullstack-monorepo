@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The cohort needs one repository with a Nest API, a Next web app, and shared TypeScript packages. We considered Nx generators/workspace tooling versus a lighter pnpm workspaces + Turborepo setup.
+The cohort needs one repository with Nest apps (API gateway BFF + domain API), a Next web app, and shared TypeScript packages. We considered Nx generators/workspace tooling versus a lighter pnpm workspaces + Turborepo setup.
 
 ## Decision
 

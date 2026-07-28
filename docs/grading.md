@@ -9,7 +9,7 @@
 ## Must (every project)
 
 - [ ] Auth on the **gateway**: register / login / logout, cookie JWT, ≥2 roles used meaningfully
-- [ ] Domain model (≥2 related entities) with migrations + seed
+- [ ] Domain model (≥2 related entities) with domain migrations + domain seed (`pnpm migration:run:api`; gateway users via `pnpm seed`)
 - [ ] List endpoint: pagination + ≥2 filters + soft-delete on the main list resource
 - [ ] One hard domain invariant in a service (+ DB constraint when possible)
 - [ ] One multi-entity write in a transaction

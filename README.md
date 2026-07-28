@@ -55,7 +55,7 @@ Branch: **`<your-name>/<project-slug>`** (example: `ada/job-portal`). See [submi
 
 ```bash
 pnpm dev          # web + gateway + api
-pnpm doctor       # env, Postgres, ports, per-hop health (api / gateway / rewrite)
+pnpm doctor       # env, Postgres, ports, per-hop health (api /ready → gateway /health → gateway /ready proxy → Next /api/ready)
 ```
 
 **One app at a time** (order: api → gateway → web)

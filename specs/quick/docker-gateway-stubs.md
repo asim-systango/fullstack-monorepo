@@ -26,4 +26,4 @@ Align Docker stubs with the three-app BFF stack: add `Dockerfile.gateway`, refre
 ## Noticed but not touched
 
 - Full-stack compose services for gateway/api/web (intentionally out of scope)
-- Project brief / homepage doc drift from prior audit
+- Next Docker build still warns about missing `eslint-plugin-react-hooks` during lint step but completes successfully

@@ -11,5 +11,6 @@ pnpm dev:api    # from repo root
 
 - Domain migrations: `pnpm migration:run:api` / `pnpm migration:generate`
 - Users/auth stay on `apps/api-gateway`
-- Smoke via UI path: `http://localhost:3000/api/ready`
+- Smoke: hop 1 `http://localhost:3002/ready` or full path `http://localhost:3000/api/ready` (`pnpm doctor`)
 - Swagger: `http://localhost:3002/docs`
+- Note: browser `/api/health` is the **gateway** health check; domain liveness for proxies is `/ready`

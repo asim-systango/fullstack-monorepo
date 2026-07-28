@@ -1,9 +1,9 @@
 # Hospital Appointment System
 
-|                  |                                                                        |
-| ---------------- | ---------------------------------------------------------------------- |
-| **Slug**         | `hospital-appointments`                                                |
-| **Implement in** | `apps/api/` + `apps/web/` on branch `<dev-name>/hospital-appointments` |
+|                  |                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| **Slug**         | `hospital-appointments`                                                                             |
+| **Implement in** | `apps/api/` + `apps/web/` (auth on `apps/api-gateway`) on branch `<dev-name>/hospital-appointments` |
 
 ## Problem
 
@@ -17,7 +17,7 @@ Patients book doctor slots; doctors manage schedules; staff maintain prescriptio
 
 ## Suggested entities
 
-- `User`
+- Auth `User` is on the gateway — use `userId` FKs; do **not** recreate users/auth in `apps/api`
 - `DoctorProfile`
 - `Slot`
 - `Appointment`
@@ -86,8 +86,8 @@ Plus the shared Must bar in [grading.md](../grading.md).
 
 ## Definition of done
 
-- Migrations + seed (≥8 realistic rows across core tables)
-- Compose Postgres + root `.env` + `apps/api/.env`
+- Domain migrations (`pnpm migration:run:api`) + domain seed (≥8 realistic rows); gateway users via `pnpm seed`
+- Compose Postgres + root `.env` + `apps/api-gateway/.env` + `apps/api/.env` + `apps/web/.env.local`
 - Next + Query + RTK ownership respected
 - `docs/architecture.md` completed
 - 5-minute demo script in the PR body (and notes in `docs/architecture.md`)
