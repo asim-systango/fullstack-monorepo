@@ -1,4 +1,6 @@
 # Shared Postgres for the fullstack boilerplate apps.
+# App images are optional stubs (Dockerfile.gateway / Dockerfile.api / Dockerfile.web)
+# — not started by this compose file.
 #
 #   pnpm docker:db   # loads root .env via --env-file when present
 #   # or: docker compose --env-file .env -f docker/docker-compose.yml up -d postgres

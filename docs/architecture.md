@@ -28,14 +28,14 @@ Browser → web :3000
 
 ## Folders
 
-| Path               | Role                                           |
-| ------------------ | ---------------------------------------------- |
-| `apps/web`         | Next UI (`:3000`)                              |
-| `apps/api-gateway` | Auth + BFF (`:3001`)                           |
-| `apps/api`         | Domain Nest API (`:3002`) — **your Must work** |
-| `libs/*`           | Shared packages (`@repo/*`)                    |
-| `docker/`          | Postgres only                                  |
-| `docs/projects/`   | Capstone briefs                                |
+| Path               | Role                                                                  |
+| ------------------ | --------------------------------------------------------------------- |
+| `apps/web`         | Next UI (`:3000`)                                                     |
+| `apps/api-gateway` | Auth + BFF (`:3001`)                                                  |
+| `apps/api`         | Domain Nest API (`:3002`) — **your Must work**                        |
+| `libs/*`           | Shared packages (`@repo/*`)                                           |
+| `docker/`          | Compose: Postgres only · deploy stubs: `Dockerfile.{gateway,api,web}` |
+| `docs/projects/`   | Capstone briefs                                                       |
 
 Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 

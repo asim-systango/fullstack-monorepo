@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 # Stub multi-stage build for the Next web app (not used by docker compose).
+# Browser calls same-origin /api; Next rewrites to the gateway (API_GATEWAY_URL).
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN corepack enable
@@ -11,6 +12,11 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS build
 COPY apps/web ./apps/web
 COPY tsconfig.base.json ./
+# Baked into the client bundle / next.config rewrites at build time.
+ARG NEXT_PUBLIC_API_URL=/api
+ARG API_GATEWAY_URL=http://api-gateway:3001
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV API_GATEWAY_URL=$API_GATEWAY_URL
 RUN pnpm --filter @fullstack/web build
 
 FROM node:20-alpine AS runner

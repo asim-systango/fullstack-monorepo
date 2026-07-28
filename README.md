@@ -66,15 +66,16 @@ pnpm dev:gateway
 pnpm dev:web
 ```
 
-| Script                             | Purpose                     |
-| ---------------------------------- | --------------------------- |
-| `pnpm docker:db` / `docker:down`   | Start / stop Postgres       |
-| `pnpm migration:run`               | Users table (gateway)       |
-| `pnpm migration:run:api`           | Your domain migrations      |
-| `pnpm migration:generate`          | Generate a domain migration |
-| `pnpm seed`                        | Seed demo users             |
-| `pnpm typecheck` / `lint` / `test` | Local checks                |
-| `pnpm build` / `start`             | Production build / run      |
+| Script                             | Purpose                                                         |
+| ---------------------------------- | --------------------------------------------------------------- |
+| `pnpm docker:db` / `docker:down`   | Start / stop Postgres                                           |
+| `docker/Dockerfile.*`              | Optional deploy stubs (gateway, api, web) — not used by Compose |
+| `pnpm migration:run`               | Users table (gateway)                                           |
+| `pnpm migration:run:api`           | Your domain migrations                                          |
+| `pnpm migration:generate`          | Generate a domain migration                                     |
+| `pnpm seed`                        | Seed demo users                                                 |
+| `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
+| `pnpm build` / `start`             | Production build / run                                          |
 
 Also: `dev:backend`, `build:*`, `start:*`, `typecheck:*` per app.
 

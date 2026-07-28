@@ -1,23 +1,23 @@
 # syntax=docker/dockerfile:1
-# Stub multi-stage build for the Nest domain API (not used by docker compose).
-# Cookie auth lives in Dockerfile.gateway — this image is Bearer JWT + domain modules.
+# Stub multi-stage build for the Nest API gateway / BFF (not used by docker compose).
+# Compose remains Postgres-only; use this image when wiring a real deploy.
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/api/package.json ./apps/api/
+COPY apps/api-gateway/package.json ./apps/api-gateway/
 COPY libs ./libs
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
-COPY apps/api ./apps/api
+COPY apps/api-gateway ./apps/api-gateway
 COPY tsconfig.base.json ./
-RUN pnpm --filter @repo/env build && pnpm --filter @fullstack/api build
+RUN pnpm --filter @repo/env build && pnpm --filter @fullstack/api-gateway build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 RUN corepack enable
 ENV NODE_ENV=production
 COPY --from=build /app /app
-WORKDIR /app/apps/api
+WORKDIR /app/apps/api-gateway
 CMD ["pnpm", "start"]
