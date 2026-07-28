@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate narrative, scope-heavy project briefs for the fullstack boilerplate."""
+"""Generate narrative, scope-heavy project briefs for the monorepo starter."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,7 +16,7 @@ def page(title: str, slug: str, body: str) -> str:
 | **Git branch** | `<dev-name>/{slug}` (example: `ada/{slug}`) |
 | **Where to code** | Nest: `apps/api/` · Next: `apps/web/` |
 | **URLs** | API `http://localhost:3001` · Web `http://localhost:3000` |
-| **Database** | Postgres `fullstack` (`pnpm docker:db`) |
+| **Database** | Postgres `app` (`pnpm docker:db`) |
 | **Effort** | 5–6 days solo · difficulty **4 / 5** |
 
 > Read this entire brief before writing code. Grading follows **Scope of work** below plus [grading.md](../grading.md) and [stack.md](../stack.md).

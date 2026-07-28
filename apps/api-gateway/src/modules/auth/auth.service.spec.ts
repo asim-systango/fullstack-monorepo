@@ -42,7 +42,7 @@ describe('AuthService', () => {
   beforeAll(() => {
     Object.assign(process.env, {
       NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/fullstack',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/app',
       JWT_SECRET: 'test-jwt-secret-16',
       JWT_EXPIRES_IN: '1h',
       COOKIE_SECURE: 'false',

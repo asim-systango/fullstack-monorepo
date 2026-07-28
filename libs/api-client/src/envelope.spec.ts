@@ -4,7 +4,7 @@ import { createAuthApi, unwrapData } from './index';
 
 const sampleUser = {
   id: '11111111-1111-4111-8111-111111111111',
-  email: 'user@fullstack.local',
+  email: 'user@demo.local',
   name: 'Demo User',
   role: 'user' as const,
 };
@@ -34,7 +34,7 @@ describe('createAuthApi envelope smoke', () => {
 
     const auth = createAuthApi(client);
     await expect(
-      auth.login({ email: 'user@fullstack.local', password: 'password123' }),
+      auth.login({ email: 'user@demo.local', password: 'password123' }),
     ).resolves.toEqual(sampleUser);
   });
 

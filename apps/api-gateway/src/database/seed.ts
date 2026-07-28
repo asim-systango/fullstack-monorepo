@@ -10,9 +10,9 @@ async function seed() {
   const passwordHash = await bcrypt.hash('password123', 12);
 
   const seeds: Array<{ email: string; name: string; role: User['role'] }> = [
-    { email: 'admin@fullstack.local', name: 'Fullstack Admin', role: 'admin' },
-    { email: 'user@fullstack.local', name: 'Demo User', role: 'user' },
-    { email: 'staff@fullstack.local', name: 'Demo Staff', role: 'staff' },
+    { email: 'admin@demo.local', name: 'Demo Admin', role: 'admin' },
+    { email: 'user@demo.local', name: 'Demo User', role: 'user' },
+    { email: 'staff@demo.local', name: 'Demo Staff', role: 'staff' },
   ];
 
   for (const row of seeds) {

@@ -1,6 +1,13 @@
-# Fullstack boilerplate
+# App starter
 
-Shared Nest + Next starter for your capstone. You build your assigned domain here — not in a separate repo.
+Shared Nest + Next monorepo starter. You build your assigned domain here — not in a separate repo.
+
+Package scopes are **project-agnostic** (reuse this starter without renaming packages):
+
+| Scope       | What                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| `@app/*`    | Apps: `@app/web`, `@app/api-gateway`, `@app/api`                                            |
+| `@shared/*` | Libs: `@shared/env`, `@shared/http`, `@shared/ui`, `@shared/api-client`, `@shared/types`, … |
 
 ```text
 Browser → web :3000  (/api/*)
@@ -34,10 +41,10 @@ Then open **http://localhost:3000**.
 
 Needs **Node ≥ 20**, **pnpm 10.18.1**, and **Docker**.
 
-| Check        | Command / URL                                                                                       |
-| ------------ | --------------------------------------------------------------------------------------------------- |
-| Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready`          |
-| Demo logins  | `admin@fullstack.local` / `user@fullstack.local` / `staff@fullstack.local` — password `password123` |
+| Check        | Command / URL                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready` |
+| Demo logins  | `admin@demo.local` / `user@demo.local` / `staff@demo.local` — password `password123`       |
 
 ## Where you write code
 

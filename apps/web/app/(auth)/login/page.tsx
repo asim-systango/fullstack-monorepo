@@ -12,7 +12,7 @@ import { authApi } from '@/lib/api';
 export default function LoginPage() {
   const router = useRouter();
   const { refresh } = useAuth();
-  const [email, setEmail] = useState('user@fullstack.local');
+  const [email, setEmail] = useState('user@demo.local');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

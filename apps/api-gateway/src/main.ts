@@ -84,7 +84,7 @@ async function bootstrap() {
 
   if (appSettings.NODE_ENV !== 'production') {
     const swagger = new DocumentBuilder()
-      .setTitle('Fullstack API Gateway')
+      .setTitle('API Gateway')
       .setDescription(
         'Cookie JWT BFF — auth on the gateway; domain routes proxy to apps/api',
       )

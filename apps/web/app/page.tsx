@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <main>
-      <ShellHeader title="Fullstack Boilerplate" />
+      <ShellHeader title="App starter" />
       <p>
         Shared boilerplate: auth shell, TanStack Query + RTK providers, cookie JWT client.
         Build your assigned domain against the Nest domain API — see{' '}

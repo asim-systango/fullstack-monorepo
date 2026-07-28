@@ -1,4 +1,4 @@
-# Shared Postgres for the fullstack boilerplate apps.
+# Shared Postgres for the monorepo apps.
 # App images are optional stubs (Dockerfile.gateway / Dockerfile.api / Dockerfile.web)
 # — not started by this compose file.
 #
@@ -7,7 +7,7 @@
 #   pnpm migration:run
 #   pnpm seed
 
-name: fullstack
+name: app
 
 services:
   postgres:
@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-fullstack}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
     volumes:
       - ${POSTGRES_DATA_DIR:-../data/postgres}:/var/lib/postgresql/data
     healthcheck:

@@ -3,8 +3,8 @@ import { AppProviders } from '@/components/providers/app-providers';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'Fullstack Boilerplate',
-  description: 'Nest + Next fullstack boilerplate',
+  title: 'App starter',
+  description: 'Nest + Next monorepo starter',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

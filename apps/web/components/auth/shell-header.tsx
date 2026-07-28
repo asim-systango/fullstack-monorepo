@@ -38,7 +38,7 @@ export function ShellHeader({ title }: { title: string }) {
       <div>
         <h1 style={{ margin: 0, fontSize: 28, fontWeight: 600 }}>{title}</h1>
         <p className="muted" style={{ margin: '4px 0 0' }}>
-          Fullstack boilerplate — add your domain UI here
+          App starter — add your domain UI here
         </p>
       </div>
       <nav className="shell-nav">

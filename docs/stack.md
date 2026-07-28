@@ -2,7 +2,7 @@
 
 Hard rules for every project.
 
-1. **Nest ≠ Next** — domain CRUD in `apps/api`. Auth cookies on `apps/api-gateway`. Next is UI only.
+1. **Nest ≠ Next** — domain CRUD in `apps/api` (`@app/api`). Auth cookies on `apps/api-gateway` (`@app/api-gateway`). Next is UI only (`@app/web`).
 2. **Cookie JWT** — httpOnly `access_token` from the gateway. Never `localStorage`.
 3. **Browser → `/api`** — `NEXT_PUBLIC_API_URL=/api` (Next rewrites to the gateway). Use `withCredentials: true`.
 4. **TanStack Query** — server lists and mutations.
@@ -12,6 +12,7 @@ Hard rules for every project.
 8. **UI states** — empty ≠ loading ≠ error.
 9. **Envelope** — success is `{ data: T }` via `@shared/http`; prefer `@shared/api-client` on the web.
 10. **CORS** — set on the gateway for direct `:3001` tools; the UI path is same-origin via Next.
+11. **Package scopes** — keep `@app/*` / `@shared/*` (do not rename to a product brand).
 
 ## Day plan (5–6 days)
 
@@ -26,8 +27,8 @@ Hard rules for every project.
 
 ## Seed users
 
-| Email                   | Password      | Role                           |
-| ----------------------- | ------------- | ------------------------------ |
-| `admin@fullstack.local` | `password123` | admin                          |
-| `user@fullstack.local`  | `password123` | user                           |
-| `staff@fullstack.local` | `password123` | staff (rename for your domain) |
+| Email              | Password      | Role                           |
+| ------------------ | ------------- | ------------------------------ |
+| `admin@demo.local` | `password123` | admin                          |
+| `user@demo.local`  | `password123` | user                           |
+| `staff@demo.local` | `password123` | staff (rename for your domain) |

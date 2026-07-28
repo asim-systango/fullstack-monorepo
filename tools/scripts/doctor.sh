@@ -87,7 +87,7 @@ env_val() {
 api_port_env="$(env_val apps/api/.env PORT)"
 api_port_env="${api_port_env:-$API_PORT_DEFAULT}"
 
-printf 'Doctor - fullstack local stack\n'
+printf 'Doctor - local stack\n'
 printf 'Canonical ports: web %s / gateway %s / api %s / postgres %s\n' \
   "$WEB_PORT" "$GATEWAY_PORT" "$API_PORT_DEFAULT" "$POSTGRES_PORT"
 if [ "$api_port_env" != "$API_PORT_DEFAULT" ]; then

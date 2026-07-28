@@ -40,7 +40,7 @@ async function bootstrap() {
 
   if (appSettings.NODE_ENV !== 'production') {
     const swagger = new DocumentBuilder()
-      .setTitle('Fullstack Domain API')
+      .setTitle('Domain API')
       .setDescription(
         'Internal Nest API (Bearer JWT) — add domain modules under src/modules/',
       )
