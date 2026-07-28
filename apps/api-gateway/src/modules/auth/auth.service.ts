@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
-import { AUTH_COOKIE_NAME, loadApiEnv } from '../../common/env';
+import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../common/env';
 import { UsersService } from '../users/users.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import type { Response } from 'express';
@@ -37,7 +37,7 @@ function isUniqueViolation(err: unknown): boolean {
 
 @Injectable()
 export class AuthService {
-  private readonly env = loadApiEnv();
+  private readonly env = loadGatewayEnv();
 
   constructor(
     private readonly usersService: UsersService,

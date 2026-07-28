@@ -1,41 +1,35 @@
 # Submission
 
-## Ownership
+## What to implement
 
-Implement your assigned project (from the Google Sheet + `docs/projects/`) in this monorepo’s shared apps:
+| Work       | Where                                                                    |
+| ---------- | ------------------------------------------------------------------------ |
+| Domain API | `apps/api/src/modules/`                                                  |
+| UI         | `apps/web/app/` (+ components)                                           |
+| Auth       | Keep on `apps/api-gateway` (don’t move cookie login into the domain API) |
 
-- Nest domain code → `apps/api/src/modules/`
-- Next UI → `apps/web/app/` (and components)
-
-Do not change other learners’ open PRs; coordinate on shared package changes with the instructor.
+Browser calls **`/api` on `:3000`** (rewritten to the gateway). Don’t call `:3002` from the UI.
 
 ## Branch
 
-Format: **`<dev-name>/<slug>`**
-
-- `dev-name` — your name or handle (lowercase, hyphenated), e.g. `ada`
-- `slug` — your assigned project id, e.g. `job-portal`
+`<dev-name>/<slug>` — example: `ada/job-portal`
 
 ```bash
 git checkout -b ada/job-portal
 ```
 
-## Before you open a PR
+## Before the PR
 
 1. `pnpm typecheck`
 2. `pnpm lint`
 3. `pnpm test`
-4. If you changed dependencies, commit `pnpm-lock.yaml` (`pnpm install --frozen-lockfile` in CI)
-5. Migrations + seed run clean (`pnpm docker:db`, `pnpm migration:run`, `pnpm seed`)
-6. Demo script in the PR body
-7. `docs/architecture.md` filled
+4. Commit `pnpm-lock.yaml` if you changed deps
+5. `pnpm docker:db` · `pnpm migration:run` · `pnpm seed` (and your domain migrations)
+6. `pnpm doctor` (optional but recommended)
+7. Demo script in the PR body
+8. Fill `docs/architecture.md`
 
 ## PR title
 
-`feat(<slug>): <short summary>`
-
+`feat(<slug>): <short summary>`  
 Example: `feat(job-portal): add application status workflow`
-
-## Google Sheet
-
-Instructor maintains the roster externally. Repo ships [`assignments.example.csv`](../assignments.example.csv) for column shape only.

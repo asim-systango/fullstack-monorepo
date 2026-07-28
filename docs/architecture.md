@@ -1,36 +1,57 @@
 # Architecture
 
-| Layer              | Owns                                        | Does not own                   |
-| ------------------ | ------------------------------------------- | ------------------------------ |
-| React components   | UI composition, local ephemeral UI          | Server lists, auth tokens      |
-| Redux Toolkit      | Drafts, selection, filter chrome            | Nest entity arrays             |
-| TanStack Query     | Server reads/writes, cache invalidation     | Unfinished form drafts         |
-| Next.js App Router | Routes, layouts, metadata, SC/CC boundaries | Product CRUD APIs              |
-| NestJS             | Auth, validation, domain rules, persistence | Browser session storage of JWT |
-| PostgreSQL         | Data + constraints + migrations             | —                              |
+Fill in **Domain notes** and **Demo script** for your project before the PR.
 
-## Layout
+## Request flow
 
-| Path            | Role                                                                     |
-| --------------- | ------------------------------------------------------------------------ |
-| `apps/web`      | Next.js App Router UI                                                    |
-| `apps/api`      | NestJS API (TypeORM + cookie JWT)                                        |
-| `libs/*`        | Shared packages (`@repo/*`) — active + unused stubs (see README)         |
-| `tools/scripts` | Instructor tooling (brief generator)                                     |
-| `docker/`       | Postgres Compose; `Dockerfile.*` stubs exist but are not used by Compose |
-| `docs/`         | Architecture, ADRs, project briefs                                       |
+```text
+Browser → web :3000
+            /api/*  (Next rewrite)
+              ↓
+         gateway :3001   cookie JWT, /auth/*
+              ↓
+         api :3002       your domain modules
+              ↓
+         Postgres :5434
+```
 
-## Boilerplate conventions (do not fight these)
+## Who owns what
 
-- **Success responses** are wrapped as `{ data: T }`. Prefer `@repo/api-client` (it unwraps); raw `fetch` must unwrap yourself.
-- **Auth:** `JwtAuthGuard` + `RolesGuard` are global. Mark anonymous routes with `@Public()` — JWT is still attempted so `request.user` is set when a cookie is valid. Protected routes (e.g. `GET /auth/me`) require a cookie.
-- **Entities:** name files `*.entity.ts` under `apps/api/src/modules/`, register with `TypeOrmModule.forFeature([...])` (`autoLoadEntities: true`). CLI migrations use the same `*.entity.ts` glob via `data-source.ts`.
-- **Env:** API loads the **first existing** file among `apps/api/.env` then repo-root `.env` (no merge). Put API secrets in `apps/api/.env`. Root `.env` is for Compose (`POSTGRES_*`).
-- **Swagger** (non-production): `http://localhost:3001/docs`.
+| Layer          | Owns                        | Does not own       |
+| -------------- | --------------------------- | ------------------ |
+| Next UI        | Pages, layout, forms        | Product CRUD APIs  |
+| TanStack Query | Server lists and mutations  | Form drafts        |
+| Redux Toolkit  | Drafts, filters, selection  | Nest entity arrays |
+| API gateway    | Login cookies, CORS, proxy  | Domain tables      |
+| Domain API     | Entities, rules, migrations | Browser cookies    |
+| Postgres       | Data + constraints          | —                  |
+
+## Folders
+
+| Path               | Role                                           |
+| ------------------ | ---------------------------------------------- |
+| `apps/web`         | Next UI (`:3000`)                              |
+| `apps/api-gateway` | Auth + BFF (`:3001`)                           |
+| `apps/api`         | Domain Nest API (`:3002`) — **your Must work** |
+| `libs/*`           | Shared packages (`@repo/*`)                    |
+| `docker/`          | Postgres only                                  |
+| `docs/projects/`   | Capstone briefs                                |
+
+Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
+
+## Conventions
+
+- Responses: `{ data: T }` — use `@repo/api-client`
+- Browser auth: httpOnly cookie from the gateway (`@Public()` for anonymous routes)
+- Domain API auth: Bearer JWT (gateway forwards the cookie as `Authorization`)
+- Entities: `*.entity.ts` under `apps/api/src/modules/`
+- Users migration/seed: gateway · domain migrations: `apps/api`
+- Smoke: `pnpm doctor` (per-hop) or `http://localhost:3000/api/ready`
+- Scripts: see root [README](../README.md) (`pnpm dev`, `pnpm doctor`, `pnpm dev:api`, …)
 
 ## Domain notes
 
-_Describe your ERD and key invariants here (per assigned project)._
+_Describe your ERD and key invariants here._
 
 ## Demo script
 

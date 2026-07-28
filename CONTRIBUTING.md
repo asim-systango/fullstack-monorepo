@@ -1,27 +1,22 @@
 # Contributing
 
-## Code ownership
+- **Learners:** your domain in `apps/api` + UI in `apps/web`. Leave cookie auth on `apps/api-gateway` unless you must extend it.
+- **Instructors:** shared libs, docs, tools, boilerplate.
 
-- Learners: implement your assigned project in `apps/api/` and `apps/web/` on your own branch
-- Instructors: shared libs, docs, tools, boilerplate
+## PRs
 
-## Pull requests
+1. Branch `<dev-name>/<slug>`
+2. Keep the diff scoped to your feature
+3. `pnpm typecheck`, `pnpm lint`, `pnpm test` (CI also runs `lint:sonar`)
+4. Demo steps in the PR body
 
-1. Branch `<dev-name>/<slug>` (example: `ada/job-portal`)
-2. Keep diffs scoped to your feature work (+ docs only if asked)
-3. Ensure `pnpm typecheck`, `pnpm lint`, and `pnpm test` pass locally (CI also runs `lint:sonar` and installs with `--frozen-lockfile` — commit lockfile changes if you add deps)
-4. Describe demo steps in the PR body
-
-## Commit messages
+## Commits
 
 ```text
 feat(job-portal): add application status workflow
 fix(auth): refresh session after register
-chore: add husky and commitlint
 ```
 
-Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 
-## Shared code
-
-Prefer extending domain code in `apps/api/` and `apps/web/`. Changes under `libs/` affect every learner — get instructor review first.
+Ask an instructor before changing `libs/` — it affects everyone.

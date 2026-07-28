@@ -4,13 +4,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { databaseConfig } from './config/database.config';
 import { JwtAuthGuard, RolesGuard } from './common/auth/auth.decorators';
 import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
 import { HealthModule } from './modules/health/health.module';
 
 const db = databaseConfig();
 
 /**
- * Boilerplate AppModule — auth, users, health, global guards.
+ * Internal domain API — Bearer JWT only (cookie auth lives on api-gateway).
  * Add your domain modules here (do not put product CRUD in Next).
  * Entities registered via TypeOrmModule.forFeature are auto-loaded.
  */
@@ -19,7 +18,6 @@ const db = databaseConfig();
     TypeOrmModule.forRoot({
       ...db,
     }),
-    UsersModule,
     AuthModule,
     HealthModule,
   ],

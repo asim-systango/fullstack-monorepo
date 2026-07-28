@@ -10,7 +10,7 @@ The cohort needs one repository with a Nest API, a Next web app, and shared Type
 
 ## Decision
 
-Use **pnpm workspaces** for package linking and **Turborepo** for task orchestration (`dev`, `build`, `lint`, `typecheck`). Shared code lives under `libs/` (`@repo/*`). Apps live under `apps/`.
+Use **pnpm workspaces** for package linking and **Turborepo** for task orchestration (`dev`, `build`, `lint`, `typecheck`). Shared code lives under `libs/` (`@repo/*`). Apps live under `apps/` — currently `web`, `api-gateway` (BFF), and `api` (domain).
 
 ## Consequences
 

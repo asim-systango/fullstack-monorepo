@@ -1,12 +1,15 @@
-# Fullstack Nest API — shared boilerplate only.
+# Domain API (`apps/api`)
 
-Included: cookie JWT auth, users, health, ValidationPipe (field-level `details`),
-exception filter, `{ data }` response envelope, TypeORM migrations (users).
+Internal Nest API on **:3002**. Browser never talks here directly — traffic comes from the gateway with Bearer JWT.
 
-Your work: add domain modules under `src/modules/` (`*.entity.ts` +
-`TypeOrmModule.forFeature`). Do not put product CRUD in Next Route Handlers.
+```bash
+cp .env.example .env
+pnpm dev:api    # from repo root
+```
 
-Env: copy `.env.example` → `.env`. Migrations/seed use the same load-env rules
-(first existing of `apps/api/.env` then repo-root `.env`).
+**Your work:** modules under `src/modules/` (`*.entity.ts` + `TypeOrmModule.forFeature`).
 
-Swagger (dev): `http://localhost:3001/docs`
+- Domain migrations: `pnpm migration:run:api` / `pnpm migration:generate`
+- Users/auth stay on `apps/api-gateway`
+- Smoke via UI path: `http://localhost:3000/api/ready`
+- Swagger: `http://localhost:3002/docs`

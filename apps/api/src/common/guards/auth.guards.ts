@@ -10,7 +10,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import type { Request } from 'express';
-import type { User, UserRole } from '../../modules/users/user.entity';
+import type { JwtUser, UserRole } from '../auth/jwt-user';
 import { IS_PUBLIC_KEY, ROLES_KEY } from '../decorators/auth.decorators';
 
 @Injectable()
@@ -28,8 +28,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const result = super.canActivate(context);
     if (!isPublic) return result;
 
-    // Public routes: attempt JWT so request.user is set when a cookie exists,
-    // but never block anonymous access.
     if (result instanceof Observable) {
       return result.pipe(
         map(() => true),
@@ -73,7 +71,7 @@ export class RolesGuard implements CanActivate {
     ]);
     if (!roles || roles.length === 0) return true;
 
-    const request = context.switchToHttp().getRequest<Request & { user?: User }>();
+    const request = context.switchToHttp().getRequest<Request & { user?: JwtUser }>();
     const user = request.user;
     if (!user) throw new UnauthorizedException();
     if (!roles.includes(user.role)) {

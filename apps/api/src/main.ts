@@ -3,7 +3,6 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
@@ -21,21 +20,10 @@ async function bootstrap() {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
-    if (appSettings.COOKIE_SECURE) {
-      res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
-    }
     next();
   });
 
-  app.use(cookieParser());
-  const corsOrigins = appSettings.CORS_ORIGIN.split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  app.enableCors({
-    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
-    credentials: true,
-  });
+  // Internal service — browser CORS/cookies live on api-gateway only.
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -51,16 +39,18 @@ async function bootstrap() {
 
   if (appSettings.NODE_ENV !== 'production') {
     const swagger = new DocumentBuilder()
-      .setTitle('Fullstack API')
-      .setDescription('Cookie JWT Nest API — add your domain modules under src/modules/')
+      .setTitle('Fullstack Domain API')
+      .setDescription(
+        'Internal Nest API (Bearer JWT) — add domain modules under src/modules/',
+      )
       .setVersion('1.0')
-      .addCookieAuth('access_token')
+      .addBearerAuth()
       .build();
     SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swagger));
   }
 
   await app.listen(appSettings.PORT);
-  console.log(`API listening on http://localhost:${appSettings.PORT}`);
+  console.log(`Domain API listening on http://localhost:${appSettings.PORT}`);
 }
 
 void bootstrap();

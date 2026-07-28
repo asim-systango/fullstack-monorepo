@@ -1,32 +1,30 @@
-# Course stack rules
+# Stack rules
 
-This monorepo uses the same fullstack stack as the teaching course.
+Hard rules for every project.
 
-## Hard rules
+1. **Nest ≠ Next** — domain CRUD in `apps/api`. Auth cookies on `apps/api-gateway`. Next is UI only.
+2. **Cookie JWT** — httpOnly `access_token` from the gateway. Never `localStorage`.
+3. **Browser → `/api`** — `NEXT_PUBLIC_API_URL=/api` (Next rewrites to the gateway). Use `withCredentials: true`.
+4. **TanStack Query** — server lists and mutations.
+5. **Redux Toolkit** — drafts, filters, selection only (not Nest entity arrays).
+6. **Migrations only** — `synchronize: false`. Users: gateway. Domain: `apps/api`.
+7. **ValidationPipe** — whitelist + forbid non-whitelisted.
+8. **UI states** — empty ≠ loading ≠ error.
+9. **Envelope** — success is `{ data: T }`; prefer `@repo/api-client`.
+10. **CORS** — set on the gateway for direct `:3001` tools; the UI path is same-origin via Next.
 
-1. **Nest ≠ Next** — product CRUD and auth live in Nest. Next hosts UI (App Router). Do not reimplement domain APIs as Next Route Handlers.
-2. **Cookie JWT** — httpOnly cookie (`access_token`). Never put JWT in `localStorage`.
-3. **Axios `withCredentials: true`** for browser → Nest.
-4. **TanStack Query** owns server lists and mutations (cache + invalidation).
-5. **Redux Toolkit** owns unfinished drafts, selection, and filter chrome only — never Nest entity arrays.
-6. **TypeORM migrations only** — `synchronize: false` in shipped code.
-7. **ValidationPipe** whitelist + forbid non-whitelisted on Nest (errors include `details[].field` for property names).
-8. **Empty ≠ loading ≠ error** in the UI.
-9. **Response envelope** — Nest wraps success as `{ data: T }`; use `@repo/api-client` (or unwrap yourself).
-10. **CORS** — browser origin must match `CORS_ORIGIN` in `apps/api/.env` (cookie credentials).
+## Day plan (5–6 days)
 
-## Suggested day plan (5–6 days)
+| Day | Focus                                              |
+| --- | -------------------------------------------------- |
+| 1   | ERD, Nest modules, auth check, migration + seed    |
+| 2   | Domain CRUD, invariants, list + filters            |
+| 3   | Next list / create / detail with Query             |
+| 4   | RTK drafts/filters + roles in UI                   |
+| 5   | Should features + polish polish                    |
+| 6   | Buffer: Stretch, demo, fill `docs/architecture.md` |
 
-| Day | Focus                                            |
-| --- | ------------------------------------------------ |
-| 1   | ERD, Nest modules, auth, first migration + seed  |
-| 2   | Domain CRUD, invariants, list pagination/filters |
-| 3   | Next shell + Query list/mutations                |
-| 4   | RTK drafts/filters + role-aware UI               |
-| 5   | Should-tier features + env/DB polish for demo    |
-| 6   | Buffer: Stretch or demo + `docs/architecture.md` |
-
-## Seed credentials (boilerplate)
+## Seed users
 
 | Email                   | Password      | Role                           |
 | ----------------------- | ------------- | ------------------------------ |

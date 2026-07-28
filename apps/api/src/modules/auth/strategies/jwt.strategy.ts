@@ -1,31 +1,27 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { Request } from 'express';
-import { AUTH_COOKIE_NAME, loadApiEnv } from '../../../common/env';
-import { UsersService } from '../../users/users.service';
+import { Injectable } from '@nestjs/common';
+import { loadApiEnv } from '../../../common/env';
+import type { JwtUser, UserRole } from '../../../common/auth/jwt-user';
 
 type JwtPayload = { sub: string; email: string; role: string };
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly usersService: UsersService) {
+  constructor() {
     const env = loadApiEnv();
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => {
-          const cookies = req?.cookies as Record<string, string> | undefined;
-          return cookies?.[AUTH_COOKIE_NAME] ?? null;
-        },
-      ]),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: env.JWT_SECRET,
     });
   }
 
-  async validate(payload: JwtPayload) {
-    const user = await this.usersService.findById(payload.sub);
-    if (!user) throw new UnauthorizedException();
-    return user;
+  validate(payload: JwtPayload): JwtUser {
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role as UserRole,
+    };
   }
 }

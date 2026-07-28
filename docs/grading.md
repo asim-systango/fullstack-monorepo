@@ -1,28 +1,28 @@
 # Grading
 
-| Tier        | Grade meaning                                       |
-| ----------- | --------------------------------------------------- |
-| **Must**    | Pass — required for a complete submission           |
-| **Should**  | Distinction — expected from a strong 5–6 day effort |
-| **Stretch** | Bonus — optional; may use mocks/fakes               |
+| Tier        | Meaning              |
+| ----------- | -------------------- |
+| **Must**    | Required to pass     |
+| **Should**  | Strong / distinction |
+| **Stretch** | Bonus (mocks OK)     |
 
-## Must (all projects)
+## Must (every project)
 
-- [ ] Nest auth: register/login/logout, cookie JWT, ≥2 roles used meaningfully
-- [ ] Distinct domain model (≥2 related entities) with reviewed migrations + seed
-- [ ] List endpoint: pagination + ≥2 filters + soft-delete (`DeleteDateColumn` / `deletedAt`) on the primary listable resource
-- [ ] One hard domain invariant enforced in service (+ DB constraint when possible)
+- [ ] Auth on the **gateway**: register / login / logout, cookie JWT, ≥2 roles used meaningfully
+- [ ] Domain model (≥2 related entities) with migrations + seed
+- [ ] List endpoint: pagination + ≥2 filters + soft-delete on the main list resource
+- [ ] One hard domain invariant in a service (+ DB constraint when possible)
 - [ ] One multi-entity write in a transaction
-- [ ] Next App Router: layout + list + create/detail flow
-- [ ] Query for server data; RTK for drafts/filters/selection only
-- [ ] `pnpm docker:db` Postgres works (uses root `.env` when present); `apps/api/.env` `DATABASE_URL` points at that DB
-- [ ] Filled `docs/architecture.md` (ownership table + domain notes)
-- [ ] Demo script in the PR body (≤5 minutes)
+- [ ] Next: layout + list + create/detail
+- [ ] Query for server data; RTK for drafts/filters only
+- [ ] `pnpm docker:db` works; gateway + api share `DATABASE_URL` and `JWT_SECRET`
+- [ ] `docs/architecture.md` filled (ownership + domain notes)
+- [ ] Demo script in the PR (≤5 minutes)
 
 ## Should
 
-See each project brief — typically dashboards, workflows, attachments-as-URLs or local upload stubs, richer filters, and domain-specific status machines.
+See your project brief (dashboards, workflows, richer filters, etc.).
 
 ## Stretch
 
-Payments, realtime tracking, QR hardware flows, full WYSIWYG, email providers, SLA engines — document an interface and fake provider if unfinished.
+Optional extras in the brief — or an extra Nest app ([adding-a-service.md](./adding-a-service.md)). Must still pass on web + gateway + api alone.

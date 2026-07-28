@@ -1,0 +1,2 @@
+# Domain migrations live here. Users table is owned by apps/api-gateway.
+# Generate with: pnpm --filter @fullstack/api migration:generate -- src/database/migrations/Name

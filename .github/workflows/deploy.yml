@@ -9,4 +9,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy stub
-        run: echo "Configure deploy targets for apps/api and apps/web"
+        run: echo "Configure deploy targets for apps/api-gateway, apps/api, and apps/web"
