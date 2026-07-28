@@ -24,6 +24,7 @@ Prefer **folder subpaths** on `@shared/*` packages (and app-local folders with `
 | HTTP helpers  | `from '@shared/http/filters'` / `@shared/http/interceptors`                |
 | Shared auth   | `from '@shared/http/auth'` (Nest apps usually re-export via `common/auth`) |
 | Env (Nest)    | `from '@shared/env/gateway'` / `@shared/env/api` / `@shared/env/constants` |
+| Env (web)     | `@shared/env/web` is **optional** — not used by the starter; see below     |
 | Flat packages | `from '@shared/types'` until a real folder exists                          |
 | App-local     | `from '@/components/auth'`                                                 |
 
@@ -31,7 +32,7 @@ Root package entrypoints (e.g. `@shared/ui`) remain as thin re-exports; prefer t
 
 When you add a new folder under a lib, add `index.ts` and a matching `exports["./folder"]` in that package’s `package.json`.
 
-Optional: `@shared/env/web` validates Next env (`NEXT_PUBLIC_API_URL`, `API_GATEWAY_URL`) if you adopt `loadWebEnv` — the starter ships `.env.local.example` without requiring it.
+**`@shared/env/web` is optional.** Nest apps must use `@shared/env/gateway` / `@shared/env/api`. The web app does **not** call `loadWebEnv` — it reads `.env.local` via Next. Use `loadWebEnv` only if you want Zod validation for `NEXT_PUBLIC_API_URL` / `API_GATEWAY_URL`.
 
 ## Rules
 

@@ -1,3 +1,8 @@
+/**
+ * Optional web env helper — not wired into `apps/web`.
+ * Nest uses `@shared/env/gateway` / `@shared/env/api`. Next reads `.env.local` directly.
+ * Call `loadWebEnv` only if you want Zod validation for these keys.
+ */
 import { z } from 'zod';
 
 export const webEnvSchema = z.object({
