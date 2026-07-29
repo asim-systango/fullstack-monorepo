@@ -16,8 +16,7 @@ import {
   StatusMessage,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader } from '@/components/auth';
-import { useAuth } from '@/components/auth';
+import { ShellHeader, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
 const isProd = process.env.NODE_ENV === 'production';
