@@ -9,12 +9,14 @@ import {
   ValidationError,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import type { RequestWithCorrelationId } from '@shared/http/middleware';
 
 type ApiErrorBody = {
   statusCode: number;
   error: string;
   message: string | string[];
   details?: Array<{ field: string; message: string }>;
+  correlationId?: string;
 };
 
 type FieldDetail = { field: string; message: string };
@@ -102,6 +104,14 @@ export function validationExceptionFactory(errors: ValidationError[]) {
   });
 }
 
+/**
+ * Prefix log lines with the correlation id returned to the client, so a reported
+ * id can actually be grepped out of the logs.
+ */
+function withCorrelationId(message: string, correlationId?: string): string {
+  return correlationId ? `[${correlationId}] ${message}` : message;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -109,6 +119,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
+    const req = ctx.getRequest<RequestWithCorrelationId>();
+    const correlationId = req.correlationId;
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let error = 'Internal Server Error';
@@ -124,9 +136,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if (exception instanceof Error) {
       message =
         process.env.NODE_ENV === 'production' ? 'Unexpected error' : exception.message;
-      this.logger.error(exception.message, exception.stack);
+      this.logger.error(
+        withCorrelationId(exception.message, correlationId),
+        exception.stack,
+      );
     } else {
-      this.logger.error('Non-Error exception thrown', String(exception));
+      this.logger.error(
+        withCorrelationId('Non-Error exception thrown', correlationId),
+        String(exception),
+      );
     }
 
     const payload: ApiErrorBody = {
@@ -134,6 +152,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error,
       message,
       details,
+      ...(correlationId ? { correlationId } : {}),
     };
 
     res.status(status).json(payload);

@@ -9,17 +9,14 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CurrentUser, Public } from '../../common/auth';
-import { UsersService, type User } from '../users';
+import { PublicUser } from '../users';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
@@ -56,7 +53,7 @@ export class AuthController {
   @Get('me')
   @ApiOperation({ summary: 'Current user from cookie JWT' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid cookie' })
-  me(@CurrentUser() user: User) {
-    return this.usersService.toPublic(user);
+  me(@CurrentUser() user: PublicUser) {
+    return user;
   }
 }
