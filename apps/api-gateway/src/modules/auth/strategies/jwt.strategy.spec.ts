@@ -5,6 +5,12 @@ import { UsersService, type User } from '../../users';
 describe('JwtStrategy (gateway)', () => {
   const usersService = {
     findById: jest.fn(),
+    toPublic: jest.fn((user: User) => ({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    })),
   };
 
   const originalEnv = { ...process.env };
@@ -34,11 +40,13 @@ describe('JwtStrategy (gateway)', () => {
     jest.clearAllMocks();
   });
 
-  it('returns the user when the subject exists', async () => {
+  it('returns the public user when the subject exists', async () => {
     const user = {
       id: '11111111-1111-1111-1111-111111111111',
       email: 'user@example.com',
+      name: 'Demo',
       role: 'user',
+      passwordHash: 'hash',
     } as User;
     usersService.findById.mockResolvedValue(user);
 
@@ -48,7 +56,12 @@ describe('JwtStrategy (gateway)', () => {
         email: user.email,
         role: 'user',
       }),
-    ).resolves.toBe(user);
+    ).resolves.toEqual({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
   });
 
   it('throws UnauthorizedException when the subject is missing', async () => {
