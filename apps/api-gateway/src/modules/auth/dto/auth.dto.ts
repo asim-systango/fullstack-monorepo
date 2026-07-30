@@ -27,5 +27,6 @@ export class LoginDto {
   @ApiProperty()
   @IsString()
   @MinLength(1)
+  @MaxLength(128)
   password!: string;
 }

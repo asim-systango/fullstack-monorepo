@@ -14,6 +14,11 @@ describe('securityHeadersMiddleware', () => {
     expect(setHeader).toHaveBeenCalledWith('X-Content-Type-Options', 'nosniff');
     expect(setHeader).toHaveBeenCalledWith('X-Frame-Options', 'DENY');
     expect(setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
+    expect(setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      expect.stringContaining("default-src 'self'"),
+    );
+    expect(setHeader).toHaveBeenCalledWith('Permissions-Policy', expect.any(String));
     expect(next).toHaveBeenCalled();
   });
 
