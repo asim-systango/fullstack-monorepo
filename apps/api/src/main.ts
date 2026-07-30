@@ -7,7 +7,7 @@ import { AppModule } from './app.module';
 import { appConfig } from './config';
 import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/filters';
 import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
-import { securityHeadersMiddleware } from '@shared/http/middleware';
+import { requestIdMiddleware, securityHeadersMiddleware } from '@shared/http/middleware';
 import { setupSwagger } from '@shared/http/swagger';
 
 async function bootstrap() {
@@ -16,6 +16,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   app.use(compression());
+  app.use(requestIdMiddleware());
   app.use(securityHeadersMiddleware());
 
   // Internal service — browser CORS/cookies live on api-gateway only.
