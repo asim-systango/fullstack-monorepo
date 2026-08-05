@@ -1,0 +1,23 @@
+/** Doctor profile shape matching the backend DoctorProfile entity. */
+export type DoctorProfile = {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  specialization: string;
+  qualification: string;
+  experienceYears: number;
+  consultationFee: number;
+  biography: string | null;
+  profileImage: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
+/** Filters for the doctor directory. */
+export type DoctorFilters = {
+  specialization?: string;
+  search?: string;
+};

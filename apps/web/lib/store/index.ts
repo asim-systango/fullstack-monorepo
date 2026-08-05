@@ -34,9 +34,77 @@ const uiSlice = createSlice({
 
 export const { setFilterDraft, applyFilter } = uiSlice.actions;
 
+/* ────────────────────────────────────────────────────────────
+ * Appointment Filters Slice (RTK owns drafts/filters only)
+ * ──────────────────────────────────────────────────────────── */
+
+type AppointmentFilterState = {
+  statusDraft: string;
+  dateFromDraft: string;
+  dateToDraft: string;
+  doctorIdDraft: string;
+  appliedStatus: string;
+  appliedDateFrom: string;
+  appliedDateTo: string;
+  appliedDoctorId: string;
+};
+
+const appointmentFilterInitial: AppointmentFilterState = {
+  statusDraft: '',
+  dateFromDraft: '',
+  dateToDraft: '',
+  doctorIdDraft: '',
+  appliedStatus: '',
+  appliedDateFrom: '',
+  appliedDateTo: '',
+  appliedDoctorId: '',
+};
+
+const appointmentFilterSlice = createSlice({
+  name: 'appointmentFilters',
+  initialState: appointmentFilterInitial,
+  reducers: {
+    setStatusDraft(state, action: PayloadAction<string>) {
+      state.statusDraft = action.payload;
+    },
+    setDateFromDraft(state, action: PayloadAction<string>) {
+      state.dateFromDraft = action.payload;
+    },
+    setDateToDraft(state, action: PayloadAction<string>) {
+      state.dateToDraft = action.payload;
+    },
+    setDoctorIdDraft(state, action: PayloadAction<string>) {
+      state.doctorIdDraft = action.payload;
+    },
+    applyAppointmentFilters(state) {
+      state.appliedStatus = state.statusDraft.trim();
+      state.appliedDateFrom = state.dateFromDraft.trim();
+      state.appliedDateTo = state.dateToDraft.trim();
+      state.appliedDoctorId = state.doctorIdDraft.trim();
+    },
+    clearAppointmentFilters(state) {
+      Object.assign(state, appointmentFilterInitial);
+    },
+  },
+});
+
+export const {
+  setStatusDraft,
+  setDateFromDraft,
+  setDateToDraft,
+  setDoctorIdDraft,
+  applyAppointmentFilters,
+  clearAppointmentFilters,
+} = appointmentFilterSlice.actions;
+
+/* ────────────────────────────────────────────────────────────
+ * Store Configuration
+ * ──────────────────────────────────────────────────────────── */
+
 export const store = configureStore({
   reducer: {
     ui: uiSlice.reducer,
+    appointmentFilters: appointmentFilterSlice.reducer,
   },
 });
 

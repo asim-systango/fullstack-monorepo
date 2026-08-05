@@ -3,18 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
-import {
-  Button,
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Field,
-  Form,
-  Page,
-  TextInput,
-  StatusMessage,
-} from '@shared/ui/components';
+import { Button, Field, Form, TextInput, StatusMessage } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
@@ -36,70 +25,106 @@ export default function RegisterPage() {
       await authApi.register({ name, email, password });
       await authApi.login({ email, password });
       await refresh();
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Register failed');
+      setError(err instanceof ApiClientError ? err.message : 'Registration failed');
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <Page>
-      <ShellHeader title="Register" subtitle="Create an account to continue" />
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Create account</CardTitle>
-          <CardDescription>
-            Ink primary CTA · accent only on links and focus.
-          </CardDescription>
-        </CardHeader>
-        <Form pending={pending} onSubmit={onSubmit}>
-          <Field label="Name" htmlFor="register-name" required disabled={pending}>
-            <TextInput
-              id="register-name"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-            />
-          </Field>
-          <Field label="Email" htmlFor="register-email" required disabled={pending}>
-            <TextInput
-              id="register-email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </Field>
-          <Field
-            label="Password"
-            htmlFor="register-password"
-            required
-            hint="At least 8 characters"
-            disabled={pending}
-          >
-            <TextInput
-              id="register-password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </Field>
-          {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" loading={pending} loadingText="Creating…">
-            Create account
-          </Button>
-        </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Already registered? <Link href="/login">Log in</Link>
-        </p>
-      </Card>
-    </Page>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <ShellHeader />
+
+      <main className="flex flex-1 items-center justify-center p-6 my-12">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Create your PulseCare Account
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Register as a patient to book appointments and view your healthcare records
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <Form pending={pending} onSubmit={onSubmit}>
+              <Field
+                label="Full Name"
+                htmlFor="register-name"
+                required
+                disabled={pending}
+              >
+                <TextInput
+                  id="register-name"
+                  name="name"
+                  placeholder="e.g. Sarah Jenkins"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                />
+              </Field>
+
+              <Field
+                label="Email Address"
+                htmlFor="register-email"
+                required
+                disabled={pending}
+              >
+                <TextInput
+                  id="register-email"
+                  name="email"
+                  type="email"
+                  placeholder="sarah@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </Field>
+
+              <Field
+                label="Password"
+                htmlFor="register-password"
+                required
+                hint="At least 8 characters"
+                disabled={pending}
+              >
+                <TextInput
+                  id="register-password"
+                  name="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </Field>
+
+              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+
+              <Button
+                type="submit"
+                loading={pending}
+                loadingText="Creating account…"
+                className="w-full bg-foreground text-background hover:opacity-90 mt-2"
+              >
+                Complete Registration
+              </Button>
+            </Form>
+
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-semibold text-foreground underline hover:no-underline"
+              >
+                Sign in instead
+              </Link>
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }

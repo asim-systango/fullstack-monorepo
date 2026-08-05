@@ -5,7 +5,7 @@ import '../styles/globals.css';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-ibm-plex-sans',
   display: 'swap',
 });
@@ -18,8 +18,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'PulseCare — Hospital & Appointment Management System',
+  description:
+    'Next-generation healthcare platform for instant doctor appointment booking, schedule management, and medical records.',
 };
 
 export default function RootLayout({
@@ -31,7 +32,7 @@ export default function RootLayout({
       className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
       suppressHydrationWarning
     >
-      <body>
+      <body className="bg-background text-foreground font-sans antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

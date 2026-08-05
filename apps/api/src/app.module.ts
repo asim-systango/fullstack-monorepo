@@ -5,13 +5,17 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
+import { DoctorModule } from './modules/doctor';
+import { SlotModule } from './modules/slot';
+import { AppointmentModule } from './modules/appointment';
+import { PrescriptionModule } from './modules/prescription';
+import { MedicalNoteModule } from './modules/medical-note';
 
 const db = databaseConfig();
 
 /**
  * Internal domain API — Bearer JWT only (cookie auth lives on api-gateway).
- * Add your domain modules here (do not put product CRUD in Next).
- * Entities registered via TypeOrmModule.forFeature are auto-loaded.
+ * Domain modules registered here. Entities auto-loaded via TypeOrmModule.forFeature.
  */
 @Module({
   imports: [
@@ -20,6 +24,11 @@ const db = databaseConfig();
     }),
     AuthModule,
     HealthModule,
+    DoctorModule,
+    SlotModule,
+    AppointmentModule,
+    PrescriptionModule,
+    MedicalNoteModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
