@@ -6,6 +6,8 @@ import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { IssuesModule } from './modules/issues/issues.module';
+import { LabelsModule } from './modules/labels/labels.module';
 
 const db = databaseConfig();
 
@@ -22,6 +24,8 @@ const db = databaseConfig();
     AuthModule,
     HealthModule,
     ProjectsModule,
+    IssuesModule,
+    LabelsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
