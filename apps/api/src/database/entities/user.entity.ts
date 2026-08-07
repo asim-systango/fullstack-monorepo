@@ -1,10 +1,20 @@
-import { Entity, PrimaryColumn, Column, BeforeInsert, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  BeforeInsert,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ulid } from 'ulid';
+import { Organization } from './organization.entity';
+import { Role } from './role.entity';
 
-export enum UserRole {
-  ADMIN = 'admin',
-  SALES_LEAD = 'sales_lead',
-  REP = 'rep',
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
 }
 
 @Entity({ name: 'users' })
@@ -19,31 +29,62 @@ export class User {
     }
   }
 
-  @Column({ unique: true })
+  @Column({ type: 'char', length: 26, nullable: true })
+  @Index()
+  organizationId?: string;
+
+  @ManyToOne(() => Organization, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'organizationId' })
+  organization?: Organization;
+
+  @Column({ type: 'char', length: 26 })
+  @Index()
+  roleId!: string;
+
+  @ManyToOne(() => Role, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'roleId' })
+  role?: Role;
+
+  @Column({ length: 100 })
+  firstName!: string;
+
+  @Column({ length: 100 })
+  lastName!: string;
+
+  @Column({ length: 255, unique: true })
   @Index()
   email!: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ length: 255 })
   passwordHash!: string;
 
-  @Column()
-  name!: string;
+  @Column({ length: 30, nullable: true })
+  phone?: string;
 
   @Column({
     type: 'enum',
-    enum: UserRole,
-    default: UserRole.REP,
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
   })
   @Index()
-  role!: UserRole;
+  status!: UserStatus;
 
-  @Column({ type: 'boolean', default: true })
-  isActive!: boolean;
+  @Column({ default: true })
+  @Index()
+  isPasswordChangeRequired!: boolean;
+
+  @Column({ type: 'bigint', nullable: true })
+  lastLoginAt?: number;
+
+  @Column({ type: 'char', length: 26, nullable: true })
+  @Index()
+  createdBy?: string;
 
   @Column({
     type: 'bigint',
     default: () => 'EXTRACT(EPOCH FROM NOW()) * 1000',
   })
+  @Index()
   createdAt!: number;
 
   @Column({
