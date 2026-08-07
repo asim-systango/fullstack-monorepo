@@ -7,8 +7,8 @@ import {
   JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Appointment } from '../../appointment/entities/appointment.entity.js';
-import { DoctorProfile } from '../../doctor/entities/doctor-profile.entity.js';
+import { Appointment } from '../../appointment/entities/appointment.entity';
+import { DoctorProfile } from '../../doctor/entities/doctor-profile.entity';
 
 /**
  * Clinical consultation note attached to an appointment.

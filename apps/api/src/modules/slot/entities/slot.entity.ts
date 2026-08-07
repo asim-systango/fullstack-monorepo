@@ -1,8 +1,8 @@
 import { Column, Entity, Index, ManyToOne, OneToOne, JoinColumn, Check } from 'typeorm';
-import { BaseEntity } from '../../../shared/entities/base.entity.js';
-import { SlotStatus } from '../../../shared/enums/slot-status.enum.js';
-import { DoctorProfile } from '../../doctor/entities/doctor-profile.entity.js';
-import type { Appointment } from '../../appointment/entities/appointment.entity.js';
+import { BaseEntity } from '../../../shared/entities/base.entity';
+import { SlotStatus } from '../../../shared/enums/slot-status.enum';
+import { DoctorProfile } from '../../doctor/entities/doctor-profile.entity';
+import type { Appointment } from '../../appointment/entities/appointment.entity';
 
 /**
  * Consultation time slot for a doctor.

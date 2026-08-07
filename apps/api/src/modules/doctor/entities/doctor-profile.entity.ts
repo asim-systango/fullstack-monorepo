@@ -1,6 +1,6 @@
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../shared/entities/base.entity.js';
-import type { Slot } from '../../slot/entities/slot.entity.js';
+import { BaseEntity } from '../../../shared/entities/base.entity';
+import type { Slot } from '../../slot/entities/slot.entity';
 
 /**
  * Doctor professional profile.

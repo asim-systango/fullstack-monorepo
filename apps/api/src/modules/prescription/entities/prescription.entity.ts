@@ -1,6 +1,6 @@
 import { Column, Entity, OneToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../shared/entities/base.entity.js';
-import { Appointment } from '../../appointment/entities/appointment.entity.js';
+import { BaseEntity } from '../../../shared/entities/base.entity';
+import { Appointment } from '../../appointment/entities/appointment.entity';
 
 /**
  * Prescription attached to a completed appointment (1:1).

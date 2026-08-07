@@ -7,11 +7,11 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { BaseEntity } from '../../../shared/entities/base.entity.js';
-import { AppointmentStatus } from '../../../shared/enums/appointment-status.enum.js';
-import { Slot } from '../../slot/entities/slot.entity.js';
-import type { Prescription } from '../../prescription/entities/prescription.entity.js';
-import type { MedicalNote } from '../../medical-note/entities/medical-note.entity.js';
+import { BaseEntity } from '../../../shared/entities/base.entity';
+import { AppointmentStatus } from '../../../shared/enums/appointment-status.enum';
+import { Slot } from '../../slot/entities/slot.entity';
+import type { Prescription } from '../../prescription/entities/prescription.entity';
+import type { MedicalNote } from '../../medical-note/entities/medical-note.entity';
 
 /**
  * Patient appointment booking.

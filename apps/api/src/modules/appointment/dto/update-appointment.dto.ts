@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { AppointmentStatus } from '../../../shared/enums/appointment-status.enum.js';
+import { AppointmentStatus } from '../../../shared/enums/appointment-status.enum';
 
 /** DTO for updating an appointment (status or reason). */
 export class UpdateAppointmentDto {
