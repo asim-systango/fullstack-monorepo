@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
@@ -17,43 +17,53 @@ export class UserRepository {
   async findById(id: string): Promise<User | null> {
     return this.userRepo.findOne({
       where: { id },
+      relations: ['role', 'organization'],
     });
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepo.findOne({
-      where: { email },
+      where: { email: email.toLowerCase() },
+      relations: ['role', 'organization'],
     });
   }
 
-  async findAll(): Promise<User[]> {
+  async findByOrganization(organizationId: string): Promise<User[]> {
     return this.userRepo.find({
+      where: { organizationId },
+      relations: ['role'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async createAndSave(data: Partial<User>): Promise<User> {
+    if (data.email) {
+      data.email = data.email.toLowerCase();
+    }
     const user = this.userRepo.create(data);
     return this.userRepo.save(user);
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<void> {
+    if (data.email) {
+      data.email = data.email.toLowerCase();
+    }
     await this.userRepo.update(id, {
       ...data,
       updatedAt: Date.now(),
     });
   }
 
-  async updateRole(id: string, role: UserRole): Promise<void> {
+  async updateLastLogin(id: string): Promise<void> {
     await this.userRepo.update(id, {
-      role,
+      lastLoginAt: Date.now(),
       updatedAt: Date.now(),
     });
   }
 
-  async updateActiveStatus(id: string, isActive: boolean): Promise<void> {
+  async markPasswordChanged(id: string): Promise<void> {
     await this.userRepo.update(id, {
-      isActive,
+      isPasswordChangeRequired: false,
       updatedAt: Date.now(),
     });
   }
