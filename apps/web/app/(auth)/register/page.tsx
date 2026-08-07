@@ -3,25 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
-import {
-  Button,
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Field,
-  Form,
-  Page,
-  TextInput,
-  StatusMessage,
-} from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
-import { authApi } from '@/lib/api';
+import { useAuth } from '@/components/auth';
+import { BrandMark } from '@/components/layout';
+import { ThemeToggle } from '@/components/theme';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { register, isMock } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,73 +22,58 @@ export default function RegisterPage() {
     setPending(true);
     setError(null);
     try {
-      await authApi.register({ name, email, password });
-      await authApi.login({ email, password });
-      await refresh();
-      router.push('/');
+      await register({ name, email, password });
+      router.push('/restaurants');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Register failed');
+      setError(err instanceof ApiClientError || err instanceof Error ? err.message : 'Register failed');
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <Page>
-      <ShellHeader title="Register" subtitle="Create an account to continue" />
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Create account</CardTitle>
-          <CardDescription>
-            Ink primary CTA · accent only on links and focus.
-          </CardDescription>
-        </CardHeader>
-        <Form pending={pending} onSubmit={onSubmit}>
-          <Field label="Name" htmlFor="register-name" required disabled={pending}>
-            <TextInput
-              id="register-name"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-            />
-          </Field>
-          <Field label="Email" htmlFor="register-email" required disabled={pending}>
-            <TextInput
-              id="register-email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </Field>
-          <Field
-            label="Password"
-            htmlFor="register-password"
-            required
-            hint="At least 8 characters"
-            disabled={pending}
-          >
-            <TextInput
-              id="register-password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </Field>
-          {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" loading={pending} loadingText="Creating…">
+    <div
+      className="tg-root"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        position: 'relative',
+      }}
+    >
+      <div style={{ position: 'absolute', top: 20, right: 24 }}>
+        <ThemeToggle />
+      </div>
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <BrandMark />
+        </div>
+        <div className="tg-card" style={{ padding: 26, boxShadow: 'var(--tg-shadow-sm)' }}>
+          <p style={{ fontSize: 17, fontWeight: 500, margin: '0 0 4px', color: 'var(--tg-text)' }}>
             Create account
-          </Button>
-        </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Already registered? <Link href="/login">Log in</Link>
-        </p>
-      </Card>
-    </Page>
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '0 0 18px' }}>
+            {isMock ? 'Mock mode — stored in this browser only.' : 'Register to order food.'}
+          </p>
+          <form onSubmit={(e) => void onSubmit(e)}>
+            <label className="tg-label">Name</label>
+            <input className="tg-input" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 12 }} required />
+            <label className="tg-label">Email</label>
+            <input className="tg-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{ marginBottom: 12 }} required />
+            <label className="tg-label">Password</label>
+            <input className="tg-input" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} style={{ marginBottom: 16 }} required />
+            {error ? <p style={{ color: 'var(--tg-danger-fg)', fontSize: 12.5 }}>{error}</p> : null}
+            <button type="submit" className="tg-btn tg-btn-primary" disabled={pending} style={{ width: '100%', height: 42 }}>
+              {pending ? 'Creating…' : 'Create account'}
+            </button>
+          </form>
+          <p style={{ marginTop: 16, fontSize: 13, color: 'var(--tg-text-muted)' }}>
+            Already registered? <Link href="/login" style={{ color: 'var(--tg-brand-accent)' }}>Log in</Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

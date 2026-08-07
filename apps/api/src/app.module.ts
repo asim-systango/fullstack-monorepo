@@ -4,7 +4,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
+import { CartModule } from './modules/cart';
 import { HealthModule } from './modules/health';
+import { OrdersModule } from './modules/orders';
+import { RestaurantsModule } from './modules/restaurants';
 
 const db = databaseConfig();
 
@@ -19,6 +22,9 @@ const db = databaseConfig();
       ...db,
     }),
     AuthModule,
+    RestaurantsModule,
+    CartModule,
+    OrdersModule,
     HealthModule,
   ],
   providers: [
