@@ -12,8 +12,6 @@ type ProductToolbarProps = {
   onCategoryToggle: (categoryId: string) => void;
   onSelectAllCategories: () => void;
   onClearCategories: () => void;
-  lowStockOnly: boolean;
-  onLowStockToggle: (checked: boolean) => void;
   onResetFilters: () => void;
 };
 
@@ -25,7 +23,6 @@ export function ProductToolbar({
   onCategoryToggle,
   onSelectAllCategories,
   onClearCategories,
-  lowStockOnly,
   onResetFilters,
 }: Readonly<ProductToolbarProps>) {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -42,13 +39,12 @@ export function ProductToolbar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const hasActiveFilters =
-    Boolean(searchQuery.trim()) || selectedCategoryIds.length > 0 || lowStockOnly;
+  const hasActiveFilters = Boolean(searchQuery.trim()) || selectedCategoryIds.length > 0;
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Search and filters */}
+        {/* Search and category filters */}
         <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
           <div className="w-full sm:w-72">
             <TextInput
@@ -91,7 +87,7 @@ export function ProductToolbar({
               </svg>
             </Button>
 
-            {/* Category dropdown */}
+            {/* Category dropdown with check marks */}
             {isCategoryOpen && (
               <div className="absolute left-0 top-full z-20 mt-2 w-72 rounded-lg border border-border bg-popover p-3 shadow-lg bg-white dark:bg-zinc-900">
                 <div className="flex items-center justify-between border-b border-border pb-2 mb-2">

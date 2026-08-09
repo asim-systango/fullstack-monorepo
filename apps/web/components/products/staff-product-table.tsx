@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   Table,
   TableHead,
@@ -46,7 +47,7 @@ export function StaffProductTable({
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
-      {/* Staff Warehouse selector */}
+      {/* Staff Warehouse Context Banner & Selector */}
       <div className="bg-muted/30 px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Badge tone="accent">Staff Facility View</Badge>
@@ -96,6 +97,7 @@ export function StaffProductTable({
               <TableHeaderCell className="text-center">Unit</TableHeaderCell>
               <TableHeaderCell className="text-right">Facility Quantity</TableHeaderCell>
               <TableHeaderCell className="text-center">Facility Status</TableHeaderCell>
+              <TableHeaderCell className="text-right">Action</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -133,7 +135,12 @@ export function StaffProductTable({
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-semibold text-foreground">{product.name}</div>
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                      >
+                        {product.name}
+                      </Link>
                       {product.description && (
                         <div className="text-xs text-muted-foreground line-clamp-1 max-w-xs">
                           {product.description}
@@ -173,6 +180,14 @@ export function StaffProductTable({
                     <span className={qtyColorClass}>{facilityQty.toLocaleString()}</span>
                   </TableCell>
                   <TableCell className="text-center">{statusBadge}</TableCell>
+                  <TableCell className="text-right">
+                    <Link
+                      href={`/products/${product.id}`}
+                      className="inline-flex items-center justify-center text-xs font-medium text-primary hover:underline"
+                    >
+                      View Details →
+                    </Link>
+                  </TableCell>
                 </TableRow>
               );
             })}

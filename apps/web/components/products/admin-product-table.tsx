@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   Table,
   TableHead,
@@ -64,6 +65,7 @@ export function AdminProductTable({
             <TableHeaderCell className="text-right">Low Threshold</TableHeaderCell>
             <TableHeaderCell className="text-right">Total Quantity</TableHeaderCell>
             <TableHeaderCell className="text-center">Global Status</TableHeaderCell>
+            <TableHeaderCell className="text-right">Action</TableHeaderCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -81,7 +83,12 @@ export function AdminProductTable({
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div className="font-semibold text-foreground">{product.name}</div>
+                    <Link
+                      href={`/products/${product.id}`}
+                      className="font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                    >
+                      {product.name}
+                    </Link>
                     {product.description && (
                       <div className="text-xs text-muted-foreground line-clamp-1 max-w-xs">
                         {product.description}
@@ -121,6 +128,14 @@ export function AdminProductTable({
                   ) : (
                     <Badge tone="success">In Stock</Badge>
                   )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Link
+                    href={`/products/${product.id}`}
+                    className="inline-flex items-center justify-center text-xs font-medium text-primary hover:underline"
+                  >
+                    View Details →
+                  </Link>
                 </TableCell>
               </TableRow>
             );

@@ -17,7 +17,6 @@ export default function ProductsPage() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [lowStockOnly, setLowStockOnly] = useState(false);
 
   // Fetch categories & warehouses
   const { data: categories = [] } = useCategories();
@@ -30,7 +29,7 @@ export default function ProductsPage() {
     }
   }, [warehouses, selectedWarehouseId]);
 
-  // Fetch product list
+  // Fetch product listing matching query and multiple categories
   const {
     data: products = [],
     isLoading,
@@ -39,7 +38,6 @@ export default function ProductsPage() {
   } = useProducts({
     search: searchQuery,
     categoryIds: selectedCategoryIds,
-    lowStockOnly,
   });
 
   const handleCategoryToggle = useCallback((categoryId: string) => {
@@ -61,14 +59,13 @@ export default function ProductsPage() {
   const handleResetFilters = useCallback(() => {
     setSearchQuery('');
     setSelectedCategoryIds([]);
-    setLowStockOnly(false);
   }, []);
 
   const activeWarehouse = warehouses.find((w) => w.id === selectedWarehouseId);
 
   return (
     <div className="space-y-6">
-      {/* Header based in uses role */}
+      {/* Header Section strictly driven by user role */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
@@ -98,7 +95,7 @@ export default function ProductsPage() {
         </StatusMessage>
       )}
 
-      {/* Filter bar */}
+      {/* Top Filter Bar with Search and Multi-Category Checkmarks */}
       <ProductToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -107,11 +104,10 @@ export default function ProductsPage() {
         onCategoryToggle={handleCategoryToggle}
         onSelectAllCategories={handleSelectAllCategories}
         onClearCategories={handleClearCategories}
-        lowStockOnly={lowStockOnly}
         onResetFilters={handleResetFilters}
       />
 
-      {/* Table based on teh role */}
+      {/* Table rendered strictly based on User Role */}
       {isAdmin ? (
         <AdminProductTable products={products} isLoading={isLoading} />
       ) : (
