@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppHeader } from '@/components/layout/app-header';
+import { AppSidebar } from '@/components/layout/app-sidebar';
 import { useAuth } from '@/components/auth';
 import { Spinner, Page } from '@shared/ui/components';
 
@@ -10,7 +10,6 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // This checks that for every route int eh (dashboard) user needs to login , uif use is not logged in thaen will be redirected to teh login page
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -33,9 +32,12 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <AppHeader />
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen bg-background text-foreground">
+      {/* Left Sidebar */}
+      <AppSidebar />
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
         <Page>{children}</Page>
       </main>
     </div>
