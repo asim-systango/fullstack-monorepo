@@ -14,9 +14,9 @@ export class ProductsService {
 
   async getAllProducts(
     includeDeleted = false,
-    categoryId?: string,
+    categoryIds?: string[],
   ): Promise<ProductWithTotalStock[]> {
-    const products = await this.productRepository.findAll(includeDeleted, categoryId);
+    const products = await this.productRepository.findAll(includeDeleted, categoryIds);
     return products.map((product) => this.attachTotalQuantity(product));
   }
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, FindOptionsWhere, In } from 'typeorm';
 import { ProductEntity } from '../entities/ProductEntity';
 
 @Injectable()
@@ -10,13 +10,16 @@ export class ProductRepository {
     private readonly repo: Repository<ProductEntity>,
   ) {}
 
-  async findAll(includeDeleted = false, categoryId?: string): Promise<ProductEntity[]> {
+  async findAll(
+    includeDeleted = false,
+    categoryIds?: string[],
+  ): Promise<ProductEntity[]> {
     const where: FindOptionsWhere<ProductEntity> = {};
     if (!includeDeleted) {
       where.isDeleted = false;
     }
-    if (categoryId) {
-      where.categoryId = categoryId;
+    if (categoryIds && categoryIds.length > 0) {
+      where.categoryId = categoryIds.length === 1 ? categoryIds[0] : In(categoryIds);
     }
 
     return this.repo.find({

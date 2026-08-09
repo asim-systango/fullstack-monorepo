@@ -11,12 +11,28 @@ export class ProductsController {
   @Roles('admin', 'staff', 'user')
   async findAll(
     @Query('includeDeleted') includeDeleted?: string,
-    @Query('categoryId') categoryId?: string,
+    @Query('categoryId') categoryId?: string | string[],
+    @Query('categoryIds') categoryIdsQuery?: string | string[],
   ) {
     const isIncludeDeleted = includeDeleted === 'true';
+
+    let categoryIds: string[] = [];
+    const rawCategoryInput = categoryIdsQuery ?? categoryId;
+    if (Array.isArray(rawCategoryInput)) {
+      categoryIds = rawCategoryInput
+        .flatMap((id) => id.split(','))
+        .map((id) => id.trim())
+        .filter(Boolean);
+    } else if (typeof rawCategoryInput === 'string' && rawCategoryInput.trim()) {
+      categoryIds = rawCategoryInput
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+    }
+
     const products = await this.productsService.getAllProducts(
       isIncludeDeleted,
-      categoryId,
+      categoryIds.length > 0 ? categoryIds : undefined,
     );
     return { data: products };
   }

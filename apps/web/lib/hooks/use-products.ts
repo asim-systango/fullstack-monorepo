@@ -3,6 +3,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 
+export type ProductStockLevel = {
+  id: string;
+  warehouseId: string;
+  productId: string;
+  quantity: number;
+  warehouse?: {
+    id: string;
+    code: string;
+    name: string;
+    location?: string;
+  };
+};
+
 export type Product = {
   id: string;
   sku: string;
@@ -17,6 +30,8 @@ export type Product = {
     name: string;
   };
   totalStock?: number;
+  totalQuantity?: number;
+  stockLevels?: ProductStockLevel[];
   createdAt: string;
   updatedAt: string;
 };
@@ -35,6 +50,7 @@ export type UpdateProductInput = Partial<CreateProductInput>;
 export type ProductQueryParams = {
   search?: string;
   categoryId?: string;
+  categoryIds?: string[];
   lowStockOnly?: boolean;
   includeDeleted?: boolean;
 };
@@ -44,7 +60,17 @@ export type ProductQueryParams = {
 export async function fetchProducts(params?: ProductQueryParams): Promise<Product[]> {
   const searchParams = new URLSearchParams();
   if (params?.includeDeleted) searchParams.set('includeDeleted', 'true');
-  if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
+
+  let selectedCategoryIds: string[] = [];
+  if (params?.categoryIds && params.categoryIds.length > 0) {
+    selectedCategoryIds = params.categoryIds;
+  } else if (params?.categoryId) {
+    selectedCategoryIds = [params.categoryId];
+  }
+
+  if (selectedCategoryIds.length > 0) {
+    searchParams.set('categoryIds', selectedCategoryIds.join(','));
+  }
 
   const response = await apiClient.get<{ data: Product[] }>(
     `/products?${searchParams.toString()}`,
