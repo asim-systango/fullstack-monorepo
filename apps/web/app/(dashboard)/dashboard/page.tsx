@@ -1,58 +1,96 @@
+'use client';
+
 import {
   Page,
   PageHeader,
   Card,
-  CardBody,
   CardHeader,
   CardTitle,
+  CardBody,
+  Button,
 } from '@shared/ui/components';
+import { DashboardStats } from '@/components/dashboard';
+import { BookingWizardModal } from '@/components/appointments';
+import { useUiStore } from '@/lib/store';
+import { CalendarPlus, Stethoscope, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardPage() {
+  const setBookingModalOpen = useUiStore((state) => state.setBookingModalOpen);
+
   return (
     <Page>
-      <PageHeader title="Dashboard" description="Hospital Appointment System overview" />
+      <PageHeader
+        title="Patient & Clinical Portal Dashboard"
+        description="Overview of appointments, medical specialists, and booking actions."
+      />
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+      <DashboardStats />
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="flex flex-col justify-between">
           <CardHeader>
-            <CardTitle>Total Doctors</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <CalendarPlus className="size-5" />
+              </div>
+              <div>
+                <CardTitle>Quick Appointment Booking</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Lock a consultation slot with concurrency verification.
+                </p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody>
-            <p className="text-3xl font-bold text-foreground">—</p>
-            <p className="text-sm text-muted-foreground">Active practitioners</p>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+              Select your preferred medical specialist, pick an open time slot, and
+              finalize your booking in 3 simple steps.
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setBookingModalOpen(true)}
+              className="gap-2 w-full sm:w-auto text-xs"
+            >
+              Start Booking Wizard <ArrowRight className="size-3.5" />
+            </Button>
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col justify-between">
           <CardHeader>
-            <CardTitle>Available Slots</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Stethoscope className="size-5" />
+              </div>
+              <div>
+                <CardTitle>Specialist Directory</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Browse board-certified hospital physicians.
+                </p>
+              </div>
+            </div>
           </CardHeader>
           <CardBody>
-            <p className="text-3xl font-bold text-foreground">—</p>
-            <p className="text-sm text-muted-foreground">Open for booking</p>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Appointments</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold text-foreground">—</p>
-            <p className="text-sm text-muted-foreground">Scheduled today</p>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Cancellations</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold text-foreground">—</p>
-            <p className="text-sm text-muted-foreground">This week</p>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+              Filter physicians by cardiology, neurology, dermatology, pediatrics, and
+              experience level.
+            </p>
+            <Link href="/doctors">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 w-full sm:w-auto text-xs"
+              >
+                Explore Doctors Directory <ArrowRight className="size-3.5" />
+              </Button>
+            </Link>
           </CardBody>
         </Card>
       </div>
+
+      <BookingWizardModal />
     </Page>
   );
 }

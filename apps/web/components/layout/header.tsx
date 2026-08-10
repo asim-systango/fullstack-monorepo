@@ -17,6 +17,16 @@ import {
 export function Header() {
   const { user, logout, loading } = useAuth();
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const renderUserInfo = () => {
     if (loading) {
       return (
@@ -29,15 +39,22 @@ export function Header() {
     if (user) {
       return (
         <div className="flex items-center gap-3">
-          <div className="hidden flex-col text-right sm:flex">
-            <span className="text-xs font-semibold text-foreground">{user.name}</span>
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {user.email}
-            </span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs shadow-2xs">
+              {getInitials(user.name)}
+            </div>
+            <div className="hidden flex-col text-right sm:flex">
+              <span className="text-xs font-semibold text-foreground leading-tight">
+                {user.name}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono leading-tight">
+                {user.email}
+              </span>
+            </div>
           </div>
           <Badge
             tone={user.role === 'admin' ? 'accent' : 'neutral'}
-            className="capitalize"
+            className="capitalize text-xs"
           >
             {user.role}
           </Badge>

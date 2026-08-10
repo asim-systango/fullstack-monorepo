@@ -10,20 +10,11 @@ import {
   CalendarDays,
   Settings,
   Activity,
-  LogOut,
   Menu,
   X,
-  User as UserIcon,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth';
-import {
-  Button,
-  Badge,
-  ThemeToggle,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from '@shared/ui/components';
+import { Button } from '@shared/ui/components';
 
 type NavItem = {
   label: string;
@@ -57,25 +48,15 @@ const DEFAULT_NAV: NavItem[] = [
 
 /**
  * Modern SaaS sidebar with Lucide vector icons, glassmorphism card backdrop,
- * active indicator pills, user profile card, and responsive mobile drawer.
+ * active indicator pills, and responsive mobile drawer.
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const role = user?.role ?? 'user';
   const navItems = NAV_CONFIG[role] ?? DEFAULT_NAV;
-
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   return (
     <>
@@ -163,58 +144,11 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        {/* User Profile Footer Card */}
-        <div className="border-t border-border/80 p-3 bg-muted/20">
-          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3 shadow-2xs">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs">
-                {user?.name ? getInitials(user.name) : <UserIcon className="size-4" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-foreground">
-                  {user?.name ?? 'Guest User'}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <Badge
-                    tone={role === 'admin' ? 'accent' : 'neutral'}
-                    className="text-[9px] px-1.5 py-0 capitalize"
-                  >
-                    {role}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 shrink-0">
-              <Tooltip>
-                <TooltipTrigger>
-                  <ThemeToggle
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-lg"
-                  />
-                </TooltipTrigger>
-                <TooltipContent side="top">Toggle theme</TooltipContent>
-              </Tooltip>
-
-              {user ? (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => void logout()}
-                      aria-label="Logout"
-                    >
-                      <LogOut className="size-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Sign out</TooltipContent>
-                </Tooltip>
-              ) : null}
-            </div>
-          </div>
+        {/* Sidebar Footer */}
+        <div className="border-t border-border/80 px-4 py-3.5 bg-muted/20 text-center">
+          <p className="text-[11px] font-mono text-muted-foreground">
+            PulseCare v1.0.0 &bull; Healthcare Portal
+          </p>
         </div>
       </aside>
     </>

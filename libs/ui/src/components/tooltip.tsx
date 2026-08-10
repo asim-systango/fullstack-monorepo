@@ -55,20 +55,17 @@ export function TooltipTrigger({
 }>) {
   const ctx = useContext(TooltipContext);
   return (
-    <button
-      type="button"
+    <span
+      role="none"
       aria-describedby={ctx?.open ? ctx.tooltipId : undefined}
-      className={cn(
-        'inline-flex items-center cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit',
-        className,
-      )}
+      className={cn('inline-flex items-center cursor-pointer', className)}
       onMouseEnter={ctx?.onMouseEnter}
       onMouseLeave={ctx?.onMouseLeave}
       onFocus={ctx?.onMouseEnter}
       onBlur={ctx?.onMouseLeave}
     >
       {children}
-    </button>
+    </span>
   );
 }
 
