@@ -1,0 +1,89 @@
+/* ============================================================
+   Tailwind CSS v4 — single import, no config file needed
+   ============================================================ */
+@import 'tailwindcss';
+
+/* ============================================================
+   CSS Custom Properties (Design Tokens)
+   Yahan hum apne poore app ka color system define karte hain.
+   Tailwind v4 mein ye directly CSS variables hote hain.
+   ============================================================ */
+@layer base {
+  :root {
+    /* --- Brand Colors --- */
+    --color-brand-50: #eef2ff;
+    --color-brand-100: #e0e7ff;
+    --color-brand-400: #818cf8;
+    --color-brand-500: #6366f1; /* primary accent */
+    --color-brand-600: #4f46e5;
+    --color-brand-700: #4338ca;
+
+    /* --- Neutral / Background --- */
+    --color-bg-base: #0f0f13; /* darkest — page background */
+    --color-bg-surface: #17171e; /* cards, panels */
+    --color-bg-elevated: #1e1e28; /* modals, dropdowns */
+    --color-bg-muted: #2a2a36; /* input fields */
+
+    /* --- Border --- */
+    --color-border: #2e2e3d;
+    --color-border-focus: #6366f1;
+
+    /* --- Text --- */
+    --color-text-primary: #f1f1f5;
+    --color-text-secondary: #9191a8;
+    --color-text-muted: #5c5c73;
+
+    /* --- Semantic --- */
+    --color-success: #22c55e;
+    --color-error: #ef4444;
+    --color-warning: #f59e0b;
+
+    /* --- Radius --- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+  }
+
+  /* --- Base reset & typography --- */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-inter), system-ui, sans-serif;
+    line-height: 1.6;
+    min-height: 100dvh;
+  }
+
+  /* --- Scrollbar styling --- */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg-surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-bg-muted);
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+  }
+}
