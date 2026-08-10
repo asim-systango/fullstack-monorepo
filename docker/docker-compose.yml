@@ -5,7 +5,6 @@
 #   pnpm docker:db   # loads root .env via --env-file when present
 #   # or: docker compose --env-file .env -f docker/docker-compose.yml up -d postgres
 #   pnpm migration:run
-#   pnpm seed
 
 name: app
 

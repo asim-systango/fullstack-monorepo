@@ -32,7 +32,6 @@ cp apps/web/.env.local.example apps/web/.env.local
 
 pnpm docker:db
 pnpm migration:run
-pnpm seed
 pnpm dev
 pnpm doctor
 ```
@@ -44,7 +43,6 @@ Needs **Node ≥ 20**, **pnpm 10.18.1**, and **Docker**.
 | Check        | Command / URL                                                                              |
 | ------------ | ------------------------------------------------------------------------------------------ |
 | Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready` |
-| Demo logins  | `admin@demo.local` / `user@demo.local` / `staff@demo.local` — password `password123`       |
 
 ## Where you write code
 
@@ -82,7 +80,6 @@ pnpm dev:web
 | `pnpm migration:run:api`           | Your domain migrations                                          |
 | `pnpm migration:generate`          | Generate a domain migration                                     |
 | `pnpm migration:revert` / `:api`   | Revert latest gateway / domain migration                        |
-| `pnpm seed`                        | Seed demo users                                                 |
 | `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
 | `pnpm test:coverage`               | Jest + coverage thresholds (CI gate)                            |
 | `pnpm test:gateway` / `test:api`   | Per-app Jest                                                    |

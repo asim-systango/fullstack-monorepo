@@ -7,9 +7,9 @@ cp .env.example .env
 pnpm dev:gateway    # from repo root
 ```
 
-**Scripts (via root):** `pnpm dev:gateway` · `build:gateway` · `start:gateway` · `typecheck:gateway` · `test:gateway` · `migration:run` · `migration:revert` · `seed`
+**Scripts (via root):** `pnpm dev:gateway` · `build:gateway` · `start:gateway` · `typecheck:gateway` · `test:gateway` · `migration:run` · `migration:revert`
 
-- Users migration + seed: `pnpm migration:run` / `pnpm seed` (from repo root)
+- Users migration: `pnpm migration:run` (from repo root)
 - `API_UPSTREAM_URL` → domain API (default `http://localhost:3002`)
 - Same `JWT_SECRET` as `apps/api` (`@app/api`)
 - Shared HTTP helpers: `@shared/http/filters`, `@shared/http/interceptors`, `@shared/http/auth` · env: `@shared/env/gateway` / `@shared/env/constants`
