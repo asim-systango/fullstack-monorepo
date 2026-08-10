@@ -1,11 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Media } from '../media/media.entity';
+import { RevisionMedia } from '../media/revision-media.entity';
+import { ArticleTag } from '../tags/article-tag.entity';
+import { Tag } from '../tags/tag.entity';
+import { ArticlesController } from './articles.controller';
+import { ArticlesRepository } from './articles.repository';
+import { ArticlesService } from './articles.service';
 import { Article } from './article.entity';
 import { Revision } from './revision.entity';
 
-/** Entity registration only — CRUD/publish services come later. */
 @Module({
-  imports: [TypeOrmModule.forFeature([Article, Revision])],
-  exports: [TypeOrmModule],
+  imports: [
+    TypeOrmModule.forFeature([Article, Revision, Tag, ArticleTag, Media, RevisionMedia]),
+  ],
+  controllers: [ArticlesController],
+  providers: [ArticlesRepository, ArticlesService],
+  exports: [ArticlesService, TypeOrmModule],
 })
 export class ArticlesModule {}
