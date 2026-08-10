@@ -20,7 +20,7 @@ const NAV_ITEMS = [
     icon: '📦',
     roles: ['admin', 'staff', 'user'],
   },
-  { href: '/warehouses', label: 'Warehouses', icon: '🏬', roles: ['admin', 'staff'] },
+  { href: '/warehouses', label: 'Warehouses', icon: '🏬', roles: ['admin'] },
   {
     href: '/movements',
     label: 'Stock Movements',

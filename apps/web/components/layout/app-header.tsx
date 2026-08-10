@@ -8,7 +8,7 @@ import { useAuth } from '@/components/auth';
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', roles: ['admin', 'staff', 'user'] },
   { href: '/products', label: 'Products', roles: ['admin', 'staff', 'user'] },
-  { href: '/warehouses', label: 'Warehouses', roles: ['admin', 'staff'] },
+  { href: '/warehouses', label: 'Warehouses', roles: ['admin'] },
   { href: '/movements', label: 'Stock Movements', roles: ['admin', 'staff', 'user'] },
   { href: '/transfers', label: 'Transfers', roles: ['admin', 'staff'] },
   { href: '/purchase-orders', label: 'Purchase Orders', roles: ['admin', 'staff'] },
