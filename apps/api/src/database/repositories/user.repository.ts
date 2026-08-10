@@ -41,6 +41,16 @@ export class UserRepository {
     });
   }
 
+  async findByEmailAndOrgSlug(email: string, slug: string): Promise<User | null> {
+    return this.userRepo.findOne({
+      where: {
+        email: email.toLowerCase(),
+        organization: { slug },
+      },
+      relations: ['role', 'organization'],
+    });
+  }
+
   async findByOrganization(organizationId: string): Promise<User[]> {
     return this.userRepo.find({
       where: { organizationId },
