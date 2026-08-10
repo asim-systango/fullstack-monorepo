@@ -1,0 +1,34 @@
+export type UserRole = 'ADMIN' | 'DOCTOR' | 'PATIENT' | 'admin' | 'user' | 'staff';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  name: string;
+  phone?: string;
+  role: UserRole;
+  isActive?: boolean;
+  emailVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user: AuthUser;
+}

@@ -15,50 +15,52 @@ import {
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
-import { authApi } from '@/lib/api';
+import { useLogin } from '@/features/auth/hooks/use-auth';
 
 const isProd = process.env.NODE_ENV === 'production';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading, refresh } = useAuth();
-  const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
-  const [password, setPassword] = useState(isProd ? '' : 'password123');
+  const { user, loading } = useAuth();
+  const loginMutation = useLogin();
+  const [email, setEmail] = useState(isProd ? '' : 'patient@hospital.com');
+  const [password, setPassword] = useState(isProd ? '' : 'Patient@123');
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/dashboard');
+      const role = user.role?.toUpperCase();
+      if (role === 'DOCTOR') {
+        router.replace('/doctor');
+      } else if (role === 'ADMIN') {
+        router.replace('/admin');
+      } else {
+        router.replace('/dashboard');
+      }
     }
   }, [user, loading, router]);
 
-  if (user) {
+  if (loading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <LoadingState label="Redirecting to dashboard…" />
+        <LoadingState label="Redirecting to portal..." />
       </div>
     );
   }
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
     setError(null);
     try {
-      await authApi.login({ email, password });
-      await refresh();
-      router.push('/dashboard');
+      await loginMutation.mutateAsync({ email, password });
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
-    } finally {
-      setPending(false);
+      setError(err instanceof ApiClientError ? err.message : 'Invalid email or password');
     }
   }
 
-  const fillDemoUser = (demoEmail: string) => {
+  const fillDemoUser = (demoEmail: string, demoPass: string) => {
     setEmail(demoEmail);
-    setPassword('password123');
+    setPassword(demoPass);
   };
 
   return (
@@ -80,7 +82,7 @@ export default function LoginPage() {
           {/* Quick Demo Preset Chips */}
           <Card className="bg-muted/30 p-4 space-y-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Quick Demo Login
+              Quick Demo Accounts
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -88,7 +90,7 @@ export default function LoginPage() {
                 size="xs"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => fillDemoUser('user@demo.local')}
+                onClick={() => fillDemoUser('patient@hospital.com', 'Patient@123')}
               >
                 <UserIcon className="size-3.5" /> Patient
               </Button>
@@ -97,7 +99,7 @@ export default function LoginPage() {
                 size="xs"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => fillDemoUser('staff@demo.local')}
+                onClick={() => fillDemoUser('doctor2@hospital.com', 'Doctor@123')}
               >
                 <Stethoscope className="size-3.5" /> Doctor
               </Button>
@@ -106,7 +108,7 @@ export default function LoginPage() {
                 size="xs"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => fillDemoUser('admin@demo.local')}
+                onClick={() => fillDemoUser('admin@hospital.com', 'Admin@123')}
               >
                 <Settings className="size-3.5" /> Admin
               </Button>
@@ -115,12 +117,16 @@ export default function LoginPage() {
 
           {/* Login Form Card */}
           <Card className="p-6">
-            <Form pending={pending} onSubmit={onSubmit} className="space-y-4">
+            <Form
+              pending={loginMutation.isPending}
+              onSubmit={onSubmit}
+              className="space-y-4"
+            >
               <Field
                 label="Email Address"
                 htmlFor="login-email"
                 required
-                disabled={pending}
+                disabled={loginMutation.isPending}
               >
                 <TextInput
                   id="login-email"
@@ -129,7 +135,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                  placeholder="name@domain.com"
+                  placeholder="patient@hospital.com"
                 />
               </Field>
 
@@ -137,7 +143,7 @@ export default function LoginPage() {
                 label="Password"
                 htmlFor="login-password"
                 required
-                disabled={pending}
+                disabled={loginMutation.isPending}
               >
                 <TextInput
                   id="login-password"
@@ -155,7 +161,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 variant="primary"
-                loading={pending}
+                loading={loginMutation.isPending}
                 loadingText="Signing in…"
                 className="w-full mt-2 gap-2"
               >
@@ -169,7 +175,7 @@ export default function LoginPage() {
                 href="/register"
                 className="font-semibold text-primary hover:underline"
               >
-                Create an account
+                Register as Patient
               </Link>
             </p>
           </Card>

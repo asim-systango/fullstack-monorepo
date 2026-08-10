@@ -9,11 +9,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { User } from '@shared/api-client';
-import { authApi } from '@/lib/api';
+import { fetchProfileApi, logoutApi } from '@/features/auth/services';
+import { useAuthStore } from '@/features/auth/store/use-auth-store';
+import type { AuthUser } from '@/features/auth/types';
 
 type AuthContextValue = {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
@@ -22,28 +23,47 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isAuthenticated, setAuth, clearAuth } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const me = await authApi.me();
-      setUser(me);
+      const me = await fetchProfileApi();
+      if (me) {
+        const token =
+          useAuthStore.getState().accessToken ||
+          (typeof window !== 'undefined'
+            ? localStorage.getItem('access_token') || ''
+            : '');
+        setAuth({ accessToken: token, user: me });
+      }
     } catch {
-      setUser(null);
+      clearAuth();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setAuth, clearAuth]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (
+      isAuthenticated ||
+      (typeof window !== 'undefined' && localStorage.getItem('access_token'))
+    ) {
+      void refresh();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated, refresh]);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
-  }, []);
+    try {
+      await logoutApi();
+    } catch {
+      // Ignore network errors on logout
+    } finally {
+      clearAuth();
+    }
+  }, [clearAuth]);
 
   const value = useMemo(
     () => ({ user, loading, refresh, logout }),

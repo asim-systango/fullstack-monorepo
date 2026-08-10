@@ -10,6 +10,7 @@ import { API_ENDPOINTS } from './endpoints';
 
 export { API_ENDPOINTS };
 export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export { z } from 'zod';
 
 export class ApiClientError extends Error {
   readonly statusCode: number;

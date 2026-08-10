@@ -1,17 +1,19 @@
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { CurrentUser, Public } from '../../common/auth';
 import { PublicUser } from '../users';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, RefreshTokenDto } from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,8 +23,10 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiOkResponse({ description: 'Public user profile (envelope `{ data }`)' })
+  @ApiOperation({ summary: 'Register a new patient account' })
+  @ApiOkResponse({
+    description: 'Registration successful, returns Access & Refresh tokens + User',
+  })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -33,27 +37,52 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({
     summary: 'Log in',
-    description: 'Sets httpOnly `access_token` cookie on success.',
+    description:
+      'Returns Access Token & Refresh Token, sets httpOnly cookies on success.',
   })
-  @ApiOkResponse({ description: 'Public user profile; Set-Cookie applied' })
+  @ApiOkResponse({ description: 'Authentication successful' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
   login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     return this.authService.login(dto, res);
   }
 
   @Public()
-  @Post('logout')
+  @Post('refresh')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Log out (clears auth cookie)' })
-  logout(@Res({ passthrough: true }) res: Response) {
-    return this.authService.logout(res);
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiOkResponse({ description: 'Token refreshed successfully' })
+  @ApiForbiddenResponse({ description: 'Invalid or expired refresh token' })
+  refresh(
+    @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.refreshToken(dto, req, res);
   }
 
+  @Post('logout')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Log out user and invalidate refresh token' })
+  @ApiOkResponse({ description: 'Logout successful' })
+  logout(@CurrentUser() user: PublicUser, @Res({ passthrough: true }) res: Response) {
+    return this.authService.logout(user, res);
+  }
+
+  @ApiBearerAuth()
   @ApiCookieAuth('access_token')
   @Get('me')
-  @ApiOperation({ summary: 'Current user from cookie JWT' })
-  @ApiUnauthorizedResponse({ description: 'Missing or invalid cookie' })
+  @ApiOperation({ summary: 'Get current authenticated user profile' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
   me(@CurrentUser() user: PublicUser) {
+    return user;
+  }
+
+  @ApiBearerAuth()
+  @ApiCookieAuth('access_token')
+  @Get('profile')
+  @ApiOperation({ summary: 'Get current logged in user profile (alias for /me)' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
+  profile(@CurrentUser() user: PublicUser) {
     return user;
   }
 }

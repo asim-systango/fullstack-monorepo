@@ -22,41 +22,46 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-/** Role-based navigation configuration with Lucide icons (UI Kit link removed). */
-const NAV_CONFIG: Record<string, NavItem[]> = {
-  user: [
-    { label: 'Doctors', href: '/doctors', icon: Stethoscope },
-    { label: 'Appointments', href: '/appointments', icon: Calendar },
-  ],
-  staff: [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Schedule', href: '/doctor/schedule', icon: CalendarDays },
-    { label: 'Appointments', href: '/appointments', icon: Calendar },
-  ],
-  admin: [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Doctors', href: '/doctors', icon: Stethoscope },
-    { label: 'Appointments', href: '/appointments', icon: Calendar },
-    { label: 'Admin Panel', href: '/admin', icon: Settings },
-  ],
-};
-
-const DEFAULT_NAV: NavItem[] = [
+const PATIENT_NAV: NavItem[] = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Doctors', href: '/doctors', icon: Stethoscope },
   { label: 'Appointments', href: '/appointments', icon: Calendar },
 ];
 
-/**
- * Modern SaaS sidebar with Lucide vector icons, glassmorphism card backdrop,
- * active indicator pills, and responsive mobile drawer.
- */
+const DOCTOR_NAV: NavItem[] = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Schedule', href: '/doctor/schedule', icon: CalendarDays },
+  { label: 'Appointments', href: '/appointments', icon: Calendar },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Doctors', href: '/doctors', icon: Stethoscope },
+  { label: 'Appointments', href: '/appointments', icon: Calendar },
+  { label: 'Admin Panel', href: '/admin', icon: Settings },
+];
+
+/** Role-based navigation configuration. */
+const NAV_CONFIG: Record<string, NavItem[]> = {
+  PATIENT: PATIENT_NAV,
+  DOCTOR: DOCTOR_NAV,
+  ADMIN: ADMIN_NAV,
+  patient: PATIENT_NAV,
+  user: PATIENT_NAV,
+  doctor: DOCTOR_NAV,
+  staff: DOCTOR_NAV,
+  admin: ADMIN_NAV,
+};
+
+const DEFAULT_NAV: NavItem[] = PATIENT_NAV;
+
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const role = user?.role ?? 'user';
-  const navItems = NAV_CONFIG[role] ?? DEFAULT_NAV;
+  const role = user?.role ? String(user.role).toUpperCase() : 'PATIENT';
+  const navItems = NAV_CONFIG[role] ?? NAV_CONFIG[user?.role ?? 'PATIENT'] ?? DEFAULT_NAV;
 
   return (
     <>
@@ -106,8 +111,11 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-6">
-          <div className="mb-3 px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-            Navigation Menu
+          <div className="mb-3 px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center justify-between">
+            <span>Navigation Menu</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono">
+              {role}
+            </span>
           </div>
           <ul className="space-y-1.5">
             {navItems.map((item) => {

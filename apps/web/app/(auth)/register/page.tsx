@@ -10,19 +10,25 @@ import {
   TextInput,
   StatusMessage,
   LoadingState,
+  Card,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
-import { authApi } from '@/lib/api';
+import { useRegister } from '@/features/auth/hooks/use-auth';
+import { registerSchema } from '@/features/auth/validators';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, loading, refresh } = useAuth();
-  const [name, setName] = useState('');
+  const { user, loading } = useAuth();
+  const registerMutation = useRegister();
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -30,27 +36,43 @@ export default function RegisterPage() {
     }
   }, [user, loading, router]);
 
-  if (user) {
+  if (loading || user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <LoadingState label="Redirecting to dashboard…" />
+        <LoadingState label="Redirecting to dashboard..." />
       </div>
     );
   }
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
     setError(null);
+
+    const validation = registerSchema.safeParse({
+      firstName,
+      lastName,
+      email,
+      phone,
+      password,
+      confirmPassword,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0]?.message || 'Invalid form data';
+      setError(firstError);
+      return;
+    }
+
     try {
-      await authApi.register({ name, email, password });
-      await authApi.login({ email, password });
-      await refresh();
-      router.push('/dashboard');
+      await registerMutation.mutateAsync({
+        firstName,
+        lastName,
+        email,
+        phone: phone.trim() || undefined,
+        password,
+      });
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Registration failed');
-    } finally {
-      setPending(false);
     }
   }
 
@@ -62,63 +84,111 @@ export default function RegisterPage() {
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Create your PulseCare Account
+              Create Patient Account
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Register as a patient to book appointments and view your healthcare records
+            <p className="mt-2 text-xs text-muted-foreground">
+              Register as a patient to book appointments and manage your healthcare
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <Form pending={pending} onSubmit={onSubmit}>
+          <Card className="p-6">
+            <Form
+              pending={registerMutation.isPending}
+              onSubmit={onSubmit}
+              className="space-y-3.5"
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="First Name"
+                  htmlFor="reg-fname"
+                  required
+                  disabled={registerMutation.isPending}
+                >
+                  <TextInput
+                    id="reg-fname"
+                    name="firstName"
+                    placeholder="Jane"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </Field>
+                <Field
+                  label="Last Name"
+                  htmlFor="reg-lname"
+                  required
+                  disabled={registerMutation.isPending}
+                >
+                  <TextInput
+                    id="reg-lname"
+                    name="lastName"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </Field>
+              </div>
+
               <Field
-                label="Full Name"
-                htmlFor="register-name"
+                label="Email Address"
+                htmlFor="reg-email"
                 required
-                disabled={pending}
+                disabled={registerMutation.isPending}
               >
                 <TextInput
-                  id="register-name"
-                  name="name"
-                  placeholder="e.g. Sarah Jenkins"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
+                  id="reg-email"
+                  name="email"
+                  type="email"
+                  placeholder="jane.doe@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </Field>
 
               <Field
-                label="Email Address"
-                htmlFor="register-email"
-                required
-                disabled={pending}
+                label="Phone Number"
+                htmlFor="reg-phone"
+                disabled={registerMutation.isPending}
               >
                 <TextInput
-                  id="register-email"
-                  name="email"
-                  type="email"
-                  placeholder="sarah@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
+                  id="reg-phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </Field>
 
               <Field
                 label="Password"
-                htmlFor="register-password"
+                htmlFor="reg-password"
                 required
-                hint="At least 8 characters"
-                disabled={pending}
+                hint="8+ chars with uppercase, lowercase, number, special char"
+                disabled={registerMutation.isPending}
               >
                 <TextInput
-                  id="register-password"
+                  id="reg-password"
                   name="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  minLength={8}
-                  autoComplete="new-password"
+                  placeholder="••••••••"
+                />
+              </Field>
+
+              <Field
+                label="Confirm Password"
+                htmlFor="reg-confirm"
+                required
+                disabled={registerMutation.isPending}
+              >
+                <TextInput
+                  id="reg-confirm"
+                  name="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
                 />
               </Field>
 
@@ -126,24 +196,22 @@ export default function RegisterPage() {
 
               <Button
                 type="submit"
-                loading={pending}
-                loadingText="Creating account…"
-                className="w-full bg-foreground text-background hover:opacity-90 mt-2"
+                variant="primary"
+                loading={registerMutation.isPending}
+                loadingText="Registering…"
+                className="w-full mt-2"
               >
-                Complete Registration
+                Create Account
               </Button>
             </Form>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
               Already have an account?{' '}
-              <Link
-                href="/login"
-                className="font-semibold text-foreground underline hover:no-underline"
-              >
+              <Link href="/login" className="font-semibold text-primary hover:underline">
                 Sign in instead
               </Link>
             </p>
-          </div>
+          </Card>
         </div>
       </main>
     </div>

@@ -2,36 +2,85 @@ import '../load-env';
 import 'reflect-metadata';
 import * as bcrypt from 'bcryptjs';
 import dataSource from './data-source';
-import { User } from '../modules/users';
+import { Role, User } from '../modules/users';
 
 async function seed() {
   await dataSource.initialize();
   const users = dataSource.getRepository(User);
-  const passwordHash = await bcrypt.hash('password123', 12);
 
-  const seeds: Array<{ email: string; name: string; role: User['role'] }> = [
-    { email: 'admin@demo.local', name: 'Demo Admin', role: 'admin' },
-    { email: 'user@demo.local', name: 'Demo User', role: 'user' },
-    { email: 'staff@demo.local', name: 'Demo Staff', role: 'staff' },
+  const seeds = [
+    {
+      email: 'admin@hospital.com',
+      firstName: 'Admin',
+      lastName: 'User',
+      name: 'System Admin',
+      password: 'Admin@123',
+      role: Role.ADMIN,
+      phone: '+1000000001',
+    },
+    {
+      email: 'doctor@hospital.com',
+      firstName: 'Sarah',
+      lastName: 'Jenkins',
+      name: 'Dr. Sarah Jenkins',
+      password: 'Doctor@123',
+      role: Role.DOCTOR,
+      phone: '+1000000002',
+    },
+    {
+      email: 'doctor2@hospital.com',
+      firstName: 'Michael',
+      lastName: 'Chen',
+      name: 'Dr. Michael Chen',
+      password: 'Doctor@123',
+      role: Role.DOCTOR,
+      phone: '+1000000003',
+    },
+    {
+      email: 'patient@hospital.com',
+      firstName: 'Jane',
+      lastName: 'Doe',
+      name: 'Jane Doe',
+      password: 'Patient@123',
+      role: Role.PATIENT,
+      phone: '+1000000004',
+    },
   ];
 
   for (const row of seeds) {
     const existing = await users.findOne({ where: { email: row.email } });
+    const passwordHash = await bcrypt.hash(row.password, 12);
     if (!existing) {
       await users.save(
         users.create({
           email: row.email,
+          firstName: row.firstName,
+          lastName: row.lastName,
           name: row.name,
+          phone: row.phone,
           passwordHash,
           role: row.role,
+          isActive: true,
+          emailVerified: true,
         }),
       );
+    } else {
+      await users.update(existing.id, {
+        firstName: row.firstName,
+        lastName: row.lastName,
+        name: row.name,
+        phone: row.phone,
+        passwordHash,
+        role: row.role,
+        isActive: true,
+      });
     }
   }
 
-  console.log('Seed complete — password for all: password123', {
-    emails: seeds.map((s) => s.email),
-  });
+  console.log('API-Gateway seed complete — created accounts:');
+  seeds.forEach((s) =>
+    console.log(` - ${s.email} (${s.role}) / Password: ${s.password}`),
+  );
 
   await dataSource.destroy();
 }

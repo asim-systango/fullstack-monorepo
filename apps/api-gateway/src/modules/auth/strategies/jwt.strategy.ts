@@ -13,6 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const env = loadGatewayEnv();
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
         (req: Request) => {
           const cookies = req?.cookies as Record<string, string> | undefined;
           return cookies?.[AUTH_COOKIE_NAME] ?? null;
@@ -26,7 +27,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findById(payload.sub);
-    if (!user) throw new UnauthorizedException();
+    if (!user || !user.isActive)
+      throw new UnauthorizedException('User is unauthenticated or inactive');
     return this.usersService.toPublic(user);
   }
 }

@@ -24,6 +24,82 @@ Error responses return standard NestJS exception envelopes:
 
 ## Endpoints Summary
 
+### 0. Authentication Endpoints (`/auth`)
+
+#### `POST /auth/register`
+
+Register a new Patient account.
+
+- **Request Body**:
+
+```json
+{
+  "email": "patient@hospital.com",
+  "password": "Patient@123",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "phone": "+1234567890"
+}
+```
+
+- **Response**: `201 Created`
+
+```json
+{
+  "accessToken": "eyJhbGciOi...",
+  "refreshToken": "eyJhbGciOi...",
+  "user": {
+    "id": "u4444444-4444-4444-4444-444444444444",
+    "email": "patient@hospital.com",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "name": "Jane Doe",
+    "phone": "+1234567890",
+    "role": "PATIENT",
+    "isActive": true
+  }
+}
+```
+
+#### `POST /auth/login`
+
+Authenticate user and obtain JWT tokens.
+
+- **Request Body**:
+
+```json
+{
+  "email": "patient@hospital.com",
+  "password": "Patient@123"
+}
+```
+
+- **Response**: `200 OK`
+
+#### `POST /auth/refresh`
+
+Obtain new Access Token using valid Refresh Token.
+
+- **Request Body**:
+
+```json
+{
+  "refreshToken": "eyJhbGciOi..."
+}
+```
+
+#### `POST /auth/logout`
+
+Invalidate current user refresh token.
+
+- **Response**: `200 OK`
+
+#### `GET /auth/me` or `/auth/profile`
+
+Get currently logged-in user profile. Protected by Bearer token / Cookie.
+
+---
+
 ### 1. Doctor Endpoints (`/doctors`)
 
 #### `GET /doctors`
