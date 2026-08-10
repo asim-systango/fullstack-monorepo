@@ -1,97 +1,181 @@
 'use client';
 
-import { Page, PageHeader } from '@shared/ui/components';
-import { DoctorFilter, DoctorList, type DoctorInfo } from '@/components/doctors';
-import { BookingWizardModal } from '@/components/appointments';
-import { useUiStore, useAppointmentStore } from '@/lib/store';
-import { useState, useMemo } from 'react';
+import React, { useState } from 'react';
+import {
+  Page,
+  PageHeader,
+  EmptyState,
+  Spinner,
+  Button,
+  Select,
+} from '@shared/ui/components';
+import { useDoctors } from '@/features/doctor/hooks';
+import { DoctorCard } from '@/components/doctor/doctor-card';
+import { DoctorTable } from '@/components/doctor/doctor-table';
+import { LayoutGrid, List, Search, Filter, RotateCcw } from 'lucide-react';
+import { TextInput } from '@shared/ui/components';
 
-const MOCK_DOCTORS: DoctorInfo[] = [
-  {
-    id: 'doc-1',
-    name: 'Dr. Sarah Jenkins',
-    specialty: 'CARDIOLOGY',
-    rating: 4.9,
-    experienceYears: 12,
-    location: 'Building A, Suite 302',
-    consultationFee: 150,
-    availableDays: ['Mon', 'Wed', 'Fri'],
-  },
-  {
-    id: 'doc-2',
-    name: 'Dr. Michael Chen',
-    specialty: 'NEUROLOGY',
-    rating: 4.8,
-    experienceYears: 9,
-    location: 'Building B, Suite 105',
-    consultationFee: 180,
-    availableDays: ['Tue', 'Thu'],
-  },
-  {
-    id: 'doc-3',
-    name: 'Dr. Emily Vance',
-    specialty: 'DERMATOLOGY',
-    rating: 4.95,
-    experienceYears: 14,
-    location: 'Building C, Suite 410',
-    consultationFee: 160,
-    availableDays: ['Mon', 'Tue', 'Thu'],
-  },
-  {
-    id: 'doc-4',
-    name: 'Dr. Robert Garcia',
-    specialty: 'PEDIATRICS',
-    rating: 4.7,
-    experienceYears: 7,
-    location: 'Building A, Suite 112',
-    consultationFee: 130,
-    availableDays: ['Wed', 'Fri', 'Sat'],
-  },
+const SPECIALIZATIONS = [
+  'ALL',
+  'Cardiology',
+  'Dermatology',
+  'Orthopedics',
+  'Neurology',
+  'Pediatrics',
+  'General Medicine',
 ];
 
 export default function DoctorsPage() {
-  const [selectedSpecialty, setSelectedSpecialty] = useState('ALL');
-  const searchQuery = useUiStore((state) => state.searchQuery);
-  const setSearchQuery = useUiStore((state) => state.setSearchQuery);
-  const setBookingModalOpen = useUiStore((state) => state.setBookingModalOpen);
-  const selectDoctor = useAppointmentStore((state) => state.selectDoctor);
+  const [specialization, setSpecialization] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
-  const filteredDoctors = useMemo(() => {
-    return MOCK_DOCTORS.filter((doc) => {
-      const matchesSpecialty =
-        selectedSpecialty === 'ALL' || doc.specialty === selectedSpecialty;
-      const matchesQuery =
-        searchQuery === '' || doc.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSpecialty && matchesQuery;
-    });
-  }, [selectedSpecialty, searchQuery]);
-
-  const handleBookClick = (doctor: DoctorInfo) => {
-    selectDoctor(doctor.id, doctor.name);
-    setBookingModalOpen(true);
-  };
+  const {
+    data: doctors = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useDoctors({
+    specialization: specialization === 'ALL' ? undefined : specialization,
+    search: search || undefined,
+  });
 
   const handleReset = () => {
-    setSelectedSpecialty('ALL');
-    setSearchQuery('');
+    setSpecialization('ALL');
+    setSearch('');
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="py-16 flex flex-col items-center justify-center gap-3">
+          <Spinner size="lg" className="text-primary" />
+          <p className="text-sm text-muted-foreground">Loading doctor directory...</p>
+        </div>
+      );
+    }
+
+    if (isError) {
+      return (
+        <div className="py-12">
+          <EmptyState
+            title="Failed to Load Doctors"
+            description="An error occurred while fetching the doctor directory."
+            action={
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                Try Again
+              </Button>
+            }
+          />
+        </div>
+      );
+    }
+
+    if (doctors.length === 0) {
+      return (
+        <div className="py-12">
+          <EmptyState
+            title="No Doctors Found"
+            description="No medical specialists match your current search filters."
+            action={
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                Clear Filters
+              </Button>
+            }
+          />
+        </div>
+      );
+    }
+
+    if (viewMode === 'grid') {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {doctors.map((doctor) => (
+            <DoctorCard key={doctor.id} doctor={doctor} />
+          ))}
+        </div>
+      );
+    }
+
+    return <DoctorTable doctors={doctors} />;
   };
 
   return (
     <Page>
       <PageHeader
         title="Find a Specialist Doctor"
-        description="Explore board-certified medical experts and book instant consultation slots."
+        description="Browse board-certified medical specialists, review credentials, and view available consultation schedules."
       />
 
-      <DoctorFilter
-        selectedSpecialty={selectedSpecialty}
-        onSpecialtyChange={setSelectedSpecialty}
-        onReset={handleReset}
-      />
+      {/* Filter and View Controls Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center gap-3 flex-1">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <TextInput
+              placeholder="Search by doctor name or specialty..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 text-sm w-full"
+            />
+          </div>
 
-      <DoctorList doctors={filteredDoctors} onBookDoctor={handleBookClick} />
+          {/* Specialization Filter Dropdown */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="w-4 h-4 text-muted-foreground hidden sm:block" />
+            <Select
+              value={specialization}
+              onChange={(e) => setSpecialization(e.target.value)}
+              className="text-sm w-full sm:w-48"
+            >
+              {SPECIALIZATIONS.map((spec) => (
+                <option key={spec} value={spec}>
+                  {spec === 'ALL' ? 'All Specializations' : spec}
+                </option>
+              ))}
+            </Select>
+          </div>
 
-      <BookingWizardModal />
+          {(specialization !== 'ALL' || search !== '') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-xs text-muted-foreground gap-1 hover:text-foreground"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset
+            </Button>
+          )}
+        </div>
+
+        {/* View Mode Toggle (Grid / Table) */}
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/50 self-end md:self-auto">
+          <Button
+            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className="h-8 px-2.5 text-xs gap-1.5"
+            title="Grid View"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">Grid</span>
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="h-8 px-2.5 text-xs gap-1.5"
+            title="Table View"
+          >
+            <List className="w-4 h-4" />
+            <span className="hidden sm:inline">Table</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Content Rendering */}
+      {renderContent()}
     </Page>
   );
 }

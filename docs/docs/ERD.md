@@ -1,24 +1,33 @@
-# Entity Relationship Diagram (ERD) — Day 02 Foundation
-
-The relational architecture of the **Hospital Appointment System** models entity relationships for Doctors, Time Slots, Appointments, Prescriptions, and Medical Notes.
+# Entity Relationship Diagram (ERD) — Hospital Appointment System
 
 ```mermaid
 erDiagram
-    DoctorProfile ||--o{ Slot : "configures (1:N)"
-    DoctorProfile ||--o{ MedicalNote : "records (1:N)"
-    Slot ||--o| Appointment : "reserved_in (1:1)"
-    Appointment ||--o| Prescription : "has (1:1)"
-    Appointment ||--o{ MedicalNote : "contains (1:N)"
+    USERS ||--o| DOCTOR_PROFILES : "has profile (role=DOCTOR)"
+    DOCTOR_PROFILES ||--o{ SLOTS : "manages"
+    SLOTS ||--o| APPOINTMENTS : "booked as"
+    USERS ||--o{ APPOINTMENTS : "patient books (role=PATIENT)"
+    APPOINTMENTS ||--o| PRESCRIPTIONS : "has"
+    APPOINTMENTS ||--o{ MEDICAL_NOTES : "records"
+    DOCTOR_PROFILES ||--o{ MEDICAL_NOTES : "writes"
 
-    DoctorProfile {
+    USERS {
         uuid id PK
-        uuid userId UNIQUE
+        string email UK
+        string passwordHash
+        string role "PATIENT | DOCTOR | ADMIN"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    DOCTOR_PROFILES {
+        uuid id PK
+        uuid userId FK, UK
         string firstName
         string lastName
-        string specialization INDEX
+        string specialization
         string qualification
-        int experienceYears
-        numeric consultationFee
+        integer experienceYears
+        decimal consultationFee
         text biography
         string profileImage
         boolean isActive
@@ -27,49 +36,42 @@ erDiagram
         timestamp deletedAt
     }
 
-    Slot {
+    SLOTS {
         uuid id PK
         uuid doctorId FK
         timestamp startsAt
         timestamp endsAt
-        enum status "AVAILABLE | BOOKED | BLOCKED"
+        string status "AVAILABLE | BOOKED | BLOCKED"
         timestamp createdAt
         timestamp updatedAt
     }
 
-    Appointment {
+    APPOINTMENTS {
         uuid id PK
-        uuid patientId INDEX
-        uuid slotId FK, UNIQUE
-        enum status "SCHEDULED | CANCELLED | COMPLETED"
+        uuid patientId FK
+        uuid slotId FK, UK
+        string status "SCHEDULED | CANCELLED | COMPLETED"
         text reason
         timestamp createdAt
         timestamp updatedAt
         timestamp deletedAt
     }
 
-    Prescription {
+    PRESCRIPTIONS {
         uuid id PK
-        uuid appointmentId FK, UNIQUE
+        uuid appointmentId FK, UK
         jsonb medicines
         text instructions
         timestamp createdAt
         timestamp updatedAt
     }
 
-    MedicalNote {
+    MEDICAL_NOTES {
         uuid id PK
         uuid appointmentId FK
         uuid doctorId FK
         text notes
         timestamp createdAt
+        timestamp updatedAt
     }
 ```
-
-## Domain Entity Relationships
-
-1. **DoctorProfile to Slot (1:N)**: A doctor profile can have multiple available, booked, or blocked consultation time slots.
-2. **Slot to Appointment (1:1)**: An appointment is booked strictly against a single unique time slot (`slotId` UNIQUE constraint).
-3. **Appointment to Prescription (1:1)**: An appointment can have at most one official medical prescription attached (`appointmentId` UNIQUE constraint).
-4. **Appointment to MedicalNote (1:N)**: An appointment can accumulate multiple clinical observation notes over time.
-5. **DoctorProfile to MedicalNote (1:N)**: Medical notes reference the authoring doctor profile.

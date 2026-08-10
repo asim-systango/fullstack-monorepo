@@ -1,95 +1,123 @@
-# Database Design & Schema Specification — Day 04
+# Database Design & Repository Architecture Specification
 
-This document describes the PostgreSQL relational database schema, data types, indexes, transactional locking strategies, and constraints implemented in TypeORM.
+## Overview
 
----
-
-## Database Indexing Strategy
-
-To guarantee maximum Query Builder performance and eliminate N+1 latency, the following database indexes are created:
-
-| Entity | Indexed Column | Index Type | Purpose |
-|---|---|---|---|
-| `DoctorProfile` | `specialization` | B-Tree | Fast lookup for specialist filtering in directory |
-| `Slot` | `doctorId` | B-Tree | Quick relation joins for doctor schedule lookup |
-| `Slot` | `startsAt` | B-Tree | Chronological sorting and range queries (`dateFrom`, `dateTo`) |
-| `Slot` | `status` | B-Tree | Filtering active `AVAILABLE` slots |
-| `Appointment` | `patientId` | B-Tree | Ownership filtering & user appointment history |
-| `Appointment` | `status` | B-Tree | Filter by `SCHEDULED`, `COMPLETED`, `CANCELLED` |
-| `Appointment` | `slotId` | Unique B-Tree | Ensures 1:1 relation between Appointment and Slot |
+The **Hospital Appointment System** database architecture is designed using PostgreSQL and TypeORM, following domain isolation, explicit repository encapsulation, and soft delete patterns.
 
 ---
 
-## Concurrency Protection & Locking Strategy
-
-### Pessimistic Write Locking (`SELECT FOR UPDATE`)
-
-To prevent race conditions and guarantee zero double-booking under concurrent traffic:
-
-1. **Booking Transaction**:
-   - `queryRunner.manager.findOne(Slot, { where: { id }, lock: { mode: 'pessimistic_write' } })`
-   - Executes `SELECT * FROM slots WHERE id = $1 FOR UPDATE`.
-   - Any concurrent request attempting to book the same `slotId` blocks at the database level until the first transaction commits or rolls back.
-   - If slot status becomes `BOOKED`, the subsequent transaction immediately fails with a `409 Conflict` error.
-
-2. **Cancellation Transaction**:
-   - Acquires `pessimistic_write` lock on `appointments` and linked `slots` row.
-   - Updates appointment status to `CANCELLED` (with `deletedAt` soft delete) and updates slot status back to `AVAILABLE`.
-
----
-
-## Database Tables Overview
+## Database Tables & Schema Specs
 
 ### 1. `doctor_profiles`
-Stores professional practitioner metadata.
 
-| Column | Data Type | Constraints / Indexes | Description |
-|---|---|---|---|
-| `id` | `UUID` | Primary Key, `uuid_generate_v4()` | Unique doctor profile ID |
-| `userId` | `UUID` | UNIQUE, NOT NULL | Account User reference |
-| `firstName` | `VARCHAR(50)` | NOT NULL | Doctor first name |
-| `lastName` | `VARCHAR(50)` | NOT NULL | Doctor last name |
-| `specialization` | `VARCHAR(100)` | INDEX, NOT NULL | Medical specialty (e.g. Cardiology) |
-| `qualification` | `VARCHAR(100)` | NOT NULL | Medical degrees (e.g. MD, FACC) |
-| `experienceYears` | `INTEGER` | DEFAULT 0 | Years of clinical experience |
-| `consultationFee` | `NUMERIC(10,2)` | DEFAULT 0.00 | Consultation fee in USD |
-| `biography` | `TEXT` | NULLABLE | Detailed professional bio |
-| `profileImage` | `VARCHAR(255)` | NULLABLE | Profile photo URL |
-| `isActive` | `BOOLEAN` | DEFAULT `true` | Active status toggle |
-| `createdAt` | `TIMESTAMPTZ` | DEFAULT `now()` | Record creation timestamp |
-| `updatedAt` | `TIMESTAMPTZ` | DEFAULT `now()` | Record last update timestamp |
-| `deletedAt` | `TIMESTAMPTZ` | NULLABLE | Soft delete timestamp |
+Stores extended doctor information linked to the authentication `users` table.
+
+| Column             | Type            | Constraints                       | Description                         |
+| ------------------ | --------------- | --------------------------------- | ----------------------------------- |
+| `id`               | `uuid`          | PK, default `gen_random_uuid()`   | Primary Key                         |
+| `user_id`          | `uuid`          | FK (`users.id`), UNIQUE, NOT NULL | Direct link to user record          |
+| `first_name`       | `varchar(100)`  | NOT NULL                          | Doctor first name                   |
+| `last_name`        | `varchar(100)`  | NOT NULL                          | Doctor last name                    |
+| `specialization`   | `varchar(100)`  | NOT NULL, INDEX                   | Medical specialty (e.g. Cardiology) |
+| `qualification`    | `varchar(255)`  | NOT NULL                          | Academic degrees/certifications     |
+| `experience_years` | `integer`       | NOT NULL, DEFAULT 0               | Years of clinical practice          |
+| `consultation_fee` | `numeric(10,2)` | NOT NULL                          | Consultation fee in INR             |
+| `biography`        | `text`          | NULLABLE                          | Professional bio                    |
+| `profile_image`    | `varchar(500)`  | NULLABLE                          | Profile picture URL                 |
+| `is_active`        | `boolean`       | DEFAULT true                      | Account status flag                 |
+| `created_at`       | `timestamp`     | DEFAULT `now()`                   | Record creation timestamp           |
+| `updated_at`       | `timestamp`     | DEFAULT `now()`                   | Record update timestamp             |
+| `deleted_at`       | `timestamp`     | NULLABLE                          | Soft delete timestamp               |
+
+**Indexes & Constraints**:
+
+- `IDX_DOCTOR_SPECIALIZATION` on `specialization`
+- `UQ_DOCTOR_USER_ID` unique constraint on `user_id`
 
 ---
 
 ### 2. `slots`
-Stores scheduled consultation time windows for doctors.
 
-| Column | Data Type | Constraints / Indexes | Description |
-|---|---|---|---|
-| `id` | `UUID` | Primary Key, `uuid_generate_v4()` | Slot ID |
-| `doctorId` | `UUID` | INDEX, FK -> `doctor_profiles(id)` ON DELETE CASCADE | Doctor ID |
-| `startsAt` | `TIMESTAMPTZ` | INDEX, NOT NULL | Slot start time |
-| `endsAt` | `TIMESTAMPTZ` | NOT NULL | Slot end time |
-| `status` | `ENUM` | INDEX, DEFAULT `'AVAILABLE'` | `'AVAILABLE'`, `'BOOKED'`, `'BLOCKED'` |
-| `createdAt` | `TIMESTAMPTZ` | DEFAULT `now()` | Creation timestamp |
-| `updatedAt` | `TIMESTAMPTZ` | DEFAULT `now()` | Update timestamp |
+Represents 30-minute consultation availability windows for doctors.
 
-**Check Constraints**:
-- `CHK_slots_starts_before_ends`: `CHECK ("startsAt" < "endsAt")`
+| Column       | Type                       | Constraints                            | Description                              |
+| ------------ | -------------------------- | -------------------------------------- | ---------------------------------------- |
+| `id`         | `uuid`                     | PK, default `gen_random_uuid()`        | Primary Key                              |
+| `doctor_id`  | `uuid`                     | FK (`doctor_profiles.id`), NOT NULL    | Doctor reference                         |
+| `starts_at`  | `timestamp with time zone` | NOT NULL, INDEX                        | Consultation window start                |
+| `ends_at`    | `timestamp with time zone` | NOT NULL                               | Consultation window end                  |
+| `status`     | `varchar(20)`              | NOT NULL, DEFAULT `'AVAILABLE'`, INDEX | Status: `AVAILABLE`, `BOOKED`, `BLOCKED` |
+| `created_at` | `timestamp`                | DEFAULT `now()`                        | Creation timestamp                       |
+| `updated_at` | `timestamp`                | DEFAULT `now()`                        | Update timestamp                         |
+
+**Indexes & Constraints**:
+
+- `IDX_SLOTS_DOCTOR_ID` on `doctor_id`
+- `IDX_SLOTS_STARTS_AT` on `starts_at`
+- `IDX_SLOTS_STATUS` on `status`
+- `CHK_SLOTS_TIME_ORDER` check constraint (`starts_at < ends_at`)
 
 ---
 
 ### 3. `appointments`
-Stores appointment bookings between patients and slots.
 
-| Column | Data Type | Constraints / Indexes | Description |
-|---|---|---|---|
-| `id` | `UUID` | Primary Key, `uuid_generate_v4()` | Appointment ID |
-| `patientId` | `UUID` | INDEX, NOT NULL | Patient User reference |
-| `slotId` | `UUID` | FK -> `slots(id)` ON DELETE CASCADE, UNIQUE | Booked Slot reference |
-| `status` | `ENUM` | INDEX, DEFAULT `'SCHEDULED'` | `'SCHEDULED'`, `'CANCELLED'`, `'COMPLETED'` |
-| `reason` | `TEXT` | NULLABLE | Patient symptoms or visit reason |
-| `createdAt` | `TIMESTAMPTZ` | DEFAULT `now()` | Creation timestamp |
-| `updatedAt` | `TIMESTAMPTZ` | DEFAULT `now()` | Update timestamp |
-| `deletedAt` | `TIMESTAMPTZ` | NULLABLE | Soft delete timestamp |
+Represents patient bookings tied to specific consultation slots.
+
+| Column       | Type          | Constraints                            | Description                                   |
+| ------------ | ------------- | -------------------------------------- | --------------------------------------------- |
+| `id`         | `uuid`        | PK, default `gen_random_uuid()`        | Primary Key                                   |
+| `patient_id` | `uuid`        | FK (`users.id`), NOT NULL              | Patient reference                             |
+| `slot_id`    | `uuid`        | FK (`slots.id`), UNIQUE, NOT NULL      | Slot reference                                |
+| `status`     | `varchar(20)` | NOT NULL, DEFAULT `'SCHEDULED'`, INDEX | Status: `SCHEDULED`, `CANCELLED`, `COMPLETED` |
+| `reason`     | `text`        | NULLABLE                               | Reason for medical visit                      |
+| `created_at` | `timestamp`   | DEFAULT `now()`                        | Creation timestamp                            |
+| `updated_at` | `timestamp`   | DEFAULT `now()`                        | Update timestamp                              |
+| `deleted_at` | `timestamp`   | NULLABLE                               | Soft delete timestamp                         |
+
+**Indexes & Constraints**:
+
+- `IDX_APPOINTMENTS_PATIENT_ID` on `patient_id`
+- `IDX_APPOINTMENTS_STATUS` on `status`
+- `UQ_APPOINTMENTS_SLOT_ID` unique constraint on `slot_id`
+
+---
+
+### 4. `prescriptions`
+
+Contains medical prescriptions generated by doctors for completed appointments.
+
+| Column           | Type        | Constraints                              | Description                  |
+| ---------------- | ----------- | ---------------------------------------- | ---------------------------- |
+| `id`             | `uuid`      | PK, default `gen_random_uuid()`          | Primary Key                  |
+| `appointment_id` | `uuid`      | FK (`appointments.id`), UNIQUE, NOT NULL | Appointment reference        |
+| `medicines`      | `jsonb`     | NOT NULL                                 | Structured medicine array    |
+| `instructions`   | `text`      | NULLABLE                                 | Special patient instructions |
+| `created_at`     | `timestamp` | DEFAULT `now()`                          | Creation timestamp           |
+| `updated_at`     | `timestamp` | DEFAULT `now()`                          | Update timestamp             |
+
+---
+
+### 5. `medical_notes`
+
+Clinical progress notes attached to appointments.
+
+| Column           | Type        | Constraints                         | Description                   |
+| ---------------- | ----------- | ----------------------------------- | ----------------------------- |
+| `id`             | `uuid`      | PK, default `gen_random_uuid()`     | Primary Key                   |
+| `appointment_id` | `uuid`      | FK (`appointments.id`), NOT NULL    | Appointment reference         |
+| `doctor_id`      | `uuid`      | FK (`doctor_profiles.id`), NOT NULL | Doctor reference              |
+| `notes`          | `text`      | NOT NULL                            | Clinical observations & notes |
+| `created_at`     | `timestamp` | DEFAULT `now()`                     | Creation timestamp            |
+| `updated_at`     | `timestamp` | DEFAULT `now()`                     | Update timestamp              |
+
+---
+
+## Repository Layer Architecture
+
+All database queries are executed via dedicated repository wrapper classes inside `src/modules/*/repositories/`:
+
+1. **`DoctorRepository`**: Provides custom query builders for specialization filtering, full-text doctor searching, and soft deletes.
+2. **`SlotRepository`**: Encapsulates date-range queries, doctor availability lookups, and slot state updates.
+3. **`AppointmentRepository`**: Manages relational queries linking appointments to slot details, prescriptions, and clinical notes.
+4. **`PrescriptionRepository`**: Handles single-appointment lookup and structured medicine updates.
+5. **`MedicalNoteRepository`**: Provides query methods by appointment ID and doctor ID.

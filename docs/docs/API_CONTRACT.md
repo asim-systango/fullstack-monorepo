@@ -1,88 +1,176 @@
-# API Contract & Endpoint Documentation — Day 04
+# REST API Contract Specification — Hospital Appointment System
 
-Base API URL: `http://localhost:4000/api/v1`
+## Standard Response Envelope
 
-Standard Response Structure:
+All API endpoints return JSON responses wrapped in a standard envelope:
 
-**Success Response**:
 ```json
 {
-  "success": true,
-  "message": "Operation completed successfully",
-  "data": {}
+  "data": T
 }
 ```
 
-**Error Response**:
+Error responses return standard NestJS exception envelopes:
+
 ```json
 {
-  "success": false,
-  "message": "Error message description",
-  "statusCode": 409
+  "statusCode": 400,
+  "message": "Error description message",
+  "error": "Bad Request"
 }
 ```
 
 ---
 
-## 0. Authentication Endpoints (`/auth`)
+## Endpoints Summary
 
-| Method | Path | Summary | Guard / Role | Success Status |
-|---|---|---|---|---|
-| `POST` | `/auth/register` | Patient registration | `@Public()` | 201 Created |
-| `POST` | `/auth/login` | Returns Access & Refresh Tokens + User | `@Public()` | 200 OK |
-| `POST` | `/auth/refresh` | Generate new Access Token | `@Public()` | 200 OK |
-| `POST` | `/auth/logout` | Invalidate DB Refresh Token session | Protected | 200 OK |
-| `GET` | `/auth/profile` | Returns current logged-in user | Protected | 200 OK |
+### 1. Doctor Endpoints (`/doctors`)
+
+#### `GET /doctors`
+
+List doctor profiles with optional filters.
+
+- **Query Parameters**:
+  - `specialization` (string, optional)
+  - `isActive` (boolean, optional)
+  - `search` (string, optional)
+- **Response**: `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "d1111111-1111-1111-1111-111111111111",
+      "userId": "u1111111-1111-1111-1111-111111111111",
+      "firstName": "Rajesh",
+      "lastName": "Sharma",
+      "specialization": "Cardiology",
+      "qualification": "MD, FACC (Cardiology)",
+      "experienceYears": 14,
+      "consultationFee": 750,
+      "biography": "Senior Interventional Cardiologist...",
+      "profileImage": "https://...",
+      "isActive": true
+    }
+  ]
+}
+```
+
+#### `GET /doctors/:id`
+
+Get detailed doctor profile by UUID.
+
+- **Response**: `200 OK`
+- **Error**: `404 Not Found`
+
+#### `POST /doctors`
+
+Create a new doctor profile.
+
+#### `PATCH /doctors/:id`
+
+Update doctor profile details.
+
+#### `DELETE /doctors/:id`
+
+Soft-delete doctor profile.
 
 ---
 
-## 1. Doctor Endpoints (`/doctors`)
+### 2. Slot Endpoints (`/slots`)
 
-| Method | Path | Summary | Guard / Role | Success Status |
-|---|---|---|---|---|
-| `GET` | `/doctors` | Get all active doctor profiles | Protected | 200 OK |
-| `GET` | `/doctors/:id` | Get doctor profile by UUID | Protected | 200 OK |
-| `GET` | `/doctors/:id/slots` | Get AVAILABLE future slots for doctor (sorted ASC) | Protected | 200 OK |
-| `POST` | `/doctors` | Create doctor profile | Admin | 201 Created |
-| `PATCH` | `/doctors/:id` | Update doctor profile fields | Admin / Doctor | 200 OK |
-| `DELETE` | `/doctors/:id` | Soft delete doctor profile | Admin | 204 No Content |
+#### `GET /slots`
 
----
+List consultation slots.
 
-## 2. Slot Endpoints (`/slots`)
+- **Query Parameters**:
+  - `doctorId` (UUID, optional)
+  - `status` (`AVAILABLE` | `BOOKED` | `BLOCKED`, optional)
+  - `startDate` (ISO Date, optional)
+  - `endDate` (ISO Date, optional)
 
-| Method | Path | Summary | Guard / Role | Success Status |
-|---|---|---|---|---|
-| `GET` | `/slots` | Get all doctor slots | Protected | 200 OK |
-| `GET` | `/slots/:id` | Get slot by UUID | Protected | 200 OK |
-| `GET` | `/slots/doctor/:doctorId` | Get all slots for doctor UUID | Protected | 200 OK |
-| `GET` | `/slots/doctor/:doctorId/available` | Get available future slots for doctor | Protected | 200 OK |
-| `POST` | `/slots` | Create 30-min slot (Validates future & no overlap) | Doctor / Admin | 201 Created |
-| `PATCH` | `/slots/:id/status` | Block / Unblock slot (`BLOCKED` / `AVAILABLE`) | Doctor / Admin | 200 OK |
-| `PATCH` | `/slots/:id` | Update slot details/timing | Doctor / Admin | 200 OK |
-| `DELETE` | `/slots/:id` | Delete unused slot (Cannot delete BOOKED) | Doctor / Admin | 204 No Content |
+#### `GET /slots/:id`
 
----
+Get slot details by UUID.
 
-## 3. Appointment Endpoints (`/appointments`)
+#### `POST /slots`
 
-| Method | Path | Summary | Guard / Role | Success Status |
-|---|---|---|---|---|
-| `POST` | `/appointments` | **Transactional Booking** (`slotId`, `reason`). PatientId extracted strictly from JWT | Patient | 201 Created |
-| `GET` | `/appointments` | Paginated appointments list (`status`, `dateFrom`, `dateTo`, `doctorId`, `page`, `limit`) | Protected | 200 OK |
-| `GET` | `/appointments/:id` | Get appointment details by UUID (Ownership enforced) | Protected | 200 OK |
-| `PATCH` | `/appointments/:id` | Update appointment status/reason | Protected | 200 OK |
-| `DELETE` | `/appointments/:id` | **Transactional Cancellation**. Updates status to `CANCELLED` & frees slot to `AVAILABLE` | Patient / Admin | 200 OK |
+Create a consultation slot.
+
+#### `PATCH /slots/:id`
+
+Update slot status.
+
+#### `DELETE /slots/:id`
+
+Delete a slot.
 
 ---
 
-## HTTP Status Codes & Error Responses
+### 3. Appointment Endpoints (`/appointments`)
 
-| Status Code | Description | Scenario |
-|---|---|---|
-| `400 Bad Request` | Validation failure or invalid input | Slot duration not 30 minutes, or slot in past |
-| `401 Unauthorized` | Missing or invalid JWT token | Unauthenticated request |
-| `403 Forbidden` | Ownership violation or inactive user | Patient attempting to cancel another patient's booking |
-| `404 Not Found` | Resource does not exist | Slot ID or Appointment ID not found |
-| `409 Conflict` | Double-booking or state conflict | Slot already booked by concurrent transaction |
-| `422 Unprocessable Entity` | Business rule violation | Attempting to cancel completed appointment or book blocked slot |
+#### `GET /appointments`
+
+List appointments with optional filters.
+
+- **Query Parameters**:
+  - `patientId` (UUID, optional)
+  - `doctorId` (UUID, optional)
+  - `status` (`SCHEDULED` | `CANCELLED` | `COMPLETED`, optional)
+
+#### `GET /appointments/:id`
+
+Get appointment by UUID (includes relation details).
+
+#### `POST /appointments`
+
+Book an appointment for a specific slot.
+
+- **Request Body**:
+
+```json
+{
+  "slotId": "s1111111-1111-1111-1111-111111111113",
+  "reason": "Routine cardiac checkup"
+}
+```
+
+#### `PATCH /appointments/:id`
+
+Update appointment status or visit reason.
+
+#### `DELETE /appointments/:id`
+
+Cancel and soft-delete an appointment.
+
+---
+
+### 4. Prescription Endpoints (`/prescriptions`)
+
+#### `GET /prescriptions`
+
+List all prescriptions or query by `appointmentId`.
+
+#### `GET /prescriptions/:id`
+
+Get prescription details by UUID.
+
+#### `POST /prescriptions`
+
+Create a new prescription.
+
+---
+
+### 5. Medical Note Endpoints (`/medical-notes`)
+
+#### `GET /medical-notes`
+
+List clinical medical notes by `appointmentId` or `doctorId`.
+
+#### `GET /medical-notes/:id`
+
+Get clinical medical note by UUID.
+
+#### `POST /medical-notes`
+
+Add a clinical medical note.

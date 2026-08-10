@@ -1,7 +1,31 @@
-/** Appointment status matching backend AppointmentStatus enum. */
+import type { DoctorProfile } from '../doctor/types';
+import type { Slot } from '../slot/types';
+
 export type AppointmentStatus = 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
 
-/** Appointment shape matching the backend Appointment entity. */
+export type PrescriptionItem = {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration?: string;
+};
+
+export type Prescription = {
+  id: string;
+  appointmentId: string;
+  medicines: PrescriptionItem[];
+  instructions: string | null;
+  createdAt: string;
+};
+
+export type MedicalNote = {
+  id: string;
+  appointmentId: string;
+  doctorId: string;
+  notes: string;
+  createdAt: string;
+};
+
 export type Appointment = {
   id: string;
   patientId: string;
@@ -11,14 +35,17 @@ export type Appointment = {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  slot?: Slot & { doctor?: DoctorProfile };
+  prescription?: Prescription;
+  medicalNotes?: MedicalNote[];
 };
 
-/** Filters for the appointment list. */
 export type AppointmentFilters = {
   status?: AppointmentStatus;
   dateFrom?: string;
   dateTo?: string;
   doctorId?: string;
+  patientId?: string;
   page?: number;
   limit?: number;
 };
