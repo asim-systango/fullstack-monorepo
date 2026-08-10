@@ -12,6 +12,7 @@ import {
   type HTMLAttributes,
   type ReactNode,
 } from 'react';
+import { X } from 'lucide-react';
 import { cn } from '../cn';
 import { Button } from './button';
 
@@ -43,8 +44,7 @@ export type DialogProps = Readonly<
 /**
  * Modal dialog via native `<dialog>` + `showModal()`.
  * Escape and focus trap come from the browser.
- * Compose with `DialogHeader` / `DialogTitle` / `DialogBody` / `DialogFooter`.
- * `Modal` is an alias of this component.
+ * Enhanced with backdrop blur and smooth entrance animations.
  */
 export function Dialog({
   open,
@@ -86,7 +86,11 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={cn('ui-dialog', className)}
+      className={cn(
+        'm-0 max-h-none max-w-none border-0 bg-transparent p-4 text-foreground inset-0 w-full h-full grid place-items-center backdrop:bg-black/60 backdrop:backdrop-blur-md',
+        !open && 'hidden',
+        className,
+      )}
       aria-labelledby={titleId}
       aria-describedby={hasDescription ? descriptionId : undefined}
       onCancel={(e) => {
@@ -103,23 +107,23 @@ export function Dialog({
       {closeOnBackdrop ? (
         <button
           type="button"
-          className="ui-dialog-backdrop"
+          className="col-start-1 row-start-1 h-full w-full cursor-default border-0 bg-transparent p-0"
           aria-label="Dismiss dialog"
           tabIndex={-1}
           onClick={() => onOpenChange?.(false)}
         />
       ) : null}
-      <div className="ui-dialog-panel">
+      <div className="col-start-1 row-start-1 relative z-10 w-full max-w-lg rounded-xl border border-border bg-card p-6 text-card-foreground shadow-2xl transition-all animate-in fade-in-0 zoom-in-95">
         {showClose ? (
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            className="ui-dialog-close"
+            size="icon"
+            className="absolute top-4 right-4 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
             aria-label="Close"
             onClick={() => onOpenChange?.(false)}
           >
-            <span aria-hidden="true">×</span>
+            <X className="size-4" />
           </Button>
         ) : null}
         <DialogIdsContext.Provider value={ids}>{children}</DialogIdsContext.Provider>
@@ -128,14 +132,14 @@ export function Dialog({
   );
 }
 
-/** Alias — same as `Dialog` (blocking modal via `showModal`). */
+/** Alias — same as `Dialog` */
 export const Modal = Dialog;
 
 type BoxProps = Readonly<HTMLAttributes<HTMLDivElement> & { children?: ReactNode }>;
 
 export function DialogHeader({ children, className, ...rest }: BoxProps) {
   return (
-    <div className={cn('ui-dialog-header', className)} {...rest}>
+    <div className={cn('mb-4 pr-8 space-y-1.5', className)} {...rest}>
       {children}
     </div>
   );
@@ -148,7 +152,14 @@ export type DialogTitleProps = Readonly<
 export function DialogTitle({ children, className, ...rest }: DialogTitleProps) {
   const ids = useDialogIds();
   return (
-    <h2 id={ids?.titleId} className={cn('ui-dialog-title', className)} {...rest}>
+    <h2
+      id={ids?.titleId}
+      className={cn(
+        'text-lg font-semibold tracking-tight text-card-foreground',
+        className,
+      )}
+      {...rest}
+    >
       {children}
     </h2>
   );
@@ -173,7 +184,7 @@ export function DialogDescription({
   return (
     <p
       id={ids?.descriptionId}
-      className={cn('ui-dialog-description', className)}
+      className={cn('text-sm text-muted-foreground', className)}
       {...rest}
     >
       {children}
@@ -183,7 +194,10 @@ export function DialogDescription({
 
 export function DialogBody({ children, className, ...rest }: BoxProps) {
   return (
-    <div className={cn('ui-dialog-body', className)} {...rest}>
+    <div
+      className={cn('py-2 text-sm text-card-foreground space-y-4', className)}
+      {...rest}
+    >
       {children}
     </div>
   );
@@ -191,7 +205,13 @@ export function DialogBody({ children, className, ...rest }: BoxProps) {
 
 export function DialogFooter({ children, className, ...rest }: BoxProps) {
   return (
-    <div className={cn('ui-dialog-footer', className)} {...rest}>
+    <div
+      className={cn(
+        'mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4',
+        className,
+      )}
+      {...rest}
+    >
       {children}
     </div>
   );

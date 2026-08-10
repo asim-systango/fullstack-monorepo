@@ -13,6 +13,7 @@ export { TextInput, type TextInputProps } from './text-input';
 export { TextArea, type TextAreaProps } from './text-area';
 export { Select, type SelectProps } from './select';
 export { Checkbox, type CheckboxProps } from './checkbox';
+export { Switch, type SwitchProps } from './switch';
 export { StatusMessage, type StatusMessageProps } from './status-message';
 export { Badge, type BadgeTone, type BadgeProps } from './badge';
 export { Alert, type AlertTone, type AlertProps } from './alert';
@@ -53,3 +54,13 @@ export {
   type TableHeaderCellProps,
   type TableCellProps,
 } from './table';
+export { Tooltip, TooltipTrigger, TooltipContent } from './tooltip';
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from './dropdown-menu';
+export { ThemeToggle, type ThemeToggleProps } from './theme-toggle';

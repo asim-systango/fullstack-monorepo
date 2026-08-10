@@ -1,14 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import { Activity, LogIn, UserPlus } from 'lucide-react';
 import { useAuth } from './auth-provider';
-import { Badge, Button } from '@shared/ui/components';
+import {
+  Badge,
+  Button,
+  ThemeToggle,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@shared/ui/components';
 
 function AuthNav() {
   const { user, loading, logout } = useAuth();
 
   if (loading) {
-    return <span className="text-sm text-muted-foreground">Loading…</span>;
+    return <span className="text-xs text-muted-foreground animate-pulse">Loading…</span>;
   }
 
   if (user) {
@@ -29,17 +37,17 @@ function AuthNav() {
 
   return (
     <div className="flex items-center gap-3">
-      <Link
-        href="/login"
-        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-      >
-        Sign In
+      <Link href="/login">
+        <Button variant="ghost" size="sm" className="gap-1.5">
+          <LogIn className="size-3.5" />
+          Sign In
+        </Button>
       </Link>
-      <Link
-        href="/register"
-        className="rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90"
-      >
-        Get Started
+      <Link href="/register">
+        <Button variant="primary" size="sm" className="gap-1.5">
+          <UserPlus className="size-3.5" />
+          Get Started
+        </Button>
       </Link>
     </div>
   );
@@ -50,17 +58,17 @@ export function ShellHeader({
   subtitle,
 }: Readonly<{ title?: string; subtitle?: string }>) {
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-border/80 bg-card/80 backdrop-blur-md shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg transition-transform group-hover:scale-105">
-            ✚
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg transition-transform group-hover:scale-105 shadow-xs">
+            <Activity className="size-5" />
           </div>
           <div>
             <span className="text-lg font-bold tracking-tight text-foreground">
               PulseCare
             </span>
-            <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground font-mono">
               HOSPITAL
             </span>
           </div>
@@ -75,25 +83,33 @@ export function ShellHeader({
           </div>
         ) : null}
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4">
           <Link
             href="/"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hidden sm:inline"
           >
             Home
           </Link>
           <Link
             href="/doctors"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hidden sm:inline"
           >
             Doctors
           </Link>
           <Link
             href="/appointments"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hidden sm:inline"
           >
             Appointments
           </Link>
+
+          <Tooltip>
+            <TooltipTrigger>
+              <ThemeToggle variant="ghost" size="sm" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Toggle Theme</TooltipContent>
+          </Tooltip>
+
           <AuthNav />
         </nav>
       </div>

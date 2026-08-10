@@ -2,20 +2,41 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type SyntheticEvent } from 'react';
-import { Button, Field, Form, TextInput, StatusMessage } from '@shared/ui/components';
+import { useState, useEffect, type SyntheticEvent } from 'react';
+import {
+  Button,
+  Field,
+  Form,
+  TextInput,
+  StatusMessage,
+  LoadingState,
+} from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  if (user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingState label="Redirecting to dashboard…" />
+      </div>
+    );
+  }
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -5,12 +5,31 @@ import { ShellHeader } from '@/components/auth';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { useAuth } from '@/components/auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  User as UserIcon,
+  Stethoscope,
+  Settings,
+  Lock,
+  FileText,
+  ClipboardList,
+  Shield,
+  Zap,
+  ArrowRight,
+  Sparkles,
+} from 'lucide-react';
+import { Button, Card, LoadingState } from '@shared/ui/components';
 
 export default function HomePage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
 
   const handleQuickLogin = async (email: string, role: string) => {
     setLoadingRole(role);
@@ -25,50 +44,56 @@ export default function HomePage() {
     }
   };
 
+  if (user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingState label="Redirecting to dashboard…" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <ShellHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-border py-24 px-6 md:py-32">
+      <section className="relative overflow-hidden border-b border-border/80 py-20 px-6 md:py-28 bg-gradient-to-b from-background via-muted/30 to-background">
         <div className="mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-xs font-medium text-foreground mb-8">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-1.5 text-xs font-medium text-foreground mb-8 shadow-xs backdrop-blur-xs">
+            <Sparkles className="size-3.5 text-amber-500 animate-pulse" />
             Next-Generation Hospital & Appointment Platform
           </div>
 
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-tight">
             Precision Healthcare. <br />
-            <span className="bg-gradient-to-r from-foreground via-muted-foreground to-foreground bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent">
               Effortless Booking.
             </span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
             PulseCare connects patients with world-class medical specialists through
             real-time, transactionally secured slot scheduling and integrated health
             records.
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/doctors"
-              className="rounded-lg bg-foreground px-6 py-3.5 text-sm font-semibold text-background shadow-lg transition-all hover:opacity-90 hover:scale-[1.02]"
-            >
-              Book an Appointment
+            <Link href="/doctors">
+              <Button size="lg" variant="primary" className="gap-2">
+                Book an Appointment <ArrowRight className="size-4" />
+              </Button>
             </Link>
-            <Link
-              href="/login"
-              className="rounded-lg border border-border bg-card px-6 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-muted"
-            >
-              Sign In to Portal
+            <Link href="/login">
+              <Button size="lg" variant="outline">
+                Sign In to Portal
+              </Button>
             </Link>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="border-b border-border bg-muted/20 py-12 px-6">
+      <section className="border-b border-border bg-card/50 py-12 px-6">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 md:grid-cols-4">
           <div className="text-center">
             <p className="text-3xl font-bold text-foreground sm:text-4xl">150+</p>
@@ -98,7 +123,7 @@ export default function HomePage() {
       </section>
 
       {/* Quick Demo Access Section */}
-      <section className="border-b border-border py-20 px-6 bg-background">
+      <section className="border-b border-border py-16 px-6 bg-background">
         <div className="mx-auto max-w-5xl">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
@@ -111,81 +136,102 @@ export default function HomePage() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {/* Patient Preset */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:border-foreground/40">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">👤</span>
-                <div>
-                  <h3 className="font-semibold text-foreground">Patient Portal</h3>
-                  <p className="text-xs text-muted-foreground">user@demo.local</p>
+            <Card className="flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
+                    <UserIcon className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Patient Portal</h3>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      user@demo.local
+                    </p>
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Browse specialist directory, view open consultation slots, and manage
+                  personal bookings.
+                </p>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Browse specialist directory, view open consultation slots, and manage
-                personal bookings.
-              </p>
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                className="mt-6 w-full gap-2"
                 onClick={() => void handleQuickLogin('user@demo.local', 'Patient')}
-                disabled={loadingRole !== null}
-                className="mt-6 w-full rounded-md border border-border bg-background py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                loading={loadingRole === 'Patient'}
+                loadingText="Authenticating…"
               >
-                {loadingRole === 'Patient' ? 'Authenticating…' : 'Enter as Patient →'}
-              </button>
-            </div>
+                Enter as Patient <ArrowRight className="size-4" />
+              </Button>
+            </Card>
 
             {/* Doctor Preset */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:border-foreground/40">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🩺</span>
-                <div>
-                  <h3 className="font-semibold text-foreground">Doctor Portal</h3>
-                  <p className="text-xs text-muted-foreground">staff@demo.local</p>
+            <Card className="flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
+                    <Stethoscope className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Doctor Portal</h3>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      staff@demo.local
+                    </p>
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Manage consultation schedules, issue prescriptions, and record clinical
+                  medical notes.
+                </p>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Manage consultation schedules, issue prescriptions, and record clinical
-                medical notes.
-              </p>
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                className="mt-6 w-full gap-2"
                 onClick={() => void handleQuickLogin('staff@demo.local', 'Doctor')}
-                disabled={loadingRole !== null}
-                className="mt-6 w-full rounded-md border border-border bg-background py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                loading={loadingRole === 'Doctor'}
+                loadingText="Authenticating…"
               >
-                {loadingRole === 'Doctor' ? 'Authenticating…' : 'Enter as Doctor →'}
-              </button>
-            </div>
+                Enter as Doctor <ArrowRight className="size-4" />
+              </Button>
+            </Card>
 
             {/* Admin Preset */}
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:border-foreground/40">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">⚙️</span>
-                <div>
-                  <h3 className="font-semibold text-foreground">Hospital Admin</h3>
-                  <p className="text-xs text-muted-foreground">admin@demo.local</p>
+            <Card className="flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
+                    <Settings className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Hospital Admin</h3>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      admin@demo.local
+                    </p>
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Oversee hospital operations, manage practitioner profiles, and monitor
+                  system analytics.
+                </p>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Oversee hospital operations, manage practitioner profiles, and monitor
-                system analytics.
-              </p>
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                className="mt-6 w-full gap-2"
                 onClick={() => void handleQuickLogin('admin@demo.local', 'Admin')}
-                disabled={loadingRole !== null}
-                className="mt-6 w-full rounded-md border border-border bg-background py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                loading={loadingRole === 'Admin'}
+                loadingText="Authenticating…"
               >
-                {loadingRole === 'Admin' ? 'Authenticating…' : 'Enter as Admin →'}
-              </button>
-            </div>
+                Enter as Admin <ArrowRight className="size-4" />
+              </Button>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Feature Highlights Grid */}
-      <section className="py-20 px-6 border-b border-border bg-muted/10">
+      <section className="py-16 px-6 border-b border-border bg-muted/10">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">
               Engineered for Healthcare Excellence
             </h2>
@@ -194,10 +240,10 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg mb-4">
-                🩺
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-4 shadow-xs">
+                <Stethoscope className="size-5" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
                 Specialist Management
@@ -206,11 +252,11 @@ export default function HomePage() {
                 Filter medical practitioners by specialization, qualification, experience,
                 and consultation fees.
               </p>
-            </div>
+            </Card>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg mb-4">
-                🔒
+            <Card>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-4 shadow-xs">
+                <Lock className="size-5" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
                 Concurrency Slot Locking
@@ -219,11 +265,11 @@ export default function HomePage() {
                 Pessimistic database locking prevents double bookings during high-demand
                 appointment windows.
               </p>
-            </div>
+            </Card>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg mb-4">
-                📄
+            <Card>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-4 shadow-xs">
+                <FileText className="size-5" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
                 Digital Prescriptions
@@ -232,11 +278,11 @@ export default function HomePage() {
                 Structured JSONB medicine records with dosage, frequency, and instructions
                 attached to appointments.
               </p>
-            </div>
+            </Card>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg mb-4">
-                📝
+            <Card>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-4 shadow-xs">
+                <ClipboardList className="size-5" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
                 Clinical Medical Notes
@@ -245,11 +291,11 @@ export default function HomePage() {
                 Private consultation records authored by attending physicians with full
                 audit history.
               </p>
-            </div>
+            </Card>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg mb-4">
-                🛡️
+            <Card>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-4 shadow-xs">
+                <Shield className="size-5" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
                 Enterprise Security
@@ -258,11 +304,11 @@ export default function HomePage() {
                 HttpOnly JWT cookie authorization at the gateway tier and strict RBAC
                 authorization across services.
               </p>
-            </div>
+            </Card>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-lg mb-4">
-                ⚡
+            <Card>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-4 shadow-xs">
+                <Zap className="size-5" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
                 High-Performance Stack
@@ -271,7 +317,7 @@ export default function HomePage() {
                 Powered by Next.js App Router, NestJS microservices, TypeORM PostgreSQL,
                 and Redis caching.
               </p>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -286,7 +332,7 @@ export default function HomePage() {
 
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               API Gateway Operational
             </span>
             <Link href="/doctors" className="hover:text-foreground">
