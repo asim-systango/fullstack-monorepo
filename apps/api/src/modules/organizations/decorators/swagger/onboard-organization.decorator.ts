@@ -1,5 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { OnboardOrganizationDto } from '../../dto/onboard-organization.dto';
 import { ORGANIZATION_ERRORS } from '../../constants/organization.constants';
 
@@ -10,6 +10,7 @@ export function OnboardOrganizationSwagger() {
       description:
         'Creates a new Organization record, provisions the primary Organization Administrator user account with a temporary password, and dispatches an onboarding invitation email.',
     }),
+    ApiBearerAuth(),
     ApiBody({ type: OnboardOrganizationDto }),
     ApiResponse({
       status: 201,

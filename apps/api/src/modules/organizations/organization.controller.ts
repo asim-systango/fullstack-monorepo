@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Body,
+  UseGuards,
   HttpCode,
   HttpStatus,
   BadRequestException,
@@ -14,6 +15,8 @@ import { OrganizationService } from './organization.service';
 import { OnboardOrganizationDto } from './dto/onboard-organization.dto';
 import { OnboardOrganizationSwagger } from './decorators/swagger/onboard-organization.decorator';
 import { ORGANIZATION_ERRORS } from './constants/organization.constants';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoutePermissionGuard } from '../../common/guards/route-permission.guard';
 
 @ApiTags('Organizations')
 @Controller('api/v1/organizations')
@@ -21,6 +24,7 @@ export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
   @Post('onboard')
+  @UseGuards(JwtAuthGuard, RoutePermissionGuard)
   @HttpCode(HttpStatus.CREATED)
   @OnboardOrganizationSwagger()
   async onboardOrganization(@Body() dto: OnboardOrganizationDto) {
