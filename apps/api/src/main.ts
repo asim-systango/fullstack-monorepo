@@ -9,6 +9,7 @@ import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/fi
 import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
 import { securityHeadersMiddleware } from '@shared/http/middleware';
 import { setupSwagger } from '@shared/http/swagger';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const appSettings = appConfig();
@@ -17,6 +18,7 @@ async function bootstrap() {
 
   app.use(compression());
   app.use(securityHeadersMiddleware());
+  app.use(cookieParser());
 
   // Internal service — browser CORS/cookies live on api-gateway only.
 

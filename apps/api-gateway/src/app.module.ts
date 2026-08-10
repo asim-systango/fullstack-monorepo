@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { databaseConfig } from './config';
+import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
 
 const db = databaseConfig();
@@ -24,6 +25,7 @@ const db = databaseConfig();
       ...db,
     }),
     HealthModule,
+    AuthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
