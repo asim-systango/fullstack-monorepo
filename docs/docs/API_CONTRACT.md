@@ -132,24 +132,25 @@ List doctor profiles with optional filters.
 }
 ```
 
-#### `GET /doctors/:id`
+#### `GET /doctors/:id/slots`
 
-Get detailed doctor profile by UUID.
+Get available, future consultation slots for a doctor.
 
 - **Response**: `200 OK`
-- **Error**: `404 Not Found`
 
-#### `POST /doctors`
-
-Create a new doctor profile.
-
-#### `PATCH /doctors/:id`
-
-Update doctor profile details.
-
-#### `DELETE /doctors/:id`
-
-Soft-delete doctor profile.
+```json
+{
+  "data": [
+    {
+      "id": "s1111111-1111-1111-1111-111111111113",
+      "doctorId": "d1111111-1111-1111-1111-111111111111",
+      "startsAt": "2026-08-11T09:00:00.000Z",
+      "endsAt": "2026-08-11T09:30:00.000Z",
+      "status": "AVAILABLE"
+    }
+  ]
+}
+```
 
 ---
 
@@ -171,15 +172,28 @@ Get slot details by UUID.
 
 #### `POST /slots`
 
-Create a consultation slot.
+Create a consultation slot (Doctor / Admin only).
+
+- **Validation Rules**: Must be exactly 30 minutes in duration, future date, no overlapping slots for the same doctor.
+- **Request Body**:
+
+```json
+{
+  "doctorId": "d1111111-1111-1111-1111-111111111111",
+  "startsAt": "2026-08-12T10:00:00Z",
+  "endsAt": "2026-08-12T10:30:00Z"
+}
+```
 
 #### `PATCH /slots/:id`
 
-Update slot status.
+Update slot status (e.g. block or unblock slot).
+
+- **Request Body**: `{"status": "BLOCKED"}`
 
 #### `DELETE /slots/:id`
 
-Delete a slot.
+Delete an unbooked slot. Returns `400 Bad Request` if slot is currently `BOOKED`.
 
 ---
 
@@ -187,12 +201,17 @@ Delete a slot.
 
 #### `GET /appointments`
 
-List appointments with optional filters.
+List appointments with optional filters and pagination.
 
 - **Query Parameters**:
   - `patientId` (UUID, optional)
   - `doctorId` (UUID, optional)
   - `status` (`SCHEDULED` | `CANCELLED` | `COMPLETED`, optional)
+  - `dateFrom` (ISO Date string, optional)
+  - `dateTo` (ISO Date string, optional)
+  - `page` (number, default: 1)
+  - `limit` (number, default: 50)
+  - `sort` (`createdAt` | `startsAt`, default: `startsAt`)
 
 #### `GET /appointments/:id`
 
@@ -200,8 +219,9 @@ Get appointment by UUID (includes relation details).
 
 #### `POST /appointments`
 
-Book an appointment for a specific slot.
+Book an appointment for a specific slot (Transactional & Pessimistic Lock Protected).
 
+- **Authentication**: Required (Patient Bearer Token). `patientId` is resolved automatically from JWT payload.
 - **Request Body**:
 
 ```json
@@ -211,6 +231,12 @@ Book an appointment for a specific slot.
 }
 ```
 
+- **Response**: `201 Created`
+- **Error Responses**:
+  - `400 Bad Request`: Slot in past or invalid payload.
+  - `401 Unauthorized`: Missing or invalid JWT token.
+  - `409 Conflict`: Slot already booked or locked by concurrent request (`SELECT FOR UPDATE`).
+
 #### `PATCH /appointments/:id`
 
 Update appointment status or visit reason.
@@ -218,6 +244,12 @@ Update appointment status or visit reason.
 #### `DELETE /appointments/:id`
 
 Cancel and soft-delete an appointment.
+
+- **Authentication**: Required. Patient can only cancel their own appointment unless role is `ADMIN`.
+- **Response**: `200 OK`
+- **Error Responses**:
+  - `403 Forbidden`: Attempting to cancel another patient's appointment.
+  - `400 Bad Request`: Attempting to cancel an already cancelled or completed appointment.
 
 ---
 

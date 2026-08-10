@@ -32,7 +32,7 @@ async function seed() {
   const d1 = await doctorRepo.save(
     doctorRepo.create({
       id: 'd1111111-1111-1111-1111-111111111111',
-      userId: 'u1111111-1111-1111-1111-111111111111',
+      userId: '11111111-1111-1111-1111-111111111111',
       firstName: 'Rajesh',
       lastName: 'Sharma',
       specialization: 'Cardiology',
@@ -50,7 +50,7 @@ async function seed() {
   const d2 = await doctorRepo.save(
     doctorRepo.create({
       id: 'd2222222-2222-2222-2222-222222222222',
-      userId: 'u2222222-2222-2222-2222-222222222222',
+      userId: '22222222-2222-2222-2222-222222222222',
       firstName: 'Priya',
       lastName: 'Deshmukh',
       specialization: 'Dermatology',
@@ -68,7 +68,7 @@ async function seed() {
   const d3 = await doctorRepo.save(
     doctorRepo.create({
       id: 'd3333333-3333-3333-3333-333333333333',
-      userId: 'u3333333-3333-3333-3333-333333333333',
+      userId: '33333333-3333-3333-3333-333333333333',
       firstName: 'Arjun',
       lastName: 'Mehta',
       specialization: 'Orthopedics',
@@ -93,82 +93,130 @@ async function seed() {
     0,
   );
 
-  // 2. Seed 12 Slots (mixed status)
-  console.log('⏰ Seeding 12 Consultation Slots...');
+  // 2. Seed 20 Slots (mixed status)
+  console.log('⏰ Seeding 20 Consultation Slots...');
   const slotData = [
-    // Doctor 1 Slots
+    // Doctor 1 Slots (6 slots)
     {
-      id: 's1111111-1111-1111-1111-111111111111',
+      id: '10000000-0000-0000-0000-000000000001',
       doctorId: d1.id,
       offsetHours: 0,
       status: SlotStatus.BOOKED,
     },
     {
-      id: 's1111111-1111-1111-1111-111111111112',
+      id: '10000000-0000-0000-0000-000000000002',
       doctorId: d1.id,
       offsetHours: 1,
       status: SlotStatus.BOOKED,
     },
     {
-      id: 's1111111-1111-1111-1111-111111111113',
+      id: '10000000-0000-0000-0000-000000000003',
       doctorId: d1.id,
       offsetHours: 2,
       status: SlotStatus.AVAILABLE,
     },
     {
-      id: 's1111111-1111-1111-1111-111111111114',
+      id: '10000000-0000-0000-0000-000000000004',
       doctorId: d1.id,
       offsetHours: 3,
       status: SlotStatus.BLOCKED,
     },
-    // Doctor 2 Slots
     {
-      id: 's2222222-2222-2222-2222-222222222221',
+      id: '10000000-0000-0000-0000-000000000005',
+      doctorId: d1.id,
+      offsetHours: 4,
+      status: SlotStatus.AVAILABLE,
+    },
+    {
+      id: '10000000-0000-0000-0000-000000000006',
+      doctorId: d1.id,
+      offsetHours: 5,
+      status: SlotStatus.AVAILABLE,
+    },
+    // Doctor 2 Slots (7 slots)
+    {
+      id: '20000000-0000-0000-0000-000000000001',
       doctorId: d2.id,
       offsetHours: 0,
       status: SlotStatus.BOOKED,
     },
     {
-      id: 's2222222-2222-2222-2222-222222222222',
+      id: '20000000-0000-0000-0000-000000000002',
       doctorId: d2.id,
       offsetHours: 1,
-      status: SlotStatus.AVAILABLE,
+      status: SlotStatus.BOOKED,
     },
     {
-      id: 's2222222-2222-2222-2222-222222222223',
+      id: '20000000-0000-0000-0000-000000000003',
       doctorId: d2.id,
       offsetHours: 2,
       status: SlotStatus.AVAILABLE,
     },
     {
-      id: 's2222222-2222-2222-2222-222222222224',
+      id: '20000000-0000-0000-0000-000000000004',
       doctorId: d2.id,
       offsetHours: 3,
       status: SlotStatus.BLOCKED,
     },
-    // Doctor 3 Slots
     {
-      id: 's3333333-3333-3333-3333-333333333331',
+      id: '20000000-0000-0000-0000-000000000005',
+      doctorId: d2.id,
+      offsetHours: 4,
+      status: SlotStatus.AVAILABLE,
+    },
+    {
+      id: '20000000-0000-0000-0000-000000000006',
+      doctorId: d2.id,
+      offsetHours: 5,
+      status: SlotStatus.AVAILABLE,
+    },
+    {
+      id: '20000000-0000-0000-0000-000000000007',
+      doctorId: d2.id,
+      offsetHours: 6,
+      status: SlotStatus.AVAILABLE,
+    },
+    // Doctor 3 Slots (7 slots)
+    {
+      id: '30000000-0000-0000-0000-000000000001',
       doctorId: d3.id,
       offsetHours: 0,
       status: SlotStatus.BOOKED,
     },
     {
-      id: 's3333333-3333-3333-3333-333333333332',
+      id: '30000000-0000-0000-0000-000000000002',
       doctorId: d3.id,
       offsetHours: 1,
-      status: SlotStatus.AVAILABLE,
+      status: SlotStatus.BOOKED,
     },
     {
-      id: 's3333333-3333-3333-3333-333333333333',
+      id: '30000000-0000-0000-0000-000000000003',
       doctorId: d3.id,
       offsetHours: 2,
       status: SlotStatus.AVAILABLE,
     },
     {
-      id: 's3333333-3333-3333-3333-333333333334',
+      id: '30000000-0000-0000-0000-000000000004',
       doctorId: d3.id,
       offsetHours: 3,
+      status: SlotStatus.AVAILABLE,
+    },
+    {
+      id: '30000000-0000-0000-0000-000000000005',
+      doctorId: d3.id,
+      offsetHours: 4,
+      status: SlotStatus.BLOCKED,
+    },
+    {
+      id: '30000000-0000-0000-0000-000000000006',
+      doctorId: d3.id,
+      offsetHours: 5,
+      status: SlotStatus.AVAILABLE,
+    },
+    {
+      id: '30000000-0000-0000-0000-000000000007',
+      doctorId: d3.id,
+      offsetHours: 6,
       status: SlotStatus.AVAILABLE,
     },
   ];
@@ -189,10 +237,10 @@ async function seed() {
     slots.push(createdSlot);
   }
 
-  // 3. Seed 4 Appointments
-  console.log('📅 Seeding 4 Appointments...');
-  const patient1 = 'p1111111-1111-1111-1111-111111111111';
-  const patient2 = 'p2222222-2222-2222-2222-222222222222';
+  // 3. Seed 6 Appointments
+  console.log('📅 Seeding 6 Appointments...');
+  const patient1 = '44444444-4444-4444-4444-444444444444';
+  const patient2 = '55555555-5555-5555-5555-555555555555';
 
   const a1 = await appointmentRepo.save(
     appointmentRepo.create({
@@ -218,7 +266,7 @@ async function seed() {
     appointmentRepo.create({
       id: 'a3333333-3333-3333-3333-333333333333',
       patientId: patient1,
-      slotId: slots[4]!.id,
+      slotId: slots[6]!.id,
       status: AppointmentStatus.COMPLETED,
       reason: 'Skin flare-up consultation and allergy check',
     }),
@@ -228,9 +276,29 @@ async function seed() {
     appointmentRepo.create({
       id: 'a4444444-4444-4444-4444-444444444444',
       patientId: patient2,
-      slotId: slots[8]!.id,
+      slotId: slots[7]!.id,
+      status: AppointmentStatus.SCHEDULED,
+      reason: 'Eczema management consultation',
+    }),
+  );
+
+  await appointmentRepo.save(
+    appointmentRepo.create({
+      id: 'a5555555-5555-5555-5555-555555555555',
+      patientId: patient1,
+      slotId: slots[13]!.id,
+      status: AppointmentStatus.SCHEDULED,
+      reason: 'Knee joint pain & mobility check',
+    }),
+  );
+
+  await appointmentRepo.save(
+    appointmentRepo.create({
+      id: 'a6666666-6666-6666-6666-666666666666',
+      patientId: patient2,
+      slotId: slots[14]!.id,
       status: AppointmentStatus.CANCELLED,
-      reason: 'Knee joint pain consultation (cancelled by patient)',
+      reason: 'Orthopedic consultation (cancelled by patient)',
     }),
   );
 
@@ -238,7 +306,7 @@ async function seed() {
   console.log('💊 Seeding 2 Prescriptions...');
   await prescriptionRepo.save(
     prescriptionRepo.create({
-      id: 'pr111111-1111-1111-1111-111111111111',
+      id: 'fa111111-1111-1111-1111-111111111111',
       appointmentId: a1.id,
       medicines: [
         {
@@ -261,7 +329,7 @@ async function seed() {
 
   await prescriptionRepo.save(
     prescriptionRepo.create({
-      id: 'pr222222-2222-2222-2222-222222222222',
+      id: 'fa222222-2222-2222-2222-222222222222',
       appointmentId: a3.id,
       medicines: [
         {

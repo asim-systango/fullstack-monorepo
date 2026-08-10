@@ -15,7 +15,12 @@ export class AppointmentRepository {
     patientId?: string;
     doctorId?: string;
     status?: AppointmentStatus;
-  }): Promise<Appointment[]> {
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+    sort?: 'createdAt' | 'startsAt';
+  }): Promise<{ items: Appointment[]; total: number; page: number; limit: number }> {
     const query = this.repo
       .createQueryBuilder('appointment')
       .leftJoinAndSelect('appointment.slot', 'slot')
@@ -37,8 +42,30 @@ export class AppointmentRepository {
       query.andWhere('appointment.status = :status', { status: options.status });
     }
 
-    query.orderBy('slot.startsAt', 'DESC');
-    return query.getMany();
+    if (options?.dateFrom) {
+      query.andWhere('slot.startsAt >= :dateFrom', {
+        dateFrom: new Date(options.dateFrom),
+      });
+    }
+
+    if (options?.dateTo) {
+      query.andWhere('slot.endsAt <= :dateTo', {
+        dateTo: new Date(options.dateTo),
+      });
+    }
+
+    if (options?.sort === 'createdAt') {
+      query.orderBy('appointment.createdAt', 'DESC');
+    } else {
+      query.orderBy('slot.startsAt', 'DESC');
+    }
+
+    const page = Math.max(1, options?.page ?? 1);
+    const limit = Math.min(100, Math.max(1, options?.limit ?? 50));
+    query.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await query.getManyAndCount();
+    return { items, total, page, limit };
   }
 
   async findById(id: string): Promise<Appointment | null> {

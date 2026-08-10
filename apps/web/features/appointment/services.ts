@@ -122,10 +122,16 @@ export const appointmentApi = {
   /** Fetch all appointments with optional filters. */
   async getAll(filters?: AppointmentFilters): Promise<Appointment[]> {
     try {
-      const { data } = await apiClient.get<{ data: Appointment[] }>(BASE, {
+      const response = await apiClient.get<
+        { items: Appointment[]; total: number } | { data: Appointment[] } | Appointment[]
+      >(BASE, {
         params: filters,
       });
-      return data.data ?? data;
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if ('items' in data && Array.isArray(data.items)) return data.items;
+      if ('data' in data && Array.isArray(data.data)) return data.data;
+      return [];
     } catch {
       let filtered = [...MOCK_APPOINTMENTS];
       if (filters?.status) {

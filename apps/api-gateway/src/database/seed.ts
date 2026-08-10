@@ -10,6 +10,7 @@ async function seed() {
 
   const seeds = [
     {
+      id: '00000000-0000-0000-0000-000000000000',
       email: 'admin@hospital.com',
       firstName: 'Admin',
       lastName: 'User',
@@ -19,6 +20,7 @@ async function seed() {
       phone: '+1000000001',
     },
     {
+      id: '11111111-1111-1111-1111-111111111111',
       email: 'doctor@hospital.com',
       firstName: 'Sarah',
       lastName: 'Jenkins',
@@ -28,6 +30,7 @@ async function seed() {
       phone: '+1000000002',
     },
     {
+      id: '22222222-2222-2222-2222-222222222222',
       email: 'doctor2@hospital.com',
       firstName: 'Michael',
       lastName: 'Chen',
@@ -37,6 +40,7 @@ async function seed() {
       phone: '+1000000003',
     },
     {
+      id: '44444444-4444-4444-4444-444444444444',
       email: 'patient@hospital.com',
       firstName: 'Jane',
       lastName: 'Doe',
@@ -53,6 +57,7 @@ async function seed() {
     if (!existing) {
       await users.save(
         users.create({
+          id: row.id,
           email: row.email,
           firstName: row.firstName,
           lastName: row.lastName,

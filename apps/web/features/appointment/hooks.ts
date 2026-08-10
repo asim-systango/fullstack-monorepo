@@ -24,6 +24,7 @@ export function useBookAppointment() {
       appointmentApi.book(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ['slots'] });
     },
   });
 }
@@ -36,6 +37,7 @@ export function useCancelAppointment() {
     mutationFn: (id: string) => appointmentApi.cancel(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ['slots'] });
     },
   });
 }

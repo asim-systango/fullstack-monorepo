@@ -5,8 +5,10 @@ import { DoctorRepository } from './repositories/doctor.repository';
 import { DoctorService } from './doctor.service';
 import { DoctorController } from './doctor.controller';
 
+import { SlotModule } from '../slot';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([DoctorProfile])],
+  imports: [TypeOrmModule.forFeature([DoctorProfile]), SlotModule],
   controllers: [DoctorController],
   providers: [DoctorRepository, DoctorService],
   exports: [DoctorRepository, DoctorService],

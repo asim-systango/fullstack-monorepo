@@ -15,10 +15,15 @@ import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { Public } from '../../common/auth';
 
+import { SlotService } from '../slot/slot.service';
+
 @ApiTags('Doctors')
 @Controller('doctors')
 export class DoctorController {
-  constructor(private readonly doctorService: DoctorService) {}
+  constructor(
+    private readonly doctorService: DoctorService,
+    private readonly slotService: SlotService,
+  ) {}
 
   @Public()
   @Get()
@@ -43,6 +48,16 @@ export class DoctorController {
   @ApiResponse({ status: 404, description: 'Doctor profile not found' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.doctorService.findOne(id);
+  }
+
+  @Public()
+  @Get(':id/slots')
+  @ApiOperation({ summary: 'Get available future consultation slots for doctor' })
+  @ApiResponse({ status: 200, description: 'List of available slots' })
+  @ApiResponse({ status: 404, description: 'Doctor profile not found' })
+  async findDoctorSlots(@Param('id', ParseUUIDPipe) id: string) {
+    await this.doctorService.findOne(id);
+    return this.slotService.findAvailableForDoctor(id);
   }
 
   @Post()

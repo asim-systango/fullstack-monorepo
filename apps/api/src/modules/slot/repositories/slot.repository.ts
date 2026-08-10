@@ -41,6 +41,33 @@ export class SlotRepository {
     return query.getMany();
   }
 
+  async findAvailableByDoctorId(doctorId: string): Promise<Slot[]> {
+    const now = new Date();
+    return this.repo
+      .createQueryBuilder('slot')
+      .leftJoinAndSelect('slot.doctor', 'doctor')
+      .where('slot.doctorId = :doctorId', { doctorId })
+      .andWhere('slot.status = :status', { status: SlotStatus.AVAILABLE })
+      .andWhere('slot.startsAt > :now', { now })
+      .orderBy('slot.startsAt', 'ASC')
+      .getMany();
+  }
+
+  async findOverlappingSlot(
+    doctorId: string,
+    startsAt: Date,
+    endsAt: Date,
+  ): Promise<Slot | null> {
+    return this.repo
+      .createQueryBuilder('slot')
+      .where('slot.doctorId = :doctorId', { doctorId })
+      .andWhere('slot.startsAt < :endsAt AND slot.endsAt > :startsAt', {
+        startsAt,
+        endsAt,
+      })
+      .getOne();
+  }
+
   async findById(id: string): Promise<Slot | null> {
     return this.repo.findOne({
       where: { id },

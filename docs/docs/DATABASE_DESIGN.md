@@ -112,12 +112,34 @@ Clinical progress notes attached to appointments.
 
 ---
 
-## Repository Layer Architecture
+## Concurrency & Transaction Safety (Day 4)
 
-All database queries are executed via dedicated repository wrapper classes inside `src/modules/*/repositories/`:
+### 1. Pessimistic Write Locking (`pessimistic_write`)
 
-1. **`DoctorRepository`**: Provides custom query builders for specialization filtering, full-text doctor searching, and soft deletes.
-2. **`SlotRepository`**: Encapsulates date-range queries, doctor availability lookups, and slot state updates.
-3. **`AppointmentRepository`**: Manages relational queries linking appointments to slot details, prescriptions, and clinical notes.
-4. **`PrescriptionRepository`**: Handles single-appointment lookup and structured medicine updates.
-5. **`MedicalNoteRepository`**: Provides query methods by appointment ID and doctor ID.
+To eliminate double-booking under concurrent HTTP requests, `AppointmentService.create` executes within a database transaction managed by TypeORM `QueryRunner`:
+
+```sql
+-- Executed inside QueryRunner transaction block:
+BEGIN;
+SELECT * FROM slots WHERE id = 'slot-uuid' FOR UPDATE;
+-- Verify status = 'AVAILABLE' and startsAt > NOW()
+UPDATE slots SET status = 'BOOKED' WHERE id = 'slot-uuid';
+INSERT INTO appointments (patient_id, slot_id, status, reason) VALUES (...);
+COMMIT;
+```
+
+If a second concurrent request attempts to book the same `slot-uuid`, PostgreSQL holds the second transaction at `SELECT ... FOR UPDATE` until the first transaction commits or rolls back. Once released, the second transaction sees `status = 'BOOKED'` and throws a `409 Conflict` exception.
+
+### 2. State Machine Transitions
+
+#### Slot Status Lifecycle:
+
+- `AVAILABLE` -> `BOOKED` (On successful appointment booking transaction)
+- `AVAILABLE` -> `BLOCKED` (On doctor schedule modification)
+- `BLOCKED` -> `AVAILABLE` (On doctor unblocking slot)
+- `BOOKED` -> `AVAILABLE` (On appointment cancellation transaction)
+
+#### Appointment Status Lifecycle:
+
+- `SCHEDULED` -> `COMPLETED` (On consultation completion)
+- `SCHEDULED` -> `CANCELLED` (On patient or admin cancellation, triggers soft-delete `deletedAt = NOW()`)
