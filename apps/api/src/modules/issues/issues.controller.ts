@@ -3,6 +3,7 @@ import { CurrentUser } from '../../common/auth';
 import type { JwtUser } from '../../common/auth/jwt-user';
 import { IssuesService } from './issues.service';
 import { ChangeStatusDto, CreateCommentDto, CreateIssueDto, IssueFilterDto } from './dto';
+import { AssignSprintDto } from '../sprints/dto';
 
 @Controller()
 export class IssuesController {
@@ -43,6 +44,15 @@ export class IssuesController {
   @Delete('issues/:id')
   remove(@Param('id') id: string, @CurrentUser() user: JwtUser) {
     return this.issues.remove(id, user);
+  }
+
+  @Patch('issues/:id/sprint')
+  assignSprint(
+    @Param('id') id: string,
+    @Body() dto: AssignSprintDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.issues.assignSprint(id, dto.sprintId ?? null, user);
   }
 
   @Post('issues/:id/comments')

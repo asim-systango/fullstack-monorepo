@@ -19,6 +19,13 @@ export class IssuesService {
     private readonly membership: MembershipService,
   ) {}
 
+  /** Load a non-deleted issue or throw 404 (soft-deleted rows are excluded by default). */
+  private async getIssueOr404(id: string): Promise<Issue> {
+    const issue = await this.db.getRepository(Issue).findOne({ where: { id } });
+    if (!issue) throw new NotFoundException('Issue not found');
+    return issue;
+  }
+
   async create(projectId: string, dto: CreateIssueDto, user: JwtUser): Promise<Issue> {
     await this.membership.assertMember(projectId, user);
     if (dto.assigneeId && !(await this.membership.isMember(projectId, dto.assigneeId))) {
@@ -73,8 +80,7 @@ export class IssuesService {
   }
 
   async findOne(id: string, user: JwtUser) {
-    const issue = await this.db.getRepository(Issue).findOne({ where: { id } });
-    if (!issue) throw new NotFoundException('Issue not found');
+    const issue = await this.getIssueOr404(id);
     await this.membership.assertMember(issue.projectId, user);
     const comments = await this.db
       .getRepository(Comment)
@@ -89,8 +95,7 @@ export class IssuesService {
   }
 
   async changeStatus(id: string, dto: ChangeStatusDto, user: JwtUser): Promise<Issue> {
-    const issue = await this.db.getRepository(Issue).findOne({ where: { id } });
-    if (!issue) throw new NotFoundException('Issue not found');
+    const issue = await this.getIssueOr404(id);
     await this.membership.assertMember(issue.projectId, user);
     assertTransition(issue.status, dto.status);
     return this.db.transaction(async (m) => {
@@ -108,15 +113,21 @@ export class IssuesService {
   }
 
   async remove(id: string, user: JwtUser): Promise<void> {
-    const issue = await this.db.getRepository(Issue).findOne({ where: { id } });
-    if (!issue) throw new NotFoundException('Issue not found');
+    const issue = await this.getIssueOr404(id);
     await this.membership.assertLead(issue.projectId, user);
     await this.db.getRepository(Issue).softDelete(id);
   }
 
+  async assignSprint(id: string, sprintId: string | null, user: JwtUser): Promise<Issue> {
+    const issue = await this.getIssueOr404(id);
+    await this.membership.assertMember(issue.projectId, user);
+    await this.db.getRepository(Issue).update(id, { sprintId });
+    return this.db.getRepository(Issue).findOneOrFail({ where: { id } });
+  }
+
   async addComment(id: string, dto: CreateCommentDto, user: JwtUser): Promise<Comment> {
-    const issue = await this.db.getRepository(Issue).findOne({ where: { id } });
-    if (!issue) throw new NotFoundException('Issue not found'); // soft-deleted → excluded → 404
+    // soft-deleted issues are excluded → getIssueOr404 throws 404
+    const issue = await this.getIssueOr404(id);
     await this.membership.assertMember(issue.projectId, user);
     return this.db
       .getRepository(Comment)
