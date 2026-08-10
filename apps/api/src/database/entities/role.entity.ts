@@ -1,5 +1,14 @@
-import { Entity, PrimaryColumn, Column, BeforeInsert, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  BeforeInsert,
+  Index,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { ulid } from 'ulid';
+import { Permission } from './permission.entity';
 
 export enum RoleName {
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -32,4 +41,14 @@ export class Role {
     default: () => 'EXTRACT(EPOCH FROM NOW()) * 1000',
   })
   createdAt!: number;
+
+  @ManyToMany(() => Permission, (permission) => permission.roles, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: 'role_permissions',
+    joinColumn: { name: 'roleId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'permissionId', referencedColumnName: 'id' },
+  })
+  permissions!: Permission[];
 }

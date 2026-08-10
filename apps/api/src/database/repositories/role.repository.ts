@@ -26,6 +26,19 @@ export class RoleRepository {
     return this.roleRepo.find({ order: { name: 'ASC' } });
   }
 
+  async getPermissionIdsByRoleId(roleId: string): Promise<string[]> {
+    const role = await this.roleRepo.findOne({
+      where: { id: roleId },
+      relations: ['permissions'],
+    });
+
+    if (!role || !role.permissions) {
+      return [];
+    }
+
+    return role.permissions.map((permission) => permission.id);
+  }
+
   async createAndSave(data: Partial<Role>): Promise<Role> {
     const role = this.roleRepo.create(data);
     return this.roleRepo.save(role);
