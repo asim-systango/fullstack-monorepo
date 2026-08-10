@@ -12,6 +12,12 @@ export interface SendOrgAdminInviteParams {
   loginUrl?: string;
 }
 
+export interface SendPasswordResetParams {
+  toEmail: string;
+  userName: string;
+  resetUrl: string;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -93,6 +99,38 @@ export class MailService {
     } else {
       this.logger.log(
         `[EMAIL SIMULATION] To: ${toEmail} | Subject: ${subject} | TempPassword: ${tempPassword}`,
+      );
+    }
+  }
+
+  async sendPasswordResetMail(params: SendPasswordResetParams): Promise<void> {
+    const { toEmail, userName, resetUrl } = params;
+    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const subject = 'CRM Account - Password Reset Request';
+
+    const html = this.renderTemplate('password-reset', {
+      toEmail,
+      userName,
+      resetUrl,
+    });
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from,
+          to: toEmail,
+          subject,
+          html,
+        });
+        this.logger.log(`Password reset email sent successfully to ${toEmail}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to send password reset email to ${toEmail}: ${(error as Error).message}`,
+        );
+      }
+    } else {
+      this.logger.log(
+        `[EMAIL SIMULATION] To: ${toEmail} | Subject: ${subject} | ResetUrl: ${resetUrl}`,
       );
     }
   }

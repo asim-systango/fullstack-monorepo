@@ -1,13 +1,16 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserRepository } from '../../../database/repositories/user.repository';
+import { UserStatus } from '../../../database/entities/user.entity';
+import { JwtTokenType } from '../constants/auth.constants';
 
 export interface JwtPayload {
   sub: string;
   email: string;
   organizationId?: string | null;
   roleId?: string;
+  type?: string;
   iat?: number;
   exp?: number;
 }
@@ -23,10 +26,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    if (payload.type === JwtTokenType.PASSWORD_RESET) {
+      throw new UnauthorizedException(
+        'Password reset token cannot be used for API authentication',
+      );
+    }
+
     const user = await this.userRepository.findById(payload.sub);
-    if (!user || user.status !== 'ACTIVE') {
+    if (!user || user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('User is inactive or token is invalid');
     }
+
+    if (user.isPasswordChangeRequired) {
+      throw new ForbiddenException(
+        'Password change is required before accessing API endpoints',
+      );
+    }
+
     return user;
   }
 }
