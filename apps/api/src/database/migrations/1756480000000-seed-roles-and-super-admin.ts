@@ -5,10 +5,10 @@ export class SeedRolesAndSuperAdmin1756480000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     const superAdminRoleId = '01J00000000000000000000R01';
-    const orgAdminRoleId = '01J00000000000000000000R02'; // 26 chars
-    const salesLeadRoleId = '01J00000000000000000000R03'; // 26 chars
-    const salesRepRoleId = '01J00000000000000000000R04'; // 26 chars
-    const superAdminUserId = '01J00000000000000000000U01'; // 26 chars
+    const orgAdminRoleId = '01J00000000000000000000R02';
+    const salesLeadRoleId = '01J00000000000000000000R03';
+    const salesRepRoleId = '01J00000000000000000000R04';
+    const superAdminUserId = '01J00000000000000000000U01';
 
     // 1. Insert default roles
     await queryRunner.query(
@@ -40,8 +40,14 @@ export class SeedRolesAndSuperAdmin1756480000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // Delete any users assigned to these roles first to satisfy Foreign Key constraints
     await queryRunner.query(
-      `DELETE FROM "users" WHERE "id" = '01J00000000000000000000U01'`,
+      `DELETE FROM "users" WHERE "roleId" IN (
+        '01J00000000000000000000R01',
+        '01J00000000000000000000R02',
+        '01J00000000000000000000R03',
+        '01J00000000000000000000R04'
+      )`,
     );
     await queryRunner.query(
       `DELETE FROM "roles" WHERE "id" IN (
