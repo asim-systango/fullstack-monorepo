@@ -94,10 +94,7 @@ export function StaffProductTable({
               <TableHeaderCell>Product Name</TableHeaderCell>
               <TableHeaderCell>Category</TableHeaderCell>
               <TableHeaderCell>Assigned Warehouse</TableHeaderCell>
-              <TableHeaderCell className="text-center">Unit</TableHeaderCell>
               <TableHeaderCell className="text-right">Facility Quantity</TableHeaderCell>
-              <TableHeaderCell className="text-center">Facility Status</TableHeaderCell>
-              <TableHeaderCell className="text-right">Action</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -108,13 +105,6 @@ export function StaffProductTable({
               );
               const facilityQty = facilityStock?.quantity ?? 0;
               const threshold = product.lowStockThreshold ?? 5;
-
-              let statusBadge = <Badge tone="success">In Stock</Badge>;
-              if (facilityQty === 0) {
-                statusBadge = <Badge tone="danger">Out of Stock</Badge>;
-              } else if (facilityQty <= threshold) {
-                statusBadge = <Badge tone="danger">Low Stock</Badge>;
-              }
 
               let qtyColorClass = 'text-emerald-600 dark:text-emerald-400';
               if (facilityQty === 0) {
@@ -129,9 +119,9 @@ export function StaffProductTable({
                   className="hover:bg-muted/40 transition-colors"
                 >
                   <TableCell>
-                    <code className="rounded bg-muted px-2 py-1 text-xs font-mono font-semibold text-foreground">
+                    <span className="font-mono text-xs font-semibold text-foreground">
                       {product.sku}
-                    </code>
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div>
@@ -173,20 +163,8 @@ export function StaffProductTable({
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-center font-medium text-xs uppercase tracking-wider text-muted-foreground">
-                    {product.unit || 'pcs'}
-                  </TableCell>
                   <TableCell className="text-right font-bold font-mono">
                     <span className={qtyColorClass}>{facilityQty.toLocaleString()}</span>
-                  </TableCell>
-                  <TableCell className="text-center">{statusBadge}</TableCell>
-                  <TableCell className="text-right">
-                    <Link
-                      href={`/products/${product.id}`}
-                      className="inline-flex items-center justify-center text-xs font-medium text-primary hover:underline"
-                    >
-                      View Details →
-                    </Link>
                   </TableCell>
                 </TableRow>
               );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Table,
@@ -11,6 +12,7 @@ import {
   Badge,
   EmptyState,
   Spinner,
+  Pagination,
 } from '@shared/ui';
 import type { Product } from '@/lib/hooks/use-products';
 
@@ -19,10 +21,19 @@ type AdminProductTableProps = {
   isLoading: boolean;
 };
 
+const PAGE_SIZE = 10;
+
 export function AdminProductTable({
   products,
   isLoading,
 }: Readonly<AdminProductTableProps>) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page when total product count changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [products.length]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-3 rounded-lg border border-border bg-card">
@@ -45,6 +56,12 @@ export function AdminProductTable({
     );
   }
 
+  const totalPages = Math.ceil(products.length / PAGE_SIZE);
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
       <div className="bg-muted/30 px-4 py-2 border-b border-border flex items-center justify-between">
@@ -61,15 +78,11 @@ export function AdminProductTable({
             <TableHeaderCell className="w-[120px]">SKU Code</TableHeaderCell>
             <TableHeaderCell>Product Name</TableHeaderCell>
             <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell className="text-center">Unit</TableHeaderCell>
-            <TableHeaderCell className="text-right">Low Threshold</TableHeaderCell>
             <TableHeaderCell className="text-right">Total Quantity</TableHeaderCell>
-            <TableHeaderCell className="text-center">Global Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Action</TableHeaderCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {products.map((product) => {
+          {paginatedProducts.map((product) => {
             const totalQuantity = product.totalQuantity ?? product.totalStock ?? 0;
             const threshold = product.lowStockThreshold ?? 5;
             const isLowStock = totalQuantity <= threshold;
@@ -77,9 +90,9 @@ export function AdminProductTable({
             return (
               <TableRow key={product.id} className="hover:bg-muted/40 transition-colors">
                 <TableCell>
-                  <code className="rounded bg-muted px-2 py-1 text-xs font-mono font-semibold text-foreground">
+                  <span className="font-mono text-xs font-semibold text-foreground">
                     {product.sku}
-                  </code>
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div>
@@ -98,18 +111,14 @@ export function AdminProductTable({
                 </TableCell>
                 <TableCell>
                   {product.category?.name ? (
-                    <Badge tone="neutral">{product.category.name}</Badge>
+                    <span className="text-xs font-medium text-foreground">
+                      {product.category.name}
+                    </span>
                   ) : (
                     <span className="text-xs text-muted-foreground italic">
                       Unassigned
                     </span>
                   )}
-                </TableCell>
-                <TableCell className="text-center font-medium text-xs uppercase tracking-wider text-muted-foreground">
-                  {product.unit || 'pcs'}
-                </TableCell>
-                <TableCell className="text-right font-mono text-xs">
-                  {threshold}
                 </TableCell>
                 <TableCell className="text-right font-bold font-mono">
                   <span
@@ -122,26 +131,19 @@ export function AdminProductTable({
                     {totalQuantity.toLocaleString()}
                   </span>
                 </TableCell>
-                <TableCell className="text-center">
-                  {isLowStock ? (
-                    <Badge tone="danger">Low Stock</Badge>
-                  ) : (
-                    <Badge tone="success">In Stock</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Link
-                    href={`/products/${product.id}`}
-                    className="inline-flex items-center justify-center text-xs font-medium text-primary hover:underline"
-                  >
-                    View Details →
-                  </Link>
-                </TableCell>
               </TableRow>
             );
           })}
         </TableBody>
       </Table>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={products.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

@@ -7,7 +7,15 @@ export function middleware(request: NextRequest) {
   const hasSession = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
 
   if ((pathname === '/login' || pathname === '/register') && hasSession) {
-    return NextResponse.redirect(new URL('/', request.url));
+    if (
+      request.nextUrl.searchParams.has('clear') ||
+      request.nextUrl.searchParams.has('force')
+    ) {
+      const response = NextResponse.next();
+      response.cookies.delete(AUTH_COOKIE_NAME);
+      return response;
+    }
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

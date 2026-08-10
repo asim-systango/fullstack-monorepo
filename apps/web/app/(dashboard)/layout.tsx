@@ -32,13 +32,13 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen w-full bg-background text-foreground">
       {/* Left Sidebar */}
       <AppSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-        <Page>{children}</Page>
+      <main className="flex-1 min-w-0 w-full overflow-y-auto px-0 py-6">
+        <Page className="w-full min-w-0 max-w-none">{children}</Page>
       </main>
     </div>
   );

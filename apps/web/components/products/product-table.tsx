@@ -48,10 +48,8 @@ export function ProductTable({ products, isLoading }: Readonly<ProductTableProps
             <TableHeaderCell className="w-[120px]">SKU Code</TableHeaderCell>
             <TableHeaderCell>Product Name</TableHeaderCell>
             <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell className="text-center">Unit</TableHeaderCell>
             <TableHeaderCell className="text-right">Low Threshold</TableHeaderCell>
             <TableHeaderCell className="text-right">Total Stock</TableHeaderCell>
-            <TableHeaderCell className="text-center">Status</TableHeaderCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -63,9 +61,9 @@ export function ProductTable({ products, isLoading }: Readonly<ProductTableProps
             return (
               <TableRow key={product.id} className="hover:bg-muted/40 transition-colors">
                 <TableCell>
-                  <code className="rounded bg-muted px-2 py-1 text-xs font-mono font-semibold text-foreground">
+                  <span className="font-mono text-xs font-semibold text-foreground">
                     {product.sku}
-                  </code>
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div>
@@ -86,9 +84,6 @@ export function ProductTable({ products, isLoading }: Readonly<ProductTableProps
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="text-center font-medium text-xs uppercase tracking-wider text-muted-foreground">
-                  {product.unit || 'pcs'}
-                </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {threshold}
                 </TableCell>
@@ -102,13 +97,6 @@ export function ProductTable({ products, isLoading }: Readonly<ProductTableProps
                   >
                     {totalStock.toLocaleString()}
                   </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  {isLowStock ? (
-                    <Badge tone="danger">Low Stock</Badge>
-                  ) : (
-                    <Badge tone="success">In Stock</Badge>
-                  )}
                 </TableCell>
               </TableRow>
             );

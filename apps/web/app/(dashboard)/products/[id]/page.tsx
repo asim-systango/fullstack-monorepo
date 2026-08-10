@@ -180,13 +180,6 @@ export default function ProductDetailPage({
   );
   const staffFacilityQty = staffStockRecord?.quantity ?? 0;
 
-  let staffStatusBadge = <Badge tone="success">In Stock</Badge>;
-  if (staffFacilityQty === 0) {
-    staffStatusBadge = <Badge tone="danger">Out of Stock</Badge>;
-  } else if (staffFacilityQty <= threshold) {
-    staffStatusBadge = <Badge tone="danger">Low Stock</Badge>;
-  }
-
   let staffQtyColorClass = 'text-emerald-600 dark:text-emerald-400';
   if (staffFacilityQty === 0) {
     staffQtyColorClass = 'text-red-600 font-extrabold dark:text-red-400';
@@ -473,7 +466,7 @@ export default function ProductDetailPage({
           <CardBody>
             {staffWarehouse ? (
               <div className="space-y-4">
-                <div className="rounded-lg border border-border bg-muted/20 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="rounded-lg border border-border bg-muted/20 p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
                     <span className="text-muted-foreground block font-medium">
                       Facility Name
@@ -494,13 +487,6 @@ export default function ProductDetailPage({
                       {staffWarehouse.location || 'Indore Facility'}
                     </span>
                   </div>
-
-                  <div>
-                    <span className="text-muted-foreground block font-medium">
-                      Facility Status
-                    </span>
-                    <div className="mt-1">{staffStatusBadge}</div>
-                  </div>
                 </div>
 
                 <div className="rounded-lg border border-border overflow-hidden">
@@ -508,11 +494,9 @@ export default function ProductDetailPage({
                     <TableHead>
                       <TableRow>
                         <TableHeaderCell>Warehouse Facility</TableHeaderCell>
-                        <TableHeaderCell className="text-center">Unit</TableHeaderCell>
                         <TableHeaderCell className="text-right">
                           Available Stock
                         </TableHeaderCell>
-                        <TableHeaderCell className="text-center">Status</TableHeaderCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -527,15 +511,11 @@ export default function ProductDetailPage({
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center font-medium text-xs uppercase tracking-wider text-muted-foreground">
-                          {unit || 'pcs'}
-                        </TableCell>
                         <TableCell className="text-right font-bold font-mono text-base">
                           <span className={staffQtyColorClass}>
                             {staffFacilityQty.toLocaleString()}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">{staffStatusBadge}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
