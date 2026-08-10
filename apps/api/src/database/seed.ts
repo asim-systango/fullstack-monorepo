@@ -71,6 +71,13 @@ async function seed() {
     warehouseMap.set(wh.code, existing);
   }
 
+  // Assign Vijay Nagar Warehouse to staff user if not already set
+  const vijayWhForUser = warehouseMap.get('WH-VIJAY');
+  if (seedUser && !seedUser.warehouseId && vijayWhForUser) {
+    seedUser.warehouseId = vijayWhForUser.id;
+    await userRepo.save(seedUser);
+  }
+
   // 3. Seed Product Categories
   const categoriesData = [
     CATEGORY_ELECTRONICS,

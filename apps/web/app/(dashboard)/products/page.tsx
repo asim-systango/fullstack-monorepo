@@ -22,12 +22,14 @@ export default function ProductsPage() {
   const { data: categories = [] } = useCategories();
   const { data: warehouses = [] } = useWarehouses();
 
-  // Set default warehouse ID for staff view
+  // Set default warehouse ID for staff view based on user profile or first available warehouse
   useEffect(() => {
-    if (warehouses.length > 0 && warehouses[0]?.id && !selectedWarehouseId) {
+    if (user?.warehouseId) {
+      setSelectedWarehouseId(user.warehouseId);
+    } else if (warehouses.length > 0 && warehouses[0]?.id && !selectedWarehouseId) {
       setSelectedWarehouseId(warehouses[0].id);
     }
-  }, [warehouses, selectedWarehouseId]);
+  }, [user?.warehouseId, warehouses, selectedWarehouseId]);
 
   // Fetch product listing matching query and multiple categories
   const {
@@ -61,7 +63,9 @@ export default function ProductsPage() {
     setSelectedCategoryIds([]);
   }, []);
 
-  const activeWarehouse = warehouses.find((w) => w.id === selectedWarehouseId);
+  const activeWarehouse =
+    warehouses.find((w) => w.id === (user?.warehouseId || selectedWarehouseId)) ||
+    warehouses[0];
 
   return (
     <div className="space-y-6">

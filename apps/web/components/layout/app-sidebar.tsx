@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Badge, Button, type BadgeTone } from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
+import { useWarehouse } from '@/lib/hooks/use-warehouses';
 
 const NAV_ITEMS = [
   {
@@ -53,6 +54,8 @@ function getRoleBadge(role: string) {
 function SidebarUserFooter({ isCollapsed }: Readonly<{ isCollapsed: boolean }>) {
   const { user, logout } = useAuth();
   const userRole = user?.role || 'user';
+  const warehouseId = user?.warehouseId ?? '';
+  const { data: warehouse, isLoading: isWarehouseLoading } = useWarehouse(warehouseId);
 
   if (!user) {
     return (
@@ -64,14 +67,27 @@ function SidebarUserFooter({ isCollapsed }: Readonly<{ isCollapsed: boolean }>) 
     );
   }
 
+  let warehouseDisplay = 'No Warehouse Assigned';
+  if (warehouseId) {
+    if (warehouse?.name) {
+      warehouseDisplay = warehouse.name;
+    } else if (isWarehouseLoading) {
+      warehouseDisplay = 'Loading warehouse...';
+    } else {
+      warehouseDisplay = 'Assigned Warehouse';
+    }
+  } else if (userRole === 'admin') {
+    warehouseDisplay = 'All Warehouses';
+  }
+
   if (isCollapsed) {
     return (
       <div className="flex flex-col items-center gap-2">
         <div
           className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground font-bold text-xs"
-          title={user.email}
+          title={warehouseDisplay}
         >
-          {user.email.charAt(0).toUpperCase()}
+          {warehouseDisplay.charAt(0).toUpperCase()}
         </div>
         <button
           type="button"
@@ -87,13 +103,21 @@ function SidebarUserFooter({ isCollapsed }: Readonly<{ isCollapsed: boolean }>) 
 
   return (
     <div className="rounded-lg border border-border/80 bg-muted/40 p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <span
-          className="text-xs font-medium text-foreground truncate max-w-[120px]"
-          title={user.email}
-        >
-          {user.email}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col truncate min-w-0">
+          <span
+            className="text-xs font-semibold text-foreground truncate"
+            title={warehouseDisplay}
+          >
+            {warehouseDisplay}
+          </span>
+          {warehouse?.code && (
+            <span className="text-[10px] text-muted-foreground truncate">
+              {warehouse.code}
+              {warehouse.location ? ` • ${warehouse.location}` : ''}
+            </span>
+          )}
+        </div>
         {getRoleBadge(userRole)}
       </div>
       <Button

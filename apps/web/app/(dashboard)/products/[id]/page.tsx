@@ -82,10 +82,12 @@ export default function ProductDetailPage({
   }, [product]);
 
   useEffect(() => {
-    if (warehouses.length > 0 && warehouses[0]?.id && !selectedWarehouseId) {
+    if (user?.warehouseId) {
+      setSelectedWarehouseId(user.warehouseId);
+    } else if (warehouses.length > 0 && warehouses[0]?.id && !selectedWarehouseId) {
       setSelectedWarehouseId(warehouses[0].id);
     }
-  }, [warehouses, selectedWarehouseId]);
+  }, [user?.warehouseId, warehouses, selectedWarehouseId]);
 
   const isLoading = isProductLoading || isWarehousesLoading;
 
@@ -174,7 +176,8 @@ export default function ProductDetailPage({
   const threshold = product.lowStockThreshold ?? 5;
 
   const staffWarehouse =
-    warehouses.find((w) => w.id === selectedWarehouseId) || warehouses[0];
+    warehouses.find((w) => w.id === (user?.warehouseId || selectedWarehouseId)) ||
+    warehouses[0];
   const staffStockRecord = product.stockLevels?.find(
     (sl) => sl.warehouseId === staffWarehouse?.id,
   );
@@ -440,26 +443,17 @@ export default function ProductDetailPage({
                 </CardDescription>
               </div>
 
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="staff-detail-wh-select"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Assigned Warehouse:
-                </label>
-                <Select
-                  id="staff-detail-wh-select"
-                  value={selectedWarehouseId}
-                  onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                  className="text-xs py-1 px-2.5 h-8 w-60"
-                >
-                  {warehouses.map((wh) => (
-                    <option key={wh.id} value={wh.id}>
-                      {wh.name} ({wh.code})
-                    </option>
-                  ))}
-                </Select>
-              </div>
+              {staffWarehouse && (
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground bg-muted/40 px-3 py-1.5 rounded-md border border-border">
+                  <span className="text-muted-foreground font-medium">
+                    Assigned Facility:
+                  </span>
+                  <span>{staffWarehouse.name}</span>
+                  <span className="text-muted-foreground font-mono font-normal">
+                    ({staffWarehouse.code})
+                  </span>
+                </div>
+              )}
             </div>
           </CardHeader>
 

@@ -11,8 +11,8 @@ import {
   Badge,
   EmptyState,
   Spinner,
-  Select,
 } from '@shared/ui';
+import { useAuth } from '@/components/auth';
 import type { Product } from '@/lib/hooks/use-products';
 import type { Warehouse } from '@/lib/hooks/use-warehouses';
 
@@ -20,8 +20,8 @@ type StaffProductTableProps = {
   products: Product[];
   isLoading: boolean;
   warehouses: Warehouse[];
-  selectedWarehouseId: string;
-  onWarehouseChange: (warehouseId: string) => void;
+  selectedWarehouseId?: string;
+  onWarehouseChange?: (warehouseId: string) => void;
 };
 
 export function StaffProductTable({
@@ -29,10 +29,11 @@ export function StaffProductTable({
   isLoading,
   warehouses,
   selectedWarehouseId,
-  onWarehouseChange,
 }: Readonly<StaffProductTableProps>) {
+  const { user } = useAuth();
+  const staffWarehouseId = user?.warehouseId || selectedWarehouseId;
   const activeWarehouse =
-    warehouses.find((w) => w.id === selectedWarehouseId) || warehouses[0];
+    warehouses.find((w) => w.id === staffWarehouseId) || warehouses[0];
 
   if (isLoading) {
     return (
@@ -47,7 +48,7 @@ export function StaffProductTable({
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
-      {/* Staff Warehouse Context Banner & Selector */}
+      {/* Staff Warehouse Context Banner */}
       <div className="bg-muted/30 px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Badge tone="accent">Staff Facility View</Badge>
@@ -56,27 +57,16 @@ export function StaffProductTable({
           </span>
         </div>
 
-        {/* Facility Selector */}
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="staff-warehouse-select"
-            className="text-xs font-medium text-muted-foreground"
-          >
-            My Warehouse:
-          </label>
-          <Select
-            id="staff-warehouse-select"
-            value={selectedWarehouseId}
-            onChange={(e) => onWarehouseChange(e.target.value)}
-            className="text-xs py-1 px-2.5 h-8 w-60"
-          >
-            {warehouses.map((wh) => (
-              <option key={wh.id} value={wh.id}>
-                {wh.name} ({wh.code})
-              </option>
-            ))}
-          </Select>
-        </div>
+        {/* Assigned Facility Info */}
+        {activeWarehouse && (
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground bg-background px-3 py-1 rounded-md border border-border shadow-2xs">
+            <span className="text-muted-foreground font-medium">Facility:</span>
+            <span>{activeWarehouse.name}</span>
+            <span className="text-muted-foreground font-mono font-normal">
+              ({activeWarehouse.code})
+            </span>
+          </div>
+        )}
       </div>
 
       {products.length === 0 ? (

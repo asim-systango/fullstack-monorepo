@@ -25,6 +25,9 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 20, default: 'user', nullable: false })
   role!: UserRole;
 
+  @Column({ name: 'warehouse_id', type: 'uuid', nullable: true })
+  warehouseId?: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz', nullable: false })
   createdAt!: Date;
 
