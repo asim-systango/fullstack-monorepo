@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { User } from '../entities/user.entity';
 
 @Injectable()
@@ -24,6 +24,19 @@ export class UserRepository {
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepo.findOne({
       where: { email: email.toLowerCase() },
+      relations: ['role', 'organization'],
+    });
+  }
+
+  async findByEmailAndOrganization(
+    email: string,
+    organizationId: string | null,
+  ): Promise<User | null> {
+    return this.userRepo.findOne({
+      where: {
+        email: email.toLowerCase(),
+        organizationId: organizationId === null ? IsNull() : organizationId,
+      },
       relations: ['role', 'organization'],
     });
   }
