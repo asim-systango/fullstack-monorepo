@@ -1,0 +1,99 @@
+# Enterprise Production Docker Compose for Monorepo Stack
+name: app-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-internal
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-internal
+
+  api-domain:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-internal
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      API_UPSTREAM_URL: http://api-domain:3002
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key}
+    ports:
+      - '3001:3001'
+    depends_on:
+      api-domain:
+        condition: service_started
+    networks:
+      - app-internal
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_GATEWAY_URL: http://api-gateway:3001
+      NEXT_PUBLIC_API_URL: /api
+    ports:
+      - '3000:3000'
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - app-internal
+
+networks:
+  app-internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
