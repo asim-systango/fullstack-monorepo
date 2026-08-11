@@ -1,12 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -103,6 +106,45 @@ export class CreateArticleDto {
   @IsUUID('4', { each: true })
   tagIds?: string[];
 }
+
+/** Query params for GET /articles */
+export class ListArticlesQuery {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page: number = 1;
+
+  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit: number = 20;
+}
+
+/** One item in the GET /articles list response */
+export type ArticleListItem = {
+  id: string;
+  authorId: string;
+  title: string;
+  slug: string;
+  publishedRevisionId: string | null;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Paginated response for GET /articles */
+export type ArticleListResponse = {
+  data: ArticleListItem[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
 
 /** Response from POST /articles */
 export type CreatedArticle = {

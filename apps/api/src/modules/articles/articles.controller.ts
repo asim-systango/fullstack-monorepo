@@ -1,10 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -13,7 +14,12 @@ import { CurrentUser, Roles } from '../../common/auth';
 import type { JwtUser } from '../../common/auth';
 import { Role } from '../../common/enums/role.enum';
 import { ArticlesService } from './articles.service';
-import { CreateArticleDto, type CreatedArticle } from './dto/article.dto';
+import {
+  CreateArticleDto,
+  ListArticlesQuery,
+  type ArticleListResponse,
+  type CreatedArticle,
+} from './dto/article.dto';
 
 @ApiTags('articles')
 @Controller('articles')
@@ -41,5 +47,25 @@ export class ArticlesController {
     @CurrentUser() user: JwtUser,
   ): Promise<CreatedArticle> {
     return this.articlesService.createArticle(dto, user);
+  }
+
+  @Get('studio')
+  @ApiBearerAuth()
+  @Roles(Role.Author, Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'List articles',
+    description:
+      'Authors see only their own non-deleted articles. Editors and Admins see all non-deleted articles. ' +
+      'Sorted by `updatedAt DESC`. Soft-deleted articles are always excluded.',
+  })
+  @ApiOkResponse({ description: 'Paginated article list' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT' })
+  @ApiForbiddenResponse({ description: 'Insufficient role' })
+  @ApiBadRequestResponse({ description: 'Invalid pagination parameters' })
+  listArticles(
+    @Query() query: ListArticlesQuery,
+    @CurrentUser() user: JwtUser,
+  ): Promise<ArticleListResponse> {
+    return this.articlesService.listArticles(query, user);
   }
 }

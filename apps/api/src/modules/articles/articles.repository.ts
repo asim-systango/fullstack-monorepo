@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { In, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { Media } from '../media/media.entity';
 import { RevisionMedia } from '../media/revision-media.entity';
 import { ArticleTag } from '../tags/article-tag.entity';
@@ -8,6 +8,7 @@ import { Tag } from '../tags/tag.entity';
 import { Article } from './article.entity';
 import { Revision } from './revision.entity';
 import { collectMediaRefs, type ContentBlock } from './types/revision-content';
+import type { ArticleListItem } from './dto/article.dto';
 
 export type CreateDraftInput = {
   authorId: string;
@@ -15,6 +16,13 @@ export type CreateDraftInput = {
   slug: string;
   content: ContentBlock[];
   tagIds?: string[];
+};
+
+export type ListArticlesInput = {
+  /** When set, restricts results to this author only (Author role). */
+  authorId?: string;
+  page: number;
+  limit: number;
 };
 
 @Injectable()
@@ -155,5 +163,33 @@ export class ArticlesRepository {
 
       throw err;
     }
+  }
+
+  async listArticles(
+    input: ListArticlesInput,
+  ): Promise<{ items: ArticleListItem[]; total: number }> {
+    const where = {
+      deletedAt: IsNull(),
+      ...(input.authorId ? { authorId: input.authorId } : {}),
+    };
+
+    const [rows, total] = await this.articleRepo.findAndCount({
+      where,
+      select: {
+        id: true,
+        authorId: true,
+        title: true,
+        slug: true,
+        publishedRevisionId: true,
+        publishedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      order: { updatedAt: 'DESC' },
+      skip: (input.page - 1) * input.limit,
+      take: input.limit,
+    });
+
+    return { items: rows as ArticleListItem[], total };
   }
 }
