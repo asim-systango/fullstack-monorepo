@@ -2,10 +2,14 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ArticleTag } from './article-tag.entity';
 import { Tag } from './tag.entity';
+import { TagsController } from './tags.controller';
+import { TagsRepository } from './tags.repository';
+import { TagsService } from './tags.service';
 
-/** Entity registration only — tag CRUD comes later. */
 @Module({
   imports: [TypeOrmModule.forFeature([Tag, ArticleTag])],
-  exports: [TypeOrmModule],
+  controllers: [TagsController],
+  providers: [TagsRepository, TagsService],
+  exports: [TagsService, TypeOrmModule],
 })
 export class TagsModule {}
