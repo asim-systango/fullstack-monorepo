@@ -11,6 +11,8 @@ export function securityHeadersMiddleware(options: SecurityHeadersOptions = {}) 
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Content-Security-Policy', "default-src 'self'");
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     if (options.hsts) {
       res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
     }
