@@ -33,7 +33,9 @@ import {
   type StudioArticleDetail,
 } from './dto/get-article.dto';
 import {
+  ArticleSlugParam,
   ListPublicArticlesQuery,
+  type PublicArticleDetail,
   type PublicArticleListResponse,
 } from './dto/public-article.dto';
 
@@ -81,6 +83,29 @@ export class ArticlesController {
     @Query() query: ListPublicArticlesQuery,
   ): Promise<PublicArticleListResponse> {
     return this.articlesService.listPublicArticles(query);
+  }
+
+  @Get('public/:slug')
+  @Public()
+  @ApiOperation({
+    summary: 'Get a published article by slug for the public blog',
+    description:
+      'No authentication required. Returns the article only when `publishedRevisionId` is set ' +
+      'and `deletedAt` is null. Content comes from the published revision pointer — ' +
+      'not the latest revision. Draft and soft-deleted slugs return 404.',
+  })
+  @ApiParam({
+    name: 'slug',
+    description: 'Article slug (lowercase letters, numbers, hyphens)',
+    example: 'understanding-react-hooks',
+  })
+  @ApiOkResponse({ description: 'Published article detail' })
+  @ApiNotFoundResponse({ description: 'Article not found or not published' })
+  @ApiBadRequestResponse({ description: 'Invalid slug format' })
+  getPublicArticleBySlug(
+    @Param() params: ArticleSlugParam,
+  ): Promise<PublicArticleDetail> {
+    return this.articlesService.getPublicArticleBySlug(params.slug);
   }
 
   @Get('studio')

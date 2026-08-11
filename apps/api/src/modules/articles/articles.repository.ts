@@ -9,7 +9,10 @@ import { Article } from './article.entity';
 import { Revision } from './revision.entity';
 import { collectMediaRefs, type ContentBlock } from './types/revision-content';
 import type { ArticleListItem, StudioArticleDetail } from './dto/get-article.dto';
-import type { PublicArticleListItem } from './dto/public-article.dto';
+import type {
+  PublicArticleDetail,
+  PublicArticleListItem,
+} from './dto/public-article.dto';
 
 export type CreateDraftInput = {
   authorId: string;
@@ -35,6 +38,10 @@ export type GetStudioArticleInput = {
 export type ListPublicArticlesInput = {
   page: number;
   limit: number;
+};
+
+export type GetPublicArticleBySlugInput = {
+  slug: string;
 };
 
 @Injectable()
@@ -280,6 +287,46 @@ export class ArticlesRepository {
           : null,
       })),
       total,
+    };
+  }
+
+  async findPublicArticleBySlug(
+    input: GetPublicArticleBySlugInput,
+  ): Promise<PublicArticleDetail | null> {
+    const article = await this.articleRepo.findOne({
+      where: {
+        slug: input.slug,
+        deletedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+      },
+      relations: {
+        articleTags: { tag: true },
+        publishedRevision: { coverMedia: true },
+      },
+    });
+
+    if (!article?.publishedRevision) return null;
+
+    const published = article.publishedRevision;
+
+    return {
+      id: article.id,
+      title: article.title,
+      slug: article.slug,
+      publishedAt: article.publishedAt!,
+      tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
+      revision: {
+        id: published.id,
+        content: published.content,
+        coverMedia: published.coverMedia
+          ? {
+              id: published.coverMedia.id,
+              secureUrl: published.coverMedia.secureUrl,
+              resourceType: published.coverMedia.resourceType,
+              defaultAltText: published.coverMedia.defaultAltText,
+            }
+          : null,
+      },
     };
   }
 }

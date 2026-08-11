@@ -10,6 +10,7 @@ import type {
 } from './dto/get-article.dto';
 import type {
   ListPublicArticlesQuery,
+  PublicArticleDetail,
   PublicArticleListResponse,
 } from './dto/public-article.dto';
 import {
@@ -109,6 +110,16 @@ export class ArticlesService {
       total,
       totalPages: Math.ceil(total / query.limit),
     };
+  }
+
+  async getPublicArticleBySlug(slug: string): Promise<PublicArticleDetail> {
+    const article = await this.articlesRepository.findPublicArticleBySlug({ slug });
+
+    if (!article) {
+      throw new NotFoundException('Article not found');
+    }
+
+    return article;
   }
 
   private resolveContent(dto: CreateArticleDto): ContentBlock[] {
