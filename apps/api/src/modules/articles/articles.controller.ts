@@ -1,12 +1,23 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -14,12 +25,13 @@ import { CurrentUser, Roles } from '../../common/auth';
 import type { JwtUser } from '../../common/auth';
 import { Role } from '../../common/enums/role.enum';
 import { ArticlesService } from './articles.service';
+import { CreateArticleDto, type CreatedArticle } from './dto/article.dto';
 import {
-  CreateArticleDto,
+  ArticleIdParam,
   ListArticlesQuery,
   type ArticleListResponse,
-  type CreatedArticle,
-} from './dto/article.dto';
+  type StudioArticleDetail,
+} from './dto/get-article.dto';
 
 @ApiTags('articles')
 @Controller('articles')
@@ -67,5 +79,30 @@ export class ArticlesController {
     @CurrentUser() user: JwtUser,
   ): Promise<ArticleListResponse> {
     return this.articlesService.listArticles(query, user);
+  }
+
+  @Get('studio/:id')
+  @ApiBearerAuth()
+  @Roles(Role.Author, Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'Get a single article for studio editing',
+    description:
+      'Authors can only retrieve their own non-deleted article. ' +
+      'Editors and Admins can retrieve any non-deleted article. ' +
+      'Returns full revision history (metadata only, ordered by createdAt ASC). ' +
+      'The published revision is identified by `publishedRevisionId` — ' +
+      'do not assume the latest revision is the published one.',
+  })
+  @ApiParam({ name: 'id', description: 'Article UUID', format: 'uuid' })
+  @ApiOkResponse({ description: 'Article detail with revisions and tags' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT' })
+  @ApiForbiddenResponse({ description: 'Insufficient role' })
+  @ApiNotFoundResponse({ description: 'Article not found or access denied' })
+  @ApiBadRequestResponse({ description: 'Invalid UUID format' })
+  getStudioArticle(
+    @Param() params: ArticleIdParam,
+    @CurrentUser() user: JwtUser,
+  ): Promise<StudioArticleDetail> {
+    return this.articlesService.getStudioArticle(params.id, user);
   }
 }

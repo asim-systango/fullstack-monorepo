@@ -1,13 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { JwtUser } from '../../common/auth';
 import { Role } from '../../common/enums/role.enum';
 import { ArticlesRepository } from './articles.repository';
+import type { CreateArticleDto, CreatedArticle } from './dto/article.dto';
 import type {
   ArticleListResponse,
-  CreateArticleDto,
-  CreatedArticle,
   ListArticlesQuery,
-} from './dto/article.dto';
+  StudioArticleDetail,
+} from './dto/get-article.dto';
 import {
   markdownToContentBlocks,
   parseContentBlocks,
@@ -73,6 +73,21 @@ export class ArticlesService {
     user: JwtUser,
   ): Promise<ArticleListResponse> {
     return this.listArticles(query, user);
+  }
+
+  async getStudioArticle(id: string, user: JwtUser): Promise<StudioArticleDetail> {
+    const isAuthor = user.role === Role.Author;
+
+    const article = await this.articlesRepository.findStudioArticleById({
+      id,
+      authorId: isAuthor ? user.id : undefined,
+    });
+
+    if (!article) {
+      throw new NotFoundException('Article not found');
+    }
+
+    return article;
   }
 
   private resolveContent(dto: CreateArticleDto): ContentBlock[] {

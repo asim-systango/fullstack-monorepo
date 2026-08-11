@@ -8,7 +8,7 @@ import { Tag } from '../tags/tag.entity';
 import { Article } from './article.entity';
 import { Revision } from './revision.entity';
 import { collectMediaRefs, type ContentBlock } from './types/revision-content';
-import type { ArticleListItem } from './dto/article.dto';
+import type { ArticleListItem, StudioArticleDetail } from './dto/get-article.dto';
 
 export type CreateDraftInput = {
   authorId: string;
@@ -23,6 +23,12 @@ export type ListArticlesInput = {
   authorId?: string;
   page: number;
   limit: number;
+};
+
+export type GetStudioArticleInput = {
+  id: string;
+  /** When set, ownership is enforced: only the matching author's article is returned. */
+  authorId?: string;
 };
 
 @Injectable()
@@ -191,5 +197,45 @@ export class ArticlesRepository {
     });
 
     return { items: rows as ArticleListItem[], total };
+  }
+
+  async findStudioArticleById(
+    input: GetStudioArticleInput,
+  ): Promise<StudioArticleDetail | null> {
+    const article = await this.articleRepo.findOne({
+      where: {
+        id: input.id,
+        deletedAt: IsNull(),
+        ...(input.authorId ? { authorId: input.authorId } : {}),
+      },
+      relations: {
+        articleTags: { tag: true },
+        revisions: true,
+      },
+      order: {
+        revisions: { createdAt: 'ASC' },
+      },
+    });
+
+    if (!article) return null;
+
+    return {
+      id: article.id,
+      authorId: article.authorId,
+      title: article.title,
+      slug: article.slug,
+      publishedRevisionId: article.publishedRevisionId,
+      publishedAt: article.publishedAt,
+      createdAt: article.createdAt,
+      updatedAt: article.updatedAt,
+      tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
+      revisions: article.revisions.map((r) => ({
+        id: r.id,
+        createdBy: r.createdBy,
+        coverMediaId: r.coverMediaId,
+        content: r.content,
+        createdAt: r.createdAt,
+      })),
+    };
   }
 }
