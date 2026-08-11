@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, QueryFailedError, Repository } from 'typeorm';
 import { Media } from '../media/media.entity';
@@ -7,8 +12,13 @@ import { ArticleTag } from '../tags/article-tag.entity';
 import { Tag } from '../tags/tag.entity';
 import { Article } from './article.entity';
 import { Revision } from './revision.entity';
-import { collectMediaRefs, type ContentBlock } from './types/revision-content';
+import {
+  collectMediaRefs,
+  parseContentBlocks,
+  type ContentBlock,
+} from './types/revision-content';
 import type { ArticleListItem, StudioArticleDetail } from './dto/get-article.dto';
+import type { PublishedArticle } from './dto/publish-article.dto';
 import type {
   PublicArticleDetail,
   PublicArticleListItem,
@@ -42,6 +52,11 @@ export type ListPublicArticlesInput = {
 
 export type GetPublicArticleBySlugInput = {
   slug: string;
+};
+
+export type PublishRevisionInput = {
+  articleId: string;
+  revisionId: string;
 };
 
 @Injectable()
@@ -327,6 +342,56 @@ export class ArticlesRepository {
             }
           : null,
       },
+    };
+  }
+
+  /**
+   * Set the article's published revision pointer.
+   * Both publishedRevisionId and publishedAt are written in one UPDATE.
+   * Does not copy revision content onto the article or touch tags/revisions.
+   */
+  async publishRevision(input: PublishRevisionInput): Promise<PublishedArticle> {
+    const article = await this.articleRepo.findOne({
+      where: { id: input.articleId, deletedAt: IsNull() },
+    });
+    if (!article) {
+      throw new NotFoundException('Article not found');
+    }
+
+    const revision = await this.revisionRepo.findOne({
+      where: {
+        id: input.revisionId,
+        articleId: input.articleId,
+      },
+    });
+    if (!revision) {
+      throw new NotFoundException('Revision not found');
+    }
+
+    // Reuse create-time content rules; reject empty/invalid revisions.
+    try {
+      parseContentBlocks(revision.content);
+    } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+      throw new BadRequestException('Revision content is invalid');
+    }
+
+    const publishedAt = new Date();
+
+    await this.articleRepo.update(
+      { id: article.id },
+      {
+        publishedRevisionId: revision.id,
+        publishedAt,
+      },
+    );
+
+    return {
+      id: article.id,
+      publishedRevisionId: revision.id,
+      publishedAt,
     };
   }
 }
