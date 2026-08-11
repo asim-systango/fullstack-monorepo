@@ -31,13 +31,13 @@ const PATIENT_NAV: NavItem[] = [
 const DOCTOR_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Schedule', href: '/doctor/schedule', icon: CalendarDays },
-  { label: 'Appointments', href: '/appointments', icon: Calendar },
+  { label: 'Appointments', href: '/doctor/appointments', icon: Calendar },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Doctors', href: '/doctors', icon: Stethoscope },
-  { label: 'Appointments', href: '/appointments', icon: Calendar },
+  { label: 'Appointments', href: '/admin/appointments', icon: Calendar },
   { label: 'Admin Panel', href: '/admin', icon: Settings },
 ];
 

@@ -1,15 +1,23 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
-import { UsersService, type User } from '../../users';
+import { UsersService, type User, type PublicUser } from '../../users';
+import { Role } from '../../users/user.entity';
 
 describe('JwtStrategy (gateway)', () => {
   const usersService = {
     findById: jest.fn(),
-    toPublic: jest.fn((user: User) => ({
+    toPublic: jest.fn((user: User): PublicUser => ({
       id: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       name: user.name,
+      phone: user.phone,
       role: user.role,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     })),
   };
 
@@ -41,26 +49,42 @@ describe('JwtStrategy (gateway)', () => {
   });
 
   it('returns the public user when the subject exists', async () => {
-    const user = {
+    const user: User = {
       id: '11111111-1111-1111-1111-111111111111',
       email: 'user@example.com',
-      name: 'Demo',
-      role: 'user',
       passwordHash: 'hash',
-    } as User;
+      firstName: 'Demo',
+      lastName: 'User',
+      name: 'Demo User',
+      phone: '+1234567890',
+      role: Role.PATIENT,
+      isActive: true,
+      emailVerified: true,
+      hashedRefreshToken: null,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      deletedAt: null,
+    };
     usersService.findById.mockResolvedValue(user);
 
     await expect(
       strategy.validate({
         sub: user.id,
         email: user.email,
-        role: 'user',
+        role: Role.PATIENT,
       }),
     ).resolves.toEqual({
       id: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       name: user.name,
+      phone: user.phone,
       role: user.role,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     });
   });
 
@@ -71,7 +95,7 @@ describe('JwtStrategy (gateway)', () => {
       strategy.validate({
         sub: 'missing',
         email: 'x@example.com',
-        role: 'user',
+        role: 'PATIENT',
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });

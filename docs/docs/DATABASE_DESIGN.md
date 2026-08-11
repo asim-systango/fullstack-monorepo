@@ -141,5 +141,27 @@ If a second concurrent request attempts to book the same `slot-uuid`, PostgreSQL
 
 #### Appointment Status Lifecycle:
 
-- `SCHEDULED` -> `COMPLETED` (On consultation completion)
+- `SCHEDULED` -> `COMPLETED` (On consultation completion via `POST /appointments/:id/complete`)
 - `SCHEDULED` -> `CANCELLED` (On patient or admin cancellation, triggers soft-delete `deletedAt = NOW()`)
+
+---
+
+### 3. Clinical Completion Transaction & Privacy Controls (Day 5)
+
+#### Transactional Completion Flow:
+
+When `POST /appointments/:id/complete` is executed:
+
+1. `SELECT * FROM appointments WHERE id = :id FOR UPDATE` inside a `QueryRunner` transaction.
+2. Validates appointment status is `SCHEDULED`.
+3. Verifies doctor ownership (`slot.doctorId === doctorProfile.id` for Doctor role).
+4. Updates `appointment.status = 'COMPLETED'`.
+5. Atomically inserts into `prescriptions` table if medicines array is provided.
+6. Atomically inserts into `medical_notes` table if notes text is provided.
+7. Commits transaction and returns populated appointment.
+
+#### Role-Based Data Privacy Scoping:
+
+- **Patient Queries**: Internal medical notes are dynamically stripped (`appointment.medicalNotes = []`) before serialization to preserve doctor notes confidentiality.
+- **Doctor Queries**: Scoped strictly to slots owned by the requesting doctor.
+- **Admin Queries**: Unrestricted query builder with `q` search parameter across doctors, patients, and visit reasons.

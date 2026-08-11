@@ -10,10 +10,16 @@ function makeUser(overrides: Partial<User> = {}): User {
     id: '11111111-1111-1111-1111-111111111111',
     email: 'user@example.com',
     passwordHash: '',
-    name: 'Demo',
-    role: 'user',
+    firstName: 'Demo',
+    lastName: 'User',
+    name: 'Demo User',
+    role: 'PATIENT' as const,
+    isActive: true,
+    emailVerified: true,
+    hashedRefreshToken: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
     ...overrides,
   };
 }
@@ -22,10 +28,14 @@ describe('AuthService', () => {
   const usersService = {
     findByEmail: jest.fn(),
     findById: jest.fn(),
+    findByPhone: jest.fn(),
     create: jest.fn(),
+    updateRefreshToken: jest.fn(),
     toPublic: jest.fn((user: User) => ({
       id: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       name: user.name,
       role: user.role,
     })),
@@ -69,24 +79,28 @@ describe('AuthService', () => {
     it('creates a user on the happy path', async () => {
       const created = makeUser({ passwordHash: 'hash' });
       usersService.findByEmail.mockResolvedValue(null);
+      usersService.findByPhone.mockResolvedValue(null);
       usersService.create.mockResolvedValue(created);
 
       const result = await service.register({
         email: 'user@example.com',
         password: 'password123',
-        name: 'Demo',
+        firstName: 'Demo',
+        lastName: 'User',
       });
 
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           email: 'user@example.com',
-          name: 'Demo',
-          role: 'user',
+          firstName: 'Demo',
+          lastName: 'User',
         }),
       );
-      expect(result).toEqual({
+      expect(result.user).toEqual({
         id: created.id,
         email: created.email,
+        firstName: created.firstName,
+        lastName: created.lastName,
         name: created.name,
         role: created.role,
       });
@@ -99,7 +113,8 @@ describe('AuthService', () => {
         service.register({
           email: 'user@example.com',
           password: 'password123',
-          name: 'Demo',
+          firstName: 'Demo',
+          lastName: 'User',
         }),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(usersService.create).not.toHaveBeenCalled();
@@ -107,6 +122,7 @@ describe('AuthService', () => {
 
     it('maps Postgres unique violations to ConflictException', async () => {
       usersService.findByEmail.mockResolvedValue(null);
+      usersService.findByPhone.mockResolvedValue(null);
       const driverError = Object.assign(new Error('duplicate key'), {
         code: '23505',
       });
@@ -118,14 +134,15 @@ describe('AuthService', () => {
         service.register({
           email: 'user@example.com',
           password: 'password123',
-          name: 'Demo',
+          firstName: 'Demo',
+          lastName: 'User',
         }),
       ).rejects.toBeInstanceOf(ConflictException);
     });
   });
 
   describe('login', () => {
-    it('sets an httpOnly cookie and returns the public user', async () => {
+    it('sets an httpOnly cookie and returns tokens and public user', async () => {
       const password = 'password123';
       const bcrypt = await import('bcryptjs');
       const passwordHash = await bcrypt.hash(password, 4);
@@ -148,7 +165,7 @@ describe('AuthService', () => {
           path: '/',
         }),
       );
-      expect(result.email).toBe(user.email);
+      expect(result.user.email).toBe(user.email);
     });
 
     it('throws UnauthorizedException for bad credentials', async () => {
@@ -163,12 +180,13 @@ describe('AuthService', () => {
   });
 
   describe('logout', () => {
-    it('clears the auth cookie', () => {
+    it('clears the auth cookie', async () => {
       const res = {
         clearCookie: jest.fn(),
       } as unknown as Response;
 
-      expect(service.logout(res)).toEqual({ ok: true });
+      const result = await service.logout('11111111-1111-1111-1111-111111111111', res);
+      expect(result).toEqual({ message: 'Successfully logged out' });
       expect(res.clearCookie).toHaveBeenCalledWith(
         'access_token',
         expect.objectContaining({ httpOnly: true, path: '/' }),

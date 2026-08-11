@@ -17,12 +17,14 @@ import {
 export interface AppointmentCardProps {
   appointment: Appointment;
   onCancel?: (id: string) => void;
+  onComplete?: (appointment: Appointment) => void;
   isCancelling?: boolean;
 }
 
 export function AppointmentCard({
   appointment,
   onCancel,
+  onComplete,
   isCancelling,
 }: Readonly<AppointmentCardProps>) {
   const doctor = appointment.slot?.doctor;
@@ -129,7 +131,7 @@ export function AppointmentCard({
               {appointment.prescription.medicines.map((med, idx) => (
                 <li key={idx}>
                   <strong className="text-foreground">{med.name}</strong> ({med.dosage}) —{' '}
-                  {med.frequency}
+                  {med.frequency} {med.duration ? `[${med.duration}]` : ''}
                 </li>
               ))}
             </ul>
@@ -141,12 +143,12 @@ export function AppointmentCard({
           </div>
         )}
 
-        {/* Medical Notes if present */}
+        {/* Medical Notes if present (Internal) */}
         {appointment.medicalNotes && appointment.medicalNotes.length > 0 && (
           <div className="text-xs bg-blue-500/5 p-3 rounded-md border border-blue-500/20">
             <div className="font-medium text-blue-700 dark:text-blue-400 flex items-center gap-1.5 mb-1">
               <FileText className="w-4 h-4" />
-              Clinical Notes:
+              Clinical Medical Notes (Doctor Only):
             </div>
             {appointment.medicalNotes.map((note) => (
               <p key={note.id} className="text-muted-foreground mt-1">
@@ -157,17 +159,29 @@ export function AppointmentCard({
         )}
 
         {/* Actions */}
-        {appointment.status === 'SCHEDULED' && onCancel && (
-          <div className="flex justify-end pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onCancel(appointment.id)}
-              loading={isCancelling}
-              className="text-xs text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
-            >
-              Cancel Appointment
-            </Button>
+        {appointment.status === 'SCHEDULED' && (onCancel || onComplete) && (
+          <div className="flex justify-end gap-2 pt-2 border-t border-border/30">
+            {onComplete && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onComplete(appointment)}
+                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                Complete Visit
+              </Button>
+            )}
+            {onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onCancel(appointment.id)}
+                loading={isCancelling}
+                className="text-xs text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+              >
+                Cancel
+              </Button>
+            )}
           </div>
         )}
       </div>

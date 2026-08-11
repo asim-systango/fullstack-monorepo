@@ -5,9 +5,10 @@ import { AppointmentRepository } from './repositories/appointment.repository';
 import { AppointmentService } from './appointment.service';
 import { AppointmentController } from './appointment.controller';
 import { SlotModule } from '../slot';
+import { DoctorModule } from '../doctor';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Appointment]), SlotModule],
+  imports: [TypeOrmModule.forFeature([Appointment]), SlotModule, DoctorModule],
   controllers: [AppointmentController],
   providers: [AppointmentRepository, AppointmentService],
   exports: [AppointmentRepository, AppointmentService],

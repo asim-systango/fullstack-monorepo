@@ -4,9 +4,11 @@ import { Prescription } from './entities/prescription.entity';
 import { PrescriptionRepository } from './repositories/prescription.repository';
 import { PrescriptionService } from './prescription.service';
 import { PrescriptionController } from './prescription.controller';
+import { AppointmentModule } from '../appointment';
+import { DoctorModule } from '../doctor';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Prescription])],
+  imports: [TypeOrmModule.forFeature([Prescription]), AppointmentModule, DoctorModule],
   controllers: [PrescriptionController],
   providers: [PrescriptionRepository, PrescriptionService],
   exports: [PrescriptionRepository, PrescriptionService],

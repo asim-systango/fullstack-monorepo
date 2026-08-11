@@ -201,21 +201,29 @@ Delete an unbooked slot. Returns `400 Bad Request` if slot is currently `BOOKED`
 
 #### `GET /appointments`
 
-List appointments with optional filters and pagination.
+List appointments with role-scoped data access, hospital-wide keyword search, and filters.
 
+- **Authentication**: Required (JWT Bearer token).
+- **Role Scoping Rules**:
+  - `PATIENT`: Sees ONLY appointments where `patientId == currentUser.id`. Medical notes are stripped from response.
+  - `DOCTOR`: Sees ONLY appointments for slots owned by `currentUser` doctor profile.
+  - `ADMIN`: Full access to all hospital appointments across all departments.
 - **Query Parameters**:
-  - `patientId` (UUID, optional)
-  - `doctorId` (UUID, optional)
+  - `patientId` (UUID, optional — Admin only)
+  - `doctorId` (UUID, optional — Admin only)
   - `status` (`SCHEDULED` | `CANCELLED` | `COMPLETED`, optional)
   - `dateFrom` (ISO Date string, optional)
   - `dateTo` (ISO Date string, optional)
+  - `q` (string, optional) — Hospital-wide search across doctor names, specializations, visit reasons, and patient IDs.
   - `page` (number, default: 1)
   - `limit` (number, default: 50)
   - `sort` (`createdAt` | `startsAt`, default: `startsAt`)
 
 #### `GET /appointments/:id`
 
-Get appointment by UUID (includes relation details).
+Get appointment by UUID (Role Scoped).
+
+- **Authentication**: Required. Patients can view only their own appointment; Doctors can view only their own slot appointments.
 
 #### `POST /appointments`
 
@@ -237,6 +245,39 @@ Book an appointment for a specific slot (Transactional & Pessimistic Lock Protec
   - `401 Unauthorized`: Missing or invalid JWT token.
   - `409 Conflict`: Slot already booked or locked by concurrent request (`SELECT FOR UPDATE`).
 
+#### `POST /appointments/:id/complete`
+
+Complete a consultation, record clinical diagnosis notes, and issue a digital prescription (Transactional).
+
+- **Authentication**: Required (Doctor or Admin role).
+- **Role Validation**: Doctors can ONLY complete appointments belonging to their own slots.
+- **Request Body**:
+
+```json
+{
+  "prescription": {
+    "medicines": [
+      {
+        "name": "Amoxicillin",
+        "dosage": "500mg",
+        "frequency": "Twice daily after meals",
+        "duration": "7 days"
+      }
+    ],
+    "instructions": "Take with plenty of water. Finish entire course."
+  },
+  "medicalNote": {
+    "notes": "Patient displays mild throat inflammation. Recommended warm saline gargle."
+  }
+}
+```
+
+- **Response**: `200 OK` (returns updated appointment with attached prescription & internal note).
+- **Error Responses**:
+  - `400 Bad Request`: Appointment is already completed or cancelled.
+  - `403 Forbidden`: Patient attempt to complete, or doctor attempting to complete another doctor's visit.
+  - `404 Not Found`: Appointment ID not found.
+
 #### `PATCH /appointments/:id`
 
 Update appointment status or visit reason.
@@ -257,15 +298,15 @@ Cancel and soft-delete an appointment.
 
 #### `GET /prescriptions`
 
-List all prescriptions or query by `appointmentId`.
+List prescriptions. Protected by JWT authentication.
 
 #### `GET /prescriptions/:id`
 
-Get prescription details by UUID.
+Get prescription details by UUID. Protected by JWT authentication.
 
 #### `POST /prescriptions`
 
-Create a new prescription.
+Create a new prescription (Doctor / Admin only).
 
 ---
 
@@ -275,10 +316,12 @@ Create a new prescription.
 
 List clinical medical notes by `appointmentId` or `doctorId`.
 
+- **Security Rule**: Protected by JWT authentication. Restricted to `DOCTOR` and `ADMIN` roles. `PATIENT` role access returns `403 Forbidden`.
+
 #### `GET /medical-notes/:id`
 
-Get clinical medical note by UUID.
+Get clinical medical note by UUID. Restricted to `DOCTOR` and `ADMIN` roles.
 
 #### `POST /medical-notes`
 
-Add a clinical medical note.
+Add a clinical medical note (Doctor / Admin only).

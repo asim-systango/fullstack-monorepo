@@ -46,11 +46,11 @@ sequenceDiagram
     API->>API: Extract patientId from JWT (@CurrentUser)
     API->>Service: bookAppointment(patientId, dto)
     Service->>QR: startTransaction()
-    
+
     Service->>DB: SELECT * FROM slots WHERE id = slotId FOR UPDATE
     Note over DB: Lock acquired (Pessimistic Write Lock)
     DB-->>Service: Returns Slot record
-    
+
     alt Slot is BOOKED or BLOCKED
         Service->>QR: rollbackTransaction()
         Service-->>API: Throw 409 Conflict / 422 Exception
@@ -81,10 +81,10 @@ sequenceDiagram
     User->>API: DELETE /appointments/:id
     API->>Service: cancelAppointment(user, id)
     Service->>QR: startTransaction()
-    
+
     Service->>DB: SELECT * FROM appointments WHERE id = id FOR UPDATE
     DB-->>Service: Return Appointment & Slot
-    
+
     alt User is Patient AND appointment.patientId != user.id
         Service->>QR: rollbackTransaction()
         Service-->>API: Throw 403 Forbidden
@@ -100,6 +100,49 @@ sequenceDiagram
         DB-->>Service: Transaction Committed
         Service-->>API: Return Cancelled Appointment
         API-->>User: 200 OK (Success)
+    end
+```
+
+---
+
+## Transactional Clinical Completion Sequence Diagram (Day 5)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Doctor as Doctor / Admin
+    participant API as Appointment Controller
+    participant Service as Appointment Service
+    participant QR as QueryRunner Transaction
+    participant DB as PostgreSQL Database
+
+    Doctor->>API: POST /appointments/:id/complete { prescription, medicalNote }
+    API->>Service: complete(id, user, dto)
+    Service->>QR: startTransaction()
+
+    Service->>DB: SELECT * FROM appointments WHERE id = id FOR UPDATE
+    DB-->>Service: Return Appointment & Slot
+
+    alt User is Doctor AND slot.doctorId != doctor.id
+        Service->>QR: rollbackTransaction()
+        Service-->>API: Throw 403 Forbidden
+        API-->>Doctor: 403 Forbidden ("Doctors can only complete their own visits")
+    else Appointment is CANCELLED or already COMPLETED
+        Service->>QR: rollbackTransaction()
+        Service-->>API: Throw 400 Bad Request
+        API-->>Doctor: 400 Bad Request ("Appointment already completed or cancelled")
+    else Valid Completion Request
+        Service->>DB: UPDATE appointments SET status = 'COMPLETED' WHERE id = id
+        opt Prescription provided
+            Service->>DB: INSERT INTO prescriptions (appointmentId, medicines, instructions)
+        end
+        opt Medical Note provided
+            Service->>DB: INSERT INTO medical_notes (appointmentId, doctorId, notes)
+        end
+        Service->>QR: commitTransaction()
+        DB-->>Service: Transaction Committed
+        Service-->>API: Return Updated Appointment with Prescription & Notes
+        API-->>Doctor: 200 OK (Success)
     end
 ```
 

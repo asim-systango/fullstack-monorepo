@@ -46,6 +46,18 @@ export type AppointmentFilters = {
   dateTo?: string;
   doctorId?: string;
   patientId?: string;
+  q?: string;
   page?: number;
   limit?: number;
+  sort?: 'createdAt' | 'startsAt';
+};
+
+export type CompleteAppointmentPayload = {
+  prescription?: {
+    medicines: PrescriptionItem[];
+    instructions?: string;
+  };
+  medicalNote?: {
+    notes: string;
+  };
 };

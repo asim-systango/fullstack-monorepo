@@ -1,15 +1,22 @@
 import { UsersService } from './users.service';
-import { User } from './user.entity';
+import { User, Role } from './user.entity';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: '11111111-1111-1111-1111-111111111111',
     email: 'user@example.com',
     passwordHash: 'hash',
-    name: 'Demo',
-    role: 'user',
+    firstName: 'Demo',
+    lastName: 'User',
+    name: 'Demo User',
+    phone: '+1234567890',
+    role: Role.PATIENT,
+    isActive: true,
+    emailVerified: true,
+    hashedRefreshToken: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
     ...overrides,
   };
 }
@@ -46,31 +53,35 @@ describe('UsersService', () => {
     expect(repo.findOne).toHaveBeenCalledWith({ where: { id: user.id } });
   });
 
-  it('create lowercases email and defaults role to user', async () => {
+  it('create lowercases email and defaults role to PATIENT', async () => {
     repo.save.mockImplementation(async (v) => makeUser({ ...v }));
 
     const created = await service.create({
       email: 'New@Example.com',
       passwordHash: 'hash',
-      name: 'New',
+      firstName: 'New',
+      lastName: 'User',
+      name: 'New User',
     });
 
-    expect(repo.create).toHaveBeenCalledWith({
-      email: 'new@example.com',
-      passwordHash: 'hash',
-      name: 'New',
-      role: 'user',
-    });
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'new@example.com',
+        passwordHash: 'hash',
+        firstName: 'New',
+        lastName: 'User',
+        name: 'New User',
+        role: Role.PATIENT,
+      }),
+    );
     expect(created.email).toBe('new@example.com');
   });
 
   it('toPublic omits passwordHash', () => {
     const user = makeUser({ passwordHash: 'secret' });
-    expect(service.toPublic(user)).toEqual({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    });
+    const publicUser = service.toPublic(user);
+    expect(publicUser.id).toBe(user.id);
+    expect(publicUser.email).toBe(user.email);
+    expect('passwordHash' in publicUser).toBe(false);
   });
 });

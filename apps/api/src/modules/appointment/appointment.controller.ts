@@ -10,65 +10,72 @@ import {
   ParseUUIDPipe,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { AppointmentStatus } from '../../shared/enums/appointment-status.enum';
-import { CurrentUser, Public, JwtUser } from '../../common/auth';
+import { CompleteAppointmentDto } from './dto/complete-appointment.dto';
+import { GetAppointmentsQueryDto } from './dto/get-appointments-query.dto';
+import { CurrentUser, JwtUser, Roles } from '../../common/auth';
 
 @ApiTags('Appointments')
-@Controller('appointments')
+@Controller()
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
-  @Public()
-  @Get()
-  @ApiOperation({ summary: 'List appointments with optional filters and pagination' })
-  @ApiQuery({ name: 'patientId', required: false })
-  @ApiQuery({ name: 'doctorId', required: false })
-  @ApiQuery({ name: 'status', enum: AppointmentStatus, required: false })
-  @ApiQuery({ name: 'dateFrom', required: false, description: 'ISO start date' })
-  @ApiQuery({ name: 'dateTo', required: false, description: 'ISO end date' })
-  @ApiQuery({ name: 'page', required: false, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, example: 20 })
-  @ApiQuery({ name: 'sort', required: false, enum: ['createdAt', 'startsAt'] })
+  @Get('appointments')
+  @ApiOperation({
+    summary: 'List appointments with role scoping and filters',
+  })
   @ApiResponse({
     status: 200,
     description: 'Paginated list of appointments returned successfully',
   })
   async findAll(
-    @Query('patientId') patientId?: string,
-    @Query('doctorId') doctorId?: string,
-    @Query('status') status?: AppointmentStatus,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('sort') sort?: 'createdAt' | 'startsAt',
+    @CurrentUser() user: JwtUser | undefined,
+    @Query() query: GetAppointmentsQueryDto,
   ) {
-    return this.appointmentService.findAll({
-      patientId,
-      doctorId,
-      status,
-      dateFrom,
-      dateTo,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      sort,
-    });
+    if (!user) {
+      throw new UnauthorizedException('Authentication required to access appointments');
+    }
+    return this.appointmentService.findAll(user, query);
   }
 
-  @Public()
-  @Get(':id')
-  @ApiOperation({ summary: 'Get appointment details by ID' })
+  @Get('admin/appointments')
+  @Roles('ADMIN')
+  @ApiOperation({
+    summary: 'Admin-only hospital-wide appointment search and filter',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Hospital-wide appointments list with metadata',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
+  async findAdminAppointments(
+    @CurrentUser() user: JwtUser | undefined,
+    @Query() query: GetAppointmentsQueryDto,
+  ) {
+    return this.appointmentService.findAdminAppointments(user, query);
+  }
+
+  @Get('appointments/:id')
+  @ApiOperation({ summary: 'Get appointment details by ID (Role Scoped)' })
   @ApiResponse({ status: 200, description: 'Appointment details found' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Access denied' })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.appointmentService.findOne(id);
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtUser | undefined,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException(
+        'Authentication required to view appointment details',
+      );
+    }
+    return this.appointmentService.findOne(id, user);
   }
 
-  @Post()
+  @Post('appointments')
   @ApiOperation({
     summary: 'Book a new consultation slot (Transactional & Lock Protected)',
   })
@@ -90,7 +97,30 @@ export class AppointmentController {
     return this.appointmentService.create(patientId, dto);
   }
 
-  @Patch(':id')
+  @Patch('appointments/:id/complete')
+  @Post('appointments/:id/complete')
+  @ApiOperation({
+    summary: 'Complete appointment, issue prescription and record clinical note',
+  })
+  @ApiResponse({ status: 200, description: 'Appointment marked completed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request or already completed' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — Only assigned Doctor or Admin can complete',
+  })
+  @ApiResponse({ status: 404, description: 'Appointment not found' })
+  async complete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtUser | undefined,
+    @Body() dto?: CompleteAppointmentDto,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException('Authentication required to complete appointment');
+    }
+    return this.appointmentService.complete(id, user, dto);
+  }
+
+  @Patch('appointments/:id')
   @ApiOperation({ summary: 'Update appointment status or reason' })
   @ApiResponse({ status: 200, description: 'Appointment updated successfully' })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
@@ -101,7 +131,7 @@ export class AppointmentController {
     return this.appointmentService.update(id, dto);
   }
 
-  @Delete(':id')
+  @Delete('appointments/:id')
   @ApiOperation({ summary: 'Cancel and soft-delete an appointment' })
   @ApiResponse({ status: 200, description: 'Appointment cancelled and slot freed' })
   @ApiResponse({

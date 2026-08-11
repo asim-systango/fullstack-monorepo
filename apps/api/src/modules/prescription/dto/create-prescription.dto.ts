@@ -1,26 +1,51 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 
-/** DTO for creating a prescription for a completed appointment. */
+export class MedicineItemDto {
+  @ApiProperty({ example: 'Amoxicillin' })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiProperty({ example: '500mg' })
+  @IsString()
+  @IsNotEmpty()
+  dosage!: string;
+
+  @ApiProperty({ example: 'Twice daily after meals' })
+  @IsString()
+  @IsNotEmpty()
+  frequency!: string;
+
+  @ApiPropertyOptional({ example: '5 days' })
+  @IsString()
+  @IsOptional()
+  duration?: string;
+}
+
 export class CreatePrescriptionDto {
-  @ApiProperty({ description: 'Appointment UUID (must be COMPLETED)' })
-  @IsUUID()
-  @IsNotEmpty()
-  appointmentId!: string;
-
-  @ApiProperty({
-    description: 'List of prescribed medicines',
-    example: [{ name: 'Aspirin', dosage: '100mg', frequency: 'Once daily' }],
-  })
+  @ApiProperty({ type: [MedicineItemDto] })
   @IsArray()
-  @IsNotEmpty()
-  medicines!: Record<string, unknown>[];
+  @ArrayMinSize(1, { message: 'Medicines must not be empty' })
+  @ValidateNested({ each: true })
+  @Type(() => MedicineItemDto)
+  medicines!: MedicineItemDto[];
 
   @ApiPropertyOptional({
-    description: 'Additional instructions',
-    example: 'Take with food. Avoid alcohol.',
+    description: 'Additional instructions (max 1000 chars)',
+    example: 'Take after meals with water.',
   })
   @IsString()
   @IsOptional()
+  @MaxLength(1000)
   instructions?: string;
 }

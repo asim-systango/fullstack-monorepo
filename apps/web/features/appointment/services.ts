@@ -1,5 +1,12 @@
 import { apiClient } from '@/lib/api';
-import type { Appointment, AppointmentFilters } from './types';
+import type {
+  Appointment,
+  AppointmentFilters,
+  CompleteAppointmentPayload,
+  Prescription,
+  MedicalNote,
+  PrescriptionItem,
+} from './types';
 import { MOCK_DOCTORS } from '../doctor/services';
 
 const BASE = '/appointments';
@@ -123,14 +130,27 @@ export const appointmentApi = {
   async getAll(filters?: AppointmentFilters): Promise<Appointment[]> {
     try {
       const response = await apiClient.get<
-        { items: Appointment[]; total: number } | { data: Appointment[] } | Appointment[]
+        | { items: Appointment[]; total: number }
+        | { data: { items: Appointment[] } | Appointment[] }
+        | Appointment[]
       >(BASE, {
         params: filters,
       });
       const data = response.data;
       if (Array.isArray(data)) return data;
       if ('items' in data && Array.isArray(data.items)) return data.items;
-      if ('data' in data && Array.isArray(data.data)) return data.data;
+      if ('data' in data) {
+        const inner = data.data;
+        if (Array.isArray(inner)) return inner;
+        if (
+          typeof inner === 'object' &&
+          inner &&
+          'items' in inner &&
+          Array.isArray(inner.items)
+        ) {
+          return inner.items;
+        }
+      }
       return [];
     } catch {
       let filtered = [...MOCK_APPOINTMENTS];
@@ -141,6 +161,20 @@ export const appointmentApi = {
         filtered = filtered.filter((a) => a.slot?.doctorId === filters.doctorId);
       }
       return filtered;
+    }
+  },
+
+  /** Get single appointment details by ID. */
+  async getById(id: string): Promise<Appointment> {
+    try {
+      const { data } = await apiClient.get<Appointment | { data: Appointment }>(
+        `${BASE}/${id}`,
+      );
+      return 'data' in data && data.data ? data.data : (data as Appointment);
+    } catch {
+      const found = MOCK_APPOINTMENTS.find((a) => a.id === id);
+      if (found) return found;
+      throw new Error(`Appointment ${id} not found`);
     }
   },
 
@@ -179,5 +213,143 @@ export const appointmentApi = {
       }
       throw new Error(`Appointment ${id} not found`);
     }
+  },
+
+  /** Complete an appointment with prescription & medical notes. */
+  async complete(id: string, payload?: CompleteAppointmentPayload): Promise<Appointment> {
+    try {
+      const { data } = await apiClient.post<Appointment | { data: Appointment }>(
+        `${BASE}/${id}/complete`,
+        payload,
+      );
+      return 'data' in data && data.data ? data.data : (data as Appointment);
+    } catch {
+      const found = MOCK_APPOINTMENTS.find((a) => a.id === id);
+      if (found) {
+        found.status = 'COMPLETED';
+        if (payload?.prescription) {
+          found.prescription = {
+            id: `pr-mock-${Date.now()}`,
+            appointmentId: id,
+            medicines: payload.prescription.medicines,
+            instructions: payload.prescription.instructions ?? null,
+            createdAt: new Date().toISOString(),
+          };
+        }
+        if (payload?.medicalNote) {
+          found.medicalNotes = [
+            ...(found.medicalNotes ?? []),
+            {
+              id: `mn-mock-${Date.now()}`,
+              appointmentId: id,
+              doctorId: found.slot?.doctorId ?? 'd1',
+              notes: payload.medicalNote.notes,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+        }
+        return found;
+      }
+      throw new Error(`Appointment ${id} not found`);
+    }
+  },
+};
+
+export const adminAppointmentApi = {
+  async getAdminAppointments(filters?: AppointmentFilters): Promise<{
+    items: Appointment[];
+    meta: { page: number; limit: number; totalItems: number; totalPages: number };
+  }> {
+    try {
+      const { data } = await apiClient.get<{
+        items?: Appointment[];
+        meta?: { page: number; limit: number; totalItems: number; totalPages: number };
+        data?: {
+          items: Appointment[];
+          meta: { page: number; limit: number; totalItems: number; totalPages: number };
+        };
+      }>('/admin/appointments', { params: filters });
+
+      if (data.data?.items) {
+        return data.data;
+      }
+      if (data.items) {
+        return {
+          items: data.items,
+          meta: data.meta ?? {
+            page: 1,
+            limit: 10,
+            totalItems: data.items.length,
+            totalPages: 1,
+          },
+        };
+      }
+      return { items: [], meta: { page: 1, limit: 10, totalItems: 0, totalPages: 0 } };
+    } catch {
+      const items = await appointmentApi.getAll(filters);
+      return {
+        items,
+        meta: { page: 1, limit: 10, totalItems: items.length, totalPages: 1 },
+      };
+    }
+  },
+};
+
+export const prescriptionApi = {
+  async createForAppointment(
+    appointmentId: string,
+    payload: { medicines: PrescriptionItem[]; instructions?: string },
+  ): Promise<Prescription> {
+    const { data } = await apiClient.post<Prescription | { data: Prescription }>(
+      `/appointments/${appointmentId}/prescriptions`,
+      payload,
+    );
+    return 'data' in data && data.data ? data.data : (data as Prescription);
+  },
+
+  async getByAppointmentId(appointmentId: string): Promise<Prescription | null> {
+    const { data } = await apiClient.get<Prescription | { data: Prescription | null }>(
+      `/appointments/${appointmentId}/prescription`,
+    );
+    return 'data' in data ? data.data : (data as Prescription);
+  },
+
+  async getById(id: string): Promise<Prescription> {
+    const { data } = await apiClient.get<Prescription | { data: Prescription }>(
+      `/prescriptions/${id}`,
+    );
+    return 'data' in data && data.data ? data.data : (data as Prescription);
+  },
+};
+
+export const medicalNoteApi = {
+  async createForAppointment(
+    appointmentId: string,
+    payload: { notes: string },
+  ): Promise<MedicalNote> {
+    const { data } = await apiClient.post<MedicalNote | { data: MedicalNote }>(
+      `/appointments/${appointmentId}/medical-notes`,
+      payload,
+    );
+    return 'data' in data && data.data ? data.data : (data as MedicalNote);
+  },
+
+  async getByAppointmentId(appointmentId: string): Promise<MedicalNote[]> {
+    const { data } = await apiClient.get<MedicalNote[] | { data: MedicalNote[] }>(
+      `/appointments/${appointmentId}/medical-notes`,
+    );
+    const result = 'data' in data ? data.data : data;
+    return Array.isArray(result) ? result : [];
+  },
+
+  async getPatientHistory(): Promise<
+    { appointmentId: string; summary: string; createdAt: string }[]
+  > {
+    const { data } = await apiClient.get<
+      | { appointmentId: string; summary: string; createdAt: string }[]
+      | { data: { appointmentId: string; summary: string; createdAt: string }[] }
+    >('/patients/me/medical-notes');
+    const result = 'data' in data ? data.data : data;
+    return Array.isArray(result) ? result : [];
   },
 };
