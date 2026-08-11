@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Patch, Post, Req, Res } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCookieAuth,
@@ -84,5 +84,18 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
   profile(@CurrentUser() user: PublicUser) {
     return user;
+  }
+
+  @ApiBearerAuth()
+  @ApiCookieAuth('access_token')
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update logged in user profile' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
+  updateProfile(
+    @CurrentUser() user: PublicUser,
+    @Body()
+    dto: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string },
+  ) {
+    return this.authService.updateProfile(user.id, dto);
   }
 }

@@ -41,6 +41,9 @@ export class User {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   phone?: string;
 
+  @Column({ name: 'avatar_url', type: 'text', nullable: true })
+  avatarUrl?: string | null;
+
   @Column({ type: 'varchar', length: 20, default: Role.PATIENT })
   role!: UserRole;
 

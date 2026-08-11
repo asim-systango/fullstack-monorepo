@@ -31,6 +31,7 @@ export class InitUsers1720000000000 implements MigrationInterface {
         ADD COLUMN IF NOT EXISTS "first_name" character varying(50),
         ADD COLUMN IF NOT EXISTS "last_name" character varying(50),
         ADD COLUMN IF NOT EXISTS "phone" character varying(20),
+        ADD COLUMN IF NOT EXISTS "avatar_url" text,
         ADD COLUMN IF NOT EXISTS "is_active" boolean NOT NULL DEFAULT true,
         ADD COLUMN IF NOT EXISTS "email_verified" boolean NOT NULL DEFAULT false,
         ADD COLUMN IF NOT EXISTS "hashed_refresh_token" text,

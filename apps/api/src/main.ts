@@ -12,7 +12,7 @@ import { setupSwagger } from '@shared/http/swagger';
 
 async function bootstrap() {
   const appSettings = appConfig();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.enableShutdownHooks();
 
   app.use(compression());

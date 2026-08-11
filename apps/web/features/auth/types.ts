@@ -7,6 +7,7 @@ export interface AuthUser {
   lastName?: string;
   name: string;
   phone?: string;
+  avatarUrl?: string | null;
   role: UserRole;
   isActive?: boolean;
   emailVerified?: boolean;

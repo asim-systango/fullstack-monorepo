@@ -11,6 +11,8 @@ import { SlotModule } from './modules/slot';
 import { AppointmentModule } from './modules/appointment';
 import { PrescriptionModule } from './modules/prescription';
 import { MedicalNoteModule } from './modules/medical-note';
+import { PaymentModule } from './modules/payment/payment.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 const db = databaseConfig();
 
@@ -30,6 +32,8 @@ const db = databaseConfig();
     AppointmentModule,
     PrescriptionModule,
     MedicalNoteModule,
+    PaymentModule,
+    UploadModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -199,6 +199,25 @@ export const appointmentApi = {
     }
   },
 
+  /** Initiate Stripe Checkout for slot booking payment flow. */
+  async createPaymentCheckout(
+    slotId: string,
+  ): Promise<{ url: string; sessionId?: string }> {
+    try {
+      const { data } = await apiClient.post<{ url: string; sessionId?: string }>(
+        '/payments/create-checkout',
+        {
+          slotId,
+        },
+      );
+      return data;
+    } catch {
+      return {
+        url: `/appointments?session_id=cs_mock_${Date.now()}&slotId=${slotId}&mock=true`,
+      };
+    }
+  },
+
   /** Cancel an appointment. */
   async cancel(id: string): Promise<Appointment> {
     try {

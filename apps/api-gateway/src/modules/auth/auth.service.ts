@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -233,6 +234,17 @@ export class AuthService {
     }
 
     return { message: 'Successfully logged out' };
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string },
+  ) {
+    const updatedUser = await this.usersService.updateProfile(userId, dto);
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
   }
 
   private async generateTokens(userId: string, email: string, role: string) {

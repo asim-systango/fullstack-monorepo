@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth';
+import { useAuthStore } from '@/features/auth/store/use-auth-store';
+import { apiClient } from '@/lib/api';
 import {
   Page,
   PageHeader,
@@ -30,10 +32,12 @@ import {
   Server,
   AlertCircle,
   Clock,
+  Loader2,
 } from 'lucide-react';
 
 export default function UserSettingsPage() {
   const { user } = useAuth();
+  const updateUser = useAuthStore((state) => state.updateUser);
   const role = (user?.role || 'PATIENT').toUpperCase();
 
   const [activeTab, setActiveTab] = useState<
@@ -45,11 +49,26 @@ export default function UserSettingsPage() {
     user?.firstName || user?.name?.split(' ')[0] || '',
   );
   const [lastName, setLastName] = useState(
-    user?.lastName || user?.name?.split(' ')[1] || '',
+    user?.lastName || user?.name?.split(' ').slice(1).join(' ') || '',
   );
-  const [phone, setPhone] = useState(user?.phone || '+1 (555) 234-5678');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [profileImage, setProfileImage] = useState<string | null>(
+    user?.avatarUrl || null,
+  );
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || user.name?.split(' ')[0] || '');
+      setLastName(user.lastName || user.name?.split(' ').slice(1).join(' ') || '');
+      setPhone(user.phone || '');
+      if (user.avatarUrl) {
+        setProfileImage(user.avatarUrl);
+      }
+    }
+  }, [user]);
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -99,19 +118,75 @@ export default function UserSettingsPage() {
   const [allergies, setAllergies] = useState('Penicillin, Peanuts');
   const [patientSuccess, setPatientSuccess] = useState(false);
 
-  // Image Upload Handler
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Cloudinary Image Upload Handler
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    setUploadError(null);
+    try {
+      // 1. Request upload URL from backend
+      const requestRes = await apiClient.post('/uploads/request-url', {
+        name: file.name,
+        contentType: file.type || 'image/png',
+        size: file.size,
+      });
+      const data = requestRes.data?.data || requestRes.data;
+      const rawUploadURL = data.uploadURL || '';
+      const uploadURL = rawUploadURL.replace(/^\/api/, '');
+
+      // 2. Direct upload to file endpoint (streams to Cloudinary)
+      const uploadRes = await apiClient.post(uploadURL, file, {
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      });
+      const uploadData = uploadRes.data?.data || uploadRes.data;
+      const objectPath = uploadData?.objectPath;
+
+      if (objectPath) {
+        setProfileImage(objectPath);
+
+        // Save immediately to backend user profile
+        const profileRes = await apiClient.patch('/auth/profile', {
+          avatarUrl: objectPath,
+        });
+        const updatedUser = profileRes.data?.data || profileRes.data;
+        if (updatedUser) {
+          updateUser(updatedUser);
+        }
+        setProfileSuccess(true);
+        setTimeout(() => setProfileSuccess(false), 3000);
+      }
+    } catch (err: unknown) {
+      console.error('Failed to upload image:', err);
+      setUploadError('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
-  const handleProfileSave = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleProfileSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setProfileSuccess(true);
-    setTimeout(() => setProfileSuccess(false), 3000);
+    setUploadError(null);
+    try {
+      const res = await apiClient.patch('/auth/profile', {
+        firstName,
+        lastName,
+        phone,
+        avatarUrl: profileImage,
+      });
+      const updatedUser = res.data?.data || res.data;
+      if (updatedUser) {
+        updateUser(updatedUser);
+      }
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 3000);
+    } catch (err: unknown) {
+      console.error('Failed to save profile:', err);
+      setUploadError('Failed to save profile changes.');
+    }
   };
 
   const handleSecuritySave = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -135,16 +210,68 @@ export default function UserSettingsPage() {
     setTimeout(() => setPatientSuccess(false), 3000);
   };
 
-  const handleDocumentSimulatedUpload = () => {
-    const today = new Date().toISOString().split('T')[0] ?? '2026-08-11';
-    const newDoc = {
-      id: `doc-${Date.now()}`,
-      name: `Uploaded_Document_${documents.length + 1}.pdf`,
-      type: 'Medical Document',
-      status: 'PENDING',
-      uploadedAt: today,
-    };
-    setDocuments([...documents, newDoc]);
+  const renderAvatarContent = (): React.ReactNode => {
+    if (isUploadingImage) {
+      return <Loader2 className="w-6 h-6 animate-spin text-primary" />;
+    }
+    if (profileImage) {
+      return (
+        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+      );
+    }
+    return <span>{`${firstName[0] || 'U'}${lastName[0] || ''}`}</span>;
+  };
+
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingDocument(true);
+    try {
+      const requestRes = await apiClient.post('/uploads/request-url', {
+        name: file.name,
+        contentType: file.type || 'application/pdf',
+        size: file.size,
+      });
+      const data = requestRes.data?.data || requestRes.data;
+      const rawUploadURL = data.uploadURL || '';
+      const uploadURL = rawUploadURL.replace(/^\/api/, '');
+
+      const uploadRes = await apiClient.post(uploadURL, file, {
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      });
+
+      const uploadData = uploadRes.data?.data || uploadRes.data;
+      const objectPath = uploadData?.objectPath || data.objectPath;
+      const today = new Date().toISOString().split('T')[0] ?? '2026-08-11';
+
+      let docType = 'Medical Document';
+      if (file.type.includes('pdf')) {
+        docType = 'Medical License (PDF)';
+      } else if (file.type.includes('image')) {
+        docType = 'ID Proof / Certificate';
+      }
+
+      const newDoc = {
+        id: `doc-${Date.now()}`,
+        name: file.name,
+        type: docType,
+        status: 'PENDING',
+        uploadedAt: today,
+        url: objectPath,
+      };
+
+      setDocuments((prev) => [...prev, newDoc]);
+    } catch (err) {
+      console.error('Failed to upload document:', err);
+    } finally {
+      setIsUploadingDocument(false);
+      e.target.value = '';
+    }
   };
 
   const getTabButtonClass = (tabName: string) => {
@@ -228,22 +355,19 @@ export default function UserSettingsPage() {
                   <div className="flex items-center gap-5 pb-4 border-b border-border/40">
                     <div className="relative group">
                       <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold border-2 border-primary/20 overflow-hidden shadow-inner">
-                        {profileImage ? (
-                          <img
-                            src={profileImage}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          `${firstName[0] || 'U'}${lastName[0] || ''}`
-                        )}
+                        {renderAvatarContent()}
                       </div>
-                      <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-md hover:scale-105 transition-transform">
-                        <Camera className="w-3.5 h-3.5" />
+                      <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-md hover:scale-105 transition-transform disabled:opacity-50">
+                        {isUploadingImage ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Camera className="w-3.5 h-3.5" />
+                        )}
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          disabled={isUploadingImage}
                           onChange={handleImageUpload}
                         />
                       </label>
@@ -261,6 +385,12 @@ export default function UserSettingsPage() {
                       </div>
                     </div>
                   </div>
+
+                  {uploadError && (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> {uploadError}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="First Name">
@@ -504,14 +634,23 @@ export default function UserSettingsPage() {
                     <FileText className="w-4 h-4 text-emerald-500" />
                     Doctor Credential Documents
                   </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDocumentSimulatedUpload}
-                    className="text-xs h-8 gap-1.5"
-                  >
-                    <UploadCloud className="w-3.5 h-3.5" /> Upload Document
-                  </Button>
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground text-xs font-medium cursor-pointer shadow-xs transition-colors">
+                    {isUploadingDocument ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    ) : (
+                      <UploadCloud className="w-3.5 h-3.5" />
+                    )}
+                    <span>
+                      {isUploadingDocument ? 'Uploading...' : 'Upload Document'}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                      className="hidden"
+                      disabled={isUploadingDocument}
+                      onChange={handleDocumentUpload}
+                    />
+                  </label>
                 </CardHeader>
                 <CardBody className="pt-4">
                   <div className="space-y-3">
@@ -525,7 +664,18 @@ export default function UserSettingsPage() {
                             <FileText className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="font-semibold text-foreground">{doc.name}</p>
+                            {'url' in doc && doc.url ? (
+                              <a
+                                href={doc.url as string}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-primary hover:underline"
+                              >
+                                {doc.name}
+                              </a>
+                            ) : (
+                              <p className="font-semibold text-foreground">{doc.name}</p>
+                            )}
                             <p className="text-[10px] text-muted-foreground">
                               Type: {doc.type} &bull; Uploaded on {doc.uploadedAt}
                             </p>

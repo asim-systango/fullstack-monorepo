@@ -58,8 +58,16 @@ export function Header() {
       return (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs shadow-2xs">
-              {getInitials(user.name, user.firstName, user.lastName)}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs shadow-2xs overflow-hidden">
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                getInitials(user.name, user.firstName, user.lastName)
+              )}
             </div>
             <div className="hidden flex-col text-right sm:flex">
               <span className="text-xs font-semibold text-foreground leading-tight">

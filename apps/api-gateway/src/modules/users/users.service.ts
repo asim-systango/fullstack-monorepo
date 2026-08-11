@@ -54,6 +54,35 @@ export class UsersService {
     await this.users.update(userId, { hashedRefreshToken });
   }
 
+  async updateProfile(
+    userId: string,
+    input: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      avatarUrl?: string | null;
+    },
+  ) {
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (!user) return null;
+
+    if (input.firstName !== undefined) user.firstName = input.firstName;
+    if (input.lastName !== undefined) user.lastName = input.lastName;
+    if (input.firstName !== undefined || input.lastName !== undefined) {
+      user.name = [
+        user.firstName ?? user.name?.split(' ')[0],
+        input.lastName ?? user.name?.split(' ').slice(1).join(' '),
+      ]
+        .filter(Boolean)
+        .join(' ');
+    }
+    if (input.phone !== undefined) user.phone = input.phone;
+    if (input.avatarUrl !== undefined) user.avatarUrl = input.avatarUrl;
+
+    const saved = await this.users.save(user);
+    return this.toPublic(saved);
+  }
+
   toPublic(user: User) {
     const firstName =
       user.firstName || user.name?.split(' ')[0] || user.email.split('@')[0];
@@ -66,6 +95,7 @@ export class UsersService {
       lastName,
       name: user.name || `${firstName} ${lastName}`.trim(),
       phone: user.phone ?? '',
+      avatarUrl: user.avatarUrl ?? null,
       role: user.role,
       isActive: user.isActive,
       emailVerified: user.emailVerified,
