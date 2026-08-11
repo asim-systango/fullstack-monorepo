@@ -50,8 +50,31 @@ export class ArticlesController {
   @Roles(Role.Author, Role.Editor, Role.Admin)
   @ApiOperation({
     summary: 'Create a draft article with an initial revision',
-    description:
-      'Send either `body` (markdown string) or `content` (ordered blocks: paragraph, heading, image, video, code) — not both. For image/video blocks, upload media first and pass mediaId.',
+    description: `
+### Content options
+Send **exactly one** of:
+- \`body\` — plain markdown (converted to one paragraph block), **or**
+- \`content\` — ordered blocks (\`paragraph\`, \`heading\`, \`image\`, \`video\`, \`code\`)
+
+### Using media (images / videos)
+Swagger \`POST /articles\` is **JSON only** — it does **not** accept file uploads.
+
+1. Call **\`POST /media\`** (multipart) and upload the file.
+2. Copy the returned \`id\` (UUID).
+3. In \`content\`, add an image/video block with that UUID as \`mediaId\`.
+
+Example image block:
+\`\`\`json
+{
+  "type": "image",
+  "mediaId": "<id from POST /media>",
+  "alt": "optional",
+  "caption": "optional"
+}
+\`\`\`
+
+The API validates that \`mediaId\` exists, is not soft-deleted, and matches the block type (image vs video). It also writes \`revision_media\` rows. Response content keeps \`mediaId\` only (no nested media object).
+`.trim(),
   })
   @ApiCreatedResponse({ description: 'Draft article created' })
   @ApiBadRequestResponse({

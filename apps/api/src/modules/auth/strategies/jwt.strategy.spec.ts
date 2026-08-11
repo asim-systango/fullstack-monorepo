@@ -1,26 +1,26 @@
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
 import { JwtStrategy } from './jwt.strategy';
 
 describe('JwtStrategy (api)', () => {
-  const originalEnv = { ...process.env };
   let strategy: JwtStrategy;
 
-  beforeAll(() => {
-    Object.assign(process.env, {
-      NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/app',
-      JWT_SECRET: 'test-jwt-secret-16',
-      JWT_EXPIRES_IN: '1h',
-      PORT: '3002',
-    });
-    strategy = new JwtStrategy();
-  });
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        JwtStrategy,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) =>
+              key === 'JWT_SECRET' ? 'test-jwt-secret-16' : undefined,
+          },
+        },
+      ],
+    }).compile();
 
-  afterAll(() => {
-    for (const key of Object.keys(process.env)) {
-      if (!(key in originalEnv)) delete process.env[key];
-    }
-    Object.assign(process.env, originalEnv);
+    strategy = module.get(JwtStrategy);
   });
 
   it('maps valid Bearer claims to JwtUser', () => {

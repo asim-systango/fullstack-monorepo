@@ -81,11 +81,11 @@ export class ArticlesRepository {
       }
     }
 
-    // 2. Validate inline media references
+    // 2. Validate inline media references (must exist and not be soft-deleted)
     if (mediaRefs.length > 0) {
       const mediaIds = [...new Set(mediaRefs.map((ref) => ref.mediaId))];
       const mediaRows = await this.mediaRepo.find({
-        where: { id: In(mediaIds) },
+        where: { id: In(mediaIds), deletedAt: IsNull() },
       });
       const byId = new Map(mediaRows.map((row) => [row.id, row]));
 
