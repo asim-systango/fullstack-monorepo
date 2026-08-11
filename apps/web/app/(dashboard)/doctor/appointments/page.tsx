@@ -6,15 +6,8 @@ import { useAppointments, useCancelAppointment } from '@/features/appointment/ho
 import type { Appointment, AppointmentStatus } from '@/features/appointment/types';
 import { AppointmentCard } from '@/components/appointment/appointment-card';
 import { CompleteAppointmentModal } from '@/components/appointment/complete-appointment-modal';
-import {
-  Stethoscope,
-  Calendar,
-  Filter,
-  Loader2,
-  CheckCircle2,
-  Clock,
-} from 'lucide-react';
-import { Button, Badge } from '@shared/ui/components';
+import { Calendar, Filter, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { Button, Badge, Page, PageHeader } from '@shared/ui/components';
 
 export default function DoctorAppointmentsPage() {
   const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | 'ALL'>('ALL');
@@ -102,28 +95,21 @@ export default function DoctorAppointmentsPage() {
 
   return (
     <RoleRoute roles={['DOCTOR', 'ADMIN']}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Stethoscope className="w-7 h-7 text-primary" />
-              Doctor Portal — Consultation Schedule
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage your patient visits, document medical consultations, and record
-              prescriptions.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge tone="accent" className="gap-1 px-3 py-1 text-xs">
-              <Clock className="w-3.5 h-3.5" /> {scheduledCount} Pending Visits
-            </Badge>
-            <Badge tone="success" className="gap-1 px-3 py-1 text-xs">
-              <CheckCircle2 className="w-3.5 h-3.5" /> {completedCount} Completed
-            </Badge>
-          </div>
-        </div>
+      <Page>
+        <PageHeader
+          title="Doctor Portal — Consultation Schedule"
+          description="Manage your patient visits, document medical consultations, and record prescriptions."
+          actions={
+            <div className="flex items-center gap-2">
+              <Badge tone="accent" className="gap-1 px-3 py-1 text-xs">
+                <Clock className="w-3.5 h-3.5" /> {scheduledCount} Pending Visits
+              </Badge>
+              <Badge tone="success" className="gap-1 px-3 py-1 text-xs">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {completedCount} Completed
+              </Badge>
+            </div>
+          }
+        />
 
         {/* Filters Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border/80 shadow-xs">
@@ -167,7 +153,7 @@ export default function DoctorAppointmentsPage() {
           isOpen={Boolean(selectedApptForCompletion)}
           onClose={() => setSelectedApptForCompletion(null)}
         />
-      </div>
+      </Page>
     </RoleRoute>
   );
 }

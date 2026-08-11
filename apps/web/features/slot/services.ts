@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api';
-import type { Slot, SlotStatus } from './types';
+import type { Slot, SlotStatus, CreateSlotInput, BulkCreateSlotInput } from './types';
 
 export const MOCK_SLOTS: Slot[] = [
   {
@@ -92,5 +92,28 @@ export const slotApi = {
   /** Fetch available slots for a doctor. */
   async getAvailableByDoctor(doctorId: string): Promise<Slot[]> {
     return this.getByDoctor(doctorId, 'AVAILABLE');
+  },
+
+  /** Create a single consultation slot. */
+  async create(payload: CreateSlotInput): Promise<Slot> {
+    const { data } = await apiClient.post<{ data: Slot }>('/slots', payload);
+    return data.data ?? data;
+  },
+
+  /** Bulk generate consultation slots for a doctor. */
+  async createBulk(payload: BulkCreateSlotInput): Promise<Slot[]> {
+    const { data } = await apiClient.post<{ data: Slot[] }>('/slots/bulk', payload);
+    return data.data ?? data;
+  },
+
+  /** Update slot status (e.g. Block / Unblock). */
+  async updateStatus(id: string, status: SlotStatus): Promise<Slot> {
+    const { data } = await apiClient.patch<{ data: Slot }>(`/slots/${id}`, { status });
+    return data.data ?? data;
+  },
+
+  /** Delete an unbooked consultation slot. */
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(`/slots/${id}`);
   },
 };

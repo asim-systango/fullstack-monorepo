@@ -6,6 +6,7 @@ export const doctorKeys = {
   all: ['doctors'] as const,
   list: (filters?: DoctorFilters) => ['doctors', filters] as const,
   detail: (id: string) => ['doctors', id] as const,
+  current: ['doctors', 'me'] as const,
 };
 
 /** Fetch all doctors with filters. */
@@ -22,5 +23,13 @@ export function useDoctor(id: string) {
     queryKey: doctorKeys.detail(id),
     queryFn: () => doctorApi.getById(id),
     enabled: Boolean(id),
+  });
+}
+
+/** Fetch profile of current logged-in doctor. */
+export function useCurrentDoctor() {
+  return useQuery({
+    queryKey: doctorKeys.current,
+    queryFn: () => doctorApi.getMe(),
   });
 }

@@ -11,3 +11,32 @@ export type Slot = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type CreateSlotInput = {
+  doctorId: string;
+  startsAt: string;
+  endsAt?: string;
+};
+
+export type ShiftInput = {
+  name?: string;
+  startTime: string;
+  endTime: string;
+};
+
+export type BulkCreateSlotInput = {
+  doctorId: string;
+  date: string;
+  endDate?: string;
+  daysOfWeek?: number[];
+  startTime?: string;
+  endTime?: string;
+  shift2StartTime?: string;
+  shift2EndTime?: string;
+  shifts?: ShiftInput[];
+  slotDurationMinutes?: number;
+};
+
+export type UpdateSlotInput = {
+  status?: SlotStatus;
+};

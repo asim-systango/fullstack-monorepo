@@ -7,16 +7,8 @@ import type { Appointment, AppointmentStatus } from '@/features/appointment/type
 import { useDoctors } from '@/features/doctor/hooks';
 import { AppointmentCard } from '@/components/appointment/appointment-card';
 import { CompleteAppointmentModal } from '@/components/appointment/complete-appointment-modal';
-import {
-  ShieldCheck,
-  Search,
-  Filter,
-  Loader2,
-  Calendar,
-  Building2,
-  RefreshCw,
-} from 'lucide-react';
-import { Button, Badge } from '@shared/ui/components';
+import { Search, Filter, Loader2, Calendar, Building2, RefreshCw } from 'lucide-react';
+import { Button, Badge, Page, PageHeader } from '@shared/ui/components';
 
 export default function AdminAppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,27 +104,17 @@ export default function AdminAppointmentsPage() {
 
   return (
     <RoleRoute roles={['ADMIN']}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-              Hospital Appointment Search & Administration
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Search, filter, monitor, and manage clinical appointments across all
-              hospital departments.
-            </p>
-          </div>
-          <Badge
-            tone="neutral"
-            className="gap-1 px-3 py-1 text-xs self-start md:self-auto"
-          >
-            <Building2 className="w-3.5 h-3.5" /> Total Records:{' '}
-            {appointments?.length ?? 0}
-          </Badge>
-        </div>
+      <Page>
+        <PageHeader
+          title="Hospital Appointment Search & Administration"
+          description="Search, filter, monitor, and manage clinical appointments across all hospital departments."
+          actions={
+            <Badge tone="neutral" className="gap-1 px-3 py-1 text-xs">
+              <Building2 className="w-3.5 h-3.5" /> Total Records:{' '}
+              {appointments?.length ?? 0}
+            </Badge>
+          }
+        />
 
         {/* Hospital Search & Filter Bar */}
         <div className="bg-card p-4 rounded-xl border border-border/80 shadow-xs space-y-4">
@@ -219,7 +201,7 @@ export default function AdminAppointmentsPage() {
           isOpen={Boolean(selectedApptForCompletion)}
           onClose={() => setSelectedApptForCompletion(null)}
         />
-      </div>
+      </Page>
     </RoleRoute>
   );
 }

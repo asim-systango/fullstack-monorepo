@@ -101,4 +101,18 @@ export const doctorApi = {
       return found;
     }
   },
+
+  /** Fetch profile of the currently logged-in doctor. */
+  async getMe(): Promise<DoctorProfile> {
+    try {
+      const { data } = await apiClient.get<{ data: DoctorProfile }>(`${BASE}/me`);
+      return data.data ?? data;
+    } catch {
+      const fallback = MOCK_DOCTORS[0];
+      if (!fallback) {
+        throw new Error('No doctor profile available');
+      }
+      return fallback;
+    }
+  },
 };

@@ -8,14 +8,17 @@ import {
   Param,
   Query,
   ParseUUIDPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { DoctorService } from './doctor.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
-import { Public, Roles } from '../../common/auth';
+import { CurrentUser, JwtUser, Public, Roles } from '../../common/auth';
 
 import { SlotService } from '../slot/slot.service';
+
+const NOT_FOUND_DESC = 'Doctor profile not found';
 
 @ApiTags('Doctors')
 @Controller('doctors')
@@ -27,7 +30,7 @@ export class DoctorController {
 
   @Public()
   @Get()
-  @ApiOperation({ summary: 'List all doctor profiles with optional filters' })
+  @ApiOperation({ summary: 'Get all doctors (with optional filters)' })
   @ApiQuery({ name: 'specialization', required: false })
   @ApiQuery({ name: 'search', required: false })
   @ApiResponse({
@@ -41,11 +44,27 @@ export class DoctorController {
     return this.doctorService.findAll({ specialization, search, isActive: true });
   }
 
+  @Get('me')
+  @Roles('DOCTOR', 'ADMIN')
+  @ApiOperation({ summary: 'Get doctor profile of current logged-in user' })
+  @ApiResponse({ status: 200, description: 'Current doctor profile returned' })
+  @ApiResponse({ status: 404, description: NOT_FOUND_DESC })
+  async findMe(@CurrentUser() user: JwtUser | undefined) {
+    if (!user) {
+      throw new NotFoundException('Authentication required');
+    }
+    const doctor = await this.doctorService.findByUserId(user.id);
+    if (!doctor) {
+      throw new NotFoundException(`Doctor profile not found for user ID "${user.id}"`);
+    }
+    return doctor;
+  }
+
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get doctor profile by ID' })
   @ApiResponse({ status: 200, description: 'Doctor profile found' })
-  @ApiResponse({ status: 404, description: 'Doctor profile not found' })
+  @ApiResponse({ status: 404, description: NOT_FOUND_DESC })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.doctorService.findOne(id);
   }
@@ -54,7 +73,7 @@ export class DoctorController {
   @Get(':id/slots')
   @ApiOperation({ summary: 'Get available future consultation slots for doctor' })
   @ApiResponse({ status: 200, description: 'List of available slots' })
-  @ApiResponse({ status: 404, description: 'Doctor profile not found' })
+  @ApiResponse({ status: 404, description: NOT_FOUND_DESC })
   async findDoctorSlots(@Param('id', ParseUUIDPipe) id: string) {
     await this.doctorService.findOne(id);
     return this.slotService.findAvailableForDoctor(id);
@@ -74,17 +93,17 @@ export class DoctorController {
   @ApiOperation({ summary: 'Update doctor profile details' })
   @ApiResponse({ status: 200, description: 'Doctor profile updated successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
-  @ApiResponse({ status: 404, description: 'Doctor profile not found' })
+  @ApiResponse({ status: 404, description: NOT_FOUND_DESC })
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateDoctorDto) {
     return this.doctorService.update(id, dto);
   }
 
   @Delete(':id')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Soft-delete a doctor profile' })
-  @ApiResponse({ status: 200, description: 'Doctor profile soft-deleted' })
+  @ApiOperation({ summary: 'Deactivate doctor profile (soft-delete)' })
+  @ApiResponse({ status: 200, description: 'Doctor profile deactivated successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
-  @ApiResponse({ status: 404, description: 'Doctor profile not found' })
+  @ApiResponse({ status: 404, description: NOT_FOUND_DESC })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.doctorService.remove(id);
   }

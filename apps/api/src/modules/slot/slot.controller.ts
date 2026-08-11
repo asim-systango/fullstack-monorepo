@@ -12,6 +12,7 @@ import {
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { SlotService } from './slot.service';
 import { CreateSlotDto } from './dto/create-slot.dto';
+import { BulkCreateSlotDto } from './dto/bulk-create-slot.dto';
 import { UpdateSlotDto } from './dto/update-slot.dto';
 import { SlotStatus } from '../../shared/enums/slot-status.enum';
 import { Public, Roles } from '../../common/auth';
@@ -45,6 +46,15 @@ export class SlotController {
   @ApiResponse({ status: 404, description: 'Slot not found' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.slotService.findOne(id);
+  }
+
+  @Post('bulk')
+  @Roles('DOCTOR', 'ADMIN')
+  @ApiOperation({ summary: 'Bulk generate consultation slots' })
+  @ApiResponse({ status: 201, description: 'Slots generated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Doctor or Admin role required' })
+  async createBulk(@Body() dto: BulkCreateSlotDto) {
+    return this.slotService.createBulk(dto);
   }
 
   @Post()
