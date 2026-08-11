@@ -2,6 +2,15 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui';
 import { useAuth } from '@/components/auth';
 
 export default function DashboardPage() {
@@ -50,7 +59,7 @@ export default function DashboardPage() {
     ((user.firstName?.[0] || '') + (user.lastName?.[0] || '')).toUpperCase() || 'U';
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex overflow-hidden font-sans">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-64 bg-zinc-900/80 border-r border-zinc-800/80 flex flex-col justify-between p-5 select-none">
         <div>
@@ -71,8 +80,10 @@ export default function DashboardPage() {
             <div className="text-xs font-semibold text-zinc-200 truncate">
               {organization ? organization.name : 'Platform Management'}
             </div>
-            <div className="text-[10px] uppercase font-bold tracking-wider text-violet-400 mt-1">
-              {user.role || 'Member'}
+            <div className="mt-1">
+              <Badge tone={isSuperAdmin ? 'accent' : 'neutral'}>
+                {user.role || 'Member'}
+              </Badge>
             </div>
           </div>
 
@@ -142,13 +153,15 @@ export default function DashboardPage() {
                 <div className="text-[10px] text-zinc-500 truncate">{user.email}</div>
               </div>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={logout}
               title="Sign Out"
-              className="p-2 rounded-lg bg-zinc-800/80 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer text-xs flex-shrink-0 ml-1"
+              className="text-xs text-zinc-400 hover:text-red-400 hover:bg-red-500/10 flex-shrink-0 ml-1"
             >
               Sign Out
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -173,74 +186,87 @@ export default function DashboardPage() {
 
           <div className="flex items-center space-x-3">
             {isSuperAdmin && (
-              <button
+              <Button
+                variant="primary"
                 onClick={() => alert('New organization provisioning dialog')}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-violet-600/20 cursor-pointer"
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-violet-600/20"
               >
                 + Provision Organization
-              </button>
+              </Button>
             )}
           </div>
         </header>
 
         {/* Dashboard Body Content */}
         <div className="p-8 space-y-6">
-          {/* Stat Cards Grid */}
+          {/* Stat Cards Grid using @shared/ui Card */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6">
-              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                Session Status
-              </div>
-              <div className="text-2xl font-bold text-emerald-400 mt-2">Active</div>
-              <div className="text-xs text-zinc-500 mt-1">
-                Authenticated via Nest Gateway JWT
-              </div>
-            </div>
+            <Card className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6">
+              <CardHeader className="p-0 mb-2">
+                <CardDescription className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  Session Status
+                </CardDescription>
+                <CardTitle className="text-2xl font-bold text-emerald-400">
+                  Active
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="p-0">
+                <p className="text-xs text-zinc-500">
+                  Authenticated via Nest Gateway JWT
+                </p>
+              </CardBody>
+            </Card>
 
-            <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6">
-              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                Account Privilege
-              </div>
-              <div className="text-2xl font-bold text-violet-400 mt-2">
-                {user.role || 'Member'}
-              </div>
-              <div className="text-xs text-zinc-500 mt-1">
-                Role-based security context
-              </div>
-            </div>
+            <Card className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6">
+              <CardHeader className="p-0 mb-2">
+                <CardDescription className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  Account Privilege
+                </CardDescription>
+                <CardTitle className="text-2xl font-bold text-violet-400">
+                  {user.role || 'Member'}
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="p-0">
+                <p className="text-xs text-zinc-500">Role-based security context</p>
+              </CardBody>
+            </Card>
 
-            <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6">
-              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                Active Workspace
-              </div>
-              <div className="text-2xl font-bold text-cyan-400 mt-2">
-                {organization ? organization.name : 'Global Platform'}
-              </div>
-              <div className="text-xs text-zinc-500 mt-1">
-                {organization ? `Slug: ${organization.slug}` : 'Cross-tenant management'}
-              </div>
-            </div>
+            <Card className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6">
+              <CardHeader className="p-0 mb-2">
+                <CardDescription className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  Active Workspace
+                </CardDescription>
+                <CardTitle className="text-2xl font-bold text-cyan-400">
+                  {organization ? organization.name : 'Global Platform'}
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="p-0">
+                <p className="text-xs text-zinc-500">
+                  {organization
+                    ? `Slug: ${organization.slug}`
+                    : 'Cross-tenant management'}
+                </p>
+              </CardBody>
+            </Card>
           </div>
 
-          {/* Context Panel */}
-          <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+          {/* Context Panel using @shared/ui Card */}
+          <Card className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6 space-y-4">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800/80 pb-4 p-0">
               <div>
-                <h3 className="text-base font-bold text-white">
+                <CardTitle className="text-base font-bold text-white">
                   {isSuperAdmin ? 'Global Tenant Administration' : 'Workspace Insights'}
-                </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                </CardTitle>
+                <CardDescription className="text-xs text-zinc-400 mt-0.5">
                   {isSuperAdmin
                     ? 'Overview of platform tenant organizations, system health, and global user roles.'
                     : 'Track sales metrics, team leads, and pipeline activities.'}
-                </p>
+                </CardDescription>
               </div>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                ● System Ready
-              </span>
-            </div>
+              <Badge tone="success">● System Ready</Badge>
+            </CardHeader>
 
-            <div className="pt-2 text-xs text-zinc-400 leading-relaxed">
+            <CardBody className="pt-2 text-xs text-zinc-400 leading-relaxed p-0">
               {isSuperAdmin ? (
                 <p>
                   As a Super Administrator, you can provision new client organizations,
@@ -253,8 +279,8 @@ export default function DashboardPage() {
                   your team&apos;s leads, contacts, and active sales deals.
                 </p>
               )}
-            </div>
-          </div>
+            </CardBody>
+          </Card>
         </div>
       </main>
     </div>

@@ -31,7 +31,7 @@ export default function RootLayout({
       className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} dark`}
       suppressHydrationWarning
     >
-      <body className="bg-zinc-950 text-zinc-100 antialiased min-h-screen">
+      <body className="bg-[var(--background)] text-[var(--foreground)] antialiased min-h-screen">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
