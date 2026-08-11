@@ -10,6 +10,7 @@ import {
   CardBody,
   CardDescription,
   CardHeader,
+  CardTitle,
 } from '@shared/ui';
 import { AppShell } from '@/components/layout/app-shell';
 import { MOCK_ORGANIZATIONS, type OrganizationItem } from '@/lib/constants';
