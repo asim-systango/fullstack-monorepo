@@ -1,6 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { DoctorRepository } from './repositories/doctor.repository';
 import { DoctorProfile } from './entities/doctor-profile.entity';
+import { Slot } from '../slot/entities/slot.entity';
+import { SlotStatus } from '../../shared/enums/slot-status.enum';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 
@@ -8,7 +12,10 @@ import { UpdateDoctorDto } from './dto/update-doctor.dto';
 export class DoctorService {
   private readonly logger = new Logger(DoctorService.name);
 
-  constructor(private readonly doctorRepository: DoctorRepository) {}
+  constructor(
+    private readonly doctorRepository: DoctorRepository,
+    @InjectDataSource() private readonly dataSource: DataSource,
+  ) {}
 
   async findAll(query?: {
     specialization?: string;
@@ -46,7 +53,42 @@ export class DoctorService {
 
   async remove(id: string): Promise<{ success: boolean; message: string }> {
     await this.findOne(id);
-    await this.doctorRepository.softDelete(id);
-    return { success: true, message: `Doctor profile "${id}" soft-deleted` };
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.softDelete(DoctorProfile, id);
+      await queryRunner.manager.update(DoctorProfile, { id }, { isActive: false });
+
+      await queryRunner.manager
+        .createQueryBuilder()
+        .update(Slot)
+        .set({ status: SlotStatus.BLOCKED })
+        .where('"doctorId" = :doctorId', { doctorId: id })
+        .andWhere('status = :status', { status: SlotStatus.AVAILABLE })
+        .andWhere('starts_at > :now', { now: new Date() })
+        .execute();
+
+      await queryRunner.commitTransaction();
+
+      this.logger.log(
+        `[DOCTOR_SOFT_DELETE] Doctor profile "${id}" soft-deleted and future available slots deactivated.`,
+      );
+
+      return {
+        success: true,
+        message: `Doctor profile "${id}" soft-deleted and future slots deactivated`,
+      };
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `[DOCTOR_SOFT_DELETE_ERROR] Failed to soft-delete doctor "${id}": ${(err as Error).message}`,
+      );
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

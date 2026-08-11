@@ -9,10 +9,10 @@ describe('JwtStrategy (gateway)', () => {
     toPublic: jest.fn((user: User): PublicUser => ({
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
       name: user.name,
-      phone: user.phone,
+      phone: user.phone ?? '',
       role: user.role,
       isActive: user.isActive,
       emailVerified: user.emailVerified,
