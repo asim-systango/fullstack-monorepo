@@ -8,6 +8,10 @@ import type {
   ListArticlesQuery,
   StudioArticleDetail,
 } from './dto/get-article.dto';
+import type {
+  ListPublicArticlesQuery,
+  PublicArticleListResponse,
+} from './dto/public-article.dto';
 import {
   markdownToContentBlocks,
   parseContentBlocks,
@@ -88,6 +92,23 @@ export class ArticlesService {
     }
 
     return article;
+  }
+
+  async listPublicArticles(
+    query: ListPublicArticlesQuery,
+  ): Promise<PublicArticleListResponse> {
+    const { items, total } = await this.articlesRepository.listPublicArticles({
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return {
+      data: items,
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+    };
   }
 
   private resolveContent(dto: CreateArticleDto): ContentBlock[] {

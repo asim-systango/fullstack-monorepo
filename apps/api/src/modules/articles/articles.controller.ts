@@ -21,7 +21,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CurrentUser, Roles } from '../../common/auth';
+import { CurrentUser, Public, Roles } from '../../common/auth';
 import type { JwtUser } from '../../common/auth';
 import { Role } from '../../common/enums/role.enum';
 import { ArticlesService } from './articles.service';
@@ -32,6 +32,10 @@ import {
   type ArticleListResponse,
   type StudioArticleDetail,
 } from './dto/get-article.dto';
+import {
+  ListPublicArticlesQuery,
+  type PublicArticleListResponse,
+} from './dto/public-article.dto';
 
 @ApiTags('articles')
 @Controller('articles')
@@ -59,6 +63,24 @@ export class ArticlesController {
     @CurrentUser() user: JwtUser,
   ): Promise<CreatedArticle> {
     return this.articlesService.createArticle(dto, user);
+  }
+
+  @Get('public')
+  @Public()
+  @ApiOperation({
+    summary: 'List published articles for the public blog',
+    description:
+      'No authentication required. Returns only articles with `publishedRevisionId` set ' +
+      'and `deletedAt` null. Sorted by `publishedAt DESC`. Draft and soft-deleted articles are never included.',
+  })
+  @ApiOkResponse({
+    description: 'Paginated list of published articles (empty list is valid)',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid pagination parameters' })
+  listPublicArticles(
+    @Query() query: ListPublicArticlesQuery,
+  ): Promise<PublicArticleListResponse> {
+    return this.articlesService.listPublicArticles(query);
   }
 
   @Get('studio')
