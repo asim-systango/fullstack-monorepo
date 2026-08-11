@@ -9,6 +9,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import type { ContentBlock } from '../types/revision-content';
 
 /** Request body for POST /articles */
 export class CreateArticleDto {
@@ -45,39 +46,26 @@ export class CreateArticleDto {
 
   @ApiPropertyOptional({
     description:
-      'Medium-style ordered blocks (paragraph, heading, image, video, code). Mutually exclusive with body. Upload media first, then reference mediaId.',
+      'Ordered content blocks. Mutually exclusive with `body`. ' +
+      'For `image` / `video` blocks: first upload via POST /media, then set `mediaId` to the returned `id` (UUID). ' +
+      'Do not put file binaries or Cloudinary URLs here.',
     type: 'array',
     items: { type: 'object' },
     example: [
       {
-        id: 'b1',
         type: 'heading',
         level: 1,
-        text: 'React Hooks',
+        text: 'My article',
       },
       {
-        id: 'b2',
         type: 'paragraph',
-        markdown: 'Hooks let you use state in function components.',
+        markdown: 'Intro text here.',
       },
       {
-        id: 'b3',
         type: 'image',
-        mediaId: '11111111-1111-4111-8111-111111111111',
-        alt: 'Hooks diagram',
-        caption: 'useState flow',
-      },
-      {
-        id: 'b4',
-        type: 'video',
-        mediaId: '22222222-2222-4222-8222-222222222222',
-        caption: 'Demo',
-      },
-      {
-        id: 'b5',
-        type: 'code',
-        language: 'tsx',
-        code: 'const [count, setCount] = useState(0);',
+        mediaId: 'PASTE_MEDIA_UUID_FROM_POST_MEDIA',
+        alt: 'Screenshot',
+        caption: 'Optional caption',
       },
     ],
   })
@@ -116,7 +104,8 @@ export type CreatedArticle = {
   updatedAt: Date;
   revision: {
     id: string;
-    content: unknown[];
+    /** Stored content blocks — image/video blocks keep `mediaId` only. */
+    content: ContentBlock[];
     createdAt: Date;
   };
   tags: Array<{ id: string; name: string }>;

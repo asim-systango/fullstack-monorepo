@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { In, IsNull, QueryFailedError, Repository } from 'typeorm';
 import { Media } from '../media/media.entity';
 import { RevisionMedia } from '../media/revision-media.entity';
 import { ArticleTag } from '../tags/article-tag.entity';
@@ -54,11 +54,11 @@ export class ArticlesRepository {
       }
     }
 
-    // 2. Validate inline media references
+    // 2. Validate inline media references (must exist and not be soft-deleted)
     if (mediaRefs.length > 0) {
       const mediaIds = [...new Set(mediaRefs.map((ref) => ref.mediaId))];
       const mediaRows = await this.mediaRepo.find({
-        where: { id: In(mediaIds) },
+        where: { id: In(mediaIds), deletedAt: IsNull() },
       });
       const byId = new Map(mediaRows.map((row) => [row.id, row]));
 

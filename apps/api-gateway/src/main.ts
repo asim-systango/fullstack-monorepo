@@ -46,7 +46,9 @@ async function bootstrap() {
     createProxyMiddleware({
       target: appSettings.API_UPSTREAM_URL,
       changeOrigin: true,
-      proxyTimeout: 10_000,
+      // Media uploads (multipart → Cloudinary) need a longer upstream window.
+      proxyTimeout: 120_000,
+      timeout: 120_000,
       pathFilter: (pathname) => !isGatewayOwnedPath(pathname),
       on: {
         proxyReq: (proxyReq, req) => {
