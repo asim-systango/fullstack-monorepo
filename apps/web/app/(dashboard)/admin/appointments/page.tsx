@@ -7,16 +7,21 @@ import type { Appointment, AppointmentStatus } from '@/features/appointment/type
 import { useDoctors } from '@/features/doctor/hooks';
 import { AppointmentCard } from '@/components/appointment/appointment-card';
 import { CompleteAppointmentModal } from '@/components/appointment/complete-appointment-modal';
+import { CancelConfirmationModal } from '@/components/appointment/cancel-confirmation-modal';
 import { Search, Filter, Loader2, Calendar, Building2, RefreshCw } from 'lucide-react';
-import { Button, Badge, Page, PageHeader } from '@shared/ui/components';
+import { Button, Badge, Page, PageHeader, Pagination } from '@shared/ui/components';
 
 export default function AdminAppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | 'ALL'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedApptForCompletion, setSelectedApptForCompletion] =
     useState<Appointment | null>(null);
+  const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(
+    null,
+  );
 
   const { data: doctors } = useDoctors();
 
@@ -32,21 +37,26 @@ export default function AdminAppointmentsPage() {
   const handleSearchSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setActiveQuery(searchQuery);
+    setCurrentPage(1);
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
     setActiveQuery('');
+    setCurrentPage(1);
   };
 
-  const handleCancel = (id: string) => {
-    if (
-      confirm(
-        'Admin Action: Are you sure you want to cancel this appointment and release the slot?',
-      )
-    ) {
-      cancelMutation.mutate(id);
-    }
+  const handleCancelClick = (id: string) => {
+    setCancellingAppointmentId(id);
+  };
+
+  const handleConfirmCancel = () => {
+    if (!cancellingAppointmentId) return;
+    cancelMutation.mutate(cancellingAppointmentId, {
+      onSuccess: () => {
+        setCancellingAppointmentId(null);
+      },
+    });
   };
 
   const renderContent = () => {
@@ -87,17 +97,34 @@ export default function AdminAppointmentsPage() {
       );
     }
 
+    const list = appointments ?? [];
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+    const safePage = Math.min(Math.max(1, currentPage), totalPages);
+    const paginatedAppts = list.slice((safePage - 1) * pageSize, safePage * pageSize);
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {appointments?.map((appt) => (
-          <AppointmentCard
-            key={appt.id}
-            appointment={appt}
-            onComplete={(a) => setSelectedApptForCompletion(a)}
-            onCancel={handleCancel}
-            isCancelling={cancelMutation.isPending}
-          />
-        ))}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {paginatedAppts.map((appt) => (
+            <AppointmentCard
+              key={appt.id}
+              appointment={appt}
+              onComplete={(a) => setSelectedApptForCompletion(a)}
+              onCancel={handleCancelClick}
+              isCancelling={
+                cancelMutation.isPending && cancellingAppointmentId === appt.id
+              }
+            />
+          ))}
+        </div>
+
+        <Pagination
+          currentPage={safePage}
+          totalItems={list.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
       </div>
     );
   };
@@ -200,6 +227,17 @@ export default function AdminAppointmentsPage() {
           appointment={selectedApptForCompletion}
           isOpen={Boolean(selectedApptForCompletion)}
           onClose={() => setSelectedApptForCompletion(null)}
+        />
+
+        {/* Cancel Confirmation Modal */}
+        <CancelConfirmationModal
+          isOpen={Boolean(cancellingAppointmentId)}
+          onClose={() => setCancellingAppointmentId(null)}
+          onConfirm={handleConfirmCancel}
+          isLoading={cancelMutation.isPending}
+          title="Admin Appointment Cancellation"
+          description="Are you sure you want to cancel this appointment and release the consultation slot?"
+          confirmText="Confirm Cancellation"
         />
       </Page>
     </RoleRoute>

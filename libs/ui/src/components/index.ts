@@ -54,6 +54,12 @@ export {
   type TableHeaderCellProps,
   type TableCellProps,
 } from './table';
+export { Pagination, type PaginationProps } from './pagination';
+export {
+  PaginatedTable,
+  type PaginatedTableProps,
+  type ColumnDef,
+} from './paginated-table';
 export { Tooltip, TooltipTrigger, TooltipContent } from './tooltip';
 export {
   DropdownMenu,

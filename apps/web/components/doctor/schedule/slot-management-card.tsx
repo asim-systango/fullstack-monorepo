@@ -9,6 +9,7 @@ import {
   Badge,
   Button,
   EmptyState,
+  Pagination,
 } from '@shared/ui/components';
 import type { Slot, SlotStatus } from '@/features/slot/types';
 import { useUpdateSlotStatus, useDeleteSlot } from '@/features/slot/hooks';
@@ -63,6 +64,7 @@ export function SlotManagementCard({
   onDateChange,
 }: Readonly<SlotManagementCardProps>) {
   const [statusFilter, setStatusFilter] = useState<'ALL' | SlotStatus>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const updateStatus = useUpdateSlotStatus();
   const deleteSlot = useDeleteSlot();
@@ -97,6 +99,16 @@ export function SlotManagementCard({
     }
   };
 
+  const handleDateSelect = (date: string) => {
+    onDateChange(date);
+    setCurrentPage(1);
+  };
+
+  const handleStatusSelect = (st: 'ALL' | SlotStatus) => {
+    setStatusFilter(st);
+    setCurrentPage(1);
+  };
+
   const renderSlotContent = () => {
     if (isLoading) {
       return (
@@ -115,92 +127,111 @@ export function SlotManagementCard({
       );
     }
 
-    return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredSlots.map((slot) => {
-          const startTime = new Date(slot.startsAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-          const endTime = new Date(slot.endsAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(filteredSlots.length / pageSize));
+    const safePage = Math.min(Math.max(1, currentPage), totalPages);
+    const paginatedSlots = filteredSlots.slice(
+      (safePage - 1) * pageSize,
+      safePage * pageSize,
+    );
 
-          return (
-            <div
-              key={slot.id}
-              className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-3 ${getSlotCardStyle(slot.status)}`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${getSlotIconStyle(slot.status)}`}>
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {startTime} – {endTime}
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedSlots.map((slot) => {
+            const startTime = new Date(slot.startsAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            const endTime = new Date(slot.endsAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+
+            return (
+              <div
+                key={slot.id}
+                className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-3 ${getSlotCardStyle(slot.status)}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${getSlotIconStyle(slot.status)}`}>
+                      <Clock className="w-4 h-4" />
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      30 mins duration
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">
+                        {startTime} – {endTime}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        30 mins duration
+                      </div>
                     </div>
                   </div>
+
+                  <Badge
+                    tone={getSlotBadgeTone(slot.status)}
+                    className="text-[11px] px-2 py-0.5"
+                  >
+                    {slot.status}
+                  </Badge>
                 </div>
 
-                <Badge
-                  tone={getSlotBadgeTone(slot.status)}
-                  className="text-[11px] px-2 py-0.5"
-                >
-                  {slot.status}
-                </Badge>
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
+                  {slot.status !== 'BOOKED' && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleToggleBlock(slot)}
+                        loading={updateStatus.isPending}
+                        className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                        title={
+                          slot.status === 'AVAILABLE' ? 'Block Slot' : 'Unblock Slot'
+                        }
+                      >
+                        {slot.status === 'AVAILABLE' ? (
+                          <>
+                            <Ban className="w-3.5 h-3.5 mr-1 text-rose-500" /> Block
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-500" />{' '}
+                            Unblock
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(slot.id)}
+                        loading={deleteSlot.isPending}
+                        className="h-7 text-xs px-2 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                        title="Delete Slot"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </>
+                  )}
+
+                  {slot.status === 'BOOKED' && (
+                    <span className="text-[11px] italic text-amber-600 font-medium">
+                      Patient Scheduled
+                    </span>
+                  )}
+                </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
-                {slot.status !== 'BOOKED' && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleToggleBlock(slot)}
-                      loading={updateStatus.isPending}
-                      className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
-                      title={slot.status === 'AVAILABLE' ? 'Block Slot' : 'Unblock Slot'}
-                    >
-                      {slot.status === 'AVAILABLE' ? (
-                        <>
-                          <Ban className="w-3.5 h-3.5 mr-1 text-rose-500" /> Block
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-500" />{' '}
-                          Unblock
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(slot.id)}
-                      loading={deleteSlot.isPending}
-                      className="h-7 text-xs px-2 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
-                      title="Delete Slot"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </>
-                )}
-
-                {slot.status === 'BOOKED' && (
-                  <span className="text-[11px] italic text-amber-600 font-medium">
-                    Patient Scheduled
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <Pagination
+          currentPage={safePage}
+          totalItems={filteredSlots.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
       </div>
     );
   };
@@ -235,7 +266,7 @@ export function SlotManagementCard({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onDateChange(todayStr)}
+              onClick={() => handleDateSelect(todayStr)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 selectedDate === todayStr
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
@@ -246,7 +277,7 @@ export function SlotManagementCard({
             </button>
             <button
               type="button"
-              onClick={() => onDateChange(tomorrowStr)}
+              onClick={() => handleDateSelect(tomorrowStr)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 selectedDate === tomorrowStr
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
@@ -260,7 +291,7 @@ export function SlotManagementCard({
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => onDateChange(e.target.value)}
+                onChange={(e) => handleDateSelect(e.target.value)}
                 className="pl-8 pr-2 py-1 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
               />
               <Calendar className="w-3.5 h-3.5 absolute left-2.5 text-muted-foreground pointer-events-none" />
@@ -274,7 +305,7 @@ export function SlotManagementCard({
               <button
                 key={st}
                 type="button"
-                onClick={() => setStatusFilter(st)}
+                onClick={() => handleStatusSelect(st)}
                 className={`px-2.5 py-1 rounded-md capitalize transition-all ${
                   statusFilter === st
                     ? 'bg-background text-foreground font-semibold shadow-xs'

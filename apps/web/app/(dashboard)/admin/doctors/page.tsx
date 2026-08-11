@@ -19,6 +19,7 @@ import {
   DialogFooter,
   Field,
   TextInput,
+  Pagination,
 } from '@shared/ui/components';
 import {
   Search,
@@ -40,6 +41,7 @@ export default function AdminDoctorsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [specFilter, setSpecFilter] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Edit Doctor Modal state
   const [editingDoctor, setEditingDoctor] = useState<DoctorProfile | null>(null);
@@ -232,113 +234,143 @@ export default function AdminDoctorsPage() {
           )}
 
           {!isLoading && !isError && filteredDoctors.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredDoctors.map((doc) => (
-                <Card
-                  key={doc.id}
-                  className={`transition-all duration-200 ${
-                    !doc.isActive
-                      ? 'opacity-70 bg-muted/20 border-dashed'
-                      : 'hover:border-primary/40'
-                  }`}
-                >
-                  <CardBody className="p-5 space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base font-bold shrink-0 border border-primary/20">
-                          {doc.firstName[0]}
-                          {doc.lastName[0]}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {(() => {
+                  const pageSize = 10;
+                  const totalPages = Math.max(
+                    1,
+                    Math.ceil(filteredDoctors.length / pageSize),
+                  );
+                  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+                  const paginatedDocs = filteredDoctors.slice(
+                    (safePage - 1) * pageSize,
+                    safePage * pageSize,
+                  );
+
+                  return paginatedDocs.map((doc) => (
+                    <Card
+                      key={doc.id}
+                      className={`transition-all duration-200 ${
+                        !doc.isActive
+                          ? 'opacity-70 bg-muted/20 border-dashed'
+                          : 'hover:border-primary/40'
+                      }`}
+                    >
+                      <CardBody className="p-5 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base font-bold shrink-0 border border-primary/20">
+                              {doc.firstName[0]}
+                              {doc.lastName[0]}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-sm text-foreground">
+                                Dr. {doc.firstName} {doc.lastName}
+                              </h3>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-semibold">
+                                  {doc.specialization}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Badge
+                            tone={doc.isActive ? 'success' : 'neutral'}
+                            className="text-[10px] shrink-0"
+                          >
+                            {doc.isActive ? (
+                              <span className="flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />{' '}
+                                Active
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <XCircle className="w-3 h-3 text-muted-foreground" />{' '}
+                                Inactive
+                              </span>
+                            )}
+                          </Badge>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-sm text-foreground">
-                            Dr. {doc.firstName} {doc.lastName}
-                          </h3>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-semibold">
-                              {doc.specialization}
+
+                        <div className="bg-muted/30 p-3 rounded-lg border border-border/40 space-y-2 text-xs">
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Award className="w-3.5 h-3.5 text-primary" />{' '}
+                              Qualification:
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {doc.qualification}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-emerald-500" />{' '}
+                              Experience:
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {doc.experienceYears} Years
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <IndianRupee className="w-3.5 h-3.5 text-blue-500" />{' '}
+                              Consultation Fee:
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              ₹{doc.consultationFee}
                             </span>
                           </div>
                         </div>
-                      </div>
 
-                      <Badge
-                        tone={doc.isActive ? 'success' : 'neutral'}
-                        className="text-[10px] shrink-0"
-                      >
-                        {doc.isActive ? (
-                          <span className="flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Active
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <XCircle className="w-3 h-3 text-muted-foreground" /> Inactive
-                          </span>
+                        {doc.biography && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 italic">
+                            &quot;{doc.biography}&quot;
+                          </p>
                         )}
-                      </Badge>
-                    </div>
 
-                    <div className="bg-muted/30 p-3 rounded-lg border border-border/40 space-y-2 text-xs">
-                      <div className="flex items-center justify-between text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Award className="w-3.5 h-3.5 text-primary" /> Qualification:
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {doc.qualification}
-                        </span>
-                      </div>
+                        <div className="pt-2 flex items-center justify-end gap-2 border-t border-border/40">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(doc)}
+                            className="text-xs h-7 gap-1"
+                          >
+                            <Edit className="w-3 h-3" /> Edit
+                          </Button>
 
-                      <div className="flex items-center justify-between text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-emerald-500" /> Experience:
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {doc.experienceYears} Years
-                        </span>
-                      </div>
+                          <Button
+                            variant={doc.isActive ? 'outline' : 'primary'}
+                            size="sm"
+                            onClick={() => handleToggleStatus(doc)}
+                            className={`text-xs h-7 gap-1 ${
+                              doc.isActive
+                                ? 'text-destructive hover:bg-destructive/10'
+                                : ''
+                            }`}
+                            disabled={
+                              deleteMutation.isPending || updateMutation.isPending
+                            }
+                          >
+                            <Power className="w-3 h-3" />
+                            {doc.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ));
+                })()}
+              </div>
 
-                      <div className="flex items-center justify-between text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <IndianRupee className="w-3.5 h-3.5 text-blue-500" />{' '}
-                          Consultation Fee:
-                        </span>
-                        <span className="font-semibold text-foreground">
-                          ₹{doc.consultationFee}
-                        </span>
-                      </div>
-                    </div>
-
-                    {doc.biography && (
-                      <p className="text-[11px] text-muted-foreground line-clamp-2 italic">
-                        &quot;{doc.biography}&quot;
-                      </p>
-                    )}
-
-                    <div className="pt-2 flex items-center justify-end gap-2 border-t border-border/40">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(doc)}
-                        className="text-xs h-7 gap-1"
-                      >
-                        <Edit className="w-3 h-3" /> Edit
-                      </Button>
-
-                      <Button
-                        variant={doc.isActive ? 'outline' : 'primary'}
-                        size="sm"
-                        onClick={() => handleToggleStatus(doc)}
-                        className={`text-xs h-7 gap-1 ${
-                          doc.isActive ? 'text-destructive hover:bg-destructive/10' : ''
-                        }`}
-                        disabled={deleteMutation.isPending || updateMutation.isPending}
-                      >
-                        <Power className="w-3 h-3" />
-                        {doc.isActive ? 'Deactivate' : 'Activate'}
-                      </Button>
-                    </div>
-                  </CardBody>
-                </Card>
-              ))}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredDoctors.length}
+                pageSize={10}
+                onPageChange={setCurrentPage}
+              />
             </div>
           )}
         </div>

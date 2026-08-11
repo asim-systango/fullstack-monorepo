@@ -8,6 +8,7 @@ import {
   Spinner,
   Button,
   Select,
+  Pagination,
 } from '@shared/ui/components';
 import { useDoctors } from '@/features/doctor/hooks';
 import { DoctorCard } from '@/components/doctor/doctor-card';
@@ -29,6 +30,7 @@ export default function DoctorsPage() {
   const [specialization, setSpecialization] = useState('ALL');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
     data: doctors = [],
@@ -43,6 +45,17 @@ export default function DoctorsPage() {
   const handleReset = () => {
     setSpecialization('ALL');
     setSearch('');
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleSpecializationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSpecialization(e.target.value);
+    setCurrentPage(1);
   };
 
   const renderContent = () => {
@@ -88,11 +101,28 @@ export default function DoctorsPage() {
     }
 
     if (viewMode === 'grid') {
+      const pageSize = 10;
+      const totalPages = Math.max(1, Math.ceil(doctors.length / pageSize));
+      const safePage = Math.min(Math.max(1, currentPage), totalPages);
+      const paginatedDoctors = doctors.slice(
+        (safePage - 1) * pageSize,
+        safePage * pageSize,
+      );
+
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {doctors.map((doctor) => (
-            <DoctorCard key={doctor.id} doctor={doctor} />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedDoctors.map((doctor) => (
+              <DoctorCard key={doctor.id} doctor={doctor} />
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={safePage}
+            totalItems={doctors.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
         </div>
       );
     }
@@ -108,7 +138,7 @@ export default function DoctorsPage() {
       />
 
       {/* Filter and View Controls Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row items-center gap-3 flex-1">
           {/* Search Input */}
           <div className="relative w-full sm:w-72">
@@ -116,7 +146,7 @@ export default function DoctorsPage() {
             <TextInput
               placeholder="Search by doctor name or specialty..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="pl-9 text-sm w-full"
             />
           </div>
@@ -126,7 +156,7 @@ export default function DoctorsPage() {
             <Filter className="w-4 h-4 text-muted-foreground hidden sm:block" />
             <Select
               value={specialization}
-              onChange={(e) => setSpecialization(e.target.value)}
+              onChange={handleSpecializationChange}
               className="text-sm w-full sm:w-48"
             >
               {SPECIALIZATIONS.map((spec) => (

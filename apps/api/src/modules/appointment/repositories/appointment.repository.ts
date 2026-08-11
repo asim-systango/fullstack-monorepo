@@ -40,6 +40,7 @@ export class AppointmentRepository {
   ): Promise<PaginatedAppointmentsResult> {
     const query = this.repo
       .createQueryBuilder('appointment')
+      .withDeleted()
       .leftJoinAndSelect('appointment.slot', 'slot')
       .leftJoinAndSelect('slot.doctor', 'doctor')
       .leftJoinAndSelect('appointment.prescription', 'prescription')

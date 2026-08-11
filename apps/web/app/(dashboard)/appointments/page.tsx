@@ -1,19 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Page, PageHeader, EmptyState, Spinner, Button } from '@shared/ui/components';
+import {
+  Page,
+  PageHeader,
+  EmptyState,
+  Spinner,
+  Button,
+  Pagination,
+} from '@shared/ui/components';
 import {
   useAppointments,
   useCancelAppointment,
   useBookAppointment,
 } from '@/features/appointment/hooks';
 import { AppointmentCard } from '@/components/appointment/appointment-card';
+import { CancelConfirmationModal } from '@/components/appointment/cancel-confirmation-modal';
 import type { AppointmentStatus } from '@/features/appointment/types';
 import { CheckCircle2, Clock, XCircle, Filter, ShieldCheck } from 'lucide-react';
 
 export default function AppointmentsPage() {
   const [paymentBanner, setPaymentBanner] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'ALL' | AppointmentStatus>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(
+    null,
+  );
 
   const {
     data: appointments = [],
@@ -47,8 +59,17 @@ export default function AppointmentsPage() {
     }
   }, [bookMutation]);
 
-  const handleCancel = (id: string) => {
-    cancelMutation.mutate(id);
+  const handleCancelClick = (id: string) => {
+    setCancellingAppointmentId(id);
+  };
+
+  const handleConfirmCancel = () => {
+    if (!cancellingAppointmentId) return;
+    cancelMutation.mutate(cancellingAppointmentId, {
+      onSuccess: () => {
+        setCancellingAppointmentId(null);
+      },
+    });
   };
 
   const tabs: {
@@ -118,16 +139,35 @@ export default function AppointmentsPage() {
       );
     }
 
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(appointments.length / pageSize));
+    const safePage = Math.min(Math.max(1, currentPage), totalPages);
+    const paginatedAppts = appointments.slice(
+      (safePage - 1) * pageSize,
+      safePage * pageSize,
+    );
+
     return (
-      <div className="space-y-4">
-        {appointments.map((appointment) => (
-          <AppointmentCard
-            key={appointment.id}
-            appointment={appointment}
-            onCancel={handleCancel}
-            isCancelling={cancelMutation.isPending}
-          />
-        ))}
+      <div className="space-y-6">
+        <div className="space-y-4">
+          {paginatedAppts.map((appointment) => (
+            <AppointmentCard
+              key={appointment.id}
+              appointment={appointment}
+              onCancel={handleCancelClick}
+              isCancelling={
+                cancelMutation.isPending && cancellingAppointmentId === appointment.id
+              }
+            />
+          ))}
+        </div>
+
+        <Pagination
+          currentPage={safePage}
+          totalItems={appointments.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
       </div>
     );
   };
@@ -166,7 +206,10 @@ export default function AppointmentsPage() {
               key={tab.value}
               variant={isActive ? 'primary' : 'ghost'}
               size="sm"
-              onClick={() => setStatusFilter(tab.value)}
+              onClick={() => {
+                setStatusFilter(tab.value);
+                setCurrentPage(1);
+              }}
               className={`gap-2 text-xs h-9 px-4 rounded-lg font-medium whitespace-nowrap transition-all ${
                 isActive ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -180,6 +223,14 @@ export default function AppointmentsPage() {
 
       {/* Content */}
       {renderContent()}
+
+      {/* Cancel Confirmation Modal */}
+      <CancelConfirmationModal
+        isOpen={Boolean(cancellingAppointmentId)}
+        onClose={() => setCancellingAppointmentId(null)}
+        onConfirm={handleConfirmCancel}
+        isLoading={cancelMutation.isPending}
+      />
     </Page>
   );
 }
