@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { In, IsNull, Not, QueryFailedError, Repository } from 'typeorm';
 import { Media } from '../media/media.entity';
 import { RevisionMedia } from '../media/revision-media.entity';
 import { ArticleTag } from '../tags/article-tag.entity';
@@ -8,6 +8,11 @@ import { Tag } from '../tags/tag.entity';
 import { Article } from './article.entity';
 import { Revision } from './revision.entity';
 import { collectMediaRefs, type ContentBlock } from './types/revision-content';
+import type { ArticleListItem, StudioArticleDetail } from './dto/get-article.dto';
+import type {
+  PublicArticleDetail,
+  PublicArticleListItem,
+} from './dto/public-article.dto';
 
 export type CreateDraftInput = {
   authorId: string;
@@ -15,6 +20,28 @@ export type CreateDraftInput = {
   slug: string;
   content: ContentBlock[];
   tagIds?: string[];
+};
+
+export type ListArticlesInput = {
+  /** When set, restricts results to this author only (Author role). */
+  authorId?: string;
+  page: number;
+  limit: number;
+};
+
+export type GetStudioArticleInput = {
+  id: string;
+  /** When set, ownership is enforced: only the matching author's article is returned. */
+  authorId?: string;
+};
+
+export type ListPublicArticlesInput = {
+  page: number;
+  limit: number;
+};
+
+export type GetPublicArticleBySlugInput = {
+  slug: string;
 };
 
 @Injectable()
@@ -155,5 +182,151 @@ export class ArticlesRepository {
 
       throw err;
     }
+  }
+
+  async listArticles(
+    input: ListArticlesInput,
+  ): Promise<{ items: ArticleListItem[]; total: number }> {
+    const where = {
+      deletedAt: IsNull(),
+      ...(input.authorId ? { authorId: input.authorId } : {}),
+    };
+
+    const [rows, total] = await this.articleRepo.findAndCount({
+      where,
+      select: {
+        id: true,
+        authorId: true,
+        title: true,
+        slug: true,
+        publishedRevisionId: true,
+        publishedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      order: { updatedAt: 'DESC' },
+      skip: (input.page - 1) * input.limit,
+      take: input.limit,
+    });
+
+    return { items: rows as ArticleListItem[], total };
+  }
+
+  async findStudioArticleById(
+    input: GetStudioArticleInput,
+  ): Promise<StudioArticleDetail | null> {
+    const article = await this.articleRepo.findOne({
+      where: {
+        id: input.id,
+        deletedAt: IsNull(),
+        ...(input.authorId ? { authorId: input.authorId } : {}),
+      },
+      relations: {
+        articleTags: { tag: true },
+        revisions: true,
+      },
+      order: {
+        revisions: { createdAt: 'ASC' },
+      },
+    });
+
+    if (!article) return null;
+
+    return {
+      id: article.id,
+      authorId: article.authorId,
+      title: article.title,
+      slug: article.slug,
+      publishedRevisionId: article.publishedRevisionId,
+      publishedAt: article.publishedAt,
+      createdAt: article.createdAt,
+      updatedAt: article.updatedAt,
+      tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
+      revisions: article.revisions.map((r) => ({
+        id: r.id,
+        createdBy: r.createdBy,
+        coverMediaId: r.coverMediaId,
+        content: r.content,
+        createdAt: r.createdAt,
+      })),
+    };
+  }
+
+  async listPublicArticles(
+    input: ListPublicArticlesInput,
+  ): Promise<{ items: PublicArticleListItem[]; total: number }> {
+    const [rows, total] = await this.articleRepo.findAndCount({
+      where: {
+        deletedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+      },
+      relations: {
+        articleTags: { tag: true },
+        publishedRevision: { coverMedia: true },
+      },
+      order: { publishedAt: 'DESC' },
+      skip: (input.page - 1) * input.limit,
+      take: input.limit,
+    });
+
+    return {
+      items: rows.map((article) => ({
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        publishedAt: article.publishedAt!,
+        publishedRevisionId: article.publishedRevisionId!,
+        tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
+        coverMedia: article.publishedRevision?.coverMedia
+          ? {
+              id: article.publishedRevision.coverMedia.id,
+              secureUrl: article.publishedRevision.coverMedia.secureUrl,
+              resourceType: article.publishedRevision.coverMedia.resourceType,
+              defaultAltText: article.publishedRevision.coverMedia.defaultAltText,
+            }
+          : null,
+      })),
+      total,
+    };
+  }
+
+  async findPublicArticleBySlug(
+    input: GetPublicArticleBySlugInput,
+  ): Promise<PublicArticleDetail | null> {
+    const article = await this.articleRepo.findOne({
+      where: {
+        slug: input.slug,
+        deletedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+      },
+      relations: {
+        articleTags: { tag: true },
+        publishedRevision: { coverMedia: true },
+      },
+    });
+
+    if (!article?.publishedRevision) return null;
+
+    const published = article.publishedRevision;
+
+    return {
+      id: article.id,
+      title: article.title,
+      slug: article.slug,
+      publishedAt: article.publishedAt!,
+      tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
+      revision: {
+        id: published.id,
+        content: published.content,
+        coverMedia: published.coverMedia
+          ? {
+              id: published.coverMedia.id,
+              secureUrl: published.coverMedia.secureUrl,
+              resourceType: published.coverMedia.resourceType,
+              defaultAltText: published.coverMedia.defaultAltText,
+            }
+          : null,
+      },
+    };
   }
 }
