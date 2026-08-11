@@ -1,6 +1,19 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/auth';
 
 export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [loading, isAuthenticated, router]);
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-violet-500 selection:text-white relative overflow-hidden font-sans">
       {/* Ambient Lighting Gradients */}
@@ -41,18 +54,29 @@ export default function HomePage() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-zinc-300 hover:text-white transition-colors px-3 py-2"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/login"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Get Started Free
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Go to Dashboard &rarr;
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-zinc-300 hover:text-white transition-colors px-3 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/login"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Get Started Free
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

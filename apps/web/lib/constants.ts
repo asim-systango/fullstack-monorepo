@@ -25,6 +25,19 @@ export const SUPER_ADMIN_MESSAGES = {
   TOTAL_USERS: 'Total Platform Users',
   PENDING_INVITES: 'Pending Invites',
   TOTAL_REQUESTS: 'Organization Requests',
+  PROVISION_MODAL_TITLE: 'Provision New Client Organization',
+  PROVISION_MODAL_SUBTITLE:
+    'Create an isolated tenant workspace and assign an initial organization administrator.',
+} as const;
+
+export const ORGANIZATION_ONBOARDING_MESSAGES = {
+  PAGE_TITLE: 'Onboard New Tenant Organization',
+  PAGE_SUBTITLE:
+    'Provision an enterprise tenant workspace, setup domain routing, and assign the primary organization administrator.',
+  SECTION_ORG_INFO: '1. Corporate Organization Details',
+  SECTION_ADMIN_INFO: '2. Primary Administrator Contact',
+  SECTION_OPTIONAL_INFO: '3. Additional Corporate Metadata',
+  SUCCESS_ONBOARDED: 'Organization onboarded successfully! Tenant workspace is now live.',
 } as const;
 
 export interface OrganizationItem {

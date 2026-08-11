@@ -18,22 +18,22 @@ export function Sidebar() {
 
   const navItems = isSuperAdmin
     ? [
-        { label: 'Overview', icon: '📊', href: '/dashboard' },
-        { label: 'Organizations', icon: '🏢', href: '/dashboard/organizations' },
-        { label: 'Global Users', icon: '👥', href: '/dashboard/users' },
+        { label: 'Overview', icon: '📊', href: '/' },
+        { label: 'Organizations', icon: '🏢', href: '/organizations' },
+        { label: 'Global Users', icon: '👥', href: '/users' },
       ]
     : [
-        { label: 'Overview', icon: '📊', href: '/dashboard' },
-        { label: 'Leads & Pipeline', icon: '🎯', href: '/dashboard/leads' },
-        { label: 'Contacts', icon: '👤', href: '/dashboard/contacts' },
-        { label: 'Deals', icon: '💼', href: '/dashboard/deals' },
+        { label: 'Overview', icon: '📊', href: '/' },
+        { label: 'Leads & Pipeline', icon: '🎯', href: '/leads' },
+        { label: 'Contacts', icon: '👤', href: '/contacts' },
+        { label: 'Deals', icon: '💼', href: '/deals' },
       ];
 
   return (
     <aside className="w-64 bg-zinc-900/80 border-r border-zinc-800/80 flex flex-col justify-between p-5 select-none shrink-0">
       <div>
         {/* Brand Logo Header */}
-        <Link href="/dashboard" className="flex items-center space-x-3 mb-8 px-2 group">
+        <Link href="/" className="flex items-center space-x-3 mb-8 px-2 group">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 p-[1px] shadow-md shadow-violet-500/20 group-hover:shadow-violet-500/35 transition-all">
             <div className="w-full h-full bg-zinc-950 rounded-[7px] flex items-center justify-center font-bold text-violet-400 text-base">
               S
