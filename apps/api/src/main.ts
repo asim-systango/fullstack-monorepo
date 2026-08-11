@@ -6,17 +6,17 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/filters';
 import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
-import { requestIdMiddleware, securityHeadersMiddleware } from '@shared/http/middleware';
+import { requestIdMiddleware } from '@shared/http/middleware';
 import { setupSwagger } from '@shared/http/swagger';
 
 async function bootstrap() {
   const port = process.env.PORT || 3002;
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
+  app.enableCors({ origin: true, credentials: true });
 
   app.use(compression());
   app.use(requestIdMiddleware());
-  app.use(securityHeadersMiddleware());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -32,9 +32,7 @@ async function bootstrap() {
 
   setupSwagger(app, {
     title: 'Domain API',
-    description:
-      'Internal Nest API (Bearer JWT) — add domain modules under `src/modules/`. ' +
-      'Authorize with a Bearer token (gateway forwards the auth cookie as Authorization).',
+    description: 'Internal Nest API (Bearer JWT)',
     auth: 'bearer',
   });
 

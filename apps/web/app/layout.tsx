@@ -18,8 +18,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'Systango CRM - Enterprise Platform',
+  description: 'High-performance multi-tenant CRM application',
 };
 
 export default function RootLayout({
@@ -28,10 +28,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} dark`}
       suppressHydrationWarning
     >
-      <body>
+      <body className="bg-zinc-950 text-zinc-100 antialiased min-h-screen">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

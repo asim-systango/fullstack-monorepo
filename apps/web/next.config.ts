@@ -2,9 +2,11 @@ import type { NextConfig } from 'next';
 
 /**
  * Browser calls same-origin `/api/*` on :3000.
- * Next rewrites those to the Nest API gateway (default :3001).
+ * Next rewrites those to the Nest API gateway (default :3001), removing the
+ * browser-only `/api` prefix. Gateway-owned routes are `/auth/*`, `/health/*`,
+ * and similar paths.
  */
-const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3001').replace(
+const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3002').replace(
   /\/$/,
   '',
 );
@@ -60,7 +62,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${gatewayOrigin}/:path*`,
+        destination: `${gatewayOrigin}/api/:path*`,
       },
     ];
   },

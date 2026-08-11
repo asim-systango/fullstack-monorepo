@@ -12,10 +12,11 @@ function AuthNav() {
   }
 
   if (user) {
+    const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
     return (
       <>
         <span className="font-mono text-xs text-muted-foreground">
-          {user.name} · {user.role}
+          {userName} · {user.role || 'Member'}
         </span>
         <Button variant="ghost" size="sm" onClick={() => void logout()}>
           Log out
@@ -39,7 +40,7 @@ function AuthNav() {
 
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Systango CRM Platform',
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <header className="ui-shell-header">
@@ -49,7 +50,7 @@ export function ShellHeader({
       </div>
       <nav className="ui-shell-nav">
         <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        <Link href="/dashboard">Dashboard</Link>
         <AuthNav />
       </nav>
     </header>
