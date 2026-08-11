@@ -33,6 +33,16 @@ export const registerSchema = z
         /[@$!%*?&#^()_-]/,
         'Password must contain at least one special character (@$!%*?&#^()_-)',
       ),
+    role: z.enum(['PATIENT', 'DOCTOR']).optional(),
+    specialization: z.string().optional().or(z.literal('')),
+    qualification: z.string().optional().or(z.literal('')),
+    experienceYears: z.coerce
+      .number()
+      .min(0, 'Experience must be 0 or positive')
+      .optional(),
+    consultationFee: z.coerce.number().min(0, 'Fee must be 0 or positive').optional(),
+    biography: z.string().optional().or(z.literal('')),
+    profileImage: z.string().optional().or(z.literal('')),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine(

@@ -48,6 +48,42 @@ export class RegisterDto {
   @MinLength(7)
   @MaxLength(20)
   phone?: string;
+
+  @ApiPropertyOptional({ example: 'PATIENT', enum: ['PATIENT', 'DOCTOR'] })
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @ApiPropertyOptional({ example: 'Cardiology' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  specialization?: string;
+
+  @ApiPropertyOptional({ example: 'MD, FACC' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  qualification?: string;
+
+  @ApiPropertyOptional({ example: 10, minimum: 0 })
+  @IsOptional()
+  experienceYears?: number;
+
+  @ApiPropertyOptional({ example: 150.0, minimum: 0 })
+  @IsOptional()
+  consultationFee?: number;
+
+  @ApiPropertyOptional({ example: 'Experienced cardiologist with 10+ years experience.' })
+  @IsOptional()
+  @IsString()
+  biography?: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/photo.jpg' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  profileImage?: string;
 }
 
 export class LoginDto {

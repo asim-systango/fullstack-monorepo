@@ -25,6 +25,13 @@ export interface RegisterPayload {
   firstName: string;
   lastName: string;
   phone?: string;
+  role?: UserRole;
+  specialization?: string;
+  qualification?: string;
+  experienceYears?: number;
+  consultationFee?: number;
+  biography?: string;
+  profileImage?: string;
 }
 
 export interface AuthResponse {

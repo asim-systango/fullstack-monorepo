@@ -45,6 +45,12 @@ export class AuthService {
       }
     }
 
+    const requestedRole =
+      dto.role &&
+      (dto.role.toUpperCase() === 'DOCTOR' || dto.role.toUpperCase() === Role.DOCTOR)
+        ? Role.DOCTOR
+        : Role.PATIENT;
+
     const passwordHash = await bcrypt.hash(dto.password, 12);
     try {
       const user = await this.usersService.create({
@@ -54,11 +60,36 @@ export class AuthService {
         lastName: dto.lastName,
         name: `${dto.firstName} ${dto.lastName}`.trim(),
         phone: dto.phone,
-        role: Role.PATIENT,
+        role: requestedRole,
       });
 
       const tokens = await this.generateTokens(user.id, user.email, user.role);
       await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+
+      if (user.role === Role.DOCTOR) {
+        try {
+          await fetch(`${this.env.API_UPSTREAM_URL}/doctors`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${tokens.accessToken}`,
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              firstName: dto.firstName,
+              lastName: dto.lastName,
+              specialization: dto.specialization || 'General Medicine',
+              qualification: dto.qualification || 'MBBS',
+              experienceYears: Number(dto.experienceYears ?? 0),
+              consultationFee: Number(dto.consultationFee ?? 0),
+              biography: dto.biography || null,
+              profileImage: dto.profileImage || null,
+            }),
+          });
+        } catch {
+          // Log or silently ignore upstream profile sync error so user registration completes
+        }
+      }
 
       return {
         accessToken: tokens.accessToken,

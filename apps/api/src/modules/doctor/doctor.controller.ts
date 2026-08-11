@@ -61,7 +61,7 @@ export class DoctorController {
   }
 
   @Post()
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DOCTOR')
   @ApiOperation({ summary: 'Create a new doctor profile' })
   @ApiResponse({ status: 201, description: 'Doctor profile created successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
