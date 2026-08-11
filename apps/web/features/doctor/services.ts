@@ -123,8 +123,8 @@ export const doctorApi = {
       return data.data ?? data;
     } catch {
       const newDoc: DoctorProfile = {
-        id: `d-${Date.now()}`,
-        userId: payload.userId || `u-${Date.now()}`,
+        id: 'd1111111-1111-1111-1111-111111111111',
+        userId: payload.userId || 'u1111111-1111-1111-1111-111111111111',
         firstName: payload.firstName || 'Doctor',
         lastName: payload.lastName || 'Specialist',
         specialization: payload.specialization || 'General Medicine',

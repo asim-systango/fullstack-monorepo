@@ -57,8 +57,9 @@ export class SlotService {
       throw new BadRequestException('Slot start time must be before end time');
     }
 
-    if (startsAt.getTime() <= Date.now()) {
-      throw new BadRequestException('Slot start time must be in the future');
+    // Ensure slot start time is valid (allow today's slots as long as end time is in the future)
+    if (endsAt.getTime() <= Date.now()) {
+      throw new BadRequestException('Slot end time must be in the future');
     }
 
     const durationMinutes = (endsAt.getTime() - startsAt.getTime()) / (1000 * 60);

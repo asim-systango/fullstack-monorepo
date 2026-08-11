@@ -15,6 +15,13 @@ import {
   Badge,
   Field,
   TextInput,
+  Select,
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
 } from '@shared/ui/components';
 import {
   User,
@@ -222,26 +229,35 @@ export default function UserSettingsPage() {
     return <span>{`${firstName[0] || 'U'}${lastName[0] || ''}`}</span>;
   };
 
+  // Document Upload Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [docCategory, setDocCategory] = useState('Medical Council License');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [documentError, setDocumentError] = useState<string | null>(null);
 
-  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleConfirmDocumentUpload = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      setDocumentError('Please select a document file to upload');
+      return;
+    }
 
     setIsUploadingDocument(true);
+    setDocumentError(null);
     try {
       const requestRes = await apiClient.post('/uploads/request-url', {
-        name: file.name,
-        contentType: file.type || 'application/pdf',
-        size: file.size,
+        name: selectedFile.name,
+        contentType: selectedFile.type || 'application/pdf',
+        size: selectedFile.size,
       });
       const data = requestRes.data?.data || requestRes.data;
       const rawUploadURL = data.uploadURL || '';
       const uploadURL = rawUploadURL.replace(/^\/api/, '');
 
-      const uploadRes = await apiClient.post(uploadURL, file, {
+      const uploadRes = await apiClient.post(uploadURL, selectedFile, {
         headers: {
-          'Content-Type': file.type || 'application/octet-stream',
+          'Content-Type': selectedFile.type || 'application/octet-stream',
         },
       });
 
@@ -249,28 +265,23 @@ export default function UserSettingsPage() {
       const objectPath = uploadData?.objectPath || data.objectPath;
       const today = new Date().toISOString().split('T')[0] ?? '2026-08-11';
 
-      let docType = 'Medical Document';
-      if (file.type.includes('pdf')) {
-        docType = 'Medical License (PDF)';
-      } else if (file.type.includes('image')) {
-        docType = 'ID Proof / Certificate';
-      }
-
       const newDoc = {
         id: `doc-${Date.now()}`,
-        name: file.name,
-        type: docType,
+        name: selectedFile.name,
+        type: docCategory,
         status: 'PENDING',
         uploadedAt: today,
         url: objectPath,
       };
 
       setDocuments((prev) => [...prev, newDoc]);
+      setIsUploadModalOpen(false);
+      setSelectedFile(null);
     } catch (err) {
       console.error('Failed to upload document:', err);
+      setDocumentError('Failed to upload document. Please try again.');
     } finally {
       setIsUploadingDocument(false);
-      e.target.value = '';
     }
   };
 
@@ -634,23 +645,18 @@ export default function UserSettingsPage() {
                     <FileText className="w-4 h-4 text-emerald-500" />
                     Doctor Credential Documents
                   </CardTitle>
-                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground text-xs font-medium cursor-pointer shadow-xs transition-colors">
-                    {isUploadingDocument ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                    ) : (
-                      <UploadCloud className="w-3.5 h-3.5" />
-                    )}
-                    <span>
-                      {isUploadingDocument ? 'Uploading...' : 'Upload Document'}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                      className="hidden"
-                      disabled={isUploadingDocument}
-                      onChange={handleDocumentUpload}
-                    />
-                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setDocumentError(null);
+                      setSelectedFile(null);
+                      setIsUploadModalOpen(true);
+                    }}
+                    className="text-xs h-8 gap-1.5"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" /> Upload Document
+                  </Button>
                 </CardHeader>
                 <CardBody className="pt-4">
                   <div className="space-y-3">
@@ -837,6 +843,111 @@ export default function UserSettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Upload Credential Document Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" /> Upload Credential Document
+          </DialogTitle>
+          <DialogDescription>
+            Select document category and attach your medical license, board certification,
+            or government ID proof for verification.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleConfirmDocumentUpload}>
+          <DialogBody className="space-y-4">
+            {documentError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{documentError}</span>
+              </div>
+            )}
+
+            <Field label="Document Category" required>
+              <Select
+                value={docCategory}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setDocCategory(e.target.value)
+                }
+                className="w-full text-xs"
+              >
+                <option value="Medical Council License">Medical Council License</option>
+                <option value="Board Certification">Board Certification</option>
+                <option value="Government ID Proof">Government ID Proof</option>
+                <option value="Medical Registration Certificate">
+                  Medical Registration Certificate
+                </option>
+                <option value="Specialist Qualification">Specialist Qualification</option>
+              </Select>
+            </Field>
+
+            <Field label="Select Document File (PDF, Image, DOC)" required>
+              <div className="border-2 border-dashed border-border/80 rounded-xl p-6 text-center bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer relative">
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.files?.[0]) {
+                      setSelectedFile(e.target.files[0]);
+                      setDocumentError(null);
+                    }
+                  }}
+                />
+                {selectedFile ? (
+                  <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-500">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>
+                      {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <UploadCloud className="w-8 h-8 mx-auto text-muted-foreground" />
+                    <p className="text-xs font-medium text-foreground">
+                      Click or drag to select document file
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Supported formats: PDF, PNG, JPG, DOC (Max 10MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Field>
+          </DialogBody>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isUploadingDocument}
+              onClick={() => setIsUploadModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isUploadingDocument || !selectedFile}
+              className="gap-2 text-xs"
+            >
+              {isUploadingDocument ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading to Storage...
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-3.5 h-3.5" /> Confirm & Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Dialog>
     </Page>
   );
 }

@@ -61,6 +61,13 @@ export function useBookAppointment() {
   });
 }
 
+/** Initiate Stripe Checkout session mutation. */
+export function useCreatePaymentCheckout() {
+  return useMutation({
+    mutationFn: (slotId: string) => appointmentApi.createPaymentCheckout(slotId),
+  });
+}
+
 /** Cancel an appointment mutation. */
 export function useCancelAppointment() {
   const queryClient = useQueryClient();

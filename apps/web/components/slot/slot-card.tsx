@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, Badge, Button } from '@shared/ui/components';
 import type { Slot } from '@/features/slot/types';
-import { Clock, CheckCircle2, XCircle, Ban } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Ban, CreditCard } from 'lucide-react';
 
 export interface SlotCardProps {
   slot: Slot;
@@ -12,7 +12,12 @@ export interface SlotCardProps {
 }
 
 export function SlotCard({ slot, onBook, isBooking }: Readonly<SlotCardProps>) {
-  const startTime = new Date(slot.startsAt).toLocaleTimeString([], {
+  const slotDate = new Date(slot.startsAt);
+  const dateStr = slotDate.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+  });
+  const startTime = slotDate.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -54,8 +59,13 @@ export function SlotCard({ slot, onBook, isBooking }: Readonly<SlotCardProps>) {
             <Clock className="w-4 h-4" />
           </div>
           <div>
-            <div className="font-semibold text-sm text-foreground">
-              {startTime} – {endTime}
+            <div className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+              <span>
+                {startTime} – {endTime}
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                ({dateStr})
+              </span>
             </div>
             <div className="mt-1">{getStatusBadge()}</div>
           </div>
@@ -67,9 +77,10 @@ export function SlotCard({ slot, onBook, isBooking }: Readonly<SlotCardProps>) {
             variant="primary"
             onClick={() => onBook(slot)}
             loading={isBooking}
-            className="text-xs px-3 py-1 h-8"
+            className="text-xs px-3 py-1 h-8 gap-1.5 shadow-sm hover:shadow"
           >
-            Book Slot
+            <CreditCard className="w-3.5 h-3.5" />
+            Book & Pay
           </Button>
         )}
       </div>

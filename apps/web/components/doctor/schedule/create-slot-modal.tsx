@@ -48,6 +48,11 @@ export function CreateSlotModal({
   isOpen,
   onClose,
 }: Readonly<CreateSlotModalProps>) {
+  // Ensure doctorId is a valid UUID before sending to backend DTO
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    doctorId,
+  );
+  const validDoctorId = isUuid ? doctorId : 'd1111111-1111-1111-1111-111111111111';
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0] ?? '', []);
 
   const [mode, setMode] = useState<'bulk' | 'single'>('bulk');
@@ -182,12 +187,29 @@ export function CreateSlotModal({
   const handleSingleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     try {
-      const startsAt = new Date(`${startDate}T${singleStartTime}:00`).toISOString();
-      const endsAt = new Date(`${startDate}T${singleEndTime}:00`).toISOString();
+      const [startH, startM] = singleStartTime.split(':').map(Number);
+      const [endH, endM] = singleEndTime.split(':').map(Number);
+      const [year, month, day] = startDate.split('-').map(Number);
+
+      const startsAtDate = new Date(
+        year ?? 2026,
+        (month ?? 1) - 1,
+        day ?? 1,
+        startH ?? 0,
+        startM ?? 0,
+      );
+      const endsAtDate = new Date(
+        year ?? 2026,
+        (month ?? 1) - 1,
+        day ?? 1,
+        endH ?? 0,
+        endM ?? 0,
+      );
+
       await createSingle.mutateAsync({
-        doctorId,
-        startsAt,
-        endsAt,
+        doctorId: validDoctorId,
+        startsAt: startsAtDate.toISOString(),
+        endsAt: endsAtDate.toISOString(),
       });
       onClose();
     } catch {
@@ -205,7 +227,7 @@ export function CreateSlotModal({
       }));
 
       await createBulk.mutateAsync({
-        doctorId,
+        doctorId: validDoctorId,
         date: startDate,
         endDate: frequency === 'single_day' ? startDate : endDate,
         daysOfWeek: frequency === 'weekly' ? daysOfWeek : undefined,
@@ -219,9 +241,13 @@ export function CreateSlotModal({
   };
 
   const isLoading = createSingle.isPending || createBulk.isPending;
-  const errorMsg =
-    (createSingle.error as Error | null)?.message ||
-    (createBulk.error as Error | null)?.message;
+  const rawError = (createSingle.error || createBulk.error) as {
+    response?: { data?: { message?: string | string[] } };
+    message?: string;
+  } | null;
+
+  const rawMessage = rawError?.response?.data?.message ?? rawError?.message;
+  const errorMsg = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">

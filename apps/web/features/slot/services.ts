@@ -1,10 +1,12 @@
 import { apiClient } from '@/lib/api';
 import type { Slot, SlotStatus, CreateSlotInput, BulkCreateSlotInput } from './types';
 
+const MOCK_DOCTOR_ID = 'd1111111-1111-1111-1111-111111111111';
+
 export const MOCK_SLOTS: Slot[] = [
   {
     id: 's1111111-1111-1111-1111-111111111111',
-    doctorId: 'd1111111-1111-1111-1111-111111111111',
+    doctorId: MOCK_DOCTOR_ID,
     startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
     endsAt: new Date(Date.now() + 2.5 * 3600 * 1000).toISOString(),
     status: 'BOOKED',
@@ -13,7 +15,7 @@ export const MOCK_SLOTS: Slot[] = [
   },
   {
     id: 's1111111-1111-1111-1111-111111111112',
-    doctorId: 'd1111111-1111-1111-1111-111111111111',
+    doctorId: MOCK_DOCTOR_ID,
     startsAt: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
     endsAt: new Date(Date.now() + 3.5 * 3600 * 1000).toISOString(),
     status: 'AVAILABLE',
@@ -22,7 +24,7 @@ export const MOCK_SLOTS: Slot[] = [
   },
   {
     id: 's1111111-1111-1111-1111-111111111113',
-    doctorId: 'd1111111-1111-1111-1111-111111111111',
+    doctorId: MOCK_DOCTOR_ID,
     startsAt: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
     endsAt: new Date(Date.now() + 4.5 * 3600 * 1000).toISOString(),
     status: 'AVAILABLE',
@@ -31,7 +33,7 @@ export const MOCK_SLOTS: Slot[] = [
   },
   {
     id: 's1111111-1111-1111-1111-111111111114',
-    doctorId: 'd1111111-1111-1111-1111-111111111111',
+    doctorId: MOCK_DOCTOR_ID,
     startsAt: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
     endsAt: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString(),
     status: 'BLOCKED',
@@ -96,13 +98,27 @@ export const slotApi = {
 
   /** Create a single consultation slot. */
   async create(payload: CreateSlotInput): Promise<Slot> {
-    const { data } = await apiClient.post<{ data: Slot }>('/slots', payload);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      payload.doctorId,
+    );
+    const cleanPayload = {
+      ...payload,
+      doctorId: isUuid ? payload.doctorId : MOCK_DOCTOR_ID,
+    };
+    const { data } = await apiClient.post<{ data: Slot }>('/slots', cleanPayload);
     return data.data ?? data;
   },
 
   /** Bulk generate consultation slots for a doctor. */
   async createBulk(payload: BulkCreateSlotInput): Promise<Slot[]> {
-    const { data } = await apiClient.post<{ data: Slot[] }>('/slots/bulk', payload);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      payload.doctorId,
+    );
+    const cleanPayload = {
+      ...payload,
+      doctorId: isUuid ? payload.doctorId : MOCK_DOCTOR_ID,
+    };
+    const { data } = await apiClient.post<{ data: Slot[] }>('/slots/bulk', cleanPayload);
     return data.data ?? data;
   },
 

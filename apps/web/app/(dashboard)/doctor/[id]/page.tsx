@@ -15,8 +15,12 @@ import {
 } from '@shared/ui/components';
 import { useDoctor } from '@/features/doctor/hooks';
 import { useAvailableSlots } from '@/features/slot/hooks';
-import { useBookAppointment } from '@/features/appointment/hooks';
+import {
+  useBookAppointment,
+  useCreatePaymentCheckout,
+} from '@/features/appointment/hooks';
 import { SlotCard } from '@/components/slot/slot-card';
+import { SlotBookingModal } from '@/components/slot/slot-booking-modal';
 import {
   ArrowLeft,
   Stethoscope,
@@ -42,24 +46,79 @@ export default function DoctorDetailPage({
   } = useDoctor(id);
   const { data: slots = [], isLoading: isSlotsLoading } = useAvailableSlots(id);
   const bookMutation = useBookAppointment();
+  const checkoutMutation = useCreatePaymentCheckout();
 
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<Slot | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  const handleBookSlot = (slot: Slot) => {
+  const handleBookSlotClick = (slot: Slot) => {
+    setBookingSuccess(null);
+    setBookingError(null);
+    setSelectedSlotForBooking(slot);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleProceedToPayment = ({
+    slotId,
+    reason,
+  }: {
+    slotId: string;
+    reason: string;
+  }) => {
     setBookingSuccess(null);
     setBookingError(null);
 
+    checkoutMutation.mutate(slotId, {
+      onSuccess: (res) => {
+        if (
+          res.url &&
+          (res.url.startsWith('http://') || res.url.startsWith('https://'))
+        ) {
+          // Open real Stripe Checkout Portal in browser
+          window.location.href = res.url;
+        } else if (res.url) {
+          // Relative URL (mock/fallback flow)
+          window.location.href = res.url;
+        } else {
+          executeDirectBooking(slotId, reason);
+        }
+      },
+      onError: (err) => {
+        setBookingError(
+          err.message || 'Failed to open Stripe payment checkout. Please try again.',
+        );
+      },
+    });
+  };
+
+  const executeDirectBooking = (slotId: string, reason: string, redirectUrl?: string) => {
     bookMutation.mutate(
-      { slotId: slot.id, reason: 'Consultation with Specialist' },
+      { slotId, reason },
       {
         onSuccess: () => {
+          const slot = selectedSlotForBooking;
+          const timeStr = slot
+            ? new Date(slot.startsAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '';
+          const slotInfo = timeStr ? `(${timeStr}) ` : '';
           setBookingSuccess(
-            `Slot (${new Date(slot.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) successfully booked! Check your Appointments tab.`,
+            `Slot ${slotInfo}successfully booked! Your consultation has been scheduled.`,
           );
+          setIsBookingModalOpen(false);
+          setSelectedSlotForBooking(null);
+
+          if (redirectUrl) {
+            window.location.href = redirectUrl;
+          }
         },
         onError: (err) => {
           setBookingError(err.message || 'Failed to book slot. Please try again.');
+          setIsBookingModalOpen(false);
         },
       },
     );
@@ -77,23 +136,31 @@ export default function DoctorDetailPage({
       );
     }
 
-    if (slots.length === 0) {
+    // Filter out slots whose end time has already passed
+    const futureAvailableSlots = slots.filter(
+      (slot) => new Date(slot.endsAt).getTime() > Date.now(),
+    );
+
+    if (futureAvailableSlots.length === 0) {
       return (
         <EmptyState
           title="No Slots Available"
-          description="Dr. Sharma has no open consultation slots at this time. Please check back later."
+          description="Dr. Sharma has no open future consultation slots at this time. Please check back later."
         />
       );
     }
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {slots.map((slot) => (
+        {futureAvailableSlots.map((slot) => (
           <SlotCard
             key={slot.id}
             slot={slot}
-            onBook={handleBookSlot}
-            isBooking={bookMutation.isPending}
+            onBook={handleBookSlotClick}
+            isBooking={
+              selectedSlotForBooking?.id === slot.id &&
+              (bookMutation.isPending || checkoutMutation.isPending)
+            }
           />
         ))}
       </div>
@@ -230,7 +297,8 @@ export default function DoctorDetailPage({
                 </p>
               </div>
               <Badge tone="accent" className="text-xs">
-                {slots.length} Slots Open
+                {slots.filter((s) => new Date(s.endsAt).getTime() > Date.now()).length}{' '}
+                Slots Open
               </Badge>
             </CardHeader>
 
@@ -238,6 +306,17 @@ export default function DoctorDetailPage({
           </Card>
         </div>
       </div>
+
+      {/* Slot Booking Confirmation & Payment Modal */}
+      <SlotBookingModal
+        open={isBookingModalOpen}
+        onOpenChange={setIsBookingModalOpen}
+        slot={selectedSlotForBooking}
+        doctor={doctor}
+        onProceedToPayment={handleProceedToPayment}
+        isProcessing={checkoutMutation.isPending || bookMutation.isPending}
+        error={bookingError}
+      />
     </Page>
   );
 }

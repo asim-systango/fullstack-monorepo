@@ -67,9 +67,18 @@ export function SlotManagementCard({
   const updateStatus = useUpdateSlotStatus();
   const deleteSlot = useDeleteSlot();
 
-  const filteredSlots = slots.filter(
-    (slot) => statusFilter === 'ALL' || slot.status === statusFilter,
-  );
+  const todayStr = new Date().toISOString().split('T')[0] ?? '';
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0] ?? '';
+
+  const isSelectedDateToday = selectedDate === todayStr;
+
+  const filteredSlots = slots.filter((slot) => {
+    // If viewing today's date, automatically hide slots whose end time has already passed
+    if (isSelectedDateToday && new Date(slot.endsAt).getTime() <= Date.now()) {
+      return false;
+    }
+    return statusFilter === 'ALL' || slot.status === statusFilter;
+  });
 
   const handleToggleBlock = async (slot: Slot) => {
     const newStatus: SlotStatus = slot.status === 'AVAILABLE' ? 'BLOCKED' : 'AVAILABLE';
@@ -87,9 +96,6 @@ export function SlotManagementCard({
       // Handled by react query
     }
   };
-
-  const todayStr = new Date().toISOString().split('T')[0] ?? '';
-  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0] ?? '';
 
   const renderSlotContent = () => {
     if (isLoading) {

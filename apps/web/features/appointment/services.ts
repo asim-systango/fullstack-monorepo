@@ -199,23 +199,18 @@ export const appointmentApi = {
     }
   },
 
-  /** Initiate Stripe Checkout for slot booking payment flow. */
   async createPaymentCheckout(
     slotId: string,
   ): Promise<{ url: string; sessionId?: string }> {
-    try {
-      const { data } = await apiClient.post<{ url: string; sessionId?: string }>(
-        '/payments/create-checkout',
-        {
-          slotId,
-        },
-      );
-      return data;
-    } catch {
-      return {
-        url: `/appointments?session_id=cs_mock_${Date.now()}&slotId=${slotId}&mock=true`,
-      };
+    const response = await apiClient.post<
+      { url: string; sessionId?: string } | { data: { url: string; sessionId?: string } }
+    >('/payments/create-checkout', { slotId });
+
+    const resData = response.data;
+    if (resData && 'data' in resData && resData.data) {
+      return resData.data;
     }
+    return resData as { url: string; sessionId?: string };
   },
 
   /** Cancel an appointment. */

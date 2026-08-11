@@ -20,9 +20,7 @@ export class PaymentService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (secretKey) {
-      this.stripe = new Stripe(secretKey, {
-        apiVersion: '2026-07-29.dahlia',
-      });
+      this.stripe = new Stripe(secretKey);
       this.logger.log('Stripe service initialized');
     } else {
       this.logger.warn('STRIPE_SECRET_KEY not set');
@@ -32,7 +30,7 @@ export class PaymentService {
   async createCheckoutSession(patientId: string, slotId: string, origin: string) {
     const slot = await this.dataSource.getRepository(Slot).findOne({
       where: { id: slotId },
-      relations: ['doctor', 'doctor.user'],
+      relations: ['doctor'],
     });
 
     if (!slot) {
@@ -66,7 +64,7 @@ export class PaymentService {
         line_items: [
           {
             price_data: {
-              currency: 'usd',
+              currency: 'inr',
               product_data: {
                 name: `Medical Consultation - ${doctorName}`,
                 description: `Slot on ${new Date(slot.startsAt).toLocaleString()}`,

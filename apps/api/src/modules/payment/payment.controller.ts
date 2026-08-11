@@ -27,7 +27,19 @@ export class PaymentController {
     if (!user) {
       throw new UnauthorizedException('Authentication required to process payment');
     }
-    const origin = `${req.protocol}://${req.get('host')}`;
+    const referer = req.get('referer');
+    let origin = req.get('origin');
+    if (!origin && referer) {
+      try {
+        const u = new URL(referer);
+        origin = u.origin;
+      } catch {
+        origin = 'http://localhost:3000';
+      }
+    }
+    if (!origin) {
+      origin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+    }
     return this.paymentService.createCheckoutSession(user.id, slotId, origin);
   }
 

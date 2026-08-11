@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Page, PageHeader, EmptyState, Spinner, Button } from '@shared/ui/components';
-import { useAppointments, useCancelAppointment } from '@/features/appointment/hooks';
+import {
+  useAppointments,
+  useCancelAppointment,
+  useBookAppointment,
+} from '@/features/appointment/hooks';
 import { AppointmentCard } from '@/components/appointment/appointment-card';
 import type { AppointmentStatus } from '@/features/appointment/types';
-import { CheckCircle2, Clock, XCircle, Filter } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Filter, ShieldCheck } from 'lucide-react';
 
 export default function AppointmentsPage() {
+  const [paymentBanner, setPaymentBanner] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'ALL' | AppointmentStatus>('ALL');
 
   const {
@@ -18,6 +23,29 @@ export default function AppointmentsPage() {
   } = useAppointments(statusFilter === 'ALL' ? undefined : { status: statusFilter });
 
   const cancelMutation = useCancelAppointment();
+  const bookMutation = useBookAppointment();
+
+  const hasHandledRef = React.useRef(false);
+
+  useEffect(() => {
+    if (hasHandledRef.current || typeof window === 'undefined') return;
+
+    const search = new URLSearchParams(window.location.search);
+    const sessionId = search.get('session_id');
+    const status = search.get('status');
+    const slotId = search.get('slotId') || search.get('slot_id');
+    const isMock = search.get('mock') === 'true';
+
+    if (sessionId || status === 'success') {
+      hasHandledRef.current = true;
+      setPaymentBanner(
+        'Payment completed successfully! Your consultation slot has been reserved.',
+      );
+      if (isMock && slotId) {
+        bookMutation.mutate({ slotId, reason: 'Paid Consultation Slot' });
+      }
+    }
+  }, [bookMutation]);
 
   const handleCancel = (id: string) => {
     cancelMutation.mutate(id);
@@ -110,6 +138,24 @@ export default function AppointmentsPage() {
         title="My Medical Appointments"
         description="View your scheduled consultations, historical medical visits, prescriptions, and clinical notes."
       />
+
+      {/* Payment Success Alert Banner */}
+      {paymentBanner && (
+        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3 text-sm animate-in fade-in-50">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
+            <span className="font-medium">{paymentBanner}</span>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+            onClick={() => setPaymentBanner(null)}
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
 
       {/* Status Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border mb-6">
