@@ -5,9 +5,18 @@ export const userSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   role: z.enum(['admin', 'user', 'staff']),
+  emailVerified: z.boolean().optional(),
 });
 
 export type User = z.infer<typeof userSchema>;
+
+export const authTokensSchema = z.object({
+  user: userSchema,
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+
+export type AuthTokens = z.infer<typeof authTokensSchema>;
 
 export const apiErrorSchema = z.object({
   statusCode: z.number(),

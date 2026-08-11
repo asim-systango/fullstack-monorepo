@@ -16,12 +16,11 @@ import {
   StatusMessage,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
+import { ShellHeader } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,9 +33,7 @@ export default function RegisterPage() {
     setError(null);
     try {
       await authApi.register({ name, email, password });
-      await authApi.login({ email, password });
-      await refresh();
-      router.push('/');
+      router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Register failed');
     } finally {
@@ -51,7 +48,7 @@ export default function RegisterPage() {
         <CardHeader>
           <CardTitle>Create account</CardTitle>
           <CardDescription>
-            Ink primary CTA · accent only on links and focus.
+            We will email a verification code before you can sign in.
           </CardDescription>
         </CardHeader>
         <Form pending={pending} onSubmit={onSubmit}>

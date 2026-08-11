@@ -4,9 +4,23 @@ import axios, {
   type CreateAxiosDefaults,
 } from 'axios';
 import { z } from 'zod';
-import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
+import {
+  apiErrorSchema,
+  userSchema,
+  authTokensSchema,
+  type ApiErrorBody,
+  type User,
+  type AuthTokens,
+} from '@shared/types';
 
-export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export {
+  apiErrorSchema,
+  userSchema,
+  authTokensSchema,
+  type ApiErrorBody,
+  type User,
+  type AuthTokens,
+};
 
 export class ApiClientError extends Error {
   readonly statusCode: number;
@@ -84,9 +98,13 @@ export function createApiClient(options: CreateApiClientOptions = {}): AxiosInst
 
 export function createAuthApi(client: AxiosInstance) {
   return {
-    async login(input: { email: string; password: string }): Promise<User> {
+    async login(input: { email: string; password: string }): Promise<AuthTokens> {
       const { data } = await client.post('/auth/login', input);
-      return userSchema.parse(unwrapData(data));
+      return authTokensSchema.parse(unwrapData(data));
+    },
+    async refresh(input: { refreshToken: string }): Promise<AuthTokens> {
+      const { data } = await client.post('/auth/refresh', input);
+      return authTokensSchema.parse(unwrapData(data));
     },
     async register(input: {
       email: string;
@@ -96,12 +114,60 @@ export function createAuthApi(client: AxiosInstance) {
       const { data } = await client.post('/auth/register', input);
       return userSchema.parse(unwrapData(data));
     },
+    async verifyOtp(input: { email: string; otp: string }): Promise<User> {
+      const { data } = await client.post('/auth/verify-otp', input);
+      return userSchema.parse(unwrapData(data));
+    },
+    async resendOtp(input: {
+      email: string;
+      purpose?: 'signup' | 'password_reset';
+    }): Promise<void> {
+      await client.post('/auth/resend-otp', input);
+    },
+    async forgotPassword(input: { email: string }): Promise<void> {
+      await client.post('/auth/forgot-password', input);
+    },
+    async resetPassword(input: {
+      email: string;
+      otp: string;
+      newPassword: string;
+    }): Promise<void> {
+      await client.post('/auth/reset-password', input);
+    },
     async me(): Promise<User> {
       const { data } = await client.get('/auth/me');
       return userSchema.parse(unwrapData(data));
     },
-    async logout(): Promise<void> {
-      await client.post('/auth/logout');
+    async updateMe(input: { email?: string; name?: string }): Promise<User> {
+      const { data } = await client.patch('/auth/me', input);
+      return userSchema.parse(unwrapData(data));
+    },
+    async changePassword(input: {
+      currentPassword: string;
+      newPassword: string;
+    }): Promise<void> {
+      await client.post('/auth/change-password', input);
+    },
+    async logout(input?: { refreshToken?: string }): Promise<void> {
+      await client.post('/auth/logout', input ?? {});
+    },
+  };
+}
+
+export function createDashboardApi(client: AxiosInstance) {
+  const publicDashboardSchema = z.object({
+    totalTitles: z.number(),
+    availableCopies: z.number(),
+  });
+
+  return {
+    async publicStats(): Promise<{ totalTitles: number; availableCopies: number }> {
+      const { data } = await client.get('/dashboard/public');
+      const parsed = publicDashboardSchema.parse(unwrapData(data));
+      return {
+        totalTitles: parsed.totalTitles,
+        availableCopies: parsed.availableCopies,
+      };
     },
   };
 }

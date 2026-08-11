@@ -38,7 +38,18 @@ export default function LoginPage() {
       await refresh();
       router.push('/');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      if (err instanceof ApiClientError && err.statusCode === 403) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('not verified') || msg.includes('email not verified')) {
+          router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
+          return;
+        }
+        setError(err.message);
+      } else if (err instanceof ApiClientError && err.statusCode === 503) {
+        setError('Library profile setup is temporarily unavailable. Please try again.');
+      } else {
+        setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      }
     } finally {
       setPending(false);
     }
@@ -46,7 +57,7 @@ export default function LoginPage() {
 
   return (
     <Page>
-      <ShellHeader title="Log in" subtitle="Sign in with your demo account" />
+      <ShellHeader title="Log in" subtitle="Sign in with your account" />
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Welcome back</CardTitle>
@@ -81,6 +92,8 @@ export default function LoginPage() {
           </Button>
         </Form>
         <p className="mt-4 text-sm text-muted-foreground">
+          <Link href="/forgot-password">Forgot password?</Link>
+          {' · '}
           No account? <Link href="/register">Register</Link>
         </p>
       </Card>

@@ -5,12 +5,14 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { BooksModule } from './modules/books';
+import { DashboardModule } from './modules/dashboard';
 import { FinesModule } from './modules/fines';
 import { HealthModule } from './modules/health';
 import { LoansModule } from './modules/loans';
 import { MembersModule } from './modules/members';
 import { ReservationsModule } from './modules/reservations';
 import { SettingsModule } from './modules/settings';
+import { InternalModule } from './modules/internal';
 
 const db = databaseConfig();
 
@@ -27,7 +29,9 @@ const db = databaseConfig();
     AuthModule,
     HealthModule,
     MembersModule,
+    InternalModule,
     BooksModule,
+    DashboardModule,
     LoansModule,
     ReservationsModule,
     FinesModule,

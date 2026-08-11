@@ -7,6 +7,7 @@ export const apiEnvSchema = z.object({
   PORT: z.coerce.number().default(3002),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(16),
+  INTERNAL_SERVICE_TOKEN: z.string().min(16),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

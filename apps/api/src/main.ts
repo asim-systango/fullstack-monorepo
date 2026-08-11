@@ -33,11 +33,12 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
-  setupSwagger(app, {
-    title: 'Domain API',
+  await setupSwagger(app, {
+    title: 'BOOKLY Domain API',
     description:
-      'Internal Nest API (Bearer JWT) — add domain modules under `src/modules/`. ' +
-      'Authorize with a Bearer token (gateway forwards the auth cookie as Authorization).',
+      'Internal Nest domain API (Bearer JWT). Prefer the **gateway** docs at the BFF port for a full catalog including auth. ' +
+      'This UI is for direct upstream debugging only. ' +
+      'Successful responses are wrapped as `{ data: ... }`.',
     auth: 'bearer',
   });
 

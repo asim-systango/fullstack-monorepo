@@ -1,44 +1,112 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Public, Roles } from '../../common/auth';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { Roles } from '../../common/auth';
 import { BookCopiesService } from './book-copies.service';
+import { BookCopyResponseDto } from './dto/book-response.dto';
 import { CreateBookCopyDto } from './dto/create-book-copy.dto';
 import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 
 @ApiTags('book-copies')
+@ApiBearerAuth()
 @Controller('books/:bookId/copies')
 export class BookCopiesController {
   constructor(private readonly copiesService: BookCopiesService) {}
 
-  @Public()
+  @Roles('staff', 'admin')
   @Get()
-  @ApiOperation({ summary: 'List copies for a book' })
-  list(@Param('bookId') bookId: string) {
+  @ApiOperation({
+    summary: 'List copies for a book (librarian)',
+    description: 'Returns non-deleted physical copies for an active catalog title.',
+  })
+  @ApiParam({ name: 'bookId', format: 'uuid' })
+  @ApiOkResponse({ type: [BookCopyResponseDto] })
+  @ApiNotFoundResponse({ description: 'Book missing or soft-deleted' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  list(@Param('bookId', ParseUUIDPipe) bookId: string) {
     return this.copiesService.listByBook(bookId);
   }
 
   @Roles('staff', 'admin')
   @Post()
-  @ApiOperation({ summary: 'Add a copy (librarian)' })
-  create(@Param('bookId') bookId: string, @Body() dto: CreateBookCopyDto) {
+  @ApiOperation({
+    summary: 'Add a copy (librarian)',
+    description: 'New copies start as `available`. Duplicate barcode returns 409.',
+  })
+  @ApiParam({ name: 'bookId', format: 'uuid' })
+  @ApiCreatedResponse({ type: BookCopyResponseDto })
+  @ApiConflictResponse({ description: 'Barcode already exists' })
+  @ApiNotFoundResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiBadRequestResponse()
+  create(@Param('bookId', ParseUUIDPipe) bookId: string, @Body() dto: CreateBookCopyDto) {
     return this.copiesService.create(bookId, dto);
   }
+}
+
+@ApiTags('book-copies')
+@ApiBearerAuth()
+@Controller('copies')
+export class CopiesController {
+  constructor(private readonly copiesService: BookCopiesService) {}
 
   @Roles('staff', 'admin')
-  @Patch(':copyId')
-  @ApiOperation({ summary: 'Update a copy (librarian)' })
-  update(
-    @Param('bookId') bookId: string,
-    @Param('copyId') copyId: string,
-    @Body() dto: UpdateBookCopyDto,
-  ) {
-    return this.copiesService.update(bookId, copyId, dto);
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update a copy (librarian)',
+    description:
+      'Allowed status transitions: available → lost, lost → available. Cannot set or change from on_loan here (loans module owns that).',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'Copy id' })
+  @ApiOkResponse({ type: BookCopyResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid status transition' })
+  @ApiConflictResponse({ description: 'Barcode already exists' })
+  @ApiNotFoundResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBookCopyDto) {
+    return this.copiesService.update(id, dto);
   }
 
   @Roles('staff', 'admin')
-  @Delete(':copyId')
-  @ApiOperation({ summary: 'Soft-delete a copy (librarian)' })
-  softDelete(@Param('bookId') bookId: string, @Param('copyId') copyId: string) {
-    return this.copiesService.softDelete(bookId, copyId);
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Soft-delete a copy (librarian)',
+    description: 'Returns 409 if the copy is currently on_loan.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'Copy id' })
+  @ApiNoContentResponse({ description: 'Soft-deleted' })
+  @ApiConflictResponse({ description: 'Copy is on loan' })
+  @ApiNotFoundResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  softDelete(@Param('id', ParseUUIDPipe) id: string) {
+    return this.copiesService.softDelete(id);
   }
 }
