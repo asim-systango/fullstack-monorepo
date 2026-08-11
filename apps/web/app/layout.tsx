@@ -1,42 +1,39 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { AppProviders } from '@/components/providers';
 import '../styles/globals.css';
 
-/**
- * Inter font — Google Fonts se load ho raha hai.
- * `variable` option se hum CSS variable bana rahe hain: --font-inter
- * Ye variable globals.css mein body font ke roop mein use hoga.
- */
-const inter = Inter({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-plex-sans',
   display: 'swap',
 });
 
-/**
- * Next.js metadata — browser tab title aur SEO ke liye.
- */
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-ibm-plex-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: {
-    template: '%s | CRM', // Har page apna title set karega, ye suffix lagega
-    default: 'CRM Platform',
-  },
-  description: 'Multi-tenant CRM platform for managing organizations and teams.',
+  title: 'App starter',
+  description: 'Nest + Next monorepo starter',
 };
 
-/**
- * RootLayout — ye poore app ka wrapper hai.
- * Har page automatically iske andar render hoga.
- *
- * `suppressHydrationWarning` — Server aur client ke beech
- * chhote HTML differences ko ignore karta hai (Next.js best practice).
- */
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }
