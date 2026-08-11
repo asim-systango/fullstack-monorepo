@@ -31,7 +31,7 @@ export default function LoginPage() {
     if (!loading && user) {
       const role = user.role?.toUpperCase();
       if (role === 'DOCTOR') {
-        router.replace('/doctor');
+        router.replace('/dashboard');
       } else if (role === 'ADMIN') {
         router.replace('/admin');
       } else {

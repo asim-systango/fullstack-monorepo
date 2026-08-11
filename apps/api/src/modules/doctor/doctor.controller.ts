@@ -13,7 +13,7 @@ import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { DoctorService } from './doctor.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
-import { Public } from '../../common/auth';
+import { Public, Roles } from '../../common/auth';
 
 import { SlotService } from '../slot/slot.service';
 
@@ -61,23 +61,29 @@ export class DoctorController {
   }
 
   @Post()
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create a new doctor profile' })
   @ApiResponse({ status: 201, description: 'Doctor profile created successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
   async create(@Body() dto: CreateDoctorDto) {
     return this.doctorService.create(dto);
   }
 
   @Patch(':id')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update doctor profile details' })
   @ApiResponse({ status: 200, description: 'Doctor profile updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
   @ApiResponse({ status: 404, description: 'Doctor profile not found' })
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateDoctorDto) {
     return this.doctorService.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Soft-delete a doctor profile' })
   @ApiResponse({ status: 200, description: 'Doctor profile soft-deleted' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
   @ApiResponse({ status: 404, description: 'Doctor profile not found' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.doctorService.remove(id);

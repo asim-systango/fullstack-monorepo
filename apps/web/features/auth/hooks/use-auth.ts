@@ -14,7 +14,7 @@ export function useLogin() {
       setAuth(data);
       const role = data.user?.role?.toUpperCase();
       if (role === 'DOCTOR') {
-        router.push('/doctor');
+        router.push('/dashboard');
       } else if (role === 'ADMIN') {
         router.push('/admin');
       } else {

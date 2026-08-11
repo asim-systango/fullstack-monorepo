@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { RoleRoute } from '@/components/auth';
 import { useAppointments, useCancelAppointment } from '@/features/appointment/hooks';
 import type { Appointment, AppointmentStatus } from '@/features/appointment/types';
 import { useDoctors } from '@/features/doctor/hooks';
@@ -110,109 +111,115 @@ export default function AdminAppointmentsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-            Hospital Appointment Search & Administration
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Search, filter, monitor, and manage clinical appointments across all hospital
-            departments.
-          </p>
-        </div>
-        <Badge tone="neutral" className="gap-1 px-3 py-1 text-xs self-start md:self-auto">
-          <Building2 className="w-3.5 h-3.5" /> Total Records: {appointments?.length ?? 0}
-        </Badge>
-      </div>
-
-      {/* Hospital Search & Filter Bar */}
-      <div className="bg-card p-4 rounded-xl border border-border/80 shadow-xs space-y-4">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by doctor name, specialization, patient ID, or reason..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
+    <RoleRoute roles={['ADMIN']}>
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <ShieldCheck className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+              Hospital Appointment Search & Administration
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Search, filter, monitor, and manage clinical appointments across all
+              hospital departments.
+            </p>
           </div>
-          <Button type="submit" variant="primary" size="sm" className="text-xs px-4">
-            Search
-          </Button>
-          {activeQuery && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleClearSearch}
-              className="text-xs"
-            >
-              Clear
-            </Button>
-          )}
-        </form>
-
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-border/40">
-          <div className="flex flex-wrap items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="font-semibold text-foreground">Doctor:</span>
-              <select
-                value={selectedDoctorId}
-                onChange={(e) => setSelectedDoctorId(e.target.value)}
-                className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="ALL">All Doctors</option>
-                {doctors?.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    Dr. {doc.firstName} {doc.lastName} ({doc.specialization})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">Status:</span>
-              <select
-                value={selectedStatus}
-                onChange={(e) =>
-                  setSelectedStatus(e.target.value as AppointmentStatus | 'ALL')
-                }
-                className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="SCHEDULED">Scheduled</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            className="text-xs h-7 gap-1"
+          <Badge
+            tone="neutral"
+            className="gap-1 px-3 py-1 text-xs self-start md:self-auto"
           >
-            <RefreshCw className="w-3 h-3" /> Refresh
-          </Button>
+            <Building2 className="w-3.5 h-3.5" /> Total Records:{' '}
+            {appointments?.length ?? 0}
+          </Badge>
         </div>
+
+        {/* Hospital Search & Filter Bar */}
+        <div className="bg-card p-4 rounded-xl border border-border/80 shadow-xs space-y-4">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by doctor name, specialization, patient ID, or reason..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <Button type="submit" variant="primary" size="sm" className="text-xs px-4">
+              Search
+            </Button>
+            {activeQuery && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClearSearch}
+                className="text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </form>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-border/40">
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="font-semibold text-foreground">Doctor:</span>
+                <select
+                  value={selectedDoctorId}
+                  onChange={(e) => setSelectedDoctorId(e.target.value)}
+                  className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">All Doctors</option>
+                  {doctors?.map((doc) => (
+                    <option key={doc.id} value={doc.id}>
+                      Dr. {doc.firstName} {doc.lastName} ({doc.specialization})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-foreground">Status:</span>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) =>
+                    setSelectedStatus(e.target.value as AppointmentStatus | 'ALL')
+                  }
+                  className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              className="text-xs h-7 gap-1"
+            >
+              <RefreshCw className="w-3 h-3" /> Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Appointment Grid */}
+        {renderContent()}
+
+        {/* Completion Modal */}
+        <CompleteAppointmentModal
+          appointment={selectedApptForCompletion}
+          isOpen={Boolean(selectedApptForCompletion)}
+          onClose={() => setSelectedApptForCompletion(null)}
+        />
       </div>
-
-      {/* Appointment Grid */}
-      {renderContent()}
-
-      {/* Completion Modal */}
-      <CompleteAppointmentModal
-        appointment={selectedApptForCompletion}
-        isOpen={Boolean(selectedApptForCompletion)}
-        onClose={() => setSelectedApptForCompletion(null)}
-      />
-    </div>
+    </RoleRoute>
   );
 }

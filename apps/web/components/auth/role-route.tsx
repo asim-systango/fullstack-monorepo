@@ -29,7 +29,17 @@ export function RoleRoute({ roles, children }: RoleRouteProps) {
     return null;
   }
 
-  if (!roles.includes(user.role)) {
+  const normalizeRole = (r: string): string => {
+    const upper = (r || '').toUpperCase();
+    if (upper === 'STAFF') return 'DOCTOR';
+    if (upper === 'USER') return 'PATIENT';
+    return upper;
+  };
+
+  const userRoleNormalized = normalizeRole(user.role);
+  const allowedRolesNormalized = roles.map(normalizeRole);
+
+  if (!allowedRolesNormalized.includes(userRoleNormalized)) {
     return (
       <Page>
         <PageHeader title="Access Denied" />

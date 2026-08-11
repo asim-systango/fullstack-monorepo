@@ -14,7 +14,7 @@ import { SlotService } from './slot.service';
 import { CreateSlotDto } from './dto/create-slot.dto';
 import { UpdateSlotDto } from './dto/update-slot.dto';
 import { SlotStatus } from '../../shared/enums/slot-status.enum';
-import { Public } from '../../common/auth';
+import { Public, Roles } from '../../common/auth';
 
 @ApiTags('Slots')
 @Controller('slots')
@@ -48,23 +48,29 @@ export class SlotController {
   }
 
   @Post()
+  @Roles('DOCTOR', 'ADMIN')
   @ApiOperation({ summary: 'Create a consultation slot' })
   @ApiResponse({ status: 201, description: 'Slot created successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Doctor or Admin role required' })
   async create(@Body() dto: CreateSlotDto) {
     return this.slotService.create(dto);
   }
 
   @Patch(':id')
+  @Roles('DOCTOR', 'ADMIN')
   @ApiOperation({ summary: 'Update slot status' })
   @ApiResponse({ status: 200, description: 'Slot status updated' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Doctor or Admin role required' })
   @ApiResponse({ status: 404, description: 'Slot not found' })
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateSlotDto) {
     return this.slotService.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles('DOCTOR', 'ADMIN')
   @ApiOperation({ summary: 'Delete a consultation slot' })
   @ApiResponse({ status: 200, description: 'Slot deleted' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Doctor or Admin role required' })
   @ApiResponse({ status: 404, description: 'Slot not found' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.slotService.remove(id);

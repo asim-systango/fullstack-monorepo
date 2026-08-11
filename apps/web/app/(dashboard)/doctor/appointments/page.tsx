@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { RoleRoute } from '@/components/auth';
 import { useAppointments, useCancelAppointment } from '@/features/appointment/hooks';
 import type { Appointment, AppointmentStatus } from '@/features/appointment/types';
 import { AppointmentCard } from '@/components/appointment/appointment-card';
@@ -100,71 +101,73 @@ export default function DoctorAppointmentsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Stethoscope className="w-7 h-7 text-primary" />
-            Doctor Portal — Consultation Schedule
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your patient visits, document medical consultations, and record
-            prescriptions.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge tone="accent" className="gap-1 px-3 py-1 text-xs">
-            <Clock className="w-3.5 h-3.5" /> {scheduledCount} Pending Visits
-          </Badge>
-          <Badge tone="success" className="gap-1 px-3 py-1 text-xs">
-            <CheckCircle2 className="w-3.5 h-3.5" /> {completedCount} Completed
-          </Badge>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border/80 shadow-xs">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <span className="text-xs font-semibold text-foreground">Filter Status:</span>
-          <div className="flex items-center gap-1.5 ml-2">
-            {(['ALL', 'SCHEDULED', 'COMPLETED', 'CANCELLED'] as const).map((status) => (
-              <Button
-                key={status}
-                variant={selectedStatus === status ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedStatus(status)}
-                className="text-xs h-8 px-3"
-              >
-                {status === 'ALL' && 'All Appointments'}
-                {status === 'SCHEDULED' && 'Scheduled'}
-                {status === 'COMPLETED' && 'Completed'}
-                {status === 'CANCELLED' && 'Cancelled'}
-              </Button>
-            ))}
+    <RoleRoute roles={['DOCTOR', 'ADMIN']}>
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border pb-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Stethoscope className="w-7 h-7 text-primary" />
+              Doctor Portal — Consultation Schedule
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your patient visits, document medical consultations, and record
+              prescriptions.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge tone="accent" className="gap-1 px-3 py-1 text-xs">
+              <Clock className="w-3.5 h-3.5" /> {scheduledCount} Pending Visits
+            </Badge>
+            <Badge tone="success" className="gap-1 px-3 py-1 text-xs">
+              <CheckCircle2 className="w-3.5 h-3.5" /> {completedCount} Completed
+            </Badge>
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => refetch()}
-          className="text-xs h-8"
-        >
-          Refresh List
-        </Button>
+        {/* Filters Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border/80 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-foreground">Filter Status:</span>
+            <div className="flex items-center gap-1.5 ml-2">
+              {(['ALL', 'SCHEDULED', 'COMPLETED', 'CANCELLED'] as const).map((status) => (
+                <Button
+                  key={status}
+                  variant={selectedStatus === status ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedStatus(status)}
+                  className="text-xs h-8 px-3"
+                >
+                  {status === 'ALL' && 'All Appointments'}
+                  {status === 'SCHEDULED' && 'Scheduled'}
+                  {status === 'COMPLETED' && 'Completed'}
+                  {status === 'CANCELLED' && 'Cancelled'}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            className="text-xs h-8"
+          >
+            Refresh List
+          </Button>
+        </div>
+
+        {/* Content Body */}
+        {renderContent()}
+
+        {/* Clinical Completion Modal */}
+        <CompleteAppointmentModal
+          appointment={selectedApptForCompletion}
+          isOpen={Boolean(selectedApptForCompletion)}
+          onClose={() => setSelectedApptForCompletion(null)}
+        />
       </div>
-
-      {/* Content Body */}
-      {renderContent()}
-
-      {/* Clinical Completion Modal */}
-      <CompleteAppointmentModal
-        appointment={selectedApptForCompletion}
-        isOpen={Boolean(selectedApptForCompletion)}
-        onClose={() => setSelectedApptForCompletion(null)}
-      />
-    </div>
+    </RoleRoute>
   );
 }
