@@ -8,6 +8,7 @@ import type {
   ListArticlesQuery,
   StudioArticleDetail,
 } from './dto/get-article.dto';
+import type { PublishArticleDto, PublishedArticle } from './dto/publish-article.dto';
 import type {
   ListPublicArticlesQuery,
   PublicArticleDetail,
@@ -50,6 +51,16 @@ export class ArticlesService {
       },
       tags: created.tags,
     };
+  }
+
+  async publishArticle(
+    articleId: string,
+    dto: PublishArticleDto,
+  ): Promise<PublishedArticle> {
+    return this.articlesRepository.publishRevision({
+      articleId,
+      revisionId: dto.revisionId,
+    });
   }
 
   async listArticles(

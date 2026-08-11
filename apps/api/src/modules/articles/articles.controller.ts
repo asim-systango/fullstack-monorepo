@@ -32,6 +32,7 @@ import {
   type ArticleListResponse,
   type StudioArticleDetail,
 } from './dto/get-article.dto';
+import { PublishArticleDto, type PublishedArticle } from './dto/publish-article.dto';
 import {
   ArticleSlugParam,
   ListPublicArticlesQuery,
@@ -174,5 +175,42 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     @CurrentUser() user: JwtUser,
   ): Promise<StudioArticleDetail> {
     return this.articlesService.getStudioArticle(params.id, user);
+  }
+
+  @Post(':id/publish')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Roles(Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'Publish a specific article revision',
+    description:
+      'Editors (`staff`) and Admins only. Authors (`user`) receive 403. ' +
+      'Sets `publishedRevisionId` and `publishedAt` together on the selected revision. ' +
+      'Does not copy revision content onto the article. ' +
+      'Republishing a different revision moves the public pointer; older revisions remain as history. ' +
+      'Republishing the same revision keeps the pointer and refreshes `publishedAt`.',
+  })
+  @ApiParam({ name: 'id', description: 'Article UUID', format: 'uuid' })
+  @ApiOkResponse({
+    description:
+      'Article published (wrapped as `{ data }` by the response envelope). ' +
+      'Body fields: `id`, `publishedRevisionId`, `publishedAt`.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid UUID, missing revisionId, or invalid/empty revision content',
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid JWT' })
+  @ApiForbiddenResponse({
+    description: 'Author (user) cannot publish — Editor/Admin only',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Article not found, soft-deleted, or revision not found for this article',
+  })
+  publishArticle(
+    @Param() params: ArticleIdParam,
+    @Body() dto: PublishArticleDto,
+  ): Promise<PublishedArticle> {
+    return this.articlesService.publishArticle(params.id, dto);
   }
 }
