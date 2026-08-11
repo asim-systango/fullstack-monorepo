@@ -34,7 +34,7 @@ export class ArticlesService {
       updatedAt: created.article.updatedAt,
       revision: {
         id: created.revision.id,
-        content: created.revision.content,
+        content: created.revision.content as ContentBlock[],
         createdAt: created.revision.createdAt,
       },
       tags: created.tags,
@@ -42,25 +42,17 @@ export class ArticlesService {
   }
 
   private resolveContent(dto: CreateArticleDto): ContentBlock[] {
-    const hasBody = typeof dto.body === 'string' && dto.body.length > 0;
+    const hasBody = Boolean(dto.body);
     const hasContent = Array.isArray(dto.content) && dto.content.length > 0;
 
-    if (hasBody && hasContent) {
+    if (hasBody === hasContent) {
       throw new BadRequestException(
         'Provide exactly one of body (markdown) or content (block array)',
       );
     }
 
-    if (hasContent) {
-      return parseContentBlocks(dto.content);
-    }
-
-    if (hasBody) {
-      return markdownToContentBlocks(dto.body!);
-    }
-
-    throw new BadRequestException(
-      'Provide exactly one of body (markdown) or content (block array)',
-    );
+    return hasContent
+      ? parseContentBlocks(dto.content)
+      : markdownToContentBlocks(dto.body!);
   }
 }
