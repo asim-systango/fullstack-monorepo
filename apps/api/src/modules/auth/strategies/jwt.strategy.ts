@@ -1,7 +1,7 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { loadApiEnv } from '../../../common/env';
+import { ConfigService } from '@nestjs/config';
 import type { JwtUser, UserRole } from '../../../common/auth';
 
 type JwtPayload = { sub: string; email: string; role: string };
@@ -14,12 +14,15 @@ function isUserRole(value: string): value is UserRole {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    const env = loadApiEnv();
+  constructor(private readonly configService: ConfigService) {
+    const secret = configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error('JWT_SECRET is not set');
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: env.JWT_SECRET,
+      secretOrKey: secret,
       algorithms: ['HS256'],
     });
   }
