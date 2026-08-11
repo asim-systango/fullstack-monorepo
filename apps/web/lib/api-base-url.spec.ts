@@ -1,8 +1,8 @@
 import { resolveApiBaseUrl } from './api-base-url';
 
 describe('resolveApiBaseUrl', () => {
-  it('defaults to /api', () => {
-    expect(resolveApiBaseUrl(undefined)).toBe('/api');
+  it('defaults to http://localhost:3002/api/v1', () => {
+    expect(resolveApiBaseUrl(undefined)).toBe('http://localhost:3002/api/v1');
   });
 
   it('strips a trailing slash', () => {
