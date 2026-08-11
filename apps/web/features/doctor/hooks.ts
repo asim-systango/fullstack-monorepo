@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { doctorApi } from './services';
-import type { DoctorFilters } from './types';
+import type { DoctorFilters, DoctorProfile } from './types';
 
 export const doctorKeys = {
   all: ['doctors'] as const,
@@ -31,5 +31,40 @@ export function useCurrentDoctor() {
   return useQuery({
     queryKey: doctorKeys.current,
     queryFn: () => doctorApi.getMe(),
+  });
+}
+
+/** Create doctor mutation (Admin). */
+export function useCreateDoctor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Partial<DoctorProfile>) => doctorApi.create(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: doctorKeys.all });
+    },
+  });
+}
+
+/** Update doctor mutation (Admin). */
+export function useUpdateDoctor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<DoctorProfile> }) =>
+      doctorApi.update(id, payload),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: doctorKeys.all });
+      void queryClient.invalidateQueries({ queryKey: doctorKeys.detail(variables.id) });
+    },
+  });
+}
+
+/** Delete / Deactivate doctor mutation (Admin). */
+export function useDeleteDoctor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => doctorApi.delete(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: doctorKeys.all });
+    },
   });
 }

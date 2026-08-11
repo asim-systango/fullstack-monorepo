@@ -12,6 +12,7 @@ import {
   Activity,
   Menu,
   X,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth';
 import { Button } from '@shared/ui/components';
@@ -26,19 +27,21 @@ const PATIENT_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Doctors', href: '/doctors', icon: Stethoscope },
   { label: 'Appointments', href: '/appointments', icon: Calendar },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const DOCTOR_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Schedule', href: '/doctor/schedule', icon: CalendarDays },
   { label: 'Appointments', href: '/doctor/appointments', icon: Calendar },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Doctors', href: '/doctors', icon: Stethoscope },
+  { label: 'Admin Dashboard', href: '/admin', icon: LayoutDashboard },
+  { label: 'Doctor Management', href: '/admin/doctors', icon: Users },
   { label: 'Appointments', href: '/admin/appointments', icon: Calendar },
-  { label: 'Admin Panel', href: '/admin', icon: Settings },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 /** Role-based navigation configuration. */
@@ -122,7 +125,9 @@ export function Sidebar() {
               const Icon = item.icon;
               const isActive =
                 pathname === item.href ||
-                (item.href !== '/' && pathname.startsWith(`${item.href}/`));
+                (item.href !== '/' &&
+                  item.href !== '/dashboard' &&
+                  pathname.startsWith(`${item.href}`));
               return (
                 <li key={item.href}>
                   <Link

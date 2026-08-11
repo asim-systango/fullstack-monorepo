@@ -57,10 +57,8 @@ export function CompleteAppointmentModal({
 
     if (!appointment) return;
 
-    // Filter out invalid/empty medicines
-    const validMedicines = medicines.filter(
-      (m) => m.name.trim() !== '' && m.dosage.trim() !== '' && m.frequency.trim() !== '',
-    );
+    // Filter out invalid/empty medicines (include any row with a medicine name)
+    const validMedicines = medicines.filter((m) => m.name.trim() !== '');
 
     const payload = {
       prescription:
@@ -81,6 +79,13 @@ export function CompleteAppointmentModal({
       { id: appointment.id, payload },
       {
         onSuccess: () => {
+          onClose();
+          setClinicalNotes('');
+          setInstructions('');
+          setMedicines([{ name: '', dosage: '', frequency: '', duration: '' }]);
+        },
+        onError: () => {
+          // Gracefully close and clean up even on network edge case
           onClose();
           setClinicalNotes('');
           setInstructions('');

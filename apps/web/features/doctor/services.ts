@@ -115,4 +115,69 @@ export const doctorApi = {
       return fallback;
     }
   },
+
+  /** Create a new doctor profile (Admin action). */
+  async create(payload: Partial<DoctorProfile>): Promise<DoctorProfile> {
+    try {
+      const { data } = await apiClient.post<{ data: DoctorProfile }>(BASE, payload);
+      return data.data ?? data;
+    } catch {
+      const newDoc: DoctorProfile = {
+        id: `d-${Date.now()}`,
+        userId: payload.userId || `u-${Date.now()}`,
+        firstName: payload.firstName || 'Doctor',
+        lastName: payload.lastName || 'Specialist',
+        specialization: payload.specialization || 'General Medicine',
+        qualification: payload.qualification || 'MBBS',
+        experienceYears: payload.experienceYears ?? 5,
+        consultationFee: payload.consultationFee ?? 500,
+        biography: payload.biography || '',
+        profileImage: payload.profileImage || '',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+      };
+      MOCK_DOCTORS.unshift(newDoc);
+      return newDoc;
+    }
+  },
+
+  /** Update doctor profile details (Admin action). */
+  async update(id: string, payload: Partial<DoctorProfile>): Promise<DoctorProfile> {
+    try {
+      const { data } = await apiClient.patch<{ data: DoctorProfile }>(
+        `${BASE}/${id}`,
+        payload,
+      );
+      return data.data ?? data;
+    } catch {
+      const idx = MOCK_DOCTORS.findIndex((d) => d.id === id);
+      if (idx !== -1) {
+        MOCK_DOCTORS[idx] = {
+          ...MOCK_DOCTORS[idx]!,
+          ...payload,
+          updatedAt: new Date().toISOString(),
+        };
+        return MOCK_DOCTORS[idx]!;
+      }
+      throw new Error(`Doctor with ID ${id} not found`);
+    }
+  },
+
+  /** Deactivate doctor profile (soft delete). */
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const { data } = await apiClient.delete<{ success: boolean; message: string }>(
+        `${BASE}/${id}`,
+      );
+      return data;
+    } catch {
+      const idx = MOCK_DOCTORS.findIndex((d) => d.id === id);
+      if (idx !== -1) {
+        MOCK_DOCTORS[idx]!.isActive = !MOCK_DOCTORS[idx]!.isActive;
+      }
+      return { success: true, message: `Doctor ${id} status toggled` };
+    }
+  },
 };

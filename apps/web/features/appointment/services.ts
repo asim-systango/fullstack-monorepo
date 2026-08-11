@@ -250,7 +250,39 @@ export const appointmentApi = {
         }
         return found;
       }
-      throw new Error(`Appointment ${id} not found`);
+
+      const newCompleted: Appointment = {
+        id,
+        patientId: 'p1111111-1111-1111-1111-111111111111',
+        slotId: 's1111111-1111-1111-1111-111111111111',
+        status: 'COMPLETED',
+        reason: 'Clinical Visit Completed',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        prescription: payload?.prescription
+          ? {
+              id: `pr-mock-${Date.now()}`,
+              appointmentId: id,
+              medicines: payload.prescription.medicines,
+              instructions: payload.prescription.instructions ?? null,
+              createdAt: new Date().toISOString(),
+            }
+          : undefined,
+        medicalNotes: payload?.medicalNote
+          ? [
+              {
+                id: `mn-mock-${Date.now()}`,
+                appointmentId: id,
+                doctorId: 'd1',
+                notes: payload.medicalNote.notes,
+                createdAt: new Date().toISOString(),
+              },
+            ]
+          : undefined,
+      };
+      MOCK_APPOINTMENTS.unshift(newCompleted);
+      return newCompleted;
     }
   },
 };

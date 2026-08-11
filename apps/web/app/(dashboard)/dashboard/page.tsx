@@ -76,7 +76,7 @@ function AdminActions() {
           <p className="text-xs text-muted-foreground leading-relaxed mb-4">
             View board-certified specialists directory and manage active doctor profiles.
           </p>
-          <Link href="/doctors">
+          <Link href="/admin/doctors">
             <Button
               variant="outline"
               size="sm"
