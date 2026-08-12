@@ -16,6 +16,7 @@ describe('JwtStrategy (gateway)', () => {
       role: user.role,
       isActive: user.isActive,
       emailVerified: user.emailVerified,
+      avatarUrl: user.avatarUrl ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     })),
@@ -83,6 +84,7 @@ describe('JwtStrategy (gateway)', () => {
       role: user.role,
       isActive: user.isActive,
       emailVerified: user.emailVerified,
+      avatarUrl: null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });

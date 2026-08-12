@@ -145,7 +145,7 @@ export default function DoctorDetailPage({
       return (
         <EmptyState
           title="No Slots Available"
-          description="Dr. Sharma has no open future consultation slots at this time. Please check back later."
+          description={`Dr. ${doctor?.firstName || 'this practitioner'} ${doctor?.lastName || ''} has no open future consultation slots at this time. Please check back later.`}
         />
       );
     }

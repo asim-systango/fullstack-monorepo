@@ -304,8 +304,29 @@ export class AppointmentService {
     }
   }
 
-  async update(id: string, dto: UpdateAppointmentDto): Promise<Appointment> {
-    await this.appointmentRepository.findById(id);
+  async update(
+    id: string,
+    dto: UpdateAppointmentDto,
+    user?: JwtUser,
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findById(id);
+    if (!appointment) {
+      throw new NotFoundException(`Appointment with ID "${id}" not found`);
+    }
+
+    if (user) {
+      if (user.role === 'DOCTOR') {
+        const doctor = await this.doctorService.findByUserId(user.id);
+        if (!doctor || appointment.slot?.doctorId !== doctor.id) {
+          throw new ForbiddenException(
+            'Access denied: Doctors can only update appointments assigned to their slots',
+          );
+        }
+      } else if (user.role !== 'ADMIN') {
+        throw new ForbiddenException('Only doctors and admins can update appointments');
+      }
+    }
+
     const updated = await this.appointmentRepository.update(id, dto);
     if (!updated) {
       throw new NotFoundException(`Appointment with ID "${id}" not found`);

@@ -14,10 +14,14 @@ import {
   XCircle,
 } from 'lucide-react';
 
+import { FileCode, ShieldCheck } from 'lucide-react';
+
 export interface AppointmentCardProps {
   appointment: Appointment;
   onCancel?: (id: string) => void;
   onComplete?: (appointment: Appointment) => void;
+  onExportFhir?: (id: string) => void;
+  onSubmitInsurance?: (appointment: Appointment) => void;
   isCancelling?: boolean;
 }
 
@@ -25,6 +29,8 @@ export function AppointmentCard({
   appointment,
   onCancel,
   onComplete,
+  onExportFhir,
+  onSubmitInsurance,
   isCancelling,
 }: Readonly<AppointmentCardProps>) {
   const doctor = appointment.slot?.doctor;
@@ -159,31 +165,49 @@ export function AppointmentCard({
         )}
 
         {/* Actions */}
-        {appointment.status === 'SCHEDULED' && (onCancel || onComplete) && (
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/30">
-            {onComplete && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => onComplete(appointment)}
-                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                Complete Visit
-              </Button>
-            )}
-            {onCancel && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onCancel(appointment.id)}
-                loading={isCancelling}
-                className="text-xs text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border/30">
+          {onExportFhir && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onExportFhir(appointment.id)}
+              className="text-xs gap-1"
+            >
+              <FileCode className="w-3.5 h-3.5 text-primary" /> Export Record
+            </Button>
+          )}
+          {onSubmitInsurance && appointment.status === 'COMPLETED' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSubmitInsurance(appointment)}
+              className="text-xs gap-1"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Claim Insurance
+            </Button>
+          )}
+          {appointment.status === 'SCHEDULED' && onComplete && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => onComplete(appointment)}
+              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Complete Visit
+            </Button>
+          )}
+          {appointment.status === 'SCHEDULED' && onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCancel(appointment.id)}
+              loading={isCancelling}
+              className="text-xs text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );

@@ -121,14 +121,23 @@ export class AppointmentController {
   }
 
   @Patch('appointments/:id')
-  @ApiOperation({ summary: 'Update appointment status or reason' })
+  @Roles('ADMIN', 'DOCTOR')
+  @ApiOperation({ summary: 'Update appointment status or reason (Doctor/Admin scoped)' })
   @ApiResponse({ status: 200, description: 'Appointment updated successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — Admin or assigned Doctor required',
+  })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAppointmentDto,
+    @CurrentUser() user: JwtUser | undefined,
   ) {
-    return this.appointmentService.update(id, dto);
+    if (!user) {
+      throw new UnauthorizedException('Authentication required to update appointment');
+    }
+    return this.appointmentService.update(id, dto, user);
   }
 
   @Delete('appointments/:id')

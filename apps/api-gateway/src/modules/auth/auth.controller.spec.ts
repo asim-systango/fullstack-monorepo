@@ -16,6 +16,7 @@ describe('AuthController', () => {
     role: 'PATIENT' as const,
     isActive: true,
     emailVerified: true,
+    avatarUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

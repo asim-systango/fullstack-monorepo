@@ -11,6 +11,8 @@ import {
   TooltipContent,
 } from '@shared/ui/components';
 
+import { NotificationDrawer } from '@/components/notification/notification-drawer';
+
 /**
  * Top header bar with user info, role badge, theme switcher, and logout action using Lucide icons.
  */
@@ -114,6 +116,8 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        {user && <NotificationDrawer />}
+
         <Tooltip>
           <TooltipTrigger>
             <ThemeToggle variant="outline" size="sm" />

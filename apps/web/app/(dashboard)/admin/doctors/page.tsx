@@ -89,21 +89,30 @@ export default function AdminDoctorsPage() {
     );
   };
 
+  const [statusConfirmDoctor, setStatusConfirmDoctor] = useState<DoctorProfile | null>(
+    null,
+  );
+
   const handleToggleStatus = (doc: DoctorProfile) => {
-    const actionName = doc.isActive ? 'deactivate' : 'reactivate';
-    if (
-      confirm(
-        `Are you sure you want to ${actionName} Dr. ${doc.firstName} ${doc.lastName}?`,
-      )
-    ) {
-      if (doc.isActive) {
-        deleteMutation.mutate(doc.id);
-      } else {
-        updateMutation.mutate({
-          id: doc.id,
+    setStatusConfirmDoctor(doc);
+  };
+
+  const confirmToggleStatus = () => {
+    if (!statusConfirmDoctor) return;
+    if (statusConfirmDoctor.isActive) {
+      deleteMutation.mutate(statusConfirmDoctor.id, {
+        onSuccess: () => setStatusConfirmDoctor(null),
+      });
+    } else {
+      updateMutation.mutate(
+        {
+          id: statusConfirmDoctor.id,
           payload: { isActive: true },
-        });
-      }
+        },
+        {
+          onSuccess: () => setStatusConfirmDoctor(null),
+        },
+      );
     }
   };
 
@@ -454,6 +463,56 @@ export default function AdminDoctorsPage() {
               disabled={updateMutation.isPending}
             >
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </Modal>
+
+        {/* Toggle Status Confirmation Modal */}
+        <Modal
+          open={Boolean(statusConfirmDoctor)}
+          onOpenChange={(open) => !open && setStatusConfirmDoctor(null)}
+        >
+          <DialogHeader>
+            <DialogTitle>Confirm Doctor Status Change</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-xs text-muted-foreground">
+            <p>
+              Are you sure you want to{' '}
+              <strong className="text-foreground">
+                {statusConfirmDoctor?.isActive ? 'deactivate' : 'reactivate'}
+              </strong>{' '}
+              Dr. {statusConfirmDoctor?.firstName} {statusConfirmDoctor?.lastName}?
+            </p>
+            {statusConfirmDoctor?.isActive && (
+              <p className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
+                Deactivating this practitioner will soft-delete their profile and
+                unpublish all future available slots.
+              </p>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStatusConfirmDoctor(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={statusConfirmDoctor?.isActive ? 'danger' : 'primary'}
+              size="sm"
+              onClick={confirmToggleStatus}
+              disabled={deleteMutation.isPending || updateMutation.isPending}
+            >
+              {(deleteMutation.isPending || updateMutation.isPending) && 'Processing...'}
+              {!deleteMutation.isPending &&
+                !updateMutation.isPending &&
+                statusConfirmDoctor?.isActive &&
+                'Deactivate Doctor'}
+              {!deleteMutation.isPending &&
+                !updateMutation.isPending &&
+                !statusConfirmDoctor?.isActive &&
+                'Reactivate Doctor'}
             </Button>
           </DialogFooter>
         </Modal>
