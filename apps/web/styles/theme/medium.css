@@ -1,0 +1,68 @@
+/**
+ * Medium-inspired design tokens.
+ * Reference: article reading layout + library/dashboard UI from Medium.
+ *
+ * Usage:
+ *   bg-background, text-foreground, text-muted-foreground
+ *   bg-surface-muted, border-border
+ *   bg-brand, text-brand, bg-accent-yellow
+ *   font-sans (UI), font-serif (article content)
+ */
+
+@theme {
+  /* ── Brand & accent ── */
+  --color-brand: #1a8917;
+  --color-brand-hover: #156d12;
+  --color-brand-foreground: #fff;
+  --color-accent-yellow: #ffc017;
+
+  /* ── Surfaces ── */
+  --color-background: #fff;
+  --color-foreground: #242424;
+  --color-surface-muted: #f2f2f2;
+  --color-surface-subtle: #e6e6e6;
+  --color-border: #e6e6e6;
+  --color-border-strong: #242424;
+
+  /* ── Text ── */
+  --color-muted-foreground: #6b6b6b;
+  --color-body: #292929;
+
+  /* ── Interactive / chrome ── */
+  --color-tooltip: #242424;
+  --color-tooltip-foreground: #fff;
+  --color-button-primary: #242424;
+  --color-button-primary-foreground: #fff;
+
+  /* ── Typography ── */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, georgia, 'Times New Roman', serif;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.625rem;
+  --text-5xl: 3.25rem;
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+  --leading-loose: 1.9;
+
+  /* ── Layout ── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-pill: 9999px;
+  --width-content: 42rem;
+  --width-content-wide: 48rem;
+  --width-sidebar: 15rem;
+
+  /* ── Motion ── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+}
