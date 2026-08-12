@@ -18,9 +18,12 @@ import {
 } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AUTH_ERROR_MESSAGES } from '@/lib/constants';
+import { useAppDispatch } from '@/lib/store';
+import { setPendingPasswordReset } from '@/lib/store/slices/auth-slice';
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { login, isAuthenticated } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -46,7 +49,23 @@ export default function LoginPage() {
     setPending(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      const res = await login(email.trim(), password);
+      if (res.isPasswordChangeRequired || (res.passwordResetToken && !res.accessToken)) {
+        if (res.passwordResetToken) {
+          dispatch(
+            setPendingPasswordReset({
+              resetToken: res.passwordResetToken,
+              user: res.user,
+            }),
+          );
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('pendingResetToken', res.passwordResetToken);
+            sessionStorage.setItem('pendingResetUser', JSON.stringify(res.user));
+          }
+        }
+        router.push('/update-password');
+        return;
+      }
       router.push('/dashboard');
     } catch (err) {
       if (err instanceof ApiClientError) {

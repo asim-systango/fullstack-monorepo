@@ -56,6 +56,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, []);
 
   const setUserSession = useCallback((res: LoginResponse) => {
+    if (!res.accessToken) return;
+
     setUser(res.user);
     setOrganization(res.organization);
 
@@ -75,7 +77,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const login = useCallback(
     async (email: string, password?: string) => {
       const res = await authApi.login({ email, password });
-      setUserSession(res);
+      if (res.accessToken && !res.isPasswordChangeRequired) {
+        setUserSession(res);
+      }
       return res;
     },
     [setUserSession],

@@ -34,9 +34,12 @@ const uiSlice = createSlice({
 
 export const { setFilterDraft, applyFilter } = uiSlice.actions;
 
+import authReducer from './slices/auth-slice';
+
 export const store = configureStore({
   reducer: {
     ui: uiSlice.reducer,
+    auth: authReducer,
   },
 });
 
