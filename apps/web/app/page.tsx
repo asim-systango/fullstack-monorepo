@@ -70,10 +70,10 @@ export default function HomePage() {
                   Sign In
                 </Link>
                 <Link
-                  href="/login"
+                  href="/onboarding-request"
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-violet-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Get Started Free
+                  Request Access
                 </Link>
               </>
             )}
@@ -125,12 +125,12 @@ export default function HomePage() {
             <span>Access Workspace</span>
             <span>→</span>
           </Link>
-          <a
-            href="#features"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white font-semibold text-sm transition-all"
+          <Link
+            href="/onboarding-request"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white font-semibold text-sm transition-all text-center flex items-center justify-center"
           >
             Request Enterprise Demo
-          </a>
+          </Link>
         </div>
 
         {/* Product UI Showcase Card */}
@@ -358,6 +358,12 @@ export default function HomePage() {
                 className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-xl shadow-violet-600/30 transition-all hover:scale-[1.02] cursor-pointer"
               >
                 Sign In to Workspace →
+              </Link>
+              <Link
+                href="/onboarding-request"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white font-semibold text-sm transition-all text-center flex items-center justify-center"
+              >
+                Request Access
               </Link>
             </div>
           </div>
