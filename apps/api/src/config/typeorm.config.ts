@@ -5,16 +5,26 @@ import { Role } from '../database/entities/role.entity';
 import { Organization } from '../database/entities/organization.entity';
 import { Permission } from '../database/entities/permission.entity';
 import { RoutePermission } from '../database/entities/route-permission.entity';
+import { FormSubmission } from '../database/entities/form-submission.entity';
 
 dotenv.config();
 
 const url = process.env.DATABASE_URL;
 
+const entitiesList = [
+  User,
+  Role,
+  Organization,
+  Permission,
+  RoutePermission,
+  FormSubmission,
+];
+
 export const typeOrmConfig: DataSourceOptions = url
   ? {
       type: 'postgres',
       url,
-      entities: [User, Role, Organization, Permission, RoutePermission],
+      entities: entitiesList,
       synchronize: false,
       migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
       migrationsTableName: 'migrations_api',
@@ -29,7 +39,7 @@ export const typeOrmConfig: DataSourceOptions = url
       username: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || 'postgres',
       database: process.env.POSTGRES_DB || 'crm',
-      entities: [User, Role, Organization, Permission, RoutePermission],
+      entities: entitiesList,
       synchronize: false,
       migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
       migrationsTableName: 'migrations_api',

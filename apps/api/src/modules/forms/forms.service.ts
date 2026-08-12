@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FormSubmissionRepository } from '../../database/repositories/form-submission.repository';
 import { UserRepository } from '../../database/repositories/user.repository';
-import { RoleName } from '../../database/entities/role.entity';
 import {
   FormType,
   FormSubmissionStatus,
@@ -72,10 +71,9 @@ export class FormsService {
       message: dto.message?.trim(),
     });
 
-    // 5. Query all Super Admins from database and send notification email to all of them
+    // 5. Query all Super Admins from database + env to send notification emails
     try {
-      const superAdmins = await this.userRepo.findByRoleName(RoleName.SUPER_ADMIN);
-      const superAdminEmails = superAdmins.map((u) => u.email).filter(Boolean);
+      const superAdminEmails = await this.userRepo.findSuperAdminEmails();
 
       if (superAdminEmails.length > 0) {
         for (const adminEmail of superAdminEmails) {
@@ -98,22 +96,7 @@ export class FormsService {
             });
         }
       } else {
-        // Fallback if no Super Admin users exist in DB
-        const fallbackEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@systango.com';
-        this.mailService
-          .sendNewOnboardingRequestMail({
-            toEmail: fallbackEmail,
-            contactName: submission.contactName,
-            email: submission.email,
-            companyName: submission.companyName || companyName,
-            phone: submission.phone,
-            companySize: submission.companySize,
-            industry: submission.industry,
-            message: submission.message,
-          })
-          .catch((err) => {
-            this.logger.error(`Failed to send fallback onboarding email:`, err);
-          });
+        this.logger.warn('No Super Admin emails found to send notification.');
       }
     } catch (err) {
       this.logger.error('Error fetching Super Admins for mail notification:', err);
