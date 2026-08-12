@@ -12,6 +12,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/database/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/database/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/database/data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
     "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/api/src"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.14.1",
+    "razorpay": "^2.9.8",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.21"

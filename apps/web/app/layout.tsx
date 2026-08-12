@@ -16,11 +16,28 @@ export const metadata: Metadata = {
   description: 'Restaurant favorites, delivered without the chaos',
 };
 
+/** Runs before paint so saved dark/light theme applies without a flash. */
+const themeBootstrapScript = `
+(function () {
+  try {
+    var key = 'tastygo-theme';
+    var stored = localStorage.getItem(key);
+    var theme = stored === 'dark' || stored === 'light' ? stored : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={jakarta.variable} data-theme="light" suppressHydrationWarning>
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body>
         <AppProviders>{children}</AppProviders>
       </body>

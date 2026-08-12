@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -18,20 +19,41 @@ type ThemeContextValue = {
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-const STORAGE_KEY = 'tastygo-theme';
+
+export const THEME_STORAGE_KEY = 'tastygo-theme';
+
+function readDomTheme(): Theme {
+  if (typeof document === 'undefined') return 'light';
+  const attr = document.documentElement.getAttribute('data-theme');
+  if (attr === 'dark' || attr === 'light') return attr;
+  try {
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'dark' || saved === 'light') return saved;
+  } catch {
+    // ignore
+  }
+  return 'light';
+}
 
 export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [theme, setTheme] = useState<Theme>('light');
+  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (saved === 'light' || saved === 'dark') setTheme(saved);
+  // Sync from the root bootstrap script before paint — never overwrite dark with light.
+  useLayoutEffect(() => {
+    setTheme(readDomTheme());
+    setReady(true);
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
     document.documentElement.setAttribute('data-theme', theme);
-    window.localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // ignore
+    }
+  }, [theme, ready]);
 
   const toggleTheme = useCallback(() => {
     setTheme((t) => (t === 'light' ? 'dark' : 'light'));

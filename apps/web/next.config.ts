@@ -23,11 +23,12 @@ const isProd = process.env.NODE_ENV === 'production';
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${isProd ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://cdn.razorpay.com",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com",
+  "frame-src https://api.razorpay.com",
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",

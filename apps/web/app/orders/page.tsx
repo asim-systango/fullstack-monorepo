@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { RequireRole, useAuth } from '@/components/auth';
+import { RequireRole } from '@/components/auth';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge } from '@/components/food';
 import { useOrders } from '@/lib/hooks/food-delivery';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
 import type { Order } from '@/lib/types/food-delivery';
 
@@ -20,25 +21,11 @@ function matchesFilter(order: Order, filter: (typeof FILTERS)[number]): boolean 
   return order.status === 'cancelled';
 }
 
-type OrdersRole = 'user' | 'staff' | 'admin';
-
-function resolveOrdersRole(role: string | undefined): OrdersRole {
-  if (role === 'admin') return 'admin';
-  if (role === 'staff') return 'staff';
-  return 'user';
-}
-
-function OrdersList({
-  title,
-  subtitle,
-  role,
-}: Readonly<{
-  title: string;
-  subtitle?: string;
-  role: OrdersRole;
-}>) {
-  const { data, isLoading, isError, error } = useOrders(role);
+function OrdersList() {
+  const { data, isLoading, isError, error } = useOrders('mine');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+
+  useToastQueryError(isError, error);
 
   const filtered = useMemo(
     () => (data?.items ?? []).filter((o) => matchesFilter(o, filter)),
@@ -59,13 +46,11 @@ function OrdersList({
       >
         <div>
           <h1 style={{ fontSize: 19, fontWeight: 500, margin: 0, color: 'var(--tg-text)' }}>
-            {title}
+            Your orders
           </h1>
-          {subtitle ? (
-            <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '4px 0 0' }}>
-              {subtitle}
-            </p>
-          ) : null}
+          <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '4px 0 0' }}>
+            Food you ordered as a customer
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {FILTERS.map((s) => (
@@ -81,13 +66,6 @@ function OrdersList({
           ))}
         </div>
       </div>
-
-      {isLoading ? <p style={{ color: 'var(--tg-text-muted)' }}>Loading orders…</p> : null}
-      {isError ? (
-        <p style={{ color: 'var(--tg-danger-fg)' }}>
-          {error instanceof Error ? error.message : 'Could not load orders'}
-        </p>
-      ) : null}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map((o) => (
@@ -125,7 +103,7 @@ function OrdersList({
         ))}
         {!isLoading && filtered.length === 0 ? (
           <p style={{ fontSize: 13, color: 'var(--tg-text-faint)', padding: '24px 0', textAlign: 'center' }}>
-            No orders in this filter.
+            No orders yet. Browse restaurants to place your first order.
           </p>
         ) : null}
       </div>
@@ -134,14 +112,11 @@ function OrdersList({
 }
 
 export default function OrdersPage() {
-  const { user } = useAuth();
-  const role = resolveOrdersRole(user?.role);
-
   return (
-    <AppShell>
-      <RequireRole roles={['user', 'staff', 'admin']}>
-        <OrdersList title="Your orders" role={role} />
-      </RequireRole>
-    </AppShell>
+    <RequireRole roles={['user', 'staff', 'admin']}>
+      <AppShell>
+        <OrdersList />
+      </AppShell>
+    </RequireRole>
   );
 }

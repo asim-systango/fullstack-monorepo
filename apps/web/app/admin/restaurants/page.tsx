@@ -2,39 +2,59 @@
 
 import { useState, type SyntheticEvent } from 'react';
 import { Plus } from 'lucide-react';
-import { ApiClientError } from '@shared/api-client';
 import { AppShell } from '@/components/layout';
 import { useCreateRestaurant, useRestaurants } from '@/lib/hooks/food-delivery';
-import { DEMO_USER_IDS } from '@/lib/mock/data';
+import { useFormErrors } from '@/lib/hooks/use-form-errors';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { parseRestaurant } from '@/lib/validation/food-delivery';
+import { toastApiError, toastSuccess } from '@/lib/toast';
+
+// Leave empty so new restaurants are not accidentally attached to Hasty Tasty staff.
+// Paste a real staff user UUID (e.g. 00000000-0000-4000-8000-000000000002 for hasty@tastygo.com).
+const DEFAULT_OWNER_USER_ID = '';
 
 export default function AdminRestaurantsPage() {
-  const { data, isLoading } = useRestaurants();
+  const { data, isError, error } = useRestaurants();
   const createRestaurant = useCreateRestaurant();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [cuisine, setCuisine] = useState('');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
-  const [ownerUserId, setOwnerUserId] = useState<string>(DEMO_USER_IDS.staff);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const [ownerUserId, setOwnerUserId] = useState(DEFAULT_OWNER_USER_ID);
+  const { errors, applyParse, clearErrors } = useFormErrors();
 
-  async function handleCreate(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setFormError(null);
-    const parsed = parseRestaurant({
+  useToastQueryError(isError, error);
+
+  function currentInput() {
+    return {
       name,
       cuisine,
       address,
       description: description || undefined,
       ownerUserId,
-    });
-    if (!parsed.success) {
-      setErrors(parsed.errors);
-      return;
-    }
-    setErrors({});
+    };
+  }
+
+  function syncValidation(
+    next: {
+      name: string;
+      cuisine: string;
+      address: string;
+      description?: string;
+      ownerUserId: string;
+    },
+    forceShow = false,
+  ) {
+    return applyParse(parseRestaurant(next), forceShow);
+  }
+
+  async function handleCreate(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const input = currentInput();
+    const parsed = parseRestaurant(input);
+    if (!applyParse(parsed, true) || !parsed.success) return;
+
     try {
       await createRestaurant.mutateAsync(parsed.data);
       setShowForm(false);
@@ -42,8 +62,11 @@ export default function AdminRestaurantsPage() {
       setCuisine('');
       setAddress('');
       setDescription('');
+      setOwnerUserId(DEFAULT_OWNER_USER_ID);
+      clearErrors();
+      toastSuccess('Restaurant created');
     } catch (err) {
-      setFormError(err instanceof ApiClientError ? err.message : 'Could not create restaurant');
+      toastApiError(err);
     }
   }
 
@@ -65,7 +88,10 @@ export default function AdminRestaurantsPage() {
         <button
           type="button"
           className="tg-btn tg-btn-primary"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setShowForm((v) => !v);
+            clearErrors();
+          }}
         >
           <Plus size={15} /> Add restaurant
         </button>
@@ -76,24 +102,72 @@ export default function AdminRestaurantsPage() {
           className="tg-card"
           style={{ padding: 18, marginBottom: 16 }}
           onSubmit={(e) => void handleCreate(e)}
+          noValidate
         >
           <label className="tg-label">Name</label>
-          <input className="tg-input" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 10 }} />
-          {errors.name ? <p style={{ color: 'var(--tg-danger-fg)', fontSize: 12 }}>{errors.name}</p> : null}
+          <input
+            className={`tg-input${errors.name ? ' tg-input-invalid' : ''}`}
+            value={name}
+            onChange={(e) => {
+              const next = e.target.value;
+              setName(next);
+              syncValidation({ ...currentInput(), name: next });
+            }}
+            aria-invalid={Boolean(errors.name)}
+          />
+          {errors.name ? <p className="tg-field-error" style={{ marginBottom: 8 }}>{errors.name}</p> : <div style={{ marginBottom: 10 }} />}
+
           <label className="tg-label">Cuisine</label>
-          <input className="tg-input" value={cuisine} onChange={(e) => setCuisine(e.target.value)} style={{ marginBottom: 10 }} />
+          <input
+            className={`tg-input${errors.cuisine ? ' tg-input-invalid' : ''}`}
+            value={cuisine}
+            onChange={(e) => {
+              const next = e.target.value;
+              setCuisine(next);
+              syncValidation({ ...currentInput(), cuisine: next });
+            }}
+            aria-invalid={Boolean(errors.cuisine)}
+          />
+          {errors.cuisine ? <p className="tg-field-error" style={{ marginBottom: 8 }}>{errors.cuisine}</p> : <div style={{ marginBottom: 10 }} />}
+
           <label className="tg-label">Address</label>
-          <textarea className="tg-textarea" value={address} onChange={(e) => setAddress(e.target.value)} style={{ marginBottom: 10 }} />
+          <textarea
+            className={`tg-textarea${errors.address ? ' tg-input-invalid' : ''}`}
+            value={address}
+            onChange={(e) => {
+              const next = e.target.value;
+              setAddress(next);
+              syncValidation({ ...currentInput(), address: next });
+            }}
+            aria-invalid={Boolean(errors.address)}
+          />
+          {errors.address ? <p className="tg-field-error" style={{ marginBottom: 8 }}>{errors.address}</p> : <div style={{ marginBottom: 10 }} />}
+
           <label className="tg-label">Owner user id</label>
-          <input className="tg-input" value={ownerUserId} onChange={(e) => setOwnerUserId(e.target.value)} style={{ marginBottom: 12 }} />
-          {formError ? <p style={{ color: 'var(--tg-danger-fg)', fontSize: 12 }}>{formError}</p> : null}
+          <input
+            className={`tg-input${errors.ownerUserId ? ' tg-input-invalid' : ''}`}
+            value={ownerUserId}
+            onChange={(e) => {
+              const next = e.target.value;
+              setOwnerUserId(next);
+              syncValidation({ ...currentInput(), ownerUserId: next });
+            }}
+            placeholder="UUID of a staff user"
+            aria-invalid={Boolean(errors.ownerUserId)}
+          />
+          {errors.ownerUserId ? (
+            <p className="tg-field-error" style={{ marginBottom: 8 }}>{errors.ownerUserId}</p>
+          ) : (
+            <p style={{ fontSize: 11.5, color: 'var(--tg-text-faint)', margin: '4px 0 12px' }}>
+              Use a staff user id from the database seed (example above is Hasty Tasty staff).
+            </p>
+          )}
+
           <button type="submit" className="tg-btn tg-btn-primary" disabled={createRestaurant.isPending}>
-            Create restaurant
+            {createRestaurant.isPending ? 'Creating…' : 'Create restaurant'}
           </button>
         </form>
       ) : null}
-
-      {isLoading ? <p style={{ color: 'var(--tg-text-muted)' }}>Loading…</p> : null}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {data?.items.map((r) => (
@@ -129,13 +203,10 @@ export default function AdminRestaurantsPage() {
                   {r.name}
                 </p>
                 <p style={{ margin: '3px 0 0', fontSize: 12.5, color: 'var(--tg-text-muted)' }}>
-                  {r.cuisine} · owner staff account linked
+                  {r.cuisine} · {r.address}
                 </p>
               </div>
             </div>
-            <button type="button" className="tg-btn tg-btn-secondary tg-btn-sm">
-              Manage
-            </button>
           </div>
         ))}
       </div>

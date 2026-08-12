@@ -7,6 +7,7 @@ import { RequireRole } from '@/components/auth';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge, OrderTimeline, PriceBreakdown } from '@/components/food';
 import { useOrder } from '@/lib/hooks/food-delivery';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
 
 type PageProps = Readonly<{ params: Promise<{ id: string }> }>;
@@ -14,12 +15,18 @@ type PageProps = Readonly<{ params: Promise<{ id: string }> }>;
 function OrderDetail({ id }: Readonly<{ id: string }>) {
   const { data: order, isLoading, isError, error } = useOrder(id);
 
-  if (isLoading) return <p style={{ color: 'var(--tg-text-muted)' }}>Loading order…</p>;
+  useToastQueryError(isError, error);
+
+  if (isLoading) return null;
   if (isError || !order) {
     return (
-      <p style={{ color: 'var(--tg-danger-fg)' }}>
-        {error instanceof Error ? error.message : 'Order not found'}
-      </p>
+      <Link
+        href="/orders"
+        className="tg-btn tg-btn-ghost"
+        style={{ textDecoration: 'none' }}
+      >
+        <ArrowLeft size={14} /> Back to orders
+      </Link>
     );
   }
 
@@ -75,7 +82,9 @@ function OrderDetail({ id }: Readonly<{ id: string }>) {
         <PriceBreakdown pricing={order} totalLabel="Total paid" />
         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <OrderStatusBadge status={order.status} />
-          <span style={{ fontSize: 12, color: 'var(--tg-text-faint)' }}>Paid (mock)</span>
+          <span style={{ fontSize: 12, color: 'var(--tg-text-faint)' }}>
+            Payment: {order.paymentStatus}
+          </span>
         </div>
       </div>
     </div>
@@ -85,10 +94,10 @@ function OrderDetail({ id }: Readonly<{ id: string }>) {
 export default function OrderDetailPage({ params }: PageProps) {
   const { id } = use(params);
   return (
-    <AppShell>
-      <RequireRole roles={['user', 'staff', 'admin']}>
+    <RequireRole roles={['user', 'staff', 'admin']}>
+      <AppShell>
         <OrderDetail id={id} />
-      </RequireRole>
-    </AppShell>
+      </AppShell>
+    </RequireRole>
   );
 }

@@ -17,7 +17,6 @@ import {
 import type { User } from '@shared/api-client';
 import { useAuth } from '@/components/auth';
 import { ThemeToggle } from '@/components/theme';
-import { useCart } from '@/lib/hooks/food-delivery';
 import { Avatar } from './avatar';
 import { BrandMark } from './brand-mark';
 import { RoleBadge } from '@/components/food/role-badge';
@@ -58,12 +57,11 @@ export function AppShell({
 }: Readonly<{ children: React.ReactNode; bare?: boolean }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
-  const { data: cart } = useCart();
+  const { user, pendingAction, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const loggingOut = pendingAction === 'logout';
 
-  const cartCount = cart?.items.reduce((sum, i) => sum + i.quantity, 0) ?? 0;
   const items = navForRole(user?.role);
 
   useEffect(() => {
@@ -74,6 +72,15 @@ export function AppShell({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
+  async function handleLogout() {
+    setMenuOpen(false);
+    try {
+      await logout();
+    } finally {
+      router.replace('/login');
+    }
+  }
+
   if (bare) {
     return <div className="tg-root tg-fade-in">{children}</div>;
   }
@@ -82,7 +89,7 @@ export function AppShell({
     <div className="tg-root tg-app-shell">
       <aside className="tg-sidebar">
         <div className="tg-sidebar-brand">
-          <BrandMark href="/restaurants" />
+          <BrandMark />
         </div>
 
         <nav className="tg-sidebar-nav" aria-label="Application navigation">
@@ -106,7 +113,6 @@ export function AppShell({
           >
             <ShoppingCart size={18} />
             <span>Cart</span>
-            {cartCount > 0 ? <span className="tg-sidebar-count">{cartCount}</span> : null}
           </Link>
         </nav>
 
@@ -122,8 +128,7 @@ export function AppShell({
             </div>
           </div>
 
-          {loading ? <span className="tg-sidebar-loading">Loading profile…</span> : null}
-          {!loading && user ? (
+          {user ? (
             <div className="tg-sidebar-profile">
               <Avatar name={user.name} />
               <div className="tg-sidebar-user">
@@ -134,9 +139,8 @@ export function AppShell({
                 type="button"
                 className="tg-sidebar-logout"
                 aria-label="Sign out"
-                onClick={() => {
-                  void logout().then(() => router.push('/'));
-                }}
+                disabled={loggingOut}
+                onClick={() => void handleLogout()}
               >
                 <LogOut size={17} />
               </button>
@@ -147,11 +151,10 @@ export function AppShell({
 
       <div className="tg-app-main">
         <header className="tg-mobile-header">
-          <BrandMark href="/restaurants" />
+          <BrandMark />
           <div className="tg-mobile-actions">
             <Link href="/cart" className="tg-mobile-icon" aria-label="Cart">
               <ShoppingCart size={18} />
-              {cartCount > 0 ? <span>{cartCount}</span> : null}
             </Link>
             <ThemeToggle />
             {user ? (
@@ -169,12 +172,7 @@ export function AppShell({
                   <div className="tg-mobile-menu tg-fade-in">
                     <strong>{user.name}</strong>
                     <span>{user.email}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void logout().then(() => router.push('/'));
-                      }}
-                    >
+                    <button type="button" disabled={loggingOut} onClick={() => void handleLogout()}>
                       <LogOut size={15} /> Sign out
                     </button>
                   </div>

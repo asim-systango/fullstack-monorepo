@@ -51,7 +51,7 @@ export class Payment {
   @Column({ name: 'provider_signature', type: 'text', nullable: true })
   providerSignature: string | null;
 
-  // Razorpay expects the amount in paise, so this is an integer.
+  /** Amount in paise (₹1 = 100). Example: order total ₹290.06 → 29006. */
   @Column({ type: 'integer' })
   amount: number;
 

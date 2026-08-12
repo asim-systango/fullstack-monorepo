@@ -1,8 +1,23 @@
-import Link from 'next/link';
+'use client';
 
-export function BrandMark({ href = '/' }: Readonly<{ href?: string }>) {
+import Link from 'next/link';
+import { useAuth } from '@/components/auth';
+import { homePathForRole } from '@/lib/auth-routes';
+
+type BrandMarkProps = Readonly<{
+  /** Optional override. Defaults to `/` when logged out, role home when logged in. */
+  href?: string;
+}>;
+
+export function BrandMark({ href }: BrandMarkProps) {
+  const { user } = useAuth();
+  const resolvedHref = href ?? (user ? homePathForRole(user.role) : '/');
+
   return (
-    <Link href={href} style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
+    <Link
+      href={resolvedHref}
+      style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}
+    >
       <div
         style={{
           width: 28,

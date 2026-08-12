@@ -14,8 +14,12 @@ import type {
   Restaurant,
   RestaurantFilters,
   UpdateMenuItemInput,
+  PaymentCheckout,
+  VerifyPaymentInput,
+  VerifyPaymentResult,
 } from '@/lib/types/food-delivery';
-import { createMockStore, DEMO_USER_IDS, type MockStore } from './data';
+import { createMockStore, type MockStore } from './data';
+import { saveMockDeliveryAddress } from './auth';
 
 let store: MockStore = createMockStore();
 
@@ -41,6 +45,15 @@ function paginate<T>(items: T[], page = 1, limit = 12): Paginated<T> {
   };
 }
 
+/** Each logged-in user has their own cart in mock mode. */
+function userCart() {
+  const userId = store.currentUserId;
+  if (!store.cartsByUser[userId]) {
+    store.cartsByUser[userId] = [];
+  }
+  return store.cartsByUser[userId];
+}
+
 export const mockFoodApi = {
   async listRestaurants(filters: RestaurantFilters = {}): Promise<Paginated<Restaurant>> {
     await delay();
@@ -62,6 +75,12 @@ export const mockFoodApi = {
     return paginate(items, filters.page, filters.limit);
   },
 
+  async getMyRestaurant(): Promise<Restaurant | null> {
+    await delay();
+    const userId = store.currentUserId;
+    return store.restaurants.find((r) => r.ownerUserId === userId) ?? null;
+  },
+
   async getRestaurant(id: string): Promise<Restaurant> {
     await delay();
     const item = store.restaurants.find((r) => r.id === id);
@@ -71,6 +90,14 @@ export const mockFoodApi = {
 
   async createRestaurant(input: CreateRestaurantInput): Promise<Restaurant> {
     await delay();
+    const existing = store.restaurants.find((r) => r.ownerUserId === input.ownerUserId);
+    if (existing) {
+      throw new ApiClientError({
+        statusCode: 409,
+        error: 'Conflict',
+        message: 'This staff user already owns a restaurant',
+      });
+    }
     const created: Restaurant = { id: uuid(), ...input };
     store.restaurants.push(created);
     return created;
@@ -119,9 +146,10 @@ export const mockFoodApi = {
 
   async getCart(): Promise<CartSummary> {
     await delay();
-    const first = store.cart[0];
+    const cart = userCart();
+    const first = cart[0];
     return {
-      items: [...store.cart],
+      items: [...cart],
       restaurantId: first?.restaurantId ?? null,
       restaurantName: first?.restaurantName ?? null,
     };
@@ -134,7 +162,8 @@ export const mockFoodApi = {
       throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Menu item not available' });
     }
 
-    const cartRestaurantId = store.cart[0]?.restaurantId;
+    const cart = userCart();
+    const cartRestaurantId = cart[0]?.restaurantId;
     if (cartRestaurantId && cartRestaurantId !== menuItem.restaurantId) {
       throw new ApiClientError({
         statusCode: 400,
@@ -143,11 +172,11 @@ export const mockFoodApi = {
       });
     }
 
-    const existing = store.cart.find((c) => c.menuItemId === menuItemId);
+    const existing = cart.find((c) => c.menuItemId === menuItemId);
     if (existing) {
       existing.quantity += quantity;
     } else {
-      store.cart.push({
+      cart.push({
         id: uuid(),
         menuItemId: menuItem.id,
         name: menuItem.name,
@@ -162,10 +191,11 @@ export const mockFoodApi = {
 
   async updateCartItem(cartItemId: string, quantity: number): Promise<CartSummary> {
     await delay();
-    const item = store.cart.find((c) => c.id === cartItemId);
+    const cart = userCart();
+    const item = cart.find((c) => c.id === cartItemId);
     if (!item) throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Cart item not found' });
     if (quantity <= 0) {
-      store.cart = store.cart.filter((c) => c.id !== cartItemId);
+      store.cartsByUser[store.currentUserId] = cart.filter((c) => c.id !== cartItemId);
     } else {
       item.quantity = quantity;
     }
@@ -174,18 +204,23 @@ export const mockFoodApi = {
 
   async clearCart(): Promise<CartSummary> {
     await delay();
-    store.cart = [];
+    store.cartsByUser[store.currentUserId] = [];
     return mockFoodApi.getCart();
   },
 
-  async listOrders(filters: OrderFilters = {}, role: 'user' | 'staff' | 'admin' = 'user'): Promise<Paginated<Order>> {
+  async listOrders(filters: OrderFilters = {}): Promise<Paginated<Order>> {
     await delay();
-    let items = [...store.orders];
-    if (role === 'user') items = items.filter((o) => o.userId === store.currentUserId);
-    if (role === 'staff') {
-      const owned = store.restaurants.filter((r) => r.ownerUserId === DEMO_USER_IDS.staff).map((r) => r.id);
-      items = items.filter((o) => owned.includes(o.restaurantId));
+    const scope = filters.scope ?? 'mine';
+    let items = store.orders.filter((o) => o.paymentStatus === 'paid');
+
+    if (scope === 'mine') {
+      items = items.filter((o) => o.userId === store.currentUserId);
+    } else if (scope === 'restaurant') {
+      const mine = store.restaurants.find((r) => r.ownerUserId === store.currentUserId);
+      items = mine ? items.filter((o) => o.restaurantId === mine.id) : [];
     }
+    // scope === 'all' → no extra filter
+
     if (filters.status) items = items.filter((o) => o.status === filters.status);
     return paginate(items, filters.page, filters.limit);
   },
@@ -193,22 +228,25 @@ export const mockFoodApi = {
   async getOrder(id: string): Promise<Order> {
     await delay();
     const order = store.orders.find((o) => o.id === id);
-    if (!order) throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Order not found' });
+    if (!order || order.paymentStatus !== 'paid') {
+      throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Order not found' });
+    }
     return order;
   },
 
   async placeOrder(input: PlaceOrderInput): Promise<Order> {
     await delay();
-    if (store.cart.length === 0) {
+    const cart = userCart();
+    if (cart.length === 0) {
       throw new ApiClientError({ statusCode: 400, error: 'Bad Request', message: 'Cart is empty' });
     }
 
-    const firstLine = store.cart[0];
+    const firstLine = cart[0];
     if (!firstLine) {
       throw new ApiClientError({ statusCode: 400, error: 'Bad Request', message: 'Cart is empty' });
     }
 
-    const subtotal = store.cart.reduce((sum, line) => sum + line.price * line.quantity, 0);
+    const subtotal = cart.reduce((sum, line) => sum + line.price * line.quantity, 0);
     const pricing = calculatePricing(subtotal);
     const restaurantId = firstLine.restaurantId;
     const now = new Date().toISOString();
@@ -220,10 +258,10 @@ export const mockFoodApi = {
       restaurantName: restaurantName(restaurantId),
       status: 'placed',
       deliveryAddress: input.deliveryAddress,
-      paymentStatus: 'paid',
+      paymentStatus: 'pending',
       ...pricing,
       createdAt: now,
-      lines: store.cart.map((line) => ({
+      lines: cart.map((line) => ({
         id: uuid(),
         menuItemId: line.menuItemId,
         itemName: line.name,
@@ -234,7 +272,8 @@ export const mockFoodApi = {
     };
 
     store.orders.unshift(order);
-    store.cart = [];
+    store.cartsByUser[store.currentUserId] = [];
+    saveMockDeliveryAddress(store.currentUserId, input.deliveryAddress);
     return order;
   },
 
@@ -258,6 +297,42 @@ export const mockFoodApi = {
     return order;
   },
 
+  async createPaymentCheckout(orderId: string): Promise<PaymentCheckout> {
+    await delay();
+    const order = store.orders.find((o) => o.id === orderId);
+    if (!order) {
+      throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Order not found' });
+    }
+    const razorpayOrderId = `order_mock_${order.id.replace(/-/g, '').slice(0, 14)}`;
+    return {
+      mock: true,
+      keyId: 'rzp_test_mock_key',
+      amount: Math.round(order.total * 100),
+      currency: 'INR',
+      orderId: order.id,
+      razorpayOrderId,
+      paymentId: uuid(),
+      provider: 'razorpay',
+      status: 'created',
+      note: 'Mock Razorpay checkout',
+    };
+  },
+
+  async verifyPayment(orderId: string, input: VerifyPaymentInput): Promise<VerifyPaymentResult> {
+    await delay();
+    const order = store.orders.find((o) => o.id === orderId);
+    if (!order) {
+      throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Order not found' });
+    }
+    order.paymentStatus = 'paid';
+    return {
+      orderId: order.id,
+      paymentStatus: 'paid',
+      razorpayPaymentId: input.razorpayPaymentId,
+      message: 'Payment captured (mock Razorpay)',
+    };
+  },
+
   /** Swap mock user for demo login simulation. */
   setCurrentUser(userId: string) {
     store.currentUserId = userId;
@@ -267,5 +342,3 @@ export const mockFoodApi = {
     store = createMockStore();
   },
 };
-
-export { DEMO_USER_IDS };

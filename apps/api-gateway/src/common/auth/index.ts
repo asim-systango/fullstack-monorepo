@@ -10,3 +10,5 @@ export {
   type AuthPrincipal,
   type UserRole,
 } from '@shared/http/auth';
+
+export type { JwtUser } from './jwt-user';

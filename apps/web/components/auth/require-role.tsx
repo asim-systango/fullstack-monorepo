@@ -1,12 +1,11 @@
 'use client';
 
-import { LoadingState } from '@shared/ui/components';
 import { useAuth } from './auth-provider';
 import { AccessDenied } from './access-denied';
 import { AppShell } from '@/components/layout';
 import type { User } from '@shared/api-client';
 import { useEffect, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 type RequireRoleProps = Readonly<{
   roles: readonly User['role'][];
@@ -15,30 +14,27 @@ type RequireRoleProps = Readonly<{
 
 export function RequireRole({ roles, children }: RequireRoleProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && !user) {
-      const returnTo = encodeURIComponent(window.location.pathname);
+      const returnTo = encodeURIComponent(pathname || '/');
       router.replace(`/login?returnTo=${returnTo}`);
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, pathname]);
 
   if (loading) {
     return (
-      <AppShell>
-        <LoadingState label="Checking access…" />
-      </AppShell>
+      <div className="tg-page-loading" role="status" aria-live="polite" aria-busy="true">
+        <span className="tg-api-loading-spinner" aria-hidden />
+        <span>Loading…</span>
+      </div>
     );
   }
 
-  if (!user) {
-    return (
-      <AppShell>
-        <LoadingState label="Redirecting to login…" />
-      </AppShell>
-    );
-  }
+  // Silent redirect — no extra copy.
+  if (!user) return null;
 
   if (!roles.includes(user.role)) {
     return (

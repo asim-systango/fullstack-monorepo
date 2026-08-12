@@ -13,6 +13,9 @@ import type {
   Restaurant,
   RestaurantFilters,
   UpdateMenuItemInput,
+  PaymentCheckout,
+  VerifyPaymentInput,
+  VerifyPaymentResult,
 } from '@/lib/types/food-delivery';
 
 /** Real API calls — same shapes the Nest backend will expose. */
@@ -21,6 +24,13 @@ export const foodApiClient = {
     return apiClient
       .get('/restaurants', { params: filters })
       .then((res) => unwrapData<Paginated<Restaurant>>(res.data));
+  },
+
+  /** Staff: the single restaurant linked to the logged-in user. */
+  getMyRestaurant() {
+    return apiClient
+      .get('/restaurants/mine')
+      .then((res) => unwrapData<Restaurant | null>(res.data));
   },
 
   getRestaurant(id: string) {
@@ -32,8 +42,11 @@ export const foodApiClient = {
   },
 
   listMenuItems(restaurantId: string, includeDeleted = false) {
+    const params: { restaurantId: string; includeDeleted?: boolean } = { restaurantId };
+    if (includeDeleted) params.includeDeleted = true;
+
     return apiClient
-      .get('/menu-items', { params: { restaurantId, includeDeleted } })
+      .get('/menu-items', { params })
       .then((res) => unwrapData<MenuItem[]>(res.data));
   },
 
@@ -76,8 +89,14 @@ export const foodApiClient = {
   },
 
   listOrders(filters: OrderFilters = {}) {
+    const { scope = 'mine', status, page, limit } = filters;
+    const params: Record<string, string | number> = { scope };
+    if (status) params.status = status;
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+
     return apiClient
-      .get('/orders', { params: filters })
+      .get('/orders', { params })
       .then((res) => unwrapData<Paginated<Order>>(res.data));
   },
 
@@ -93,6 +112,18 @@ export const foodApiClient = {
     return apiClient
       .patch(`/orders/${orderId}/status`, { status })
       .then((res) => unwrapData<Order>(res.data));
+  },
+
+  createPaymentCheckout(orderId: string) {
+    return apiClient
+      .post(`/orders/${orderId}/payments/create`)
+      .then((res) => unwrapData<PaymentCheckout>(res.data));
+  },
+
+  verifyPayment(orderId: string, input: VerifyPaymentInput) {
+    return apiClient
+      .post(`/orders/${orderId}/payments/verify`, input)
+      .then((res) => unwrapData<VerifyPaymentResult>(res.data));
   },
 };
 

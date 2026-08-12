@@ -34,9 +34,9 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
   setupSwagger(app, {
-    title: 'Domain API',
+    title: 'TastyGo Domain API',
     description:
-      'Internal Nest API (Bearer JWT) — add domain modules under `src/modules/`. ' +
+      'Internal Nest API (Bearer JWT) — restaurants, menu, cart, orders, payments. ' +
       'Authorize with a Bearer token (gateway forwards the auth cookie as Authorization).',
     auth: 'bearer',
   });

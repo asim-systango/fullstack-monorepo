@@ -1,6 +1,8 @@
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Patch, Post, Res } from '@nestjs/common';
 import {
+  ApiConflictResponse,
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -12,6 +14,8 @@ import { CurrentUser, Public } from '../../common/auth';
 import { PublicUser } from '../users';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { PublicUserDto } from './dto/public-user.dto';
+import { SaveDeliveryAddressDto } from './dto/save-delivery-address.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,10 +25,18 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiOkResponse({ description: 'Public user profile (envelope `{ data }`)' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  @ApiOperation({
+    summary: 'Register a new customer account',
+    description:
+      'Creates a user with role `user`, then sets the httpOnly `access_token` cookie.',
+  })
+  @ApiCreatedResponse({ type: PublicUserDto, description: 'Public profile + Set-Cookie' })
+  @ApiConflictResponse({ description: 'Email already registered' })
+  register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.register(dto, res);
   }
 
   @Public()
@@ -33,9 +45,9 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({
     summary: 'Log in',
-    description: 'Sets httpOnly `access_token` cookie on success.',
+    description: 'Validates email/password and sets httpOnly `access_token` cookie.',
   })
-  @ApiOkResponse({ description: 'Public user profile; Set-Cookie applied' })
+  @ApiOkResponse({ type: PublicUserDto, description: 'Public profile + Set-Cookie' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
   login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     return this.authService.login(dto, res);
@@ -45,15 +57,34 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   @ApiOperation({ summary: 'Log out (clears auth cookie)' })
+  @ApiOkResponse({ description: '{ ok: true }' })
   logout(@Res({ passthrough: true }) res: Response) {
     return this.authService.logout(res);
   }
 
   @ApiCookieAuth('access_token')
   @Get('me')
-  @ApiOperation({ summary: 'Current user from cookie JWT' })
+  @ApiOperation({
+    summary: 'Current user from cookie JWT',
+    description: 'Protected by JwtAuthGuard. Cookie is validated against the users table.',
+  })
+  @ApiOkResponse({ type: PublicUserDto })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid cookie' })
   me(@CurrentUser() user: PublicUser) {
     return user;
+  }
+
+  @ApiCookieAuth('access_token')
+  @Patch('address')
+  @ApiOperation({
+    summary: 'Save delivery address for checkout',
+    description: 'Stored on the user profile and reused on future orders.',
+  })
+  @ApiOkResponse({ type: PublicUserDto })
+  saveAddress(
+    @CurrentUser() user: PublicUser,
+    @Body() dto: SaveDeliveryAddressDto,
+  ) {
+    return this.authService.saveDeliveryAddress(user.id, dto.deliveryAddress);
   }
 }

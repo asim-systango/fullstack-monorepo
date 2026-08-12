@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { type MouseEvent } from 'react';
 import {
   ArrowRight,
   Check,
@@ -34,14 +35,26 @@ const FEATURES = [
   },
 ];
 
+function scrollToSection(event: MouseEvent<HTMLAnchorElement>, id: string) {
+  event.preventDefault();
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.history.replaceState(null, '', `#${id}`);
+}
+
 export default function HomePage() {
   return (
     <div className="tg-root tg-landing">
       <header className="tg-landing-header">
         <BrandMark />
         <nav className="tg-landing-nav" aria-label="Main navigation">
-          <a href="#how-it-works">How it works</a>
-          <a href="#for-everyone">For partners</a>
+          <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')}>
+            How it works
+          </a>
+          <a href="#for-everyone" onClick={(e) => scrollToSection(e, 'for-everyone')}>
+            For partners
+          </a>
         </nav>
         <div className="tg-landing-actions">
           <ThemeToggle />

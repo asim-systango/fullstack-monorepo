@@ -9,10 +9,13 @@ pnpm dev:web    # from repo root
 
 **Scripts (via root):** `pnpm dev:web` · `build:web` · `start:web` · `typecheck:web`
 
-| Env                                     | Meaning          |
-| --------------------------------------- | ---------------- |
-| `NEXT_PUBLIC_API_URL=/api`              | Browser API base |
-| `API_GATEWAY_URL=http://localhost:3001` | Rewrite target   |
+| Env                                     | Meaning                                      |
+| --------------------------------------- | -------------------------------------------- |
+| `NEXT_PUBLIC_API_URL=/api`              | Browser API base                             |
+| `API_GATEWAY_URL=http://localhost:3001` | Rewrite target                               |
+| `NEXT_PUBLIC_USE_MOCK=false`            | `false` = real gateway→api, `true` = mock UI |
+
+Pages call hooks in `lib/hooks/food-delivery.ts` → `lib/food-api.ts` → Nest routes under `/api/*`.
 
 ## Styling & UI kit
 

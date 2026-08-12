@@ -100,6 +100,10 @@ export function createAuthApi(client: AxiosInstance) {
       const { data } = await client.get('/auth/me');
       return userSchema.parse(unwrapData(data));
     },
+    async saveAddress(input: { deliveryAddress: string }): Promise<User> {
+      const { data } = await client.patch('/auth/address', input);
+      return userSchema.parse(unwrapData(data));
+    },
     async logout(): Promise<void> {
       await client.post('/auth/logout');
     },

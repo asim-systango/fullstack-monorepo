@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from './auth-provider';
+import { NavLink } from './nav-link';
 import { Button } from '@shared/ui/components';
 
 function AuthNav() {
@@ -26,13 +27,13 @@ function AuthNav() {
 
   return (
     <>
-      <Link href="/login">Log in</Link>
-      <Link
+      <NavLink href="/login">Log in</NavLink>
+      <NavLink
         href="/register"
         className="ui-button ui-button-sm ui-button-primary no-underline hover:no-underline"
       >
         Register
-      </Link>
+      </NavLink>
     </>
   );
 }

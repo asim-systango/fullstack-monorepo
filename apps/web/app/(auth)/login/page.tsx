@@ -1,40 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState, type SyntheticEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, type SyntheticEvent } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { ApiClientError } from '@shared/api-client';
+import type { User } from '@shared/api-client';
 import { useAuth } from '@/components/auth';
 import { BrandMark } from '@/components/layout';
 import { RoleBadge } from '@/components/food/role-badge';
 import { ThemeToggle } from '@/components/theme';
+import { PasswordInput } from '@/components/ui/password-input';
+import { homePathForRole } from '@/lib/auth-routes';
+import { useFormErrors } from '@/lib/hooks/use-form-errors';
 import { MOCK_USERS } from '@/lib/mock/auth';
+import { toastApiError } from '@/lib/toast';
+import { parseLogin } from '@/lib/validation/food-delivery';
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '/restaurants';
-  const { login } = useAuth();
+  const { login: loginAccount, isMock, pendingAction } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [pending, setPending] = useState(false);
+  const { errors, applyParse } = useFormErrors();
+  const pending = pendingAction === 'login';
+
+  function goHome(role: User['role']) {
+    router.replace(homePathForRole(role));
+  }
+
+  function syncValidation(nextEmail: string, nextPassword: string, forceShow = false) {
+    // Client-side field checks only — does not call the API.
+    return applyParse(parseLogin({ email: nextEmail, password: nextPassword }), forceShow);
+  }
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
-    setError('');
+    if (!syncValidation(email, password, true)) return;
+
+    // Login API runs only after a successful form submit.
     try {
-      const user = await login({ email, password });
-      if (user.role === 'staff') router.push('/restaurant/dashboard');
-      else if (user.role === 'admin') router.push('/admin');
-      else router.push(returnTo.startsWith('/') ? returnTo : '/restaurants');
+      const user = await loginAccount({ email: email.trim(), password });
+      goHome(user.role);
     } catch (err) {
-      setError(err instanceof ApiClientError || err instanceof Error ? err.message : 'Login failed');
-    } finally {
-      setPending(false);
+      toastApiError(err);
     }
   }
 
@@ -43,17 +52,12 @@ function LoginForm() {
     if (!account) return;
     setEmail(demoEmail);
     setPassword(account.password);
-    setPending(true);
-    setError('');
+    syncValidation(demoEmail, account.password, true);
     try {
-      const user = await login({ email: demoEmail, password: account.password });
-      if (user.role === 'staff') router.push('/restaurant/dashboard');
-      else if (user.role === 'admin') router.push('/admin');
-      else router.push('/restaurants');
+      const user = await loginAccount({ email: demoEmail, password: account.password });
+      goHome(user.role);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
-      setPending(false);
+      toastApiError(err);
     }
   }
 
@@ -66,36 +70,65 @@ function LoginForm() {
         Access your account to order, manage a kitchen, or run the platform.
       </p>
 
-      <form onSubmit={(e) => void submit(e)}>
+      <form
+        method="post"
+        action="#"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit(e);
+        }}
+        noValidate
+      >
         <label className="tg-label" htmlFor="login-email">
           Email
         </label>
         <input
           id="login-email"
-          className="tg-input"
+          className={`tg-input${errors.email ? ' tg-input-invalid' : ''}`}
           type="email"
           placeholder="name@company.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ marginBottom: 14 }}
-          required
+          onChange={(e) => {
+            const next = e.target.value;
+            setEmail(next);
+            syncValidation(next, password);
+          }}
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'login-email-error' : undefined}
         />
+        {errors.email ? (
+          <p id="login-email-error" className="tg-field-error" style={{ marginBottom: 10 }}>
+            {errors.email}
+          </p>
+        ) : (
+          <div style={{ marginBottom: 14 }} />
+        )}
+
         <label className="tg-label" htmlFor="login-password">
           Password
         </label>
-        <input
+        <PasswordInput
           id="login-password"
-          className="tg-input"
-          type="password"
+          invalid={Boolean(errors.password)}
           placeholder="Enter your password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ marginBottom: error ? 10 : 18 }}
-          required
+          onChange={(e) => {
+            const next = e.target.value;
+            setPassword(next);
+            syncValidation(email, next);
+          }}
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? 'login-password-error' : undefined}
+          autoComplete="current-password"
         />
-        {error ? (
-          <p style={{ fontSize: 12.5, color: 'var(--tg-danger-fg)', margin: '0 0 14px' }}>{error}</p>
-        ) : null}
+        {errors.password ? (
+          <p id="login-password-error" className="tg-field-error" style={{ marginBottom: 14 }}>
+            {errors.password}
+          </p>
+        ) : (
+          <div style={{ marginBottom: 18 }} />
+        )}
+
         <button
           className="tg-btn tg-btn-primary"
           type="submit"
@@ -106,9 +139,26 @@ function LoginForm() {
         </button>
       </form>
 
+      <p style={{ marginTop: 16, fontSize: 13, color: 'var(--tg-text-muted)' }}>
+        New here?{' '}
+        <Link
+          href="/register"
+          prefetch={false}
+          style={{ color: 'var(--tg-brand-accent)' }}
+          onClick={(e) => {
+            e.preventDefault();
+            router.push('/register');
+          }}
+        >
+          Create an account
+        </Link>
+      </p>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 14px' }}>
         <div style={{ flex: 1, height: 1, background: 'var(--tg-border)' }} />
-        <span style={{ fontSize: 11.5, color: 'var(--tg-text-faint)' }}>staging demo accounts</span>
+        <span style={{ fontSize: 11.5, color: 'var(--tg-text-faint)' }}>
+          {isMock ? 'mock demo accounts' : 'demo accounts (seed)'}
+        </span>
         <div style={{ flex: 1, height: 1, background: 'var(--tg-border)' }} />
       </div>
 
@@ -126,9 +176,16 @@ function LoginForm() {
               alignItems: 'center',
               width: '100%',
               padding: '9px 12px',
+              textAlign: 'left',
             }}
           >
-            <span>Continue as {acc.name}</span>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span>Continue as {acc.name}</span>
+              <span style={{ fontSize: 11, color: 'var(--tg-text-faint)' }}>
+                {acc.email}
+                {acc.restaurant ? ` · ${acc.restaurant}` : ''}
+              </span>
+            </span>
             <RoleBadge role={acc.role} />
           </button>
         ))}
@@ -171,9 +228,7 @@ export default function LoginPage() {
         >
           <BrandMark />
         </div>
-        <Suspense fallback={<p style={{ textAlign: 'center', color: 'var(--tg-text-muted)' }}>Loading…</p>}>
-          <LoginForm />
-        </Suspense>
+        <LoginForm />
         <p
           style={{
             textAlign: 'center',
@@ -182,7 +237,7 @@ export default function LoginPage() {
             marginTop: 16,
           }}
         >
-          Demo environment · password123 for all accounts
+          Demo logins · strong passwords (e.g. Admin@123)
         </p>
       </div>
     </div>

@@ -26,6 +26,10 @@ export class User {
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role!: UserRole;
 
+  /** Last saved delivery address — reused on future orders (Swiggy/Zomato style). */
+  @Column({ name: 'delivery_address', type: 'text', nullable: true })
+  deliveryAddress!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

@@ -8,7 +8,7 @@ import { formatInr } from '@/lib/pricing';
 
 export default function AdminOverviewPage() {
   const restaurants = useRestaurants();
-  const orders = useOrders('admin');
+  const orders = useOrders('all');
 
   const list = orders.data?.items ?? [];
   const revenue = list

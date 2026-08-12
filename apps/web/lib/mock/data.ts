@@ -9,7 +9,10 @@ export const DEMO_USER_IDS = {
   admin: '00000000-0000-4000-8000-000000000001',
   staff: '00000000-0000-4000-8000-000000000002',
   user: '00000000-0000-4000-8000-000000000003',
-  staff2: '00000000-0000-4000-8000-000000000004',
+  staffBurger: '00000000-0000-4000-8000-000000000004',
+  staffSushi: '00000000-0000-4000-8000-000000000005',
+  staffPasta: '00000000-0000-4000-8000-000000000006',
+  staffSpice: '00000000-0000-4000-8000-000000000007',
 } as const;
 
 export const RESTAURANT_IDS = {
@@ -17,6 +20,7 @@ export const RESTAURANT_IDS = {
   burger: '22222222-2222-4222-8222-222222222222',
   sushi: '33333333-3333-4333-8333-333333333333',
   pasta: '44444444-4444-4444-8444-444444444444',
+  spice: '55555555-5555-4555-8555-555555555555',
 } as const;
 
 export const MENU_IDS = {
@@ -44,7 +48,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
   },
   {
     id: RESTAURANT_IDS.burger,
-    ownerUserId: DEMO_USER_IDS.staff2,
+    ownerUserId: DEMO_USER_IDS.staffBurger,
     name: 'Burger Barn',
     cuisine: 'American',
     address: '88 FC Road, Indore',
@@ -55,7 +59,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
   },
   {
     id: RESTAURANT_IDS.sushi,
-    ownerUserId: DEMO_USER_IDS.staff2,
+    ownerUserId: DEMO_USER_IDS.staffSushi,
     name: 'Sushi Sagara',
     cuisine: 'Japanese',
     address: '12 Sakura Lane, Indore',
@@ -66,7 +70,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
   },
   {
     id: RESTAURANT_IDS.pasta,
-    ownerUserId: DEMO_USER_IDS.staff2,
+    ownerUserId: DEMO_USER_IDS.staffPasta,
     name: 'Pasta Piazza',
     cuisine: 'Italian',
     address: '5 Roma Street, Indore',
@@ -74,6 +78,17 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     emoji: '🍝',
     rating: 4.4,
     eta: '25-35 min',
+  },
+  {
+    id: RESTAURANT_IDS.spice,
+    ownerUserId: DEMO_USER_IDS.staffSpice,
+    name: 'Spice Route',
+    cuisine: 'Indian',
+    address: '9 Sarafa Bazaar, Indore',
+    description: 'Street-style chaat and thalis.',
+    emoji: '🌶️',
+    rating: 4.5,
+    eta: '20-30 min',
   },
 ];
 
@@ -246,13 +261,12 @@ export const SEED_ORDERS: Order[] = [
   },
 ];
 
-export const SEED_CART: CartLine[] = [];
-
 export function createMockStore() {
   return {
     restaurants: [...SEED_RESTAURANTS],
     menuItems: [...SEED_MENU_ITEMS],
-    cart: [...SEED_CART],
+    /** Each user gets their own cart. */
+    cartsByUser: {} as Record<string, CartLine[]>,
     orders: [...SEED_ORDERS],
     currentUserId: DEMO_USER_IDS.user as string,
   };

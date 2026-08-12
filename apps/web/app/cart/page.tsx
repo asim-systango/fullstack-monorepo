@@ -1,30 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Minus, Plus, ShoppingCart } from 'lucide-react';
-import { ApiClientError } from '@shared/api-client';
-import { RequireRole } from '@/components/auth';
+import { MapPin, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { RequireRole, useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout';
 import { MockPaymentDialog, PriceBreakdown } from '@/components/food';
-import { useCart, usePlaceOrder, useUpdateCartItem } from '@/lib/hooks/food-delivery';
+import {
+  useCart,
+  useCreatePaymentCheckout,
+  usePlaceOrder,
+  useUpdateCartItem,
+  useVerifyPayment,
+} from '@/lib/hooks/food-delivery';
+import { useFormErrors } from '@/lib/hooks/use-form-errors';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
+import { isMockFoodApiEnabled } from '@/lib/food-api';
 import { calculatePricing, formatInr } from '@/lib/pricing';
+import { openRazorpayCheckout } from '@/lib/razorpay';
+import { toastApiError, toastSuccess } from '@/lib/toast';
+import type { PaymentCheckout } from '@/lib/types/food-delivery';
 import { parsePlaceOrder } from '@/lib/validation/food-delivery';
 
 function CartContent() {
   const router = useRouter();
-  const { data: cart, isLoading } = useCart();
+  const { user, refresh, saveAddress } = useAuth();
+  const { data: cart, isLoading, isError, error } = useCart({ enabled: true });
   const updateItem = useUpdateCartItem();
   const placeOrder = usePlaceOrder();
+  const createPayment = useCreatePaymentCheckout();
+  const verifyPayment = useVerifyPayment();
 
-  const [address, setAddress] = useState('21 MG Road, Apt 4B, Indore');
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const savedAddress = user?.deliveryAddress?.trim() ?? '';
+  const [useSavedAddress, setUseSavedAddress] = useState(Boolean(savedAddress));
+  const [newAddress, setNewAddress] = useState('');
   const [payOpen, setPayOpen] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [pendingCheckout, setPendingCheckout] = useState<PaymentCheckout | null>(null);
+  const { errors, applyParse } = useFormErrors();
+
+  useToastQueryError(isError, error);
+
+  // When user profile loads with a saved address, select it by default.
+  useEffect(() => {
+    if (savedAddress) {
+      setUseSavedAddress(true);
+    }
+  }, [savedAddress]);
+
+  const deliveryAddress = useSavedAddress && savedAddress ? savedAddress : newAddress;
+  const useMockPayment = isMockFoodApiEnabled();
+
+  function syncAddressValidation(nextAddress: string, forceShow = false) {
+    return applyParse(parsePlaceOrder({ deliveryAddress: nextAddress }), forceShow);
+  }
+
+  async function changeQty(cartItemId: string, quantity: number) {
+    try {
+      await updateItem.mutateAsync({ cartItemId, quantity });
+    } catch (err) {
+      toastApiError(err);
+    }
+  }
 
   if (isLoading) {
-    return <p style={{ color: 'var(--tg-text-muted)' }}>Loading cart…</p>;
+    return null;
+  }
+
+  if (isError) {
+    return (
+      <p style={{ color: 'var(--tg-text-muted)', textAlign: 'center', padding: '40px 0' }}>
+        Could not load your cart. Please try again.
+      </p>
+    );
   }
 
   if (!cart || cart.items.length === 0) {
@@ -60,32 +110,96 @@ function CartContent() {
   const subtotal = cart.items.reduce((sum, line) => sum + line.price * line.quantity, 0);
   const pricing = calculatePricing(subtotal);
 
-  function openPayment() {
-    setFormError(null);
-    const parsed = parsePlaceOrder({ deliveryAddress: address });
-    if (!parsed.success) {
-      setFieldError(parsed.errors.deliveryAddress ?? 'Invalid address');
-      return;
-    }
-    setFieldError(null);
-    setPayOpen(true);
+  function getValidAddress(): string | null {
+    const parsed = parsePlaceOrder({ deliveryAddress });
+    if (!applyParse(parsed, true)) return null;
+    if (!parsed.success) return null;
+    return parsed.data.deliveryAddress;
   }
 
-  async function confirmPayment() {
-    const parsed = parsePlaceOrder({ deliveryAddress: address });
-    if (!parsed.success) {
-      setPayOpen(false);
+  async function completePayment(orderId: string, checkout: PaymentCheckout) {
+    if (useMockPayment || checkout.mock) {
+      setPendingOrderId(orderId);
+      setPendingCheckout(checkout);
+      setPayOpen(true);
       return;
     }
+
+    if (!checkout.razorpayOrderId) {
+      throw new Error('Missing Razorpay order id');
+    }
+
+    const response = await openRazorpayCheckout({
+      keyId: checkout.keyId,
+      amount: checkout.amount,
+      currency: checkout.currency,
+      razorpayOrderId: checkout.razorpayOrderId,
+      prefill: {
+        name: user?.name,
+        email: user?.email,
+      },
+    });
+
+    await verifyPayment.mutateAsync({
+      orderId,
+      input: {
+        razorpayOrderId: response.razorpay_order_id,
+        razorpayPaymentId: response.razorpay_payment_id,
+        razorpaySignature: response.razorpay_signature,
+      },
+    });
+
+    toastSuccess('Payment successful');
+    router.push(`/orders/${orderId}`);
+  }
+
+  async function handlePayClick() {
+    const address = getValidAddress();
+    if (!address) return;
+
+    setPaying(true);
+
     try {
-      const order = await placeOrder.mutateAsync({ deliveryAddress: parsed.data.deliveryAddress });
-      setPayOpen(false);
-      router.push(`/orders/${order.id}`);
+      const order = await placeOrder.mutateAsync({ deliveryAddress: address });
+      await saveAddress({ deliveryAddress: address });
+      await refresh();
+      const checkout = await createPayment.mutateAsync(order.id);
+      await completePayment(order.id, checkout);
     } catch (err) {
-      setFormError(err instanceof ApiClientError ? err.message : 'Could not place order');
-      setPayOpen(false);
+      toastApiError(err);
+    } finally {
+      setPaying(false);
     }
   }
+
+  async function confirmMockPayment() {
+    if (!pendingOrderId || !pendingCheckout) return;
+
+    setPaying(true);
+
+    try {
+      await verifyPayment.mutateAsync({
+        orderId: pendingOrderId,
+        input: {
+          razorpayOrderId:
+            pendingCheckout.razorpayOrderId ?? `order_mock_${pendingOrderId}`,
+          razorpayPaymentId: `pay_mock_${Date.now()}`,
+          razorpaySignature: 'mock_signature',
+        },
+      });
+
+      setPayOpen(false);
+      toastSuccess('Payment successful');
+      router.push(`/orders/${pendingOrderId}`);
+    } catch (err) {
+      toastApiError(err);
+      setPayOpen(false);
+    } finally {
+      setPaying(false);
+    }
+  }
+
+  const addressError = errors.deliveryAddress;
 
   return (
     <div className="tg-cart-grid">
@@ -124,12 +238,8 @@ function CartContent() {
                   <button
                     type="button"
                     className="tg-qty-btn"
-                    onClick={() =>
-                      void updateItem.mutateAsync({
-                        cartItemId: line.id,
-                        quantity: line.quantity - 1,
-                      })
-                    }
+                    disabled={updateItem.isPending || paying}
+                    onClick={() => void changeQty(line.id, line.quantity - 1)}
                   >
                     <Minus size={13} />
                   </button>
@@ -139,12 +249,8 @@ function CartContent() {
                   <button
                     type="button"
                     className="tg-qty-btn"
-                    onClick={() =>
-                      void updateItem.mutateAsync({
-                        cartItemId: line.id,
-                        quantity: line.quantity + 1,
-                      })
-                    }
+                    disabled={updateItem.isPending || paying}
+                    onClick={() => void changeQty(line.id, line.quantity + 1)}
                   >
                     <Plus size={13} />
                   </button>
@@ -165,27 +271,129 @@ function CartContent() {
           ))}
         </div>
 
-        <p className="tg-section-label">Delivery address</p>
-        <input className="tg-input" value={address} onChange={(e) => setAddress(e.target.value)} />
-        {fieldError ? (
-          <p style={{ fontSize: 12.5, color: 'var(--tg-danger-fg)', marginTop: 8 }}>{fieldError}</p>
-        ) : null}
+        <p className="tg-section-label">Delivery address *</p>
+
+        {savedAddress ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+            <label
+              className="tg-card"
+              style={{
+                display: 'flex',
+                gap: 12,
+                padding: '14px 16px',
+                cursor: 'pointer',
+                border: useSavedAddress ? '1px solid var(--tg-brand-accent)' : '1px solid var(--tg-border)',
+              }}
+            >
+              <input
+                type="radio"
+                name="addressChoice"
+                checked={useSavedAddress}
+                onChange={() => {
+                  setUseSavedAddress(true);
+                  syncAddressValidation(savedAddress);
+                }}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--tg-text)' }}>
+                  Saved address
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--tg-text-muted)' }}>
+                  <MapPin size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                  {savedAddress}
+                </p>
+              </div>
+            </label>
+
+            <label
+              className="tg-card"
+              style={{
+                display: 'flex',
+                gap: 12,
+                padding: '14px 16px',
+                cursor: 'pointer',
+                border: !useSavedAddress ? '1px solid var(--tg-brand-accent)' : '1px solid var(--tg-border)',
+              }}
+            >
+              <input
+                type="radio"
+                name="addressChoice"
+                checked={!useSavedAddress}
+                onChange={() => {
+                  setUseSavedAddress(false);
+                  syncAddressValidation(newAddress);
+                }}
+                style={{ marginTop: 3 }}
+              />
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--tg-text)' }}>
+                  Deliver to a different address
+                </p>
+                {!useSavedAddress ? (
+                  <>
+                    <textarea
+                      className={`tg-textarea${addressError ? ' tg-input-invalid' : ''}`}
+                      value={newAddress}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setNewAddress(next);
+                        syncAddressValidation(next);
+                      }}
+                      placeholder="House no, street, city"
+                      style={{ marginTop: 10, minHeight: 72 }}
+                      aria-invalid={Boolean(addressError)}
+                      aria-describedby={addressError ? 'cart-address-error' : undefined}
+                    />
+                    {addressError ? (
+                      <p id="cart-address-error" className="tg-field-error">
+                        {addressError}
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            </label>
+          </div>
+        ) : (
+          <>
+            <textarea
+              className={`tg-textarea${addressError ? ' tg-input-invalid' : ''}`}
+              value={newAddress}
+              onChange={(e) => {
+                const next = e.target.value;
+                setNewAddress(next);
+                syncAddressValidation(next);
+              }}
+              placeholder="House no, street, city (required)"
+              style={{ minHeight: 72 }}
+              aria-invalid={Boolean(addressError)}
+              aria-describedby={addressError ? 'cart-address-error' : undefined}
+            />
+            {addressError ? (
+              <p id="cart-address-error" className="tg-field-error">
+                {addressError}
+              </p>
+            ) : (
+              <p style={{ fontSize: 12, color: 'var(--tg-text-faint)', marginTop: 6 }}>
+                This address will be saved for your next order.
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <div className="tg-card" style={{ padding: '18px 20px', position: 'sticky', top: 76 }}>
         <p className="tg-section-label">Price details</p>
         <PriceBreakdown pricing={pricing} />
-        {formError ? (
-          <p style={{ fontSize: 12.5, color: 'var(--tg-danger-fg)', marginTop: 10 }}>{formError}</p>
-        ) : null}
         <button
           type="button"
           className="tg-btn tg-btn-primary"
-          disabled={placeOrder.isPending}
+          disabled={paying}
           style={{ width: '100%', height: 46, borderRadius: 11, marginTop: 16 }}
-          onClick={openPayment}
+          onClick={() => void handlePayClick()}
         >
-          Pay {formatInr(pricing.total)} and place order
+          {paying ? 'Processing…' : `Pay ${formatInr(pricing.total)} and place order`}
         </button>
         <p
           style={{
@@ -195,7 +403,9 @@ function CartContent() {
             marginTop: 10,
           }}
         >
-          Demo payment · card ending 4242
+          {useMockPayment
+            ? 'Demo payment · card ending 4242'
+            : 'Secure payment via Razorpay sandbox'}
         </p>
       </div>
 
@@ -203,8 +413,8 @@ function CartContent() {
         open={payOpen}
         onOpenChange={setPayOpen}
         total={pricing.total}
-        pending={placeOrder.isPending}
-        onConfirm={() => void confirmPayment()}
+        pending={paying}
+        onConfirm={() => void confirmMockPayment()}
       />
     </div>
   );
@@ -212,10 +422,10 @@ function CartContent() {
 
 export default function CartPage() {
   return (
-    <AppShell>
-      <RequireRole roles={['user', 'staff', 'admin']}>
+    <RequireRole roles={['user', 'staff', 'admin']}>
+      <AppShell>
         <CartContent />
-      </RequireRole>
-    </AppShell>
+      </AppShell>
+    </RequireRole>
   );
 }

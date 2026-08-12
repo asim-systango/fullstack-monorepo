@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../common/env';
-import { UsersService } from '../users';
+import { UsersService, type User } from '../users';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import type { Response } from 'express';
 
@@ -40,7 +40,24 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  /** Shared helper — puts JWT in httpOnly cookie after login or register. */
+  private async issueSession(user: User, res: Response) {
+    const token = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    res.cookie(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: this.env.COOKIE_SECURE,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: jwtExpiryToMs(this.env.JWT_EXPIRES_IN),
+    });
+  }
+
+  async register(dto: RegisterDto, res: Response) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
       throw new ConflictException('Unable to create account with those details');
@@ -54,6 +71,9 @@ export class AuthService {
         name: dto.name,
         role: 'user',
       });
+
+      // New accounts are signed in right away (same cookie as login).
+      await this.issueSession(user, res);
       return this.usersService.toPublic(user);
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -77,20 +97,7 @@ export class AuthService {
     const user = await this.validateUser(dto.email, dto.password);
     if (!user) throw new UnauthorizedException('Invalid email or password');
 
-    const token = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    res.cookie(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: this.env.COOKIE_SECURE,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: jwtExpiryToMs(this.env.JWT_EXPIRES_IN),
-    });
-
+    await this.issueSession(user, res);
     return this.usersService.toPublic(user);
   }
 
@@ -102,5 +109,9 @@ export class AuthService {
       path: '/',
     });
     return { ok: true };
+  }
+
+  async saveDeliveryAddress(userId: string, deliveryAddress: string) {
+    return this.usersService.saveDeliveryAddress(userId, deliveryAddress);
   }
 }

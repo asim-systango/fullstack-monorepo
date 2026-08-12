@@ -1,10 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { AppShell } from '@/components/layout';
 import { RestaurantCard } from '@/components/food';
 import { useRestaurants } from '@/lib/hooks/food-delivery';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import {
   applyRestaurantFilters,
   clearRestaurantFilters,
@@ -21,14 +23,24 @@ export default function RestaurantsPage() {
   const appliedCuisine = useAppSelector((s) => s.filters.restaurantCuisineApplied);
   const appliedSearch = useAppSelector((s) => s.filters.restaurantSearchApplied);
   const searchDraft = useAppSelector((s) => s.filters.restaurantSearchDraft);
-  const { data, isLoading, isError, error } = useRestaurants();
+  const debouncedSearch = useDebouncedValue(searchDraft, 350);
+  const { data, isLoading, isError, error, isFetching } = useRestaurants();
   const [activeCuisine, setActiveCuisine] = useState(appliedCuisine || 'All');
 
+  useToastQueryError(isError, error);
+
+  // Debounced search → applied filter (triggers React Query refetch).
+  useEffect(() => {
+    if (debouncedSearch.trim() === appliedSearch) return;
+    dispatch(applyRestaurantFilters());
+  }, [debouncedSearch, appliedSearch, dispatch]);
+
   const count = data?.items.length ?? 0;
+  const showLoading = isLoading || (isFetching && !data);
 
   const empty = useMemo(
-    () => !isLoading && !isError && (data?.items.length ?? 0) === 0,
-    [isLoading, isError, data],
+    () => !showLoading && !isError && (data?.items.length ?? 0) === 0,
+    [showLoading, isError, data],
   );
 
   function selectCuisine(c: string) {
@@ -66,13 +78,7 @@ export default function RestaurantsPage() {
             <MapPin size={13} /> Indore, Madhya Pradesh · {count} restaurants delivering
           </p>
         </div>
-        <form
-          style={{ position: 'relative', width: 'min(260px, 100%)' }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            dispatch(applyRestaurantFilters());
-          }}
-        >
+        <div style={{ position: 'relative', width: 'min(260px, 100%)' }}>
           <Search
             size={15}
             color="var(--tg-text-faint)"
@@ -84,8 +90,9 @@ export default function RestaurantsPage() {
             style={{ paddingLeft: 34 }}
             value={searchDraft}
             onChange={(e) => dispatch(setRestaurantSearchDraft(e.target.value))}
+            aria-label="Search restaurants"
           />
-        </form>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
@@ -106,16 +113,6 @@ export default function RestaurantsPage() {
         ))}
       </div>
 
-      {isLoading ? (
-        <p style={{ color: 'var(--tg-text-muted)', fontSize: 14 }}>Loading restaurants…</p>
-      ) : null}
-
-      {isError ? (
-        <p style={{ color: 'var(--tg-danger-fg)', fontSize: 14 }}>
-          {error instanceof Error ? error.message : 'Could not load restaurants'}
-        </p>
-      ) : null}
-
       {empty ? (
         <p style={{ color: 'var(--tg-text-faint)', textAlign: 'center', padding: '40px 0' }}>
           {appliedSearch || appliedCuisine
@@ -124,7 +121,7 @@ export default function RestaurantsPage() {
         </p>
       ) : null}
 
-      {!isLoading && !isError && data && data.items.length > 0 ? (
+      {!showLoading && !isError && data && data.items.length > 0 ? (
         <div
           style={{
             display: 'grid',

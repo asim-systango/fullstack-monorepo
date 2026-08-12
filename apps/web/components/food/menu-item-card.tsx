@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ApiClientError } from '@shared/api-client';
 import {
   Button,
   Card,
@@ -9,12 +8,12 @@ import {
   CardHeader,
   CardTitle,
   Field,
-  StatusMessage,
   TextInput,
 } from '@shared/ui/components';
 import { formatInr } from '@/lib/pricing';
 import type { MenuItem } from '@/lib/types/food-delivery';
 import { useAddToCart } from '@/lib/hooks/food-delivery';
+import { toastApiError } from '@/lib/toast';
 import { CartSwitchDialog } from './cart-switch-dialog';
 
 type MenuItemCardProps = Readonly<{
@@ -25,19 +24,17 @@ type MenuItemCardProps = Readonly<{
 
 export function MenuItemCard({ item, cartRestaurantId, cartRestaurantName }: MenuItemCardProps) {
   const [quantity, setQuantity] = useState(1);
-  const [error, setError] = useState<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
   const addToCart = useAddToCart();
 
   const needsSwitch = cartRestaurantId !== null && cartRestaurantId !== item.restaurantId;
 
   async function addItem() {
-    setError(null);
     try {
       await addToCart.mutateAsync({ menuItemId: item.id, quantity });
       setQuantity(1);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not add to cart');
+      toastApiError(err);
     }
   }
 
@@ -80,7 +77,6 @@ export function MenuItemCard({ item, cartRestaurantId, cartRestaurantName }: Men
               Add to cart
             </Button>
           </div>
-          {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
         </CardBody>
       </Card>
 

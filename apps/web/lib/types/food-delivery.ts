@@ -5,7 +5,36 @@ export type OrderStatus =
   | 'delivered'
   | 'cancelled';
 
-export type PaymentStatus = 'pending' | 'paid';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+
+export type PaymentCheckout = {
+  mock?: boolean;
+  keyId: string;
+  /** Amount in paise for Razorpay (₹290.06 → 29006). */
+  amount: number;
+  /** Same total in rupees for UI / DB cross-check. */
+  amountInr?: number;
+  currency: string;
+  orderId: string;
+  razorpayOrderId: string | null;
+  paymentId: string;
+  provider: string;
+  status: string;
+  note?: string;
+};
+
+export type VerifyPaymentInput = {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature?: string;
+};
+
+export type VerifyPaymentResult = {
+  orderId: string;
+  paymentStatus: PaymentStatus;
+  razorpayPaymentId?: string;
+  message: string;
+};
 
 export type Restaurant = {
   id: string;
@@ -99,6 +128,8 @@ export type OrderFilters = {
   status?: OrderStatus | '';
   page?: number;
   limit?: number;
+  /** mine = your orders · restaurant = kitchen queue · all = admin */
+  scope?: 'mine' | 'restaurant' | 'all';
 };
 
 export type PlaceOrderInput = {

@@ -39,7 +39,15 @@ export class UsersService {
       email: user.email,
       name: user.name,
       role: user.role,
+      deliveryAddress: user.deliveryAddress ?? null,
     };
+  }
+
+  async saveDeliveryAddress(userId: string, deliveryAddress: string) {
+    await this.users.update(userId, { deliveryAddress: deliveryAddress.trim() });
+    const user = await this.findById(userId);
+    if (!user) throw new Error('User not found');
+    return this.toPublic(user);
   }
 }
 

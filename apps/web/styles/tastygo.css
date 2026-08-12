@@ -194,6 +194,47 @@
   box-shadow: 0 0 0 3px var(--tg-brand-soft);
 }
 
+.tg-password-field {
+  position: relative;
+}
+
+.tg-input-password {
+  padding-right: 42px;
+}
+
+.tg-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tg-text-faint);
+  cursor: pointer;
+}
+
+.tg-password-toggle:hover {
+  color: var(--tg-text);
+  background: var(--tg-surface-alt);
+}
+
+.tg-input.tg-input-invalid,
+.tg-textarea.tg-input-invalid {
+  border-color: var(--tg-danger-fg);
+}
+
+.tg-input.tg-input-invalid:focus,
+.tg-textarea.tg-input-invalid:focus {
+  border-color: var(--tg-danger-fg);
+  box-shadow: 0 0 0 3px var(--tg-danger-bg);
+}
+
 .tg-textarea {
   width: 100%;
   border-radius: 10px;
@@ -211,6 +252,13 @@
 .tg-textarea:focus {
   border-color: var(--tg-brand);
   box-shadow: 0 0 0 3px var(--tg-brand-soft);
+}
+
+.tg-field-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--tg-danger-fg);
+  line-height: 1.35;
 }
 
 .tg-card {
@@ -351,6 +399,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.tg-landing #how-it-works,
+.tg-landing #for-everyone {
+  scroll-margin-top: 24px;
 }
 
 .tg-landing-nav,
@@ -859,10 +912,54 @@
   color: var(--tg-danger-fg);
 }
 
-.tg-sidebar-loading {
-  padding: 10px;
-  color: var(--tg-text-faint);
-  font-size: 12px;
+.tg-page-loading {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--tg-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tg-api-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--tg-bg) 82%, transparent);
+  backdrop-filter: blur(5px);
+}
+
+.tg-api-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--tg-surface);
+  border: 1px solid var(--tg-border);
+  box-shadow: var(--tg-shadow-md);
+  color: var(--tg-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tg-api-loading-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--tg-border);
+  border-top-color: var(--tg-brand);
+  animation: tg-spin 0.7s linear infinite;
+}
+
+@keyframes tg-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .tg-app-main {

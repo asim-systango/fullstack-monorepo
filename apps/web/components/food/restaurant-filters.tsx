@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Button, Field, TextInput } from '@shared/ui/components';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import {
   applyRestaurantFilters,
   clearRestaurantFilters,
@@ -14,6 +16,13 @@ export function RestaurantFiltersBar() {
   const dispatch = useAppDispatch();
   const cuisine = useAppSelector((s) => s.filters.restaurantCuisineDraft);
   const search = useAppSelector((s) => s.filters.restaurantSearchDraft);
+  const appliedSearch = useAppSelector((s) => s.filters.restaurantSearchApplied);
+  const debouncedSearch = useDebouncedValue(search, 350);
+
+  useEffect(() => {
+    if (debouncedSearch.trim() === appliedSearch) return;
+    dispatch(applyRestaurantFilters());
+  }, [debouncedSearch, appliedSearch, dispatch]);
 
   return (
     <form

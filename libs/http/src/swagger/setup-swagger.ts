@@ -9,8 +9,9 @@ export type SetupSwaggerOptions = {
   version?: string;
   /** Mount path (default `docs` → `/docs`). */
   path?: string;
-  auth: SwaggerAuthMode;
-  /** Cookie name when `auth` is `cookie` (default `access_token`). */
+  /** One or both of cookie / bearer (unified API uses both). */
+  auth: SwaggerAuthMode | SwaggerAuthMode[];
+  /** Cookie name when cookie auth is enabled (default `access_token`). */
   cookieName?: string;
 };
 
@@ -25,14 +26,17 @@ export function setupSwagger(
 ): void {
   if (!enabled) return;
 
+  const modes = Array.isArray(options.auth) ? options.auth : [options.auth];
+
   const builder = new DocumentBuilder()
     .setTitle(options.title)
     .setDescription(options.description)
     .setVersion(options.version ?? '1.0');
 
-  if (options.auth === 'cookie') {
+  if (modes.includes('cookie')) {
     builder.addCookieAuth(options.cookieName ?? 'access_token');
-  } else {
+  }
+  if (modes.includes('bearer')) {
     builder.addBearerAuth();
   }
 
@@ -40,6 +44,7 @@ export function setupSwagger(
   SwaggerModule.setup(options.path ?? 'docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
+      withCredentials: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
     },

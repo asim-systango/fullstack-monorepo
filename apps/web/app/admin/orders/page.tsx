@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge } from '@/components/food';
 import { useOrders } from '@/lib/hooks/food-delivery';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
 import type { Order } from '@/lib/types/food-delivery';
 
@@ -20,8 +21,10 @@ function matches(order: Order, filter: (typeof FILTERS)[number]) {
 }
 
 export default function AdminOrdersPage() {
-  const { data, isLoading } = useOrders('admin');
+  const { data, isError, error } = useOrders('all');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+
+  useToastQueryError(isError, error);
   const filtered = useMemo(
     () => (data?.items ?? []).filter((o) => matches(o, filter)),
     [data, filter],
@@ -61,8 +64,6 @@ export default function AdminOrdersPage() {
           ))}
         </div>
       </div>
-
-      {isLoading ? <p style={{ color: 'var(--tg-text-muted)' }}>Loading…</p> : null}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map((o) => (

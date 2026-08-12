@@ -3,7 +3,6 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
-import { ApiClientError } from '@shared/api-client';
 import { AppShell } from '@/components/layout';
 import { CartSwitchDialog } from '@/components/food';
 import {
@@ -14,7 +13,9 @@ import {
   useRestaurant,
   useUpdateCartItem,
 } from '@/lib/hooks/food-delivery';
+import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
+import { toastApiError } from '@/lib/toast';
 
 type PageProps = Readonly<{ params: Promise<{ id: string }> }>;
 
@@ -22,14 +23,16 @@ export default function RestaurantDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const restaurant = useRestaurant(id);
   const menu = useMenuItems(id, false);
-  const cart = useCart();
+  const cart = useCart({ enabled: true });
   const addToCart = useAddToCart();
   const updateCart = useUpdateCartItem();
   const clearCart = useClearCart();
 
-  const [error, setError] = useState<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+
+  useToastQueryError(restaurant.isError, restaurant.error);
+  useToastQueryError(menu.isError, menu.error);
 
   const cartCount = cart.data?.items.reduce((s, i) => s + i.quantity, 0) ?? 0;
   const qtyByMenuId = new Map(
@@ -39,7 +42,6 @@ export default function RestaurantDetailPage({ params }: PageProps) {
   );
 
   async function setQty(menuItemId: string, nextQty: number) {
-    setError(null);
     const existing = qtyByMenuId.get(menuItemId);
     const otherRestaurant =
       cart.data?.restaurantId && cart.data.restaurantId !== id ? cart.data.restaurantId : null;
@@ -57,30 +59,31 @@ export default function RestaurantDetailPage({ params }: PageProps) {
         await addToCart.mutateAsync({ menuItemId, quantity: nextQty });
       }
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not update cart');
+      toastApiError(err);
     }
   }
 
   async function confirmSwitch() {
     if (!pendingItemId) return;
-    await clearCart.mutateAsync();
-    setSwitchOpen(false);
-    await addToCart.mutateAsync({ menuItemId: pendingItemId, quantity: 1 });
-    setPendingItemId(null);
+    try {
+      await clearCart.mutateAsync();
+      setSwitchOpen(false);
+      await addToCart.mutateAsync({ menuItemId: pendingItemId, quantity: 1 });
+      setPendingItemId(null);
+    } catch (err) {
+      toastApiError(err);
+      setSwitchOpen(false);
+      setPendingItemId(null);
+    }
   }
 
   if (restaurant.isLoading || menu.isLoading) {
-    return (
-      <AppShell>
-        <p style={{ color: 'var(--tg-text-muted)' }}>Loading menu…</p>
-      </AppShell>
-    );
+    return <AppShell>{null}</AppShell>;
   }
 
-  if (!restaurant.data) {
+  if (restaurant.isError || !restaurant.data) {
     return (
       <AppShell>
-        <p style={{ color: 'var(--tg-danger-fg)' }}>Restaurant unavailable</p>
         <Link href="/restaurants" className="tg-btn tg-btn-ghost" style={{ textDecoration: 'none' }}>
           <ArrowLeft size={14} /> Back to restaurants
         </Link>
@@ -132,7 +135,6 @@ export default function RestaurantDetailPage({ params }: PageProps) {
       </div>
 
       <p className="tg-section-label">Menu</p>
-      {error ? <p style={{ color: 'var(--tg-danger-fg)', fontSize: 13 }}>{error}</p> : null}
 
       <div
         style={{
