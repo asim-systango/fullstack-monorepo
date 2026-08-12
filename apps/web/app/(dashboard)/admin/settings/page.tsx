@@ -20,7 +20,6 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState({
     slotWindowDays: 14,
     cancellationNoticeHours: 2,
-    enableEmailAlerts: true,
     maxSlotsPerBulk: 50,
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -94,23 +93,6 @@ export default function AdminSettingsPage() {
                     }
                   />
                 </Field>
-
-                <div className="pt-2 border-t border-border/40 space-y-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.enableEmailAlerts}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setSettings({
-                          ...settings,
-                          enableEmailAlerts: e.target.checked,
-                        })
-                      }
-                      className="rounded border-border text-primary focus:ring-primary"
-                    />
-                    <span>Enable Email & Notification Alerts</span>
-                  </label>
-                </div>
 
                 {saveSuccess && (
                   <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs flex items-center gap-2">
