@@ -64,9 +64,6 @@ export function BookingWizardModal() {
         onSuccess: () => {
           setIsSuccess(true);
         },
-        onError: () => {
-          setIsSuccess(true);
-        },
       },
     );
   };

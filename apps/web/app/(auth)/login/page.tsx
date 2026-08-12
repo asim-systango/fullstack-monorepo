@@ -9,11 +9,9 @@ import {
   Field,
   Form,
   TextInput,
-  StatusMessage,
   Card,
   LoadingState,
 } from '@shared/ui/components';
-import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { useLogin } from '@/features/auth/hooks/use-auth';
 
@@ -25,7 +23,6 @@ export default function LoginPage() {
   const loginMutation = useLogin();
   const [email, setEmail] = useState(isProd ? '' : 'patient@hospital.com');
   const [password, setPassword] = useState(isProd ? '' : 'Patient@123');
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -50,11 +47,10 @@ export default function LoginPage() {
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
     try {
       await loginMutation.mutateAsync({ email, password });
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Invalid email or password');
+    } catch {
+      // API error toast is automatically displayed by apiClient interceptor
     }
   }
 
@@ -155,8 +151,6 @@ export default function LoginPage() {
                   placeholder="••••••••"
                 />
               </Field>
-
-              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
 
               <Button
                 type="submit"

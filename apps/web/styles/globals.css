@@ -1,4 +1,5 @@
 /* All @import rules must come first (css:S8778 / CSS spec). */
+@import 'react-toastify/dist/ReactToastify.css';
 @import 'tailwindcss';
 @import '@shared/ui/theme.css';
 @import './base.css';

@@ -10,7 +10,6 @@ import {
   TextInput,
   TextArea,
   Select,
-  StatusMessage,
   LoadingState,
   Card,
   Badge,
@@ -20,10 +19,10 @@ import {
   DialogBody,
   DialogFooter,
 } from '@shared/ui/components';
-import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { useRegister } from '@/features/auth/hooks/use-auth';
 import { registerSchema } from '@/features/auth/validators';
+import { showErrorToast, showSuccessToast } from '@/lib/toast';
 
 const SPECIALIZATIONS = [
   'General Medicine',
@@ -62,8 +61,6 @@ export default function RegisterPage() {
   const [consultationFee, setConsultationFee] = useState('100');
   const [biography, setBiography] = useState('');
 
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (!loading && user) {
       router.replace('/dashboard');
@@ -80,7 +77,6 @@ export default function RegisterPage() {
 
   function handleNextStep(e: SyntheticEvent) {
     e.preventDefault();
-    setError(null);
 
     const validation = registerSchema.safeParse({
       role,
@@ -94,7 +90,7 @@ export default function RegisterPage() {
 
     if (!validation.success) {
       const firstError = validation.error.errors[0]?.message || 'Invalid account details';
-      setError(firstError);
+      showErrorToast(firstError);
       return;
     }
 
@@ -103,7 +99,6 @@ export default function RegisterPage() {
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
 
     const payload = {
       role,
@@ -128,7 +123,7 @@ export default function RegisterPage() {
 
     if (!validation.success) {
       const firstError = validation.error.errors[0]?.message || 'Invalid form data';
-      setError(firstError);
+      showErrorToast(firstError);
       return;
     }
 
@@ -137,10 +132,11 @@ export default function RegisterPage() {
       delete (apiPayload as Record<string, unknown>).confirmPassword;
       await registerMutation.mutateAsync(apiPayload);
       if (role === 'DOCTOR') {
+        showSuccessToast('Your doctor registration has been sent to admin for approval.');
         setShowPendingModal(true);
       }
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Registration failed');
+    } catch {
+      // API error toast automatically rendered by apiClient interceptor
     }
   }
 
@@ -170,7 +166,6 @@ export default function RegisterPage() {
               onClick={() => {
                 setRole('PATIENT');
                 setStep(1);
-                setError(null);
               }}
               className={`py-2.5 px-4 text-xs font-semibold rounded-lg transition-all ${
                 role === 'PATIENT'
@@ -184,7 +179,6 @@ export default function RegisterPage() {
               type="button"
               onClick={() => {
                 setRole('DOCTOR');
-                setError(null);
               }}
               className={`py-2.5 px-4 text-xs font-semibold rounded-lg transition-all ${
                 role === 'DOCTOR'
@@ -419,8 +413,6 @@ export default function RegisterPage() {
                   </Field>
                 </>
               )}
-
-              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
 
               {role === 'DOCTOR' && step === 1 ? (
                 <Button type="submit" variant="primary" className="w-full mt-2">
