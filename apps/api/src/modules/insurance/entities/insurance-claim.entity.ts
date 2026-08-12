@@ -20,6 +20,12 @@ export class InsuranceClaim {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'hospital_id', type: 'uuid', nullable: true })
+  hospitalId: string | null;
+
+  @Column({ name: 'invoice_id', type: 'uuid', nullable: true })
+  invoiceId: string | null;
+
   @Column({ name: 'appointment_id', type: 'uuid' })
   appointmentId: string;
 

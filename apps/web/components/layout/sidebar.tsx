@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Users,
+  Database,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth';
 import { Button } from '@shared/ui/components';
@@ -41,6 +42,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Admin Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Doctor Management', href: '/admin/doctors', icon: Users },
   { label: 'Appointments', href: '/admin/appointments', icon: Calendar },
+  { label: 'Database Explorer', href: '/admin/db-explorer', icon: Database },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 

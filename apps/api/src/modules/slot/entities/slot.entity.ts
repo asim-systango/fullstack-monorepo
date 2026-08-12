@@ -13,6 +13,10 @@ import type { Appointment } from '../../appointment/entities/appointment.entity'
 @Check('"starts_at" < "ends_at"')
 export class Slot extends BaseEntity {
   @Index()
+  @Column({ name: 'hospital_id', type: 'uuid', nullable: true })
+  hospitalId!: string | null;
+
+  @Index()
   @Column({ type: 'uuid' })
   doctorId!: string;
 

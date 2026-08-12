@@ -21,8 +21,15 @@ import type { MedicalNote } from '../../medical-note/entities/medical-note.entit
 @Entity({ name: 'appointments' })
 export class Appointment extends BaseEntity {
   @Index()
+  @Column({ name: 'hospital_id', type: 'uuid', nullable: true })
+  hospitalId!: string | null;
+
+  @Index()
   @Column({ type: 'uuid' })
   patientId!: string;
+
+  @Column({ type: 'varchar', length: 20, default: 'IN_PERSON' })
+  type!: string;
 
   @Column({ type: 'uuid', unique: true })
   slotId!: string;

@@ -16,6 +16,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { ExportModule } from './modules/export';
 import { NotificationModule } from './modules/notification';
 import { InsuranceModule } from './modules/insurance';
+import { DbExplorerModule } from './modules/db-explorer/db-explorer.module';
 
 const db = databaseConfig();
 
@@ -40,6 +41,7 @@ const db = databaseConfig();
     ExportModule,
     NotificationModule,
     InsuranceModule,
+    DbExplorerModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
