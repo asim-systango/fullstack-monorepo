@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>New Organization Onboarding Request</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #09090b; color: #f4f4f5; margin: 0; padding: 40px 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; }
+    .badge { display: inline-block; padding: 6px 12px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    h1 { color: #ffffff; font-size: 22px; margin-top: 16px; font-weight: 700; }
+    p { color: #a1a1aa; font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+    .details-box { background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 20px; margin: 24px 0; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #18181b; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #71717a; font-size: 13px; font-weight: 500; }
+    .detail-value { color: #f4f4f5; font-size: 14px; font-weight: 600; text-align: right; }
+    .btn { display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 16px; }
+    .footer { font-size: 12px; color: #52525b; margin-top: 32px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">New CRM Onboarding Request</span>
+    <h1>Action Required: New Company Onboarding Request</h1>
+    <p>A new organization has submitted a request to onboard onto the CRM platform. Below are the submission details:</p>
+    
+    <div class="details-box">
+      <div class="detail-row">
+        <span class="detail-label">Company Name</span>
+        <span class="detail-value">{{companyName}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Contact Name</span>
+        <span class="detail-value">{{contactName}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Contact Email</span>
+        <span class="detail-value">{{email}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Phone</span>
+        <span class="detail-value">{{phone}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Company Size</span>
+        <span class="detail-value">{{companySize}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Industry</span>
+        <span class="detail-value">{{industry}}</span>
+      </div>
+    </div>
+
+    {{#if message}}
+    <p><strong>Additional Message:</strong></p>
+    <p style="background: #09090b; padding: 12px; border-radius: 6px; font-style: italic; color: #d4d4d8;">"{{message}}"</p>
+    {{/if}}
+
+    <a href="{{dashboardUrl}}" class="btn">View Request in Admin Dashboard</a>
+    
+    <div class="footer">
+      This is an automated notification from your CRM Platform System.
+    </div>
+  </div>
+</body>
+</html>

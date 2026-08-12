@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { RoleName } from '../entities/role.entity';
 
 @Injectable()
 export class UserRepository {
@@ -56,6 +57,13 @@ export class UserRepository {
       where: { organizationId },
       relations: ['role'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByRoleName(roleName: RoleName): Promise<User[]> {
+    return this.userRepo.find({
+      where: { role: { name: roleName } },
+      relations: ['role'],
     });
   }
 

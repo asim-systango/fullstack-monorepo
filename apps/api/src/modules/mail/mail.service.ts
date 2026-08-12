@@ -18,6 +18,18 @@ export interface SendPasswordResetParams {
   resetUrl: string;
 }
 
+export interface SendNewOnboardingRequestParams {
+  toEmail: string;
+  contactName: string;
+  email: string;
+  companyName: string;
+  phone?: string;
+  companySize?: string;
+  industry?: string;
+  message?: string;
+  dashboardUrl?: string;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -131,6 +143,56 @@ export class MailService {
     } else {
       this.logger.log(
         `[EMAIL SIMULATION] To: ${toEmail} | Subject: ${subject} | ResetUrl: ${resetUrl}`,
+      );
+    }
+  }
+
+  async sendNewOnboardingRequestMail(
+    params: SendNewOnboardingRequestParams,
+  ): Promise<void> {
+    const {
+      toEmail,
+      contactName,
+      email,
+      companyName,
+      phone = 'N/A',
+      companySize = 'N/A',
+      industry = 'N/A',
+      message,
+      dashboardUrl = 'http://localhost:3000/dashboard/onboarding-requests',
+    } = params;
+
+    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const subject = `[Action Required] New Organization Onboarding Request: ${companyName}`;
+
+    const html = this.renderTemplate('new-onboarding-request', {
+      contactName,
+      email,
+      companyName,
+      phone,
+      companySize,
+      industry,
+      message,
+      dashboardUrl,
+    });
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from,
+          to: toEmail,
+          subject,
+          html,
+        });
+        this.logger.log(`New onboarding request notification sent to admin: ${toEmail}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to send onboarding request email to ${toEmail}: ${(error as Error).message}`,
+        );
+      }
+    } else {
+      this.logger.log(
+        `[EMAIL SIMULATION] To: ${toEmail} | New Onboarding Request for: ${companyName} (${email})`,
       );
     }
   }
