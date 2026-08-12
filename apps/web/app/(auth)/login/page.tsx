@@ -187,7 +187,13 @@ export default function LoginPage() {
           </CardBody>
 
           <p className="mt-6 text-xs text-zinc-500 text-center">
-            Need access to a workspace? Contact your system administrator.
+            Need access to a workspace?{' '}
+            <Link
+              href="/onboarding-request"
+              className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+            >
+              Request Access
+            </Link>
           </p>
         </Card>
 

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type SyntheticEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, type SyntheticEvent, useEffect } from 'react';
 import { ApiClientError } from '@shared/api-client';
 import {
   Alert,
@@ -19,6 +20,8 @@ import { formsApi } from '@/lib/api';
 import { PUBLIC_ONBOARDING_REQUEST_MESSAGES, SYSTEM_MESSAGES } from '@/lib/constants';
 
 export default function OnboardingRequestPage() {
+  const router = useRouter();
+
   // Form State
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
@@ -32,7 +35,18 @@ export default function OnboardingRequestPage() {
   // Status State
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [countdown, setCountdown] = useState(4);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (success && countdown > 0) {
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    } else if (success && countdown === 0) {
+      router.push('/');
+    }
+    return () => clearTimeout(timer);
+  }, [success, countdown, router]);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,7 +57,7 @@ export default function OnboardingRequestPage() {
 
     setPending(true);
     setError(null);
-    setSuccess(null);
+    setSuccess(false);
 
     try {
       await formsApi.submitOnboardingRequest({
@@ -57,17 +71,7 @@ export default function OnboardingRequestPage() {
         message: message.trim() || undefined,
       });
 
-      setSuccess(PUBLIC_ONBOARDING_REQUEST_MESSAGES.SUCCESS_SUBMITTED);
-
-      // Clear form
-      setContactName('');
-      setEmail('');
-      setCompanyName('');
-      setPhone('');
-      setCompanySize('');
-      setIndustry('');
-      setWebsite('');
-      setMessage('');
+      setSuccess(true);
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.statusCode === 409) {
@@ -121,140 +125,161 @@ export default function OnboardingRequestPage() {
           </CardHeader>
 
           <CardBody className="p-0">
-            {/* Error Alert */}
-            {error && (
-              <Alert tone="danger" className="mb-6 text-sm">
-                {error}
-              </Alert>
-            )}
-
-            {/* Success Alert */}
-            {success && (
-              <Alert tone="success" className="mb-6 text-sm">
-                {success}
-              </Alert>
-            )}
-
-            <form onSubmit={onSubmit} className="space-y-6 text-left">
-              {/* Row 1: Contact Name & Email */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Contact Name" htmlFor="contactName" required>
-                  <TextInput
-                    id="contactName"
-                    placeholder="Jane Doe"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    disabled={pending}
-                    required
-                  />
-                </Field>
-                <Field label="Work Email" htmlFor="email" required>
-                  <TextInput
-                    id="email"
-                    type="email"
-                    placeholder="jane@acme.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={pending}
-                    required
-                  />
-                </Field>
-              </div>
-
-              {/* Row 2: Company Name & Phone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Company Name" htmlFor="companyName" required>
-                  <TextInput
-                    id="companyName"
-                    placeholder="Acme Corp"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    disabled={pending}
-                    required
-                  />
-                </Field>
-                <Field label="Phone Number" htmlFor="phone">
-                  <TextInput
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={pending}
-                  />
-                </Field>
-              </div>
-
-              {/* Row 3: Industry & Company Size */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Industry" htmlFor="industry">
-                  <TextInput
-                    id="industry"
-                    placeholder="e.g. Technology, Healthcare"
-                    value={industry}
-                    onChange={(e) => setIndustry(e.target.value)}
-                    disabled={pending}
-                  />
-                </Field>
-                <Field label="Company Size" htmlFor="companySize">
-                  <TextInput
-                    id="companySize"
-                    placeholder="e.g. 10-50 employees"
-                    value={companySize}
-                    onChange={(e) => setCompanySize(e.target.value)}
-                    disabled={pending}
-                  />
-                </Field>
-              </div>
-
-              {/* Row 4: Website */}
-              <Field label="Company Website" htmlFor="website">
-                <TextInput
-                  id="website"
-                  type="url"
-                  placeholder="https://acme.com"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  disabled={pending}
-                />
-              </Field>
-
-              {/* Row 5: Message */}
-              <Field label="How can we help you?" htmlFor="message">
-                <TextArea
-                  id="message"
-                  placeholder="Tell us a bit about your CRM needs..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  disabled={pending}
-                  rows={4}
-                />
-              </Field>
-
-              {/* Submit Button */}
-              <div className="pt-2">
+            {success ? (
+              <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl font-bold mb-2">
+                  ✓
+                </div>
+                <div className="text-lg font-bold text-white text-center">
+                  Request Submitted Successfully
+                </div>
+                <p className="text-sm text-zinc-400 text-center max-w-md">
+                  {PUBLIC_ONBOARDING_REQUEST_MESSAGES.SUCCESS_SUBMITTED}
+                </p>
+                <p className="text-xs text-zinc-500 mt-4 text-center">
+                  Redirecting to home in {countdown} seconds...
+                </p>
                 <Button
-                  type="submit"
-                  variant="primary"
-                  loading={pending}
-                  loadingText="Submitting Request..."
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm tracking-wide shadow-lg shadow-violet-600/20"
+                  variant="secondary"
+                  className="mt-6"
+                  onClick={() => router.push('/')}
                 >
-                  Submit Request →
+                  Return to Home Now
                 </Button>
               </div>
-            </form>
+            ) : (
+              <>
+                {/* Error Alert */}
+                {error && (
+                  <Alert tone="danger" className="mb-6 text-sm">
+                    {error}
+                  </Alert>
+                )}
+
+                <form onSubmit={onSubmit} className="space-y-6 text-left">
+                  {/* Row 1: Contact Name & Email */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Contact Name" htmlFor="contactName" required>
+                      <TextInput
+                        id="contactName"
+                        placeholder="Jane Doe"
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        disabled={pending}
+                        required
+                      />
+                    </Field>
+                    <Field label="Work Email" htmlFor="email" required>
+                      <TextInput
+                        id="email"
+                        type="email"
+                        placeholder="jane@acme.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={pending}
+                        required
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Row 2: Company Name & Phone */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Company Name" htmlFor="companyName" required>
+                      <TextInput
+                        id="companyName"
+                        placeholder="Acme Corp"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        disabled={pending}
+                        required
+                      />
+                    </Field>
+                    <Field label="Phone Number" htmlFor="phone">
+                      <TextInput
+                        id="phone"
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        disabled={pending}
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Row 3: Industry & Company Size */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Industry" htmlFor="industry">
+                      <TextInput
+                        id="industry"
+                        placeholder="e.g. Technology, Healthcare"
+                        value={industry}
+                        onChange={(e) => setIndustry(e.target.value)}
+                        disabled={pending}
+                      />
+                    </Field>
+                    <Field label="Company Size" htmlFor="companySize">
+                      <TextInput
+                        id="companySize"
+                        placeholder="e.g. 10-50 employees"
+                        value={companySize}
+                        onChange={(e) => setCompanySize(e.target.value)}
+                        disabled={pending}
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Row 4: Website */}
+                  <Field label="Company Website" htmlFor="website">
+                    <TextInput
+                      id="website"
+                      type="url"
+                      placeholder="https://acme.com"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      disabled={pending}
+                    />
+                  </Field>
+
+                  {/* Row 5: Message */}
+                  <Field label="How can we help you?" htmlFor="message">
+                    <TextArea
+                      id="message"
+                      placeholder="Tell us a bit about your CRM needs..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      disabled={pending}
+                      rows={4}
+                    />
+                  </Field>
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      loading={pending}
+                      loadingText="Submitting Request..."
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm tracking-wide shadow-lg shadow-violet-600/20"
+                    >
+                      Submit Request →
+                    </Button>
+                  </div>
+                </form>
+              </>
+            )}
           </CardBody>
 
-          <p className="mt-8 text-xs text-zinc-500 text-center">
-            Already have an account?{' '}
-            <Link
-              href="/login"
-              className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
-            >
-              Sign In
-            </Link>
-          </p>
+          {!success && (
+            <p className="mt-8 text-xs text-zinc-500 text-center">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+              >
+                Sign In
+              </Link>
+            </p>
+          )}
         </Card>
 
         {/* Footer */}
