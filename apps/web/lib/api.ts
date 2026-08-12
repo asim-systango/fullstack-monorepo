@@ -22,11 +22,14 @@ export interface OrganizationContext {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  tokenType: string;
-  expiresIn: string;
+  accessToken: string | null;
+  passwordResetToken?: string | null;
+  isPasswordChangeRequired?: boolean;
+  tokenType?: string;
+  expiresIn?: string;
   user: UserProfile;
   organization: OrganizationContext | null;
+  message?: string;
 }
 
 export const apiClient = createApiClient({
@@ -36,7 +39,11 @@ export const apiClient = createApiClient({
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       localStorage.removeItem('organization');
-      if (!window.location.pathname.startsWith('/login')) {
+      if (
+        !window.location.pathname.startsWith('/login') &&
+        !window.location.pathname.startsWith('/update-password') &&
+        !window.location.pathname.startsWith('/reset-password')
+      ) {
         window.location.assign('/login');
       }
     }
@@ -63,6 +70,16 @@ export const authApi = {
     const endpoint = baseURL.endsWith('/v1') ? '/auth/login' : '/v1/auth/login';
     const response = await apiClient.post(endpoint, payload);
     return unwrapData<LoginResponse>(response.data);
+  },
+  async resetPassword(payload: {
+    token: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const endpoint = baseURL.endsWith('/v1')
+      ? '/auth/reset-password'
+      : '/v1/auth/reset-password';
+    const response = await apiClient.post(endpoint, payload);
+    return unwrapData<{ message: string }>(response.data);
   },
   async logout(): Promise<void> {
     if (typeof window !== 'undefined') {
