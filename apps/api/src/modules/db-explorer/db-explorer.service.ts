@@ -50,7 +50,6 @@ export class DbExplorerService {
     'invoices',
     'invoice_items',
     'payments',
-    'insurance_claims',
     'audit_logs',
     'notifications',
   ];

@@ -117,8 +117,10 @@ export class SlotService {
       sTime: string,
       eTime: string,
     ) => {
-      const windowStart = new Date(`${dateStr}T${sTime}:00`);
-      const windowEnd = new Date(`${dateStr}T${eTime}:00`);
+      const cleanSTime = sTime.slice(0, 5);
+      const cleanETime = eTime.slice(0, 5);
+      const windowStart = new Date(`${dateStr}T${cleanSTime}:00`);
+      const windowEnd = new Date(`${dateStr}T${cleanETime}:00`);
 
       if (isNaN(windowStart.getTime()) || isNaN(windowEnd.getTime())) return;
       if (windowStart >= windowEnd) return;
@@ -165,6 +167,10 @@ export class SlotService {
       if (dto.shift2StartTime && dto.shift2EndTime) {
         shiftWindows.push({ startTime: dto.shift2StartTime, endTime: dto.shift2EndTime });
       }
+    }
+
+    if (shiftWindows.length === 0) {
+      throw new BadRequestException('At least one shift window must be provided');
     }
 
     const currDate = new Date(startDate);

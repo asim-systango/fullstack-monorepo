@@ -20,8 +20,6 @@ import type { AppointmentStatus } from '@/features/appointment/types';
 import { CheckCircle2, Clock, XCircle, Filter, ShieldCheck } from 'lucide-react';
 
 import { FhirExportModal } from '@/components/export/fhir-export-modal';
-import { InsuranceClaimModal } from '@/components/insurance/insurance-claim-modal';
-import type { Appointment } from '@/features/appointment/types';
 
 export default function AppointmentsPage() {
   const [paymentBanner, setPaymentBanner] = useState<string | null>(null);
@@ -31,9 +29,6 @@ export default function AppointmentsPage() {
     null,
   );
   const [exportingAppointmentId, setExportingAppointmentId] = useState<string | null>(
-    null,
-  );
-  const [claimingAppointment, setClaimingAppointment] = useState<Appointment | null>(
     null,
   );
 
@@ -183,7 +178,6 @@ export default function AppointmentsPage() {
               appointment={appointment}
               onCancel={handleCancelClick}
               onExportFhir={(id) => setExportingAppointmentId(id)}
-              onSubmitInsurance={(appt) => setClaimingAppointment(appt)}
               isCancelling={
                 cancelMutation.isPending && cancellingAppointmentId === appointment.id
               }
@@ -266,14 +260,6 @@ export default function AppointmentsPage() {
         open={Boolean(exportingAppointmentId)}
         onOpenChange={(open) => !open && setExportingAppointmentId(null)}
         appointmentId={exportingAppointmentId || ''}
-      />
-
-      {/* Insurance Claim Submission Modal */}
-      <InsuranceClaimModal
-        open={Boolean(claimingAppointment)}
-        onOpenChange={(open) => !open && setClaimingAppointment(null)}
-        appointment={claimingAppointment}
-        onSuccess={() => void refetch()}
       />
     </Page>
   );

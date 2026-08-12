@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
@@ -12,24 +12,31 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+const emptyToUndefined = ({ value }: { value: unknown }) =>
+  typeof value === 'string' && value.trim() === '' ? undefined : value;
+
 export class ShiftDto {
   @ApiPropertyOptional({ description: 'Custom shift name', example: 'Morning OPD' })
+  @Transform(emptyToUndefined)
   @IsString()
   @IsOptional()
   name?: string;
 
   @ApiProperty({
-    description: 'Shift start time (HH:MM in 24h format)',
+    description: 'Shift start time (HH:MM or HH:MM:SS in 24h format)',
     example: '09:00',
   })
-  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d$/, {
+  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
     message: 'startTime must be in HH:MM format',
   })
   @IsNotEmpty()
   startTime!: string;
 
-  @ApiProperty({ description: 'Shift end time (HH:MM in 24h format)', example: '13:00' })
-  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d$/, {
+  @ApiProperty({
+    description: 'Shift end time (HH:MM or HH:MM:SS in 24h format)',
+    example: '13:00',
+  })
+  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
     message: 'endTime must be in HH:MM format',
   })
   @IsNotEmpty()
@@ -55,6 +62,7 @@ export class BulkCreateSlotDto {
       'Optional end date for multi-day schedule generation in YYYY-MM-DD format',
     example: '2026-08-22',
   })
+  @Transform(emptyToUndefined)
   @IsDateString()
   @IsOptional()
   endDate?: string;
@@ -72,7 +80,8 @@ export class BulkCreateSlotDto {
     description: 'Primary working hours start time (HH:MM in 24h format)',
     example: '09:00',
   })
-  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d$/, {
+  @Transform(emptyToUndefined)
+  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
     message: 'startTime must be in HH:MM format',
   })
   @IsOptional()
@@ -82,7 +91,8 @@ export class BulkCreateSlotDto {
     description: 'Primary working hours end time (HH:MM in 24h format)',
     example: '13:00',
   })
-  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d$/, {
+  @Transform(emptyToUndefined)
+  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
     message: 'endTime must be in HH:MM format',
   })
   @IsOptional()
@@ -92,7 +102,8 @@ export class BulkCreateSlotDto {
     description: 'Optional Shift 2 start time (HH:MM in 24h format)',
     example: '14:00',
   })
-  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d$/, {
+  @Transform(emptyToUndefined)
+  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
     message: 'shift2StartTime must be in HH:MM format',
   })
   @IsOptional()
@@ -102,7 +113,8 @@ export class BulkCreateSlotDto {
     description: 'Optional Shift 2 end time (HH:MM in 24h format)',
     example: '18:00',
   })
-  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d$/, {
+  @Transform(emptyToUndefined)
+  @Matches(/^([0-1]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
     message: 'shift2EndTime must be in HH:MM format',
   })
   @IsOptional()

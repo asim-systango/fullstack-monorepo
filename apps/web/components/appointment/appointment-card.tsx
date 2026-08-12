@@ -14,14 +14,11 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { ShieldCheck } from 'lucide-react';
-
 export interface AppointmentCardProps {
   appointment: Appointment;
   onCancel?: (id: string) => void;
   onComplete?: (appointment: Appointment) => void;
   onExportFhir?: (id: string) => void;
-  onSubmitInsurance?: (appointment: Appointment) => void;
   isCancelling?: boolean;
 }
 
@@ -30,7 +27,6 @@ export function AppointmentCard({
   onCancel,
   onComplete,
   onExportFhir,
-  onSubmitInsurance,
   isCancelling,
 }: Readonly<AppointmentCardProps>) {
   const doctor = appointment.slot?.doctor;
@@ -166,7 +162,7 @@ export function AppointmentCard({
 
         {/* Actions */}
         <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border/30">
-          {onExportFhir && (
+          {onExportFhir && appointment.status !== 'CANCELLED' && (
             <Button
               variant="outline"
               size="sm"
@@ -174,16 +170,6 @@ export function AppointmentCard({
               className="text-xs gap-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
             >
               <FileText className="w-3.5 h-3.5 text-emerald-600" /> Prescription PDF
-            </Button>
-          )}
-          {onSubmitInsurance && appointment.status === 'COMPLETED' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onSubmitInsurance(appointment)}
-              className="text-xs gap-1"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Claim Insurance
             </Button>
           )}
           {appointment.status === 'SCHEDULED' && onComplete && (

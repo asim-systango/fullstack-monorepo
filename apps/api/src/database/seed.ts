@@ -22,7 +22,6 @@ import { Admission } from '../modules/ipd/entities/admission.entity';
 import { Invoice } from '../modules/billing/entities/invoice.entity';
 import { InvoiceItem } from '../modules/billing/entities/invoice-item.entity';
 import { Payment } from '../modules/billing/entities/payment.entity';
-import { InsuranceClaim } from '../modules/insurance/entities/insurance-claim.entity';
 import { AuditLog } from '../modules/audit/entities/audit-log.entity';
 import { SlotStatus } from '../shared/enums/slot-status.enum';
 import { AppointmentStatus } from '../shared/enums/appointment-status.enum';
@@ -53,14 +52,12 @@ async function seed() {
   const invoiceRepo = dataSource.getRepository(Invoice);
   const invoiceItemRepo = dataSource.getRepository(InvoiceItem);
   const paymentRepo = dataSource.getRepository(Payment);
-  const claimRepo = dataSource.getRepository(InsuranceClaim);
   const auditRepo = dataSource.getRepository(AuditLog);
 
   // Clear existing domain data in proper dependency order
   console.log('🧹 Truncating existing tables...');
   const tables = [
     'audit_logs',
-    'insurance_claims',
     'payments',
     'invoice_items',
     'invoices',
@@ -670,8 +667,8 @@ async function seed() {
     }),
   );
 
-  // 10. Seed Invoices, Payments & Insurance Claims
-  console.log('💳 Seeding Billing Invoices, Payments & Claims...');
+  // 10. Seed Invoices & Payments
+  console.log('💳 Seeding Billing Invoices & Payments...');
   const inv1 = await invoiceRepo.save(
     invoiceRepo.create({
       hospitalId: h1.id,
@@ -705,22 +702,6 @@ async function seed() {
       transactionRef: 'ch_3M0000000000000000000001',
       amount: 787.5,
       status: 'SUCCESS',
-    }),
-  );
-
-  await claimRepo.save(
-    claimRepo.create({
-      hospitalId: h1.id,
-      invoiceId: inv1.id,
-      appointmentId: a1.id,
-      patientId: patUser1,
-      providerName: 'BlueCross Health Insurance',
-      policyNumber: 'BC-NY-991024',
-      claimAmount: 787.5,
-      coveredAmount: 700.0,
-      copayAmount: 87.5,
-      status: 'APPROVED',
-      notes: 'Standard consultation claim approved per policy schedule.',
     }),
   );
 

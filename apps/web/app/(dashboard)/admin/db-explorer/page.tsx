@@ -81,7 +81,7 @@ const DOMAIN_GROUPS = [
     name: 'Billing & Financials',
     icon: CreditCard,
     color: 'border-teal-500/30 bg-teal-500/5 text-teal-500',
-    tables: ['invoices', 'invoice_items', 'payments', 'insurance_claims'],
+    tables: ['invoices', 'invoice_items', 'payments'],
   },
   {
     name: 'Governance & Audit',

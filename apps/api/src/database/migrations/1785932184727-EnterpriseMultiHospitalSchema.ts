@@ -335,12 +335,6 @@ export class EnterpriseMultiHospitalSchema1785932184727 implements MigrationInte
     await queryRunner.query(
       `ALTER TABLE "prescriptions" ADD COLUMN IF NOT EXISTS "valid_until" date;`,
     );
-    await queryRunner.query(
-      `ALTER TABLE "insurance_claims" ADD COLUMN IF NOT EXISTS "hospital_id" uuid;`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "insurance_claims" ADD COLUMN IF NOT EXISTS "invoice_id" uuid;`,
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

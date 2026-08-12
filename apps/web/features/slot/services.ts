@@ -114,10 +114,15 @@ export const slotApi = {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
       payload.doctorId,
     );
-    const cleanPayload = {
+    const cleanPayload: Record<string, unknown> = {
       ...payload,
       doctorId: isUuid ? payload.doctorId : MOCK_DOCTOR_ID,
     };
+    Object.keys(cleanPayload).forEach((key) => {
+      if (cleanPayload[key] === '' || cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
     const { data } = await apiClient.post<{ data: Slot[] }>('/slots/bulk', cleanPayload);
     return data.data ?? data;
   },
