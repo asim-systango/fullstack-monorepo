@@ -7,6 +7,7 @@ import { Role } from './entities/role.entity';
 import { Organization } from './entities/organization.entity';
 import { Permission } from './entities/permission.entity';
 import { RoutePermission } from './entities/route-permission.entity';
+import { FormSubmission } from './entities/form-submission.entity';
 import { UserRepository } from './repositories/user.repository';
 import { RoleRepository } from './repositories/role.repository';
 import { OrganizationRepository } from './repositories/organization.repository';
@@ -16,7 +17,14 @@ import { RoutePermissionRepository } from './repositories/route-permission.repos
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeOrmConfig),
-    TypeOrmModule.forFeature([User, Role, Organization, Permission, RoutePermission]),
+    TypeOrmModule.forFeature([
+      User,
+      Role,
+      Organization,
+      Permission,
+      RoutePermission,
+      FormSubmission,
+    ]),
   ],
   providers: [
     DatabaseService,
