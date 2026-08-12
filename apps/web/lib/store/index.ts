@@ -34,9 +34,40 @@ const uiSlice = createSlice({
 
 export const { setFilterDraft, applyFilter } = uiSlice.actions;
 
+type IssueFiltersState = {
+  status: string;
+  labelId: string;
+  assigneeId: string;
+  page: number;
+};
+const issueFiltersInitial: IssueFiltersState = {
+  status: '',
+  labelId: '',
+  assigneeId: '',
+  page: 1,
+};
+const issueFiltersSlice = createSlice({
+  name: 'issueFilters',
+  initialState: issueFiltersInitial,
+  reducers: {
+    setIssueFilter(state, action: PayloadAction<Partial<IssueFiltersState>>) {
+      Object.assign(state, action.payload, { page: 1 });
+    },
+    setIssuePage(state, action: PayloadAction<number>) {
+      state.page = action.payload;
+    },
+    clearIssueFilters() {
+      return issueFiltersInitial;
+    },
+  },
+});
+export const { setIssueFilter, setIssuePage, clearIssueFilters } =
+  issueFiltersSlice.actions;
+
 export const store = configureStore({
   reducer: {
     ui: uiSlice.reducer,
+    issueFilters: issueFiltersSlice.reducer,
   },
 });
 
