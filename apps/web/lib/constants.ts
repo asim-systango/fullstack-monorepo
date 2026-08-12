@@ -40,6 +40,16 @@ export const ORGANIZATION_ONBOARDING_MESSAGES = {
   SUCCESS_ONBOARDED: 'Organization onboarded successfully! Tenant workspace is now live.',
 } as const;
 
+export const PUBLIC_ONBOARDING_REQUEST_MESSAGES = {
+  PAGE_TITLE: 'Request CRM Access for your Organization',
+  PAGE_SUBTITLE:
+    'Join thousands of organizations transforming their business with our CRM platform.',
+  SUCCESS_SUBMITTED:
+    'Your request has been successfully submitted! Our team will review it and contact you shortly.',
+  ERROR_ALREADY_EXISTS: 'An onboarding request for this organization already exists.',
+  ERROR_TOO_MANY_REQUESTS: 'Too many requests from this email. Please try again later.',
+} as const;
+
 export interface OrganizationItem {
   id: string;
   name: string;
