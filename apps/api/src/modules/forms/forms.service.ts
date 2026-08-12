@@ -8,6 +8,7 @@ import {
 import { MailService } from '../mail/mail.service';
 import { SubmitOnboardingRequestDto } from './dto/submit-onboarding-request.dto';
 import { GetFormSubmissionsQueryDto } from './dto/get-form-submissions-query.dto';
+import { UpdateFormSubmissionStatusDto } from './dto/update-form-submission-status.dto';
 import { FORMS_ERRORS } from './constants/forms.constants';
 
 @Injectable()
@@ -125,6 +126,53 @@ export class FormsService {
         limit: result.limit,
         totalPages: result.totalPages,
       },
+    };
+  }
+
+  async updateSubmissionStatus(
+    id: string,
+    dto: UpdateFormSubmissionStatusDto,
+    reviewedByUserId: string,
+  ) {
+    const submission = await this.formSubmissionRepo.findById(id);
+
+    if (!submission) {
+      throw new Error(FORMS_ERRORS.SUBMISSION_NOT_FOUND);
+    }
+
+    // Update status in DB
+    await this.formSubmissionRepo.updateStatus(
+      id,
+      dto.status,
+      reviewedByUserId,
+      dto.reviewNotes?.trim(),
+    );
+
+    const updatedSubmission = await this.formSubmissionRepo.findById(id);
+
+    // Asynchronously send status update email to the submitter
+    this.mailService
+      .sendFormStatusUpdatedMail({
+        toEmail: submission.email,
+        contactName: submission.contactName,
+        companyName: submission.companyName || 'Your Organization',
+        status: dto.status,
+        reviewNotes: dto.reviewNotes?.trim(),
+      })
+      .catch((err) => {
+        this.logger.error(
+          `Failed to send status update email for submission ${id} to ${submission.email}:`,
+          err,
+        );
+      });
+
+    this.logger.log(
+      `Form submission ID ${id} status updated to '${dto.status}' by user ID ${reviewedByUserId}`,
+    );
+
+    return {
+      message: `Form submission status updated successfully to ${dto.status}`,
+      submission: updatedSubmission,
     };
   }
 }
