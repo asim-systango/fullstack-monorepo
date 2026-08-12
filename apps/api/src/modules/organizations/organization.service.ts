@@ -6,6 +6,7 @@ import { RoleRepository } from '../../database/repositories/role.repository';
 import { RoleName } from '../../database/entities/role.entity';
 import { MailService } from '../mail/mail.service';
 import { OnboardOrganizationDto } from './dto/onboard-organization.dto';
+import { GetOrganizationsQueryDto } from './dto/get-organizations-query.dto';
 import { ORGANIZATION_ERRORS } from './constants/organization.constants';
 import { generateSlug } from '../../common/utils/slug.util';
 import { generateTempPassword } from '../../common/utils/password.util';
@@ -20,6 +21,20 @@ export class OrganizationService {
     private readonly roleRepository: RoleRepository,
     private readonly mailService: MailService,
   ) {}
+
+  async findAllOrganizations(query: GetOrganizationsQueryDto) {
+    const result = await this.orgRepository.findPaginated(query);
+
+    return {
+      data: result.data,
+      meta: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      },
+    };
+  }
 
   async onboardOrganization(dto: OnboardOrganizationDto, createdByUserId?: string) {
     const slug = generateSlug(dto.name);

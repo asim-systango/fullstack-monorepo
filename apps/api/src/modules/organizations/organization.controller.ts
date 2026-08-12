@@ -1,7 +1,9 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,7 +15,9 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service';
 import { OnboardOrganizationDto } from './dto/onboard-organization.dto';
+import { GetOrganizationsQueryDto } from './dto/get-organizations-query.dto';
 import { OnboardOrganizationSwagger } from './decorators/swagger/onboard-organization.decorator';
+import { GetOrganizationsSwagger } from './decorators/swagger/get-organizations.decorator';
 import { ORGANIZATION_ERRORS } from './constants/organization.constants';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoutePermissionGuard } from '../../common/guards/route-permission.guard';
@@ -22,6 +26,19 @@ import { RoutePermissionGuard } from '../../common/guards/route-permission.guard
 @Controller('api/v1/organizations')
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RoutePermissionGuard)
+  @HttpCode(HttpStatus.OK)
+  @GetOrganizationsSwagger()
+  async getOrganizations(@Query() query: GetOrganizationsQueryDto) {
+    try {
+      return await this.organizationService.findAllOrganizations(query);
+    } catch (error) {
+      console.error('Error in getOrganizations:', error);
+      throw new InternalServerErrorException(ORGANIZATION_ERRORS.UNEXPECTED_ERROR);
+    }
+  }
 
   @Post('onboard')
   @UseGuards(JwtAuthGuard, RoutePermissionGuard)
