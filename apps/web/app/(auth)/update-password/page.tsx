@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type SyntheticEvent } from 'react';
+import { Suspense, useState, useEffect, type SyntheticEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiClientError } from '@shared/api-client';
@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  Spinner,
   TextInput,
 } from '@shared/ui';
 import { authApi, type UserProfile } from '@/lib/api';
@@ -29,7 +30,7 @@ const INITIAL_FORM_STATE: UpdatePasswordFormState = {
   confirmPassword: '',
 };
 
-export default function UpdatePasswordPage() {
+function UpdatePasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
@@ -291,5 +292,19 @@ export default function UpdatePasswordPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function UpdatePasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
+          <Spinner />
+        </div>
+      }
+    >
+      <UpdatePasswordForm />
+    </Suspense>
   );
 }
