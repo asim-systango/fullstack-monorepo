@@ -18,6 +18,8 @@ import { CompleteAppointmentDto } from './dto/complete-appointment.dto';
 import { GetAppointmentsQueryDto } from './dto/get-appointments-query.dto';
 import { CurrentUser, JwtUser, Roles } from '../../common/auth';
 
+const APPOINTMENT_NOT_FOUND_MSG = 'Appointment not found';
+
 @ApiTags('Appointments')
 @Controller()
 export class AppointmentController {
@@ -62,7 +64,7 @@ export class AppointmentController {
   @ApiOperation({ summary: 'Get appointment details by ID (Role Scoped)' })
   @ApiResponse({ status: 200, description: 'Appointment details found' })
   @ApiResponse({ status: 403, description: 'Forbidden — Access denied' })
-  @ApiResponse({ status: 404, description: 'Appointment not found' })
+  @ApiResponse({ status: 404, description: APPOINTMENT_NOT_FOUND_MSG })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser | undefined,
@@ -97,10 +99,9 @@ export class AppointmentController {
     return this.appointmentService.create(patientId, dto);
   }
 
-  @Patch('appointments/:id/complete')
   @Post('appointments/:id/complete')
   @ApiOperation({
-    summary: 'Complete appointment, issue prescription and record clinical note',
+    summary: 'Complete appointment, issue prescription and record clinical note (POST)',
   })
   @ApiResponse({ status: 200, description: 'Appointment marked completed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request or already completed' })
@@ -108,8 +109,8 @@ export class AppointmentController {
     status: 403,
     description: 'Forbidden — Only assigned Doctor or Admin can complete',
   })
-  @ApiResponse({ status: 404, description: 'Appointment not found' })
-  async complete(
+  @ApiResponse({ status: 404, description: APPOINTMENT_NOT_FOUND_MSG })
+  async completePost(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser | undefined,
     @Body() dto?: CompleteAppointmentDto,
@@ -120,6 +121,25 @@ export class AppointmentController {
     return this.appointmentService.complete(id, user, dto);
   }
 
+  @Patch('appointments/:id/complete')
+  @ApiOperation({
+    summary: 'Complete appointment, issue prescription and record clinical note (PATCH)',
+  })
+  @ApiResponse({ status: 200, description: 'Appointment marked completed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request or already completed' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — Only assigned Doctor or Admin can complete',
+  })
+  @ApiResponse({ status: 404, description: APPOINTMENT_NOT_FOUND_MSG })
+  async completePatch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtUser | undefined,
+    @Body() dto?: CompleteAppointmentDto,
+  ) {
+    return this.completePost(id, user, dto);
+  }
+
   @Patch('appointments/:id')
   @Roles('ADMIN', 'DOCTOR')
   @ApiOperation({ summary: 'Update appointment status or reason (Doctor/Admin scoped)' })
@@ -128,7 +148,7 @@ export class AppointmentController {
     status: 403,
     description: 'Forbidden — Admin or assigned Doctor required',
   })
-  @ApiResponse({ status: 404, description: 'Appointment not found' })
+  @ApiResponse({ status: 404, description: APPOINTMENT_NOT_FOUND_MSG })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAppointmentDto,
@@ -147,7 +167,7 @@ export class AppointmentController {
     status: 403,
     description: 'Forbidden — Patient can only cancel own appointments',
   })
-  @ApiResponse({ status: 404, description: 'Appointment not found' })
+  @ApiResponse({ status: 404, description: APPOINTMENT_NOT_FOUND_MSG })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser | undefined,

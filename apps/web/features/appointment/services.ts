@@ -8,6 +8,7 @@ import type {
   PrescriptionItem,
 } from './types';
 import { MOCK_DOCTORS } from '../doctor/services';
+import { MOCK_SLOTS } from '../slot/services';
 
 const BASE = '/appointments';
 
@@ -195,6 +196,10 @@ export const appointmentApi = {
         deletedAt: null,
       };
       MOCK_APPOINTMENTS.unshift(newAppt);
+      const mockSlot = MOCK_SLOTS.find((s) => s.id === payload.slotId);
+      if (mockSlot) {
+        mockSlot.status = 'BOOKED';
+      }
       return newAppt;
     }
   },

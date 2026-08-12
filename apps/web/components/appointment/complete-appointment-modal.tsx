@@ -84,13 +84,6 @@ export function CompleteAppointmentModal({
           setInstructions('');
           setMedicines([{ name: '', dosage: '', frequency: '', duration: '' }]);
         },
-        onError: () => {
-          // Gracefully close and clean up even on network edge case
-          onClose();
-          setClinicalNotes('');
-          setInstructions('');
-          setMedicines([{ name: '', dosage: '', frequency: '', duration: '' }]);
-        },
       },
     );
   };
@@ -112,6 +105,16 @@ export function CompleteAppointmentModal({
 
       <DialogBody>
         <form onSubmit={handleSubmit} className="space-y-6 py-2">
+          {completeMutation.isError && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs space-y-1">
+              <p className="font-semibold">Failed to complete consultation</p>
+              <p>
+                {completeMutation.error instanceof Error
+                  ? completeMutation.error.message
+                  : 'An error occurred while saving the consultation record.'}
+              </p>
+            </div>
+          )}
           {/* Header Summary */}
           <div className="bg-muted/40 p-3.5 rounded-lg border border-border/50 text-xs space-y-1">
             <div className="flex justify-between items-center">

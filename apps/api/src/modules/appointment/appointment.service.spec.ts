@@ -191,10 +191,12 @@ describe('AppointmentService (Unit & Integration Hardening)', () => {
     });
 
     it('rejects booking when slot is already BOOKED (409 Conflict)', async () => {
-      queryRunnerMock.manager.findOne.mockResolvedValue({
-        id: 'slot-100',
-        status: SlotStatus.BOOKED,
-      });
+      queryRunnerMock.manager.findOne
+        .mockResolvedValueOnce({
+          id: 'slot-100',
+          status: SlotStatus.BOOKED,
+        })
+        .mockResolvedValueOnce(null);
 
       await expect(service.create('patient-111', { slotId: 'slot-100' })).rejects.toThrow(
         ConflictException,

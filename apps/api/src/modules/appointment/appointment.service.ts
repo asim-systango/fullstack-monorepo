@@ -169,6 +169,16 @@ export class AppointmentService {
       }
 
       if (slot.status === SlotStatus.BOOKED) {
+        const existingAppt = await queryRunner.manager.findOne(Appointment, {
+          where: { slotId: dto.slotId, patientId },
+        });
+        if (existingAppt) {
+          await queryRunner.commitTransaction();
+          this.logger.log(
+            `[BOOKING_EXISTS] Slot ${dto.slotId} already reserved for patient ${patientId}. Returning appointment ID ${existingAppt.id}`,
+          );
+          return (await this.appointmentRepository.findById(existingAppt.id))!;
+        }
         throw new ConflictException(
           `Slot "${dto.slotId}" is already booked by another patient`,
         );
@@ -233,12 +243,18 @@ export class AppointmentService {
     try {
       const appointment = await queryRunner.manager.findOne(Appointment, {
         where: { id },
-        relations: ['slot'],
         lock: { mode: 'pessimistic_write' },
       });
 
       if (!appointment) {
         throw new NotFoundException(`Appointment with ID "${id}" not found`);
+      }
+
+      if (appointment.slotId) {
+        appointment.slot =
+          (await queryRunner.manager.findOne(Slot, {
+            where: { id: appointment.slotId },
+          })) ?? undefined;
       }
 
       if (appointment.status === AppointmentStatus.CANCELLED) {

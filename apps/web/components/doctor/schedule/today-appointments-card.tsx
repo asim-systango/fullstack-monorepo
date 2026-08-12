@@ -12,7 +12,7 @@ import {
   Pagination,
 } from '@shared/ui/components';
 import type { Appointment } from '@/features/appointment/types';
-import { useCompleteAppointment } from '@/features/appointment/hooks';
+import { CompleteAppointmentModal } from '@/components/appointment/complete-appointment-modal';
 import { Calendar, User, FileText, CheckCircle, Clock } from 'lucide-react';
 
 interface TodayAppointmentsCardProps {
@@ -38,7 +38,8 @@ export function TodayAppointmentsCard({
   selectedDate,
 }: Readonly<TodayAppointmentsCardProps>) {
   const [currentPage, setCurrentPage] = useState(1);
-  const completeAppointment = useCompleteAppointment();
+  const [selectedApptForCompletion, setSelectedApptForCompletion] =
+    useState<Appointment | null>(null);
 
   // Filter appointments for the selected date
   const filteredAppointments = appointments.filter((app) => {
@@ -46,14 +47,6 @@ export function TodayAppointmentsCard({
     const appDate = new Date(app.slot.startsAt).toISOString().split('T')[0] ?? '';
     return appDate === selectedDate;
   });
-
-  const handleComplete = async (id: string) => {
-    try {
-      await completeAppointment.mutateAsync({ id });
-    } catch {
-      // Handled by react query
-    }
-  };
 
   const isToday = selectedDate === (new Date().toISOString().split('T')[0] ?? '');
 
@@ -145,12 +138,11 @@ export function TodayAppointmentsCard({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleComplete(app.id)}
-                      loading={completeAppointment.isPending}
+                      onClick={() => setSelectedApptForCompletion(app)}
                       className="h-8 text-xs gap-1.5"
                     >
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                      Mark as Completed
+                      Complete Visit
                     </Button>
                   </div>
                 )}
@@ -170,24 +162,32 @@ export function TodayAppointmentsCard({
   };
 
   return (
-    <Card className="shadow-sm border-border bg-card">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
-        <div>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            {getCardHeaderTitle(isToday, selectedDate)}
-          </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Scheduled consultations for the selected date
-          </p>
-        </div>
+    <>
+      <Card className="shadow-sm border-border bg-card">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              {getCardHeaderTitle(isToday, selectedDate)}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Scheduled consultations for the selected date
+            </p>
+          </div>
 
-        <Badge tone="neutral" className="text-xs">
-          {filteredAppointments.length} Scheduled
-        </Badge>
-      </CardHeader>
+          <Badge tone="neutral" className="text-xs">
+            {filteredAppointments.length} Scheduled
+          </Badge>
+        </CardHeader>
 
-      <CardBody className="pt-4 space-y-3">{renderAppointmentContent()}</CardBody>
-    </Card>
+        <CardBody className="pt-4 space-y-3">{renderAppointmentContent()}</CardBody>
+      </Card>
+
+      <CompleteAppointmentModal
+        appointment={selectedApptForCompletion}
+        isOpen={Boolean(selectedApptForCompletion)}
+        onClose={() => setSelectedApptForCompletion(null)}
+      />
+    </>
   );
 }

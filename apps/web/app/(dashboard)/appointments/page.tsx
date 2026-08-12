@@ -56,18 +56,35 @@ export default function AppointmentsPage() {
     const sessionId = search.get('session_id');
     const status = search.get('status');
     const slotId = search.get('slotId') || search.get('slot_id');
-    const isMock = search.get('mock') === 'true';
 
     if (sessionId || status === 'success') {
       hasHandledRef.current = true;
       setPaymentBanner(
         'Payment completed successfully! Your consultation slot has been reserved.',
       );
-      if (isMock && slotId) {
-        bookMutation.mutate({ slotId, reason: 'Paid Consultation Slot' });
+      if (slotId) {
+        bookMutation.mutate(
+          { slotId, reason: 'Paid Consultation Slot' },
+          {
+            onSuccess: () => {
+              void refetch();
+            },
+            onSettled: () => {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('session_id');
+              url.searchParams.delete('status');
+              url.searchParams.delete('slot_id');
+              url.searchParams.delete('slotId');
+              url.searchParams.delete('mock');
+              window.history.replaceState({}, '', url.pathname);
+            },
+          },
+        );
+      } else {
+        void refetch();
       }
     }
-  }, [bookMutation]);
+  }, [bookMutation, refetch]);
 
   const handleCancelClick = (id: string) => {
     setCancellingAppointmentId(id);
