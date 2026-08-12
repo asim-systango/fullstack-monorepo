@@ -1,0 +1,33 @@
+@layer base {
+  *,
+  *::before,
+  *::after {
+    @apply border-border;
+  }
+
+  html {
+    @apply h-full antialiased;
+  }
+
+  body {
+    @apply min-h-full bg-background font-sans text-base leading-normal text-body;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-serif font-bold text-foreground;
+  }
+
+  a {
+    @apply text-foreground underline-offset-2 transition-colors duration-(--duration-fast) ease-(--ease-standard);
+  }
+
+  a:hover {
+    @apply underline;
+  }
+
+  code {
+    @apply rounded-sm bg-surface-muted px-1.5 py-0.5 font-sans text-sm text-foreground;
+  }
+}
