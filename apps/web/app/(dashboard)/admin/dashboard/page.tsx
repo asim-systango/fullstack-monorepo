@@ -25,6 +25,8 @@ import {
   Clock,
   CheckCircle2,
   FileText,
+  IndianRupee,
+  Building2,
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -37,6 +39,11 @@ export default function AdminDashboardPage() {
   const activeDoctors = doctors.filter((d) => d.isActive).length;
   const scheduledAppts = appointments.filter((a) => a.status === 'SCHEDULED').length;
   const completedAppts = appointments.filter((a) => a.status === 'COMPLETED').length;
+
+  const activeAppts = appointments.filter((a) => a.status !== 'CANCELLED');
+  const totalHospitalFees = activeAppts.reduce((sum, a) => {
+    return sum + Number(a.hospitalCharge ?? a.slot?.doctor?.hospitalCharge ?? 10);
+  }, 0);
 
   const handleQuickSearchSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -58,7 +65,7 @@ export default function AdminDashboardPage() {
       <Page>
         <PageHeader
           title="Hospital Administration & Operations"
-          description="Real-time control center for staff management and clinical appointments."
+          description="Real-time control center for staff management, clinical appointments, and platform financial earnings."
           actions={
             <div className="flex items-center gap-2">
               <Link href="/admin/doctors">
@@ -76,7 +83,24 @@ export default function AdminDashboardPage() {
         />
 
         {/* Top KPI Metrics Bar */}
-        <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <div className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-card p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 shadow-xs flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">
+                Hospital Platform Revenue
+              </p>
+              <h3 className="text-2xl font-bold text-foreground mt-1">
+                ₹{totalHospitalFees.toLocaleString()}
+              </h3>
+              <p className="text-[11px] text-emerald-500 font-medium mt-0.5 flex items-center gap-1">
+                <Building2 className="w-3 h-3" /> ₹10 / appt default
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+              <IndianRupee className="w-5 h-5" />
+            </div>
+          </div>
+
           <div className="bg-card p-4 rounded-xl border border-border/80 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-medium">
@@ -106,7 +130,7 @@ export default function AdminDashboardPage() {
                 <Clock className="w-3 h-3" /> {scheduledAppts} Scheduled
               </p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
@@ -120,7 +144,7 @@ export default function AdminDashboardPage() {
                 {completedAppts}
               </h3>
               <p className="text-[11px] text-emerald-500 font-medium mt-0.5 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Finished Appointments
+                <CheckCircle2 className="w-3 h-3" /> Finished Visits
               </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">

@@ -16,6 +16,7 @@ import {
 import { Appointment } from './entities/appointment.entity';
 import { Slot } from '../slot/entities/slot.entity';
 import { DoctorService } from '../doctor/doctor.service';
+import { DoctorProfile } from '../doctor/entities/doctor-profile.entity';
 import { Prescription } from '../prescription/entities/prescription.entity';
 import { MedicalNote } from '../medical-note/entities/medical-note.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -229,11 +230,24 @@ export class AppointmentService {
       slot.status = SlotStatus.BOOKED;
       await queryRunner.manager.save(Slot, slot);
 
+      const doctor = slot.doctorId
+        ? await queryRunner.manager.findOne(DoctorProfile, {
+            where: { id: slot.doctorId },
+          })
+        : null;
+
+      const consultationFee = Number(doctor?.consultationFee ?? 100);
+      const hospitalCharge = Number(doctor?.hospitalCharge ?? 10);
+      const totalAmount = consultationFee + hospitalCharge;
+
       const appointment = queryRunner.manager.create(Appointment, {
         patientId,
         slotId: dto.slotId,
         reason: dto.reason ?? null,
         status: AppointmentStatus.SCHEDULED,
+        consultationFee,
+        hospitalCharge,
+        totalAmount,
       });
       const savedAppointment = await queryRunner.manager.save(Appointment, appointment);
 

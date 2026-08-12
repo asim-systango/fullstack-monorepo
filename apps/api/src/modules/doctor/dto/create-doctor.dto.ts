@@ -57,6 +57,12 @@ export class CreateDoctorDto {
   @IsOptional()
   consultationFee?: number;
 
+  @ApiPropertyOptional({ example: 10.0, minimum: 0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  hospitalCharge?: number;
+
   @ApiPropertyOptional({
     example: 'Board-certified cardiologist with 10 years of clinical practice.',
   })

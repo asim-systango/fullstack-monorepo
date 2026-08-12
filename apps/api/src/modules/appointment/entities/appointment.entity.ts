@@ -45,6 +45,15 @@ export class Appointment extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   reason!: string | null;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  consultationFee!: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 10 })
+  hospitalCharge!: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 10 })
+  totalAmount!: number;
+
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
 

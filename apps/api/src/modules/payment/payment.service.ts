@@ -8,6 +8,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import Stripe from 'stripe';
 import { Appointment } from '../appointment/entities/appointment.entity';
+import { DoctorProfile } from '../doctor/entities/doctor-profile.entity';
 import { Slot } from '../slot/entities/slot.entity';
 import { SlotStatus } from '../../shared/enums/slot-status.enum';
 import { AppointmentStatus } from '../../shared/enums/appointment-status.enum';
@@ -45,9 +46,12 @@ export class PaymentService {
       slot.doctor?.firstName && slot.doctor?.lastName
         ? `Dr. ${slot.doctor.firstName} ${slot.doctor.lastName}`
         : 'PulseCare Doctor';
-    const consultationFee = slot.doctor?.consultationFee
+    const consultationFeeInCents = slot.doctor?.consultationFee
       ? Math.round(Number(slot.doctor.consultationFee) * 100)
-      : 5000; // Default $50.00 in cents
+      : 5000;
+    const hospitalChargeInCents = slot.doctor?.hospitalCharge
+      ? Math.round(Number(slot.doctor.hospitalCharge) * 100)
+      : 1000; // Default ₹10 in cents
 
     if (!this.stripe) {
       // Mock session fallback if Stripe secret key is absent or testing locally
@@ -69,7 +73,18 @@ export class PaymentService {
                 name: `Medical Consultation - ${doctorName}`,
                 description: `Slot on ${new Date(slot.startsAt).toLocaleString()}`,
               },
-              unit_amount: consultationFee,
+              unit_amount: consultationFeeInCents,
+            },
+            quantity: 1,
+          },
+          {
+            price_data: {
+              currency: 'inr',
+              product_data: {
+                name: `Hospital Administration Charge`,
+                description: `Platform fee for appointment booking`,
+              },
+              unit_amount: hospitalChargeInCents,
             },
             quantity: 1,
           },
@@ -137,11 +152,24 @@ export class PaymentService {
         slot.status = SlotStatus.BOOKED;
         await queryRunner.manager.save(Slot, slot);
 
+        const doctor = slot.doctorId
+          ? await queryRunner.manager.findOne(DoctorProfile, {
+              where: { id: slot.doctorId },
+            })
+          : null;
+
+        const consultationFee = Number(doctor?.consultationFee ?? 100);
+        const hospitalCharge = Number(doctor?.hospitalCharge ?? 10);
+        const totalAmount = consultationFee + hospitalCharge;
+
         const appointment = queryRunner.manager.create(Appointment, {
           patientId,
           slotId,
           status: AppointmentStatus.SCHEDULED,
           reason: 'Paid Consultation Slot',
+          consultationFee,
+          hospitalCharge,
+          totalAmount,
         });
         await queryRunner.manager.save(Appointment, appointment);
       }

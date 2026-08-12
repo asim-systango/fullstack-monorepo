@@ -40,6 +40,9 @@ export type Appointment = {
   slotId: string;
   status: AppointmentStatus;
   reason: string | null;
+  consultationFee?: number;
+  hospitalCharge?: number;
+  totalAmount?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

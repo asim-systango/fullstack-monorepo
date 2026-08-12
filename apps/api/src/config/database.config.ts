@@ -8,7 +8,7 @@ export function databaseConfig() {
     url: env.DATABASE_URL,
     autoLoadEntities: true,
     synchronize: false,
-    migrationsRun: false,
+    migrationsRun: true,
     // Must match apps/api/src/database/data-source.ts — this app and the gateway
     // share one DATABASE_URL and must not share a migration ledger.
     migrationsTableName: 'migrations_api',

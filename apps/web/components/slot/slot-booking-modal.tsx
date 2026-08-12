@@ -64,7 +64,10 @@ export function SlotBookingModal({
     minute: '2-digit',
   });
 
-  const fee = Number(doctor.consultationFee) || 100;
+  const doctorFee = Number(doctor.consultationFee) || 100;
+  const hospitalFee =
+    doctor.hospitalCharge !== undefined ? Number(doctor.hospitalCharge) : 10;
+  const totalFee = doctorFee + hospitalFee;
 
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -171,16 +174,18 @@ export function SlotBookingModal({
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span>Doctor Consultation Fee</span>
-              <span className="font-medium text-foreground">₹{fee.toFixed(2)}</span>
+              <span className="font-medium text-foreground">₹{doctorFee.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
-              <span>Platform & Service Fee</span>
-              <span className="font-medium text-emerald-500">FREE</span>
+              <span>Hospital Platform Charge</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                ₹{hospitalFee.toFixed(2)}
+              </span>
             </div>
             <div className="flex items-center justify-between font-bold text-foreground text-sm pt-2 border-t border-border/60">
               <span>Total Payable</span>
               <span className="text-primary flex items-center">
-                <IndianRupee className="w-4 h-4" /> {fee.toFixed(2)}
+                <IndianRupee className="w-4 h-4" /> {totalFee.toFixed(2)}
               </span>
             </div>
           </div>
@@ -203,7 +208,7 @@ export function SlotBookingModal({
             loading={isProcessing}
             className="gap-2 shadow-md hover:shadow-lg"
           >
-            <CreditCard className="w-4 h-4" /> Pay ₹{fee.toFixed(2)} & Book Slot
+            <CreditCard className="w-4 h-4" /> Pay ₹{totalFee.toFixed(2)} & Book Slot
           </Button>
         </DialogFooter>
       </form>

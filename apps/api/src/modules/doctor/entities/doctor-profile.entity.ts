@@ -38,6 +38,9 @@ export class DoctorProfile extends BaseEntity {
   @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
   consultationFee!: number;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 10 })
+  hospitalCharge!: number;
+
   @Column({ type: 'text', nullable: true })
   biography!: string | null;
 

@@ -8,6 +8,7 @@ export type DoctorProfile = {
   qualification: string;
   experienceYears: number;
   consultationFee: number;
+  hospitalCharge?: number;
   biography: string | null;
   profileImage: string | null;
   isActive: boolean;

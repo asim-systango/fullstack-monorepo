@@ -57,6 +57,7 @@ export default function AdminDoctorsPage() {
     qualification: '',
     experienceYears: 0,
     consultationFee: 0,
+    hospitalCharge: 10,
     biography: '',
   });
 
@@ -76,6 +77,7 @@ export default function AdminDoctorsPage() {
       qualification: doc.qualification || '',
       experienceYears: doc.experienceYears || 0,
       consultationFee: doc.consultationFee || 0,
+      hospitalCharge: doc.hospitalCharge ?? 10,
       biography: doc.biography || '',
     });
   };
@@ -90,6 +92,7 @@ export default function AdminDoctorsPage() {
           qualification: editForm.qualification,
           experienceYears: Number(editForm.experienceYears),
           consultationFee: Number(editForm.consultationFee),
+          hospitalCharge: Number(editForm.hospitalCharge),
           biography: editForm.biography,
         },
       },
@@ -417,7 +420,8 @@ export default function AdminDoctorsPage() {
                           <th className="py-3 px-4">Specialization</th>
                           <th className="py-3 px-4">Qualifications</th>
                           <th className="py-3 px-4">Experience</th>
-                          <th className="py-3 px-4">Fee</th>
+                          <th className="py-3 px-4">Doctor Fee</th>
+                          <th className="py-3 px-4">Hospital Fee</th>
                           <th className="py-3 px-4">Approval Status</th>
                           <th className="py-3 px-4">Active State</th>
                           <th className="py-3 px-4 text-right">Actions</th>
@@ -458,6 +462,9 @@ export default function AdminDoctorsPage() {
                             </td>
                             <td className="py-3 px-4 font-semibold text-foreground">
                               ₹{doc.consultationFee}
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400">
+                              ₹{doc.hospitalCharge ?? 10}
                             </td>
                             <td className="py-3 px-4">{getApprovalBadge(doc)}</td>
                             <td className="py-3 px-4">
@@ -658,8 +665,8 @@ export default function AdminDoctorsPage() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Experience (Years)">
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Experience (Yrs)">
                 <TextInput
                   type="number"
                   value={editForm.experienceYears}
@@ -669,12 +676,22 @@ export default function AdminDoctorsPage() {
                 />
               </Field>
 
-              <Field label="Consultation Fee (₹)">
+              <Field label="Doctor Fee (₹)">
                 <TextInput
                   type="number"
                   value={editForm.consultationFee}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditForm({ ...editForm, consultationFee: Number(e.target.value) })
+                  }
+                />
+              </Field>
+
+              <Field label="Hospital Fee (₹)">
+                <TextInput
+                  type="number"
+                  value={editForm.hospitalCharge}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEditForm({ ...editForm, hospitalCharge: Number(e.target.value) })
                   }
                 />
               </Field>
