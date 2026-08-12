@@ -25,7 +25,7 @@ export const apiClient = createApiClient({
   },
 });
 
-// Attach Authorization Bearer token header interceptor
+// Attach Authorization Bearer token header interceptor & clean params
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token =
@@ -34,6 +34,17 @@ apiClient.interceptors.request.use((config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
+
+  if (config.params && typeof config.params === 'object') {
+    const cleanedParams: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(config.params as Record<string, unknown>)) {
+      if (value !== '' && value !== null && value !== undefined && value !== 'ALL') {
+        cleanedParams[key] = value;
+      }
+    }
+    config.params = cleanedParams;
+  }
+
   return config;
 });
 

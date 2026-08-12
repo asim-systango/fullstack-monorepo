@@ -178,6 +178,8 @@ export default function AdminDoctorsPage() {
 
   const renderActionButtons = (doc: DoctorProfile) => {
     const appStatus = doc.approvalStatus || 'APPROVED';
+    const isDocUpdating =
+      updateMutation.isPending && updateMutation.variables?.id === doc.id;
 
     if (appStatus === 'PENDING') {
       return (
@@ -186,6 +188,10 @@ export default function AdminDoctorsPage() {
             variant="primary"
             size="sm"
             onClick={() => setActionConfirm({ doc, type: 'APPROVE' })}
+            loading={
+              isDocUpdating &&
+              updateMutation.variables?.payload?.approvalStatus === 'APPROVED'
+            }
             className="text-xs h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
           >
             <Check className="w-3.5 h-3.5" /> Approve
@@ -194,6 +200,10 @@ export default function AdminDoctorsPage() {
             variant="danger"
             size="sm"
             onClick={() => setActionConfirm({ doc, type: 'REJECT' })}
+            loading={
+              isDocUpdating &&
+              updateMutation.variables?.payload?.approvalStatus === 'REJECTED'
+            }
             className="text-xs h-7 px-2.5 gap-1"
           >
             <X className="w-3.5 h-3.5" /> Reject
@@ -226,6 +236,9 @@ export default function AdminDoctorsPage() {
             variant="outline"
             size="sm"
             onClick={() => setActionConfirm({ doc, type: 'DEACTIVATE' })}
+            loading={
+              isDocUpdating && updateMutation.variables?.payload?.isActive === false
+            }
             className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10 border-destructive/30 gap-1"
           >
             <Power className="w-3 h-3" /> Deactivate
@@ -235,6 +248,9 @@ export default function AdminDoctorsPage() {
             variant="primary"
             size="sm"
             onClick={() => setActionConfirm({ doc, type: 'ACTIVATE' })}
+            loading={
+              isDocUpdating && updateMutation.variables?.payload?.isActive === true
+            }
             className="text-xs h-7 px-2 gap-1"
           >
             <Power className="w-3 h-3" /> Activate
@@ -601,9 +617,9 @@ export default function AdminDoctorsPage() {
               }
               size="sm"
               onClick={handleExecuteAction}
-              disabled={updateMutation.isPending}
+              loading={updateMutation.isPending}
             >
-              {updateMutation.isPending ? 'Processing...' : 'Confirm Action'}
+              Confirm Action
             </Button>
           </DialogFooter>
         </Modal>
@@ -684,9 +700,9 @@ export default function AdminDoctorsPage() {
               variant="primary"
               size="sm"
               onClick={handleSaveEdit}
-              disabled={updateMutation.isPending}
+              loading={updateMutation.isPending}
             >
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+              Save Changes
             </Button>
           </DialogFooter>
         </Modal>

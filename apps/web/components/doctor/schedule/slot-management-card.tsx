@@ -184,7 +184,9 @@ export function SlotManagementCard({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleToggleBlock(slot)}
-                        loading={updateStatus.isPending}
+                        loading={
+                          updateStatus.isPending && updateStatus.variables?.id === slot.id
+                        }
                         className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
                         title={
                           slot.status === 'AVAILABLE' ? 'Block Slot' : 'Unblock Slot'
@@ -206,7 +208,7 @@ export function SlotManagementCard({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDelete(slot.id)}
-                        loading={deleteSlot.isPending}
+                        loading={deleteSlot.isPending && deleteSlot.variables === slot.id}
                         className="h-7 text-xs px-2 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
                         title="Delete Slot"
                       >

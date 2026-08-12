@@ -1,6 +1,7 @@
 'use client';
 
-import { LogOut } from 'lucide-react';
+import { LogOut, RefreshCw } from 'lucide-react';
+import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { useAuth } from '@/components/auth';
 import {
   Badge,
@@ -18,6 +19,9 @@ import { NotificationDrawer } from '@/components/notification/notification-drawe
  */
 export function Header() {
   const { user, logout, loading } = useAuth();
+  const isFetchingCount = useIsFetching();
+  const isMutatingCount = useIsMutating();
+  const isApiActive = isFetchingCount > 0 || isMutatingCount > 0;
 
   const getInitials = (name?: string, firstName?: string, lastName?: string) => {
     if (firstName && lastName) {
@@ -108,11 +112,22 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card/80 px-6 backdrop-blur-md sticky top-0 z-30 shadow-xs">
-      <div className="flex items-center gap-2 pl-10 md:pl-0">
+    <header className="relative flex h-16 items-center justify-between border-b border-border/80 bg-card/80 px-6 backdrop-blur-md sticky top-0 z-30 shadow-xs">
+      {/* Background API Fetching Progress Bar */}
+      {isApiActive && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary/30 via-primary to-primary/30 animate-pulse z-40" />
+      )}
+
+      <div className="flex items-center gap-3 pl-10 md:pl-0">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           PulseCare Healthcare System
         </span>
+        {isApiActive && (
+          <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium animate-in fade-in duration-150">
+            <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+            <span>Syncing</span>
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

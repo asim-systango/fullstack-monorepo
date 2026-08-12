@@ -10,6 +10,19 @@ import type {
 
 const BASE = '/appointments';
 
+function cleanFilters<T extends Record<string, unknown>>(
+  filters?: T,
+): Partial<T> | undefined {
+  if (!filters) return undefined;
+  const cleaned: Partial<T> = {};
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== '' && value !== null && value !== undefined && value !== 'ALL') {
+      (cleaned as Record<string, unknown>)[key] = value;
+    }
+  }
+  return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+}
+
 export const appointmentApi = {
   /** Fetch all appointments with optional filters. */
   async getAll(filters?: AppointmentFilters): Promise<Appointment[]> {
@@ -19,7 +32,7 @@ export const appointmentApi = {
         | { data: { items: Appointment[] } | Appointment[] }
         | Appointment[]
       >(BASE, {
-        params: filters,
+        params: cleanFilters(filters as Record<string, unknown>),
       });
       const data = response.data;
       if (Array.isArray(data)) return data;
@@ -99,7 +112,9 @@ export const adminAppointmentApi = {
         items: Appointment[];
         meta: { page: number; limit: number; totalItems: number; totalPages: number };
       };
-    }>('/admin/appointments', { params: filters });
+    }>('/admin/appointments', {
+      params: cleanFilters(filters as Record<string, unknown>),
+    });
 
     if (data.data?.items) {
       return data.data;

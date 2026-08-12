@@ -14,6 +14,8 @@ export function useDoctors(filters?: DoctorFilters) {
   return useQuery({
     queryKey: doctorKeys.list(filters),
     queryFn: () => doctorApi.getAll(filters),
+    placeholderData: (previousData) => previousData,
+    staleTime: 20_000,
   });
 }
 
@@ -23,6 +25,7 @@ export function useDoctor(id: string) {
     queryKey: doctorKeys.detail(id),
     queryFn: () => doctorApi.getById(id),
     enabled: Boolean(id),
+    staleTime: 60_000,
   });
 }
 

@@ -23,9 +23,9 @@ export default function DoctorSchedulePage() {
   const doctorId = doctor?.id ?? '';
 
   const { data: slots = [], isLoading: isSlotsLoading } = useSlots(doctorId);
-  const { data: appointments = [], isLoading: isAppointmentsLoading } = useAppointments({
-    doctorId,
-  });
+  const { data: appointments = [], isLoading: isAppointmentsLoading } = useAppointments(
+    doctorId ? { doctorId } : undefined,
+  );
 
   return (
     <RoleRoute roles={['DOCTOR', 'ADMIN']}>

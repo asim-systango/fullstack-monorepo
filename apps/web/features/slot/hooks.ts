@@ -14,6 +14,8 @@ export function useSlots(doctorId: string, status?: SlotStatus) {
     queryKey: slotKeys.byDoctor(doctorId, status),
     queryFn: () => slotApi.getByDoctor(doctorId, status),
     enabled: Boolean(doctorId),
+    placeholderData: (previousData) => previousData,
+    staleTime: 10_000,
   });
 }
 
@@ -23,6 +25,8 @@ export function useAvailableSlots(doctorId: string) {
     queryKey: slotKeys.byDoctor(doctorId, 'AVAILABLE'),
     queryFn: () => slotApi.getAvailableByDoctor(doctorId),
     enabled: Boolean(doctorId),
+    placeholderData: (previousData) => previousData,
+    staleTime: 10_000,
   });
 }
 

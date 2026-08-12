@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -25,16 +25,19 @@ export enum SortOrder {
 export class GetAppointmentsQueryDto {
   @ApiPropertyOptional({ enum: AppointmentStatus })
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === 'ALL' ? undefined : value))
   @IsEnum(AppointmentStatus)
   status?: AppointmentStatus;
 
   @ApiPropertyOptional({ description: 'ISO 8601 start date' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsISO8601()
   dateFrom?: string;
 
   @ApiPropertyOptional({ description: 'ISO 8601 end date' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsISO8601()
   dateTo?: string;
 
@@ -65,21 +68,25 @@ export class GetAppointmentsQueryDto {
 
   @ApiPropertyOptional({ description: 'Doctor UUID filter' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
   doctorId?: string;
 
   @ApiPropertyOptional({ description: 'Patient UUID filter' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsUUID()
   patientId?: string;
 
   @ApiPropertyOptional({ description: 'Hospital-wide search query' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   search?: string;
 
   @ApiPropertyOptional({ description: 'Alias for search query' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   q?: string;
 }

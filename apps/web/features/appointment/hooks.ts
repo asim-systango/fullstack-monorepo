@@ -27,6 +27,8 @@ export function useAppointments(filters?: AppointmentFilters) {
   return useQuery({
     queryKey: appointmentKeys.filtered(filters),
     queryFn: () => appointmentApi.getAll(filters),
+    placeholderData: (previousData) => previousData,
+    staleTime: 15_000,
   });
 }
 
@@ -36,6 +38,7 @@ export function useAppointment(id: string) {
     queryKey: appointmentKeys.detail(id),
     queryFn: () => appointmentApi.getById(id),
     enabled: Boolean(id),
+    staleTime: 30_000,
   });
 }
 
@@ -44,6 +47,8 @@ export function useAdminAppointments(filters?: AppointmentFilters) {
   return useQuery({
     queryKey: appointmentKeys.adminFiltered(filters),
     queryFn: () => adminAppointmentApi.getAdminAppointments(filters),
+    placeholderData: (previousData) => previousData,
+    staleTime: 15_000,
   });
 }
 
