@@ -91,6 +91,14 @@ export class UserRepository {
     return Array.from(emailSet);
   }
 
+  async getKpis(): Promise<{ totalPlatformUsers: number; pendingInvites: number }> {
+    const totalPlatformUsers = await this.userRepo.count();
+    const pendingInvites = await this.userRepo.count({
+      where: { isPasswordChangeRequired: true },
+    });
+    return { totalPlatformUsers, pendingInvites };
+  }
+
   async createAndSave(data: Partial<User>): Promise<User> {
     if (data.email) {
       data.email = data.email.toLowerCase();

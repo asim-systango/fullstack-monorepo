@@ -57,6 +57,14 @@ export class OrganizationRepository {
     return this.orgRepo.find({ order: { createdAt: 'DESC' } });
   }
 
+  async getKpis(): Promise<{ total: number; active: number }> {
+    const total = await this.orgRepo.count();
+    const active = await this.orgRepo.count({
+      where: { status: OrganizationStatus.ACTIVE },
+    });
+    return { total, active };
+  }
+
   async findPaginated(query: {
     search?: string;
     status?: OrganizationStatus;
