@@ -29,6 +29,7 @@ export class UsersService {
     lastName?: string;
     name?: string;
     phone?: string;
+    avatarUrl?: string | null;
     role?: UserRole;
   }) {
     const fullName =
@@ -43,6 +44,7 @@ export class UsersService {
       lastName: input.lastName,
       name: fullName,
       phone: input.phone,
+      avatarUrl: input.avatarUrl ?? null,
       role: input.role ?? Role.PATIENT,
       isActive: true,
       emailVerified: false,

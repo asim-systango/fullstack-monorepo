@@ -22,7 +22,39 @@ export class DoctorService {
     isActive?: boolean;
     search?: string;
   }): Promise<DoctorProfile[]> {
-    return this.doctorRepository.findAll(query);
+    const doctors = await this.doctorRepository.findAll(query);
+    if (doctors.length === 0) return doctors;
+
+    try {
+      const userIds = Array.from(new Set(doctors.map((d) => d.userId).filter(Boolean)));
+      if (userIds.length > 0) {
+        const placeholders = userIds.map((_, i) => `$${i + 1}`).join(',');
+        const userEntities: Array<{ id: string; avatar_url?: string }> =
+          await this.dataSource
+            .query(
+              `SELECT id, avatar_url FROM users WHERE id IN (${placeholders})`,
+              userIds,
+            )
+            .catch(() => []);
+
+        const avatarMap = new Map<string, string | null>();
+        for (const u of userEntities) {
+          if (u.avatar_url) {
+            avatarMap.set(u.id, u.avatar_url);
+          }
+        }
+
+        for (const doc of doctors) {
+          if (!doc.profileImage && avatarMap.has(doc.userId)) {
+            doc.profileImage = avatarMap.get(doc.userId) ?? null;
+          }
+        }
+      }
+    } catch {
+      // Ignore avatar merge errors to keep list endpoint fast & robust
+    }
+
+    return doctors;
   }
 
   async findOne(id: string): Promise<DoctorProfile> {
@@ -30,6 +62,20 @@ export class DoctorService {
     if (!doctor) {
       throw new NotFoundException(`Doctor with ID "${id}" not found`);
     }
+
+    if (!doctor.profileImage && doctor.userId) {
+      try {
+        const userRes: Array<{ avatar_url?: string }> = await this.dataSource
+          .query(`SELECT avatar_url FROM users WHERE id = $1 LIMIT 1`, [doctor.userId])
+          .catch(() => []);
+        if (userRes[0]?.avatar_url) {
+          doctor.profileImage = userRes[0].avatar_url;
+        }
+      } catch {
+        // Ignore fallback query error
+      }
+    }
+
     return doctor;
   }
 

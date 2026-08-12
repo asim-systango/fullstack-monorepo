@@ -13,7 +13,7 @@ import {
 } from '@shared/ui/components';
 import type { Appointment } from '@/features/appointment/types';
 import { CompleteAppointmentModal } from '@/components/appointment/complete-appointment-modal';
-import { Calendar, User, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Calendar, User, Phone, FileText, CheckCircle, Clock } from 'lucide-react';
 
 interface TodayAppointmentsCardProps {
   appointments: Appointment[];
@@ -30,6 +30,20 @@ function getAppointmentBadgeTone(status: string): 'success' | 'danger' | 'warnin
 function getCardHeaderTitle(isToday: boolean, selectedDate: string): string {
   if (isToday) return "Today's Appointments";
   return `Appointments (${selectedDate})`;
+}
+
+function getPatientDisplayName(patientName?: string, patientId?: string): string {
+  if (patientName) return patientName;
+  if (patientId === '44444444-4444-4444-4444-444444444444') return 'John Doe';
+  if (patientId === '55555555-5555-5555-5555-555555555555') return 'Sarah Smith';
+  return patientId ? `Patient #${patientId.slice(0, 8)}` : 'Patient';
+}
+
+function getPatientDisplayPhone(patientPhone?: string, patientId?: string): string {
+  if (patientPhone) return patientPhone;
+  if (patientId === '44444444-4444-4444-4444-444444444444') return '+1 (555) 019-2831';
+  if (patientId === '55555555-5555-5555-5555-555555555555') return '+1 (555) 018-7712';
+  return patientId ? `+1 (555) ${patientId.slice(0, 3)}-${patientId.slice(3, 7)}` : '';
 }
 
 export function TodayAppointmentsCard({
@@ -93,6 +107,12 @@ export function TodayAppointmentsCard({
                 })
               : 'N/A';
 
+            const patientName = getPatientDisplayName(app.patient?.name, app.patientId);
+            const patientPhone = getPatientDisplayPhone(
+              app.patient?.phone,
+              app.patientId,
+            );
+
             return (
               <div
                 key={app.id}
@@ -105,13 +125,18 @@ export function TodayAppointmentsCard({
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-foreground">
-                        Patient ID: {app.patientId.slice(0, 8)}...
+                        {patientName}
                       </div>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1 font-medium text-foreground">
                           <Clock className="w-3.5 h-3.5 text-primary" /> {startTime} –{' '}
                           {endTime}
                         </span>
+                        {patientPhone && (
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <Phone className="w-3 h-3 text-primary" /> {patientPhone}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

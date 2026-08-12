@@ -24,6 +24,8 @@ import { FhirExportModal } from '@/components/export/fhir-export-modal';
 export default function AppointmentsPage() {
   const [paymentBanner, setPaymentBanner] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'ALL' | AppointmentStatus>('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(
     null,
@@ -32,12 +34,18 @@ export default function AppointmentsPage() {
     null,
   );
 
+  const filters = {
+    status: statusFilter === 'ALL' ? undefined : statusFilter,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  };
+
   const {
     data: appointments = [],
     isLoading,
     isError,
     refetch,
-  } = useAppointments(statusFilter === 'ALL' ? undefined : { status: statusFilter });
+  } = useAppointments(filters);
 
   const cancelMutation = useCancelAppointment();
   const bookMutation = useBookAppointment();
@@ -220,28 +228,73 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border mb-6">
-        {tabs.map((tab) => {
-          const isActive = statusFilter === tab.value;
-          return (
-            <Button
-              key={tab.value}
-              variant={isActive ? 'primary' : 'ghost'}
-              size="sm"
-              onClick={() => {
-                setStatusFilter(tab.value);
+      {/* Status & Date Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-border mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {tabs.map((tab) => {
+            const isActive = statusFilter === tab.value;
+            return (
+              <Button
+                key={tab.value}
+                variant={isActive ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setStatusFilter(tab.value);
+                  setCurrentPage(1);
+                }}
+                className={`gap-2 text-xs h-8 px-3 rounded-lg font-medium whitespace-nowrap transition-all ${
+                  isActive ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-foreground">From:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
                 setCurrentPage(1);
               }}
-              className={`gap-2 text-xs h-9 px-4 rounded-lg font-medium whitespace-nowrap transition-all ${
-                isActive ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-foreground">To:</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          {(dateFrom || dateTo) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDateFrom('');
+                setDateTo('');
+                setCurrentPage(1);
+              }}
+              className="text-xs h-7 px-2"
             >
-              {tab.icon}
-              {tab.label}
+              Clear Dates
             </Button>
-          );
-        })}
+          )}
+        </div>
       </div>
 
       {/* Content */}

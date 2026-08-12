@@ -26,6 +26,14 @@ export type MedicalNote = {
   createdAt: string;
 };
 
+export type PatientInfo = {
+  id?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  gender?: string;
+};
+
 export type Appointment = {
   id: string;
   patientId: string;
@@ -38,6 +46,7 @@ export type Appointment = {
   slot?: Slot & { doctor?: DoctorProfile };
   prescription?: Prescription;
   medicalNotes?: MedicalNote[];
+  patient?: PatientInfo;
 };
 
 export type AppointmentFilters = {

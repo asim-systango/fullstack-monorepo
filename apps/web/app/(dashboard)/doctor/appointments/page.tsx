@@ -13,6 +13,8 @@ import { Button, Badge, Page, PageHeader, Pagination } from '@shared/ui/componen
 
 export default function DoctorAppointmentsPage() {
   const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | 'ALL'>('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedApptForCompletion, setSelectedApptForCompletion] =
     useState<Appointment | null>(null);
@@ -25,6 +27,8 @@ export default function DoctorAppointmentsPage() {
 
   const filters = {
     status: selectedStatus === 'ALL' ? undefined : selectedStatus,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   };
 
   const { data: appointments, isLoading, isError, refetch } = useAppointments(filters);
@@ -147,28 +151,73 @@ export default function DoctorAppointmentsPage() {
 
         {/* Filters Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border/80 shadow-xs">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-semibold text-foreground">Filter Status:</span>
-            <div className="flex items-center gap-1.5 ml-2">
-              {(['ALL', 'SCHEDULED', 'COMPLETED', 'CANCELLED'] as const).map((status) => (
-                <Button
-                  key={status}
-                  variant={selectedStatus === status ? 'primary' : 'outline'}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedStatus(status);
-                    setCurrentPage(1);
-                  }}
-                  className="text-xs h-8 px-3"
-                >
-                  {status === 'ALL' && 'All Appointments'}
-                  {status === 'SCHEDULED' && 'Scheduled'}
-                  {status === 'COMPLETED' && 'Completed'}
-                  {status === 'CANCELLED' && 'Cancelled'}
-                </Button>
-              ))}
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="font-semibold text-foreground">Filter Status:</span>
+              <div className="flex items-center gap-1.5 ml-1">
+                {(['ALL', 'SCHEDULED', 'COMPLETED', 'CANCELLED'] as const).map(
+                  (status) => (
+                    <Button
+                      key={status}
+                      variant={selectedStatus === status ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStatus(status);
+                        setCurrentPage(1);
+                      }}
+                      className="text-xs h-8 px-3"
+                    >
+                      {status === 'ALL' && 'All'}
+                      {status === 'SCHEDULED' && 'Scheduled'}
+                      {status === 'COMPLETED' && 'Completed'}
+                      {status === 'CANCELLED' && 'Cancelled'}
+                    </Button>
+                  ),
+                )}
+              </div>
             </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">From:</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">To:</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {(dateFrom || dateTo) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setDateFrom('');
+                  setDateTo('');
+                  setCurrentPage(1);
+                }}
+                className="text-xs h-7 px-2"
+              >
+                Clear Dates
+              </Button>
+            )}
           </div>
 
           <Button

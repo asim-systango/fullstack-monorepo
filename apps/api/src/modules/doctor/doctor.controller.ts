@@ -89,10 +89,10 @@ export class DoctorController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DOCTOR')
   @ApiOperation({ summary: 'Update doctor profile details' })
   @ApiResponse({ status: 200, description: 'Doctor profile updated successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden — Admin role required' })
+  @ApiResponse({ status: 403, description: 'Forbidden — Admin or Doctor role required' })
   @ApiResponse({ status: 404, description: NOT_FOUND_DESC })
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateDoctorDto) {
     return this.doctorService.update(id, dto);

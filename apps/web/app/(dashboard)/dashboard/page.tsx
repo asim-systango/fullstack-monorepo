@@ -104,7 +104,7 @@ function AdminActions() {
           <p className="text-xs text-muted-foreground leading-relaxed mb-4">
             Configure global system parameters, audit logs, and security controls.
           </p>
-          <Link href="/admin">
+          <Link href="/admin/dashboard">
             <Button
               variant="outline"
               size="sm"

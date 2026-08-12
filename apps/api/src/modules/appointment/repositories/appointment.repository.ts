@@ -61,14 +61,19 @@ export class AppointmentRepository {
     }
 
     if (options?.dateFrom) {
-      query.andWhere('slot.startsAt >= :dateFrom', {
-        dateFrom: new Date(options.dateFrom),
+      const fromDate = new Date(options.dateFrom);
+      query.andWhere('(COALESCE(slot.startsAt, appointment.createdAt) >= :dateFrom)', {
+        dateFrom: fromDate,
       });
     }
 
     if (options?.dateTo) {
-      query.andWhere('slot.startsAt <= :dateTo', {
-        dateTo: new Date(options.dateTo),
+      const toDate = new Date(options.dateTo);
+      if (options.dateTo.length <= 10) {
+        toDate.setHours(23, 59, 59, 999);
+      }
+      query.andWhere('(COALESCE(slot.startsAt, appointment.createdAt) <= :dateTo)', {
+        dateTo: toDate,
       });
     }
 

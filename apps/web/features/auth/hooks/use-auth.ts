@@ -16,7 +16,7 @@ export function useLogin() {
       if (role === 'DOCTOR') {
         router.push('/dashboard');
       } else if (role === 'ADMIN') {
-        router.push('/admin');
+        router.push('/admin/dashboard');
       } else {
         router.push('/dashboard');
       }

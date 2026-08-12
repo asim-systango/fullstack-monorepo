@@ -15,7 +15,6 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ExportModule } from './modules/export';
 import { NotificationModule } from './modules/notification';
-import { DbExplorerModule } from './modules/db-explorer/db-explorer.module';
 
 const db = databaseConfig();
 
@@ -39,7 +38,6 @@ const db = databaseConfig();
     UploadModule,
     ExportModule,
     NotificationModule,
-    DbExplorerModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

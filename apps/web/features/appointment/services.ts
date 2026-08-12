@@ -161,6 +161,20 @@ export const appointmentApi = {
       if (filters?.doctorId) {
         filtered = filtered.filter((a) => a.slot?.doctorId === filters.doctorId);
       }
+      if (filters?.dateFrom) {
+        const fromStr = filters.dateFrom.slice(0, 10);
+        filtered = filtered.filter((a) => {
+          const apptDateStr = (a.slot?.startsAt || a.createdAt).slice(0, 10);
+          return apptDateStr >= fromStr;
+        });
+      }
+      if (filters?.dateTo) {
+        const toStr = filters.dateTo.slice(0, 10);
+        filtered = filtered.filter((a) => {
+          const apptDateStr = (a.slot?.startsAt || a.createdAt).slice(0, 10);
+          return apptDateStr <= toStr;
+        });
+      }
       return filtered;
     }
   },

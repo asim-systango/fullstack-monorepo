@@ -13,7 +13,6 @@ import {
   Menu,
   X,
   Users,
-  Database,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth';
 import { Button } from '@shared/ui/components';
@@ -39,11 +38,9 @@ const DOCTOR_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Admin Dashboard', href: '/admin', icon: LayoutDashboard },
+  { label: 'Admin Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Doctor Management', href: '/admin/doctors', icon: Users },
   { label: 'Appointments', href: '/admin/appointments', icon: Calendar },
-  { label: 'Database Explorer', href: '/admin/db-explorer', icon: Database },
-  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 /** Role-based navigation configuration. */
@@ -65,8 +62,10 @@ export function Sidebar() {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const role = user?.role ? String(user.role).toUpperCase() : 'PATIENT';
-  const navItems = NAV_CONFIG[role] ?? NAV_CONFIG[user?.role ?? 'PATIENT'] ?? DEFAULT_NAV;
+  const userRole = user?.role;
+  const role = userRole ? String(userRole).toUpperCase() : 'PATIENT';
+  const navItems =
+    NAV_CONFIG[role] ?? (userRole ? NAV_CONFIG[userRole] : undefined) ?? DEFAULT_NAV;
 
   return (
     <>
@@ -129,6 +128,8 @@ export function Sidebar() {
                 pathname === item.href ||
                 (item.href !== '/' &&
                   item.href !== '/dashboard' &&
+                  item.href !== '/admin' &&
+                  item.href !== '/admin/dashboard' &&
                   pathname.startsWith(`${item.href}`));
               return (
                 <li key={item.href}>

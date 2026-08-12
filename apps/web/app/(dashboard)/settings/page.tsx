@@ -36,7 +36,6 @@ import {
   Stethoscope,
   Heart,
   Save,
-  Server,
   AlertCircle,
   Clock,
   Loader2,
@@ -48,7 +47,7 @@ export default function UserSettingsPage() {
   const role = (user?.role || 'PATIENT').toUpperCase();
 
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'security' | 'professional' | 'health' | 'system'
+    'profile' | 'security' | 'professional' | 'health'
   >('profile');
 
   // General Profile State
@@ -73,6 +72,27 @@ export default function UserSettingsPage() {
       setPhone(user.phone || '');
       if (user.avatarUrl) {
         setProfileImage(user.avatarUrl);
+      }
+
+      if ((user.role || '').toUpperCase() === 'DOCTOR') {
+        apiClient
+          .get('/doctors/me')
+          .then((res) => {
+            const doc = res.data?.data || res.data;
+            if (doc) {
+              if (doc.specialization) setSpecialization(doc.specialization);
+              if (doc.qualification) setQualification(doc.qualification);
+              if (doc.consultationFee !== undefined)
+                setConsultationFee(doc.consultationFee);
+              if (doc.experienceYears !== undefined)
+                setExperienceYears(doc.experienceYears);
+              if (doc.biography) setBiography(doc.biography);
+              if (doc.profileImage) setProfileImage(doc.profileImage);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to load doctor profile in settings:', err);
+          });
       }
     }
   }, [user]);
@@ -205,10 +225,29 @@ export default function UserSettingsPage() {
     setTimeout(() => setSecuritySuccess(false), 3000);
   };
 
-  const handleDoctorSave = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleDoctorSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setDoctorSuccess(true);
-    setTimeout(() => setDoctorSuccess(false), 3000);
+    setDoctorSuccess(false);
+    try {
+      if (role === 'DOCTOR') {
+        const meRes = await apiClient.get('/doctors/me');
+        const doctorMe = meRes.data?.data || meRes.data;
+        if (doctorMe && doctorMe.id) {
+          await apiClient.patch(`/doctors/${doctorMe.id}`, {
+            specialization,
+            qualification,
+            consultationFee: Number(consultationFee),
+            experienceYears: Number(experienceYears),
+            biography,
+            profileImage,
+          });
+        }
+      }
+      setDoctorSuccess(true);
+      setTimeout(() => setDoctorSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to save doctor practice details:', err);
+    }
   };
 
   const handlePatientSave = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -335,15 +374,6 @@ export default function UserSettingsPage() {
                 className={getTabButtonClass('health')}
               >
                 <Heart className="w-4 h-4" /> Emergency Contact & Medical Info
-              </button>
-            )}
-
-            {role === 'ADMIN' && (
-              <button
-                onClick={() => setActiveTab('system')}
-                className={getTabButtonClass('system')}
-              >
-                <Server className="w-4 h-4" /> System Health & Audits
               </button>
             )}
           </div>
@@ -793,51 +823,6 @@ export default function UserSettingsPage() {
                     </Button>
                   </div>
                 </form>
-              </CardBody>
-            </Card>
-          )}
-
-          {/* TAB 5: Admin System Status & Audit */}
-          {activeTab === 'system' && role === 'ADMIN' && (
-            <Card>
-              <CardHeader className="pb-3 border-b border-border/50">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Server className="w-4 h-4 text-primary" />
-                  System Health & Audit Compliance
-                </CardTitle>
-              </CardHeader>
-              <CardBody className="pt-4 space-y-4 text-xs">
-                <div className="p-3.5 rounded-lg bg-muted/20 border border-border/40 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground">
-                      NestJS API Server
-                    </span>
-                    <Badge tone="success" className="text-[10px]">
-                      Operational (200 OK)
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground">
-                      PostgreSQL Database
-                    </span>
-                    <Badge tone="success" className="text-[10px]">
-                      Connected (TypeORM)
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground">
-                      X-Correlation-ID Audit Interceptor
-                    </span>
-                    <Badge tone="accent" className="text-[10px]">
-                      Enabled
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" /> System monitoring and security trace
-                  logs are running active in the background.
-                </div>
               </CardBody>
             </Card>
           )}

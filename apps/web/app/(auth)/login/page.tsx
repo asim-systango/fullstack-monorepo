@@ -33,7 +33,7 @@ export default function LoginPage() {
       if (role === 'DOCTOR') {
         router.replace('/dashboard');
       } else if (role === 'ADMIN') {
-        router.replace('/admin');
+        router.replace('/admin/dashboard');
       } else {
         router.replace('/dashboard');
       }

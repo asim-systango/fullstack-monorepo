@@ -61,6 +61,7 @@ export class AuthService {
         lastName: dto.lastName,
         name: `${dto.firstName} ${dto.lastName}`.trim(),
         phone: dto.phone,
+        avatarUrl: dto.profileImage || null,
         role: requestedRole,
       });
 
@@ -244,6 +245,40 @@ export class AuthService {
     if (!updatedUser) {
       throw new NotFoundException('User not found');
     }
+
+    if (updatedUser.role === Role.DOCTOR && dto.avatarUrl !== undefined) {
+      try {
+        const doctorRes = await fetch(`${this.env.API_UPSTREAM_URL}/doctors/me`, {
+          headers: {
+            'x-user-id': userId,
+            'x-user-role': updatedUser.role,
+            'x-user-email': updatedUser.email,
+          },
+        });
+        if (doctorRes.ok) {
+          const docData = (await doctorRes.json()) as {
+            data?: { id?: string };
+            id?: string;
+          };
+          const doc = docData.data || docData;
+          if (doc && doc.id) {
+            await fetch(`${this.env.API_UPSTREAM_URL}/doctors/${doc.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': userId,
+                'x-user-role': updatedUser.role,
+                'x-user-email': updatedUser.email,
+              },
+              body: JSON.stringify({ profileImage: dto.avatarUrl }),
+            });
+          }
+        }
+      } catch {
+        // Silently ignore upstream doctor profile sync failures
+      }
+    }
+
     return updatedUser;
   }
 
