@@ -13,6 +13,7 @@ import { RoleRepository } from './repositories/role.repository';
 import { OrganizationRepository } from './repositories/organization.repository';
 import { PermissionRepository } from './repositories/permission.repository';
 import { RoutePermissionRepository } from './repositories/route-permission.repository';
+import { FormSubmissionRepository } from './repositories/form-submission.repository';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RoutePermissionRepository } from './repositories/route-permission.repos
     OrganizationRepository,
     PermissionRepository,
     RoutePermissionRepository,
+    FormSubmissionRepository,
   ],
   exports: [
     DatabaseService,
@@ -41,6 +43,7 @@ import { RoutePermissionRepository } from './repositories/route-permission.repos
     OrganizationRepository,
     PermissionRepository,
     RoutePermissionRepository,
+    FormSubmissionRepository,
   ],
 })
 export class DatabaseModule {}

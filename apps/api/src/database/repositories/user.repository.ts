@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { RoleName } from '../entities/role.entity';
 
 @Injectable()
 export class UserRepository {
@@ -57,6 +58,37 @@ export class UserRepository {
       relations: ['role'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findByRoleName(roleName: RoleName): Promise<User[]> {
+    return this.userRepo
+      .createQueryBuilder('u')
+      .innerJoinAndSelect('u.role', 'role')
+      .leftJoinAndSelect('u.organization', 'organization')
+      .where('role.name = :roleName', { roleName })
+      .getMany();
+  }
+
+  async findSuperAdminEmails(): Promise<string[]> {
+    const users = await this.userRepo
+      .createQueryBuilder('u')
+      .innerJoin('u.role', 'role')
+      .where('role.name = :roleName', { roleName: RoleName.SUPER_ADMIN })
+      .getMany();
+
+    const emailSet = new Set<string>();
+
+    for (const u of users) {
+      if (u.email) {
+        emailSet.add(u.email.toLowerCase().trim());
+      }
+    }
+
+    if (process.env.SUPER_ADMIN_EMAIL) {
+      emailSet.add(process.env.SUPER_ADMIN_EMAIL.toLowerCase().trim());
+    }
+
+    return Array.from(emailSet);
   }
 
   async createAndSave(data: Partial<User>): Promise<User> {
