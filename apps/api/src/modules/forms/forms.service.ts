@@ -7,6 +7,7 @@ import {
 } from '../../database/entities/form-submission.entity';
 import { MailService } from '../mail/mail.service';
 import { SubmitOnboardingRequestDto } from './dto/submit-onboarding-request.dto';
+import { GetFormSubmissionsQueryDto } from './dto/get-form-submissions-query.dto';
 import { FORMS_ERRORS } from './constants/forms.constants';
 
 @Injectable()
@@ -110,6 +111,20 @@ export class FormsService {
       message:
         'Your organization onboarding request has been submitted successfully. Our team will review it shortly.',
       submissionId: submission.id,
+    };
+  }
+
+  async findAllSubmissions(query: GetFormSubmissionsQueryDto) {
+    const result = await this.formSubmissionRepo.findPaginated(query);
+
+    return {
+      data: result.data,
+      meta: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      },
     };
   }
 }

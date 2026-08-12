@@ -1,17 +1,24 @@
 import {
   Controller,
   Post,
+  Get,
+  Query,
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { FormsService } from './forms.service';
 import { SubmitOnboardingRequestDto } from './dto/submit-onboarding-request.dto';
+import { GetFormSubmissionsQueryDto } from './dto/get-form-submissions-query.dto';
 import { SubmitOnboardingRequestSwagger } from './decorators/swagger/submit-onboarding-request.decorator';
+import { GetFormSubmissionsSwagger } from './decorators/swagger/get-form-submissions.decorator';
 import { FORMS_ERRORS } from './constants/forms.constants';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoutePermissionGuard } from '../../common/guards/route-permission.guard';
 
 @ApiTags('Public Forms')
 @Controller('api/v1/forms')
@@ -35,6 +42,21 @@ export class FormsController {
           default:
             throw new InternalServerErrorException(error.message);
         }
+      }
+      throw new InternalServerErrorException(FORMS_ERRORS.UNEXPECTED_ERROR);
+    }
+  }
+
+  @Get('submissions')
+  @UseGuards(JwtAuthGuard, RoutePermissionGuard)
+  @HttpCode(HttpStatus.OK)
+  @GetFormSubmissionsSwagger()
+  async findAllSubmissions(@Query() query: GetFormSubmissionsQueryDto) {
+    try {
+      return await this.formsService.findAllSubmissions(query);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(error.message);
       }
       throw new InternalServerErrorException(FORMS_ERRORS.UNEXPECTED_ERROR);
     }

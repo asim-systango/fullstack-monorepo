@@ -6,6 +6,18 @@ import {
   FormSubmissionStatus,
   FormType,
 } from '../entities/form-submission.entity';
+import {
+  GetFormSubmissionsQueryDto,
+  SortOrder,
+} from '../../modules/forms/dto/get-form-submissions-query.dto';
+
+export interface PaginatedFormSubmissionsResult {
+  data: FormSubmission[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class FormSubmissionRepository {
@@ -20,6 +32,55 @@ export class FormSubmissionRepository {
 
   async findById(id: string): Promise<FormSubmission | null> {
     return this.repo.findOne({ where: { id } });
+  }
+
+  async findPaginated(
+    query: GetFormSubmissionsQueryDto,
+  ): Promise<PaginatedFormSubmissionsResult> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      formType,
+      status,
+      sortOrder = SortOrder.DESC,
+    } = query;
+
+    const qb = this.repo.createQueryBuilder('fs');
+
+    if (search && search.trim() !== '') {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(fs.contactName) LIKE :search OR LOWER(fs.email) LIKE :search OR LOWER(fs.companyName) LIKE :search)',
+        { search: searchTerm },
+      );
+    }
+
+    if (formType) {
+      qb.andWhere('fs.formType = :formType', { formType });
+    }
+
+    if (status) {
+      qb.andWhere('fs.status = :status', { status });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await qb
+      .orderBy('fs.createdAt', sortOrder === SortOrder.ASC ? 'ASC' : 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async findPendingByEmailAndCompany(
