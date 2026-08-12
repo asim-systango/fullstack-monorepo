@@ -7,6 +7,7 @@ import type { Appointment, AppointmentStatus } from '@/features/appointment/type
 import { AppointmentCard } from '@/components/appointment/appointment-card';
 import { CompleteAppointmentModal } from '@/components/appointment/complete-appointment-modal';
 import { CancelConfirmationModal } from '@/components/appointment/cancel-confirmation-modal';
+import { FhirExportModal } from '@/components/export/fhir-export-modal';
 import { Calendar, Filter, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { Button, Badge, Page, PageHeader, Pagination } from '@shared/ui/components';
 
@@ -16,6 +17,9 @@ export default function DoctorAppointmentsPage() {
   const [selectedApptForCompletion, setSelectedApptForCompletion] =
     useState<Appointment | null>(null);
   const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(
+    null,
+  );
+  const [exportingAppointmentId, setExportingAppointmentId] = useState<string | null>(
     null,
   );
 
@@ -105,6 +109,7 @@ export default function DoctorAppointmentsPage() {
               appointment={appt}
               onComplete={handleCompleteClick}
               onCancel={handleCancelClick}
+              onExportFhir={(id) => setExportingAppointmentId(id)}
               isCancelling={
                 cancelMutation.isPending && cancellingAppointmentId === appt.id
               }
@@ -192,6 +197,13 @@ export default function DoctorAppointmentsPage() {
           onClose={() => setCancellingAppointmentId(null)}
           onConfirm={handleConfirmCancel}
           isLoading={cancelMutation.isPending}
+        />
+
+        {/* Prescription & Interoperability Export Modal */}
+        <FhirExportModal
+          open={Boolean(exportingAppointmentId)}
+          onOpenChange={(open) => !open && setExportingAppointmentId(null)}
+          appointmentId={exportingAppointmentId || ''}
         />
       </Page>
     </RoleRoute>

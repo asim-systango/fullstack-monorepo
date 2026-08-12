@@ -14,7 +14,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { FileCode, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export interface AppointmentCardProps {
   appointment: Appointment;
@@ -171,9 +171,9 @@ export function AppointmentCard({
               variant="outline"
               size="sm"
               onClick={() => onExportFhir(appointment.id)}
-              className="text-xs gap-1"
+              className="text-xs gap-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
             >
-              <FileCode className="w-3.5 h-3.5 text-primary" /> Export Record
+              <FileText className="w-3.5 h-3.5 text-emerald-600" /> Prescription PDF
             </Button>
           )}
           {onSubmitInsurance && appointment.status === 'COMPLETED' && (
