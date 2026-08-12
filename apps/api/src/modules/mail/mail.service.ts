@@ -30,6 +30,14 @@ export interface SendNewOnboardingRequestParams {
   dashboardUrl?: string;
 }
 
+export interface SendFormStatusUpdatedParams {
+  toEmail: string;
+  contactName: string;
+  companyName: string;
+  status: string;
+  reviewNotes?: string;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -193,6 +201,45 @@ export class MailService {
     } else {
       this.logger.log(
         `[EMAIL SIMULATION] To: ${toEmail} | New Onboarding Request for: ${companyName} (${email})`,
+      );
+    }
+  }
+
+  async sendFormStatusUpdatedMail(params: SendFormStatusUpdatedParams): Promise<void> {
+    const { toEmail, contactName, companyName, status, reviewNotes } = params;
+
+    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const subject = `[Status Update] Your Onboarding Request for ${companyName} is ${status}`;
+
+    const html = this.renderTemplate('form-status-updated', {
+      contactName,
+      companyName,
+      status,
+      reviewNotes,
+      isInReview: status === 'IN_REVIEW',
+      isApproved: status === 'APPROVED',
+      isRejected: status === 'REJECTED',
+    });
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from,
+          to: toEmail,
+          subject,
+          html,
+        });
+        this.logger.log(
+          `Form status update email (${status}) sent to submitter: ${toEmail}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to send form status update email to ${toEmail}: ${(error as Error).message}`,
+        );
+      }
+    } else {
+      this.logger.log(
+        `[EMAIL SIMULATION] To: ${toEmail} | Status updated to ${status} for company ${companyName}`,
       );
     }
   }
