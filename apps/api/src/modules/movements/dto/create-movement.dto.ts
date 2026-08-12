@@ -11,8 +11,8 @@ import { MovementType } from '../../../database/entities/StockMovementEntity';
 
 export class CreateMovementDto {
   @IsUUID()
-  @IsNotEmpty()
-  warehouseId!: string;
+  @IsOptional()
+  warehouseId?: string;
 
   @IsUUID()
   @IsOptional()

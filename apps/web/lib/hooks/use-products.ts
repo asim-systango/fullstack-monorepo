@@ -75,7 +75,19 @@ export async function fetchProducts(params?: ProductQueryParams): Promise<Produc
   const response = await apiClient.get<{ data: Product[] }>(
     `/products?${searchParams.toString()}`,
   );
-  let products = response.data.data;
+  let products = response.data.data.map((p) => {
+    const computedTotal =
+      p.totalStock ??
+      p.totalQuantity ??
+      (p.stockLevels
+        ? p.stockLevels.reduce((sum, sl) => sum + (sl.quantity || 0), 0)
+        : 0);
+    return {
+      ...p,
+      totalStock: computedTotal,
+      totalQuantity: computedTotal,
+    };
+  });
 
   if (params?.search) {
     const query = params.search.toLowerCase().trim();

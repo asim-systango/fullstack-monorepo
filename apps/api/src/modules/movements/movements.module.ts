@@ -10,6 +10,7 @@ import { WarehouseRepository } from '../../database/repositories/WarehouseReposi
 import { ProductRepository } from '../../database/repositories/ProductRepository';
 import { MovementsService } from './movements.service';
 import { MovementsController } from './movements.controller';
+import { TransfersController } from './transfers.controller';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { MovementsController } from './movements.controller';
       ProductEntity,
     ]),
   ],
-  controllers: [MovementsController],
+  controllers: [MovementsController, TransfersController],
   providers: [
     MovementsService,
     StockMovementRepository,

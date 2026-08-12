@@ -3,11 +3,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 
-export type MovementType = 'inbound' | 'outbound' | 'adjustment';
+export type MovementType = 'inbound' | 'outbound' | 'adjustment' | 'transfer';
 
 export type StockMovement = {
   id: string;
   warehouseId: string;
+  sourceWarehouseId?: string;
   productId: string;
   type: MovementType;
   quantity: number;
@@ -15,6 +16,11 @@ export type StockMovement = {
   userId?: string;
   createdAt: string;
   warehouse?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  sourceWarehouse?: {
     id: string;
     code: string;
     name: string;
@@ -42,7 +48,7 @@ export type MovementQueryParams = {
 };
 
 export type RecordMovementInput = {
-  warehouseId: string;
+  warehouseId?: string;
   productId: string;
   type: MovementType;
   quantity: number;
