@@ -30,7 +30,11 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: (payload: RegisterPayload) => registerApi(payload),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      if (variables.role?.toUpperCase() === 'DOCTOR' || data.requiresApproval) {
+        // Doctor accounts require admin approval before login; do not set auth or redirect
+        return;
+      }
       setAuth(data);
       router.push('/dashboard');
     },

@@ -33,6 +33,8 @@ export class DoctorController {
   @ApiOperation({ summary: 'Get all doctors (with optional filters)' })
   @ApiQuery({ name: 'specialization', required: false })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'approvalStatus', required: false })
+  @ApiQuery({ name: 'isActive', required: false })
   @ApiResponse({
     status: 200,
     description: 'List of doctor profiles returned successfully',
@@ -40,8 +42,16 @@ export class DoctorController {
   async findAll(
     @Query('specialization') specialization?: string,
     @Query('search') search?: string,
+    @Query('approvalStatus') approvalStatus?: string,
+    @Query('isActive') isActiveStr?: string,
   ) {
-    return this.doctorService.findAll({ specialization, search, isActive: true });
+    const isActive = isActiveStr !== undefined ? isActiveStr === 'true' : undefined;
+    return this.doctorService.findAll({
+      specialization,
+      search,
+      approvalStatus,
+      isActive,
+    });
   }
 
   @Get('me')

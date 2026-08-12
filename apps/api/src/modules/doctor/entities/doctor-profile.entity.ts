@@ -47,6 +47,9 @@ export class DoctorProfile extends BaseEntity {
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ type: 'varchar', length: 20, default: 'APPROVED' })
+  approvalStatus!: 'PENDING' | 'APPROVED' | 'REJECTED';
+
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
 

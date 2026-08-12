@@ -93,10 +93,10 @@ async function seed() {
   const h1 = await hospitalRepo.save(
     hospitalRepo.create({
       id: '11111111-0000-0000-0000-000000000001',
-      code: 'HOSP-CGH-001',
-      name: 'City General Medical Center',
+      code: 'HOSP-PULSE-001',
+      name: 'PulseCare Medical Center',
       licenseNumber: 'LIC-MED-2026-9981',
-      contactEmail: 'admin@citygeneral.health',
+      contactEmail: 'admin@pulsecare.com',
       contactPhone: '+1 (555) 234-5678',
       address: {
         street: '100 Healthcare Ave',
@@ -180,7 +180,7 @@ async function seed() {
     }),
   );
 
-  const dOrtho = await deptRepo.save(
+  await deptRepo.save(
     deptRepo.create({
       id: '30000000-0000-0000-0000-000000000003',
       hospitalId: h1.id,
@@ -198,8 +198,8 @@ async function seed() {
       userId: '11111111-1111-1111-1111-111111111111',
       hospitalId: h1.id,
       medicalLicense: 'MED-NY-448102',
-      firstName: 'Rajesh',
-      lastName: 'Sharma',
+      firstName: 'Sarah',
+      lastName: 'Jenkins',
       specialization: 'Cardiology',
       qualification: 'MD, FACC (Cardiology)',
       experienceYears: 14,
@@ -218,8 +218,8 @@ async function seed() {
       userId: '22222222-2222-2222-2222-222222222222',
       hospitalId: h1.id,
       medicalLicense: 'MED-NY-889104',
-      firstName: 'Priya',
-      lastName: 'Deshmukh',
+      firstName: 'Michael',
+      lastName: 'Chen',
       specialization: 'Dermatology',
       qualification: 'MD, DNB (Dermatology)',
       experienceYears: 9,
@@ -232,30 +232,9 @@ async function seed() {
     }),
   );
 
-  const doc3 = await doctorRepo.save(
-    doctorRepo.create({
-      id: 'd3333333-3333-3333-3333-333333333333',
-      userId: '33333333-3333-3333-3333-333333333333',
-      hospitalId: h1.id,
-      medicalLicense: 'MED-NY-112948',
-      firstName: 'Arjun',
-      lastName: 'Mehta',
-      specialization: 'Orthopedics',
-      qualification: 'MS (Orthopedics), MCh',
-      experienceYears: 12,
-      consultationFee: 800.0,
-      biography:
-        'Orthopedic Surgeon specializing in joint replacement, sports injury rehabilitation, and arthroscopic procedures.',
-      profileImage:
-        'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=400&q=80',
-      isActive: true,
-    }),
-  );
-
   await docDeptRepo.save([
     docDeptRepo.create({ doctorId: doc1.id, departmentId: dCardio.id, isPrimary: true }),
     docDeptRepo.create({ doctorId: doc2.id, departmentId: dDermat.id, isPrimary: true }),
-    docDeptRepo.create({ doctorId: doc3.id, departmentId: dOrtho.id, isPrimary: true }),
   ]);
 
   // 4. Seed Patients & Roles
@@ -310,8 +289,18 @@ async function seed() {
   await roleRepo.save([
     roleRepo.create({
       userId: '00000000-0000-0000-0000-000000000000',
-      hospitalId: null,
-      role: 'SUPER_ADMIN',
+      hospitalId: h1.id,
+      role: 'ADMIN',
+    }),
+    roleRepo.create({
+      userId: '00000000-0000-0000-0000-000000000001',
+      hospitalId: h1.id,
+      role: 'ADMIN',
+    }),
+    roleRepo.create({
+      userId: '00000000-0000-0000-0000-000000000002',
+      hospitalId: h1.id,
+      role: 'ADMIN',
     }),
     roleRepo.create({ userId: doc1.userId, hospitalId: h1.id, role: 'DOCTOR' }),
     roleRepo.create({ userId: doc2.userId, hospitalId: h1.id, role: 'DOCTOR' }),
@@ -448,44 +437,20 @@ async function seed() {
     },
     {
       id: '30000000-0000-0000-0000-000000000001',
-      doctorId: doc3.id,
-      offsetHours: 0,
+      doctorId: doc1.id,
+      offsetHours: 6,
       status: SlotStatus.BOOKED,
     },
     {
       id: '30000000-0000-0000-0000-000000000002',
-      doctorId: doc3.id,
-      offsetHours: 1,
+      doctorId: doc1.id,
+      offsetHours: 7,
       status: SlotStatus.BOOKED,
     },
     {
       id: '30000000-0000-0000-0000-000000000003',
-      doctorId: doc3.id,
-      offsetHours: 2,
-      status: SlotStatus.AVAILABLE,
-    },
-    {
-      id: '30000000-0000-0000-0000-000000000004',
-      doctorId: doc3.id,
-      offsetHours: 3,
-      status: SlotStatus.AVAILABLE,
-    },
-    {
-      id: '30000000-0000-0000-0000-000000000005',
-      doctorId: doc3.id,
-      offsetHours: 4,
-      status: SlotStatus.BLOCKED,
-    },
-    {
-      id: '30000000-0000-0000-0000-000000000006',
-      doctorId: doc3.id,
-      offsetHours: 5,
-      status: SlotStatus.AVAILABLE,
-    },
-    {
-      id: '30000000-0000-0000-0000-000000000007',
-      doctorId: doc3.id,
-      offsetHours: 6,
+      doctorId: doc1.id,
+      offsetHours: 8,
       status: SlotStatus.AVAILABLE,
     },
   ];

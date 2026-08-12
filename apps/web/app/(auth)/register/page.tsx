@@ -14,6 +14,11 @@ import {
   LoadingState,
   Card,
   Badge,
+  Modal,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+  DialogFooter,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
@@ -40,6 +45,7 @@ export default function RegisterPage() {
 
   const [role, setRole] = useState<'PATIENT' | 'DOCTOR'>('PATIENT');
   const [step, setStep] = useState<1 | 2>(1);
+  const [showPendingModal, setShowPendingModal] = useState(false);
 
   // Account details
   const [firstName, setFirstName] = useState('');
@@ -130,6 +136,9 @@ export default function RegisterPage() {
       const apiPayload = { ...payload };
       delete (apiPayload as Record<string, unknown>).confirmPassword;
       await registerMutation.mutateAsync(apiPayload);
+      if (role === 'DOCTOR') {
+        setShowPendingModal(true);
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Registration failed');
     }
@@ -169,7 +178,7 @@ export default function RegisterPage() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🧑‍⚕️ Register as Patient
+              🧑‍⚕️ Register
             </button>
             <button
               type="button"
@@ -441,6 +450,51 @@ export default function RegisterPage() {
           </Card>
         </div>
       </main>
+
+      {/* Doctor Registration Pending Modal */}
+      <Modal
+        open={showPendingModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowPendingModal(false);
+            router.push('/login');
+          }
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            ⏳ Doctor Approval Request Sent
+          </DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-3 text-xs text-muted-foreground">
+          <p className="text-foreground font-medium">
+            Thank you for registering your medical profile, Dr. {firstName} {lastName}.
+          </p>
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-800 dark:text-amber-300 space-y-1">
+            <p className="font-semibold text-xs">Approval Pending Verification</p>
+            <p>
+              Your account details and credentials have been submitted to hospital
+              administration for verification.
+            </p>
+          </div>
+          <p>
+            Once an administrator reviews and approves your account status, you will be
+            able to log in to the Doctor Portal and manage consultation slots.
+          </p>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setShowPendingModal(false);
+              router.push('/login');
+            }}
+          >
+            Go to Login
+          </Button>
+        </DialogFooter>
+      </Modal>
     </div>
   );
 }

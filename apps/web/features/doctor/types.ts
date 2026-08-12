@@ -11,6 +11,7 @@ export type DoctorProfile = {
   biography: string | null;
   profileImage: string | null;
   isActive: boolean;
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -20,4 +21,6 @@ export type DoctorProfile = {
 export type DoctorFilters = {
   specialization?: string;
   search?: string;
+  approvalStatus?: string;
+  isActive?: boolean;
 };

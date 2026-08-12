@@ -17,11 +17,69 @@ export class DoctorService {
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
+  async syncUsersToDoctorProfiles(): Promise<void> {
+    try {
+      const doctorUsers: Array<{
+        id: string;
+        email: string;
+        name?: string;
+        first_name?: string;
+        last_name?: string;
+        avatar_url?: string;
+      }> = await this.dataSource
+        .query(
+          `SELECT id, email, name, first_name, last_name, avatar_url FROM users WHERE UPPER(role) = 'DOCTOR'`,
+        )
+        .catch(() => []);
+
+      for (const u of doctorUsers) {
+        const existing = await this.doctorRepository.findByUserId(u.id);
+        const firstName =
+          u.first_name ||
+          (u.name ? u.name.replace(/^Dr\.\s*/i, '').split(' ')[0] : 'Doctor') ||
+          'Doctor';
+        const lastName =
+          u.last_name ||
+          (u.name
+            ? u.name
+                .replace(/^Dr\.\s*/i, '')
+                .split(' ')
+                .slice(1)
+                .join(' ')
+            : '') ||
+          '';
+
+        if (!existing) {
+          await this.doctorRepository.create({
+            userId: u.id,
+            firstName,
+            lastName,
+            specialization: 'General Medicine',
+            qualification: 'MBBS',
+            experienceYears: 5,
+            consultationFee: 100,
+            profileImage: u.avatar_url || null,
+            approvalStatus: 'PENDING',
+          });
+        } else if (existing.firstName !== firstName || existing.lastName !== lastName) {
+          await this.doctorRepository.update(existing.id, {
+            firstName,
+            lastName,
+          });
+        }
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to auto-sync doctor profiles: ${(err as Error).message}`);
+    }
+  }
+
   async findAll(query?: {
     specialization?: string;
     isActive?: boolean;
+    approvalStatus?: string;
     search?: string;
   }): Promise<DoctorProfile[]> {
+    await this.syncUsersToDoctorProfiles();
     const doctors = await this.doctorRepository.findAll(query);
     if (doctors.length === 0) return doctors;
 

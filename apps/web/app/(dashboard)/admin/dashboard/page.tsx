@@ -171,16 +171,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-between">
-                <Link href="/register?role=doctor">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs px-2 h-8 text-muted-foreground hover:text-foreground"
-                  >
-                    + Add Doctor
-                  </Button>
-                </Link>
+              <div className="pt-2 flex items-center justify-end">
                 <Link href="/admin/doctors">
                   <Button variant="outline" size="sm" className="text-xs h-8 gap-1">
                     Manage Staff <ArrowRight className="w-3 h-3" />

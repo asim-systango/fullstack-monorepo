@@ -65,16 +65,17 @@ export class AuthService {
         role: requestedRole,
       });
 
-      const tokens = await this.generateTokens(user.id, user.email, user.role);
-      await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
-
       if (user.role === Role.DOCTOR) {
         try {
+          const tempToken = await this.jwtService.signAsync(
+            { sub: user.id, email: user.email, role: user.role },
+            { expiresIn: '5m', secret: this.env.JWT_SECRET },
+          );
           await fetch(`${this.env.API_UPSTREAM_URL}/doctors`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${tokens.accessToken}`,
+              Authorization: `Bearer ${tempToken}`,
             },
             body: JSON.stringify({
               userId: user.id,
@@ -86,12 +87,23 @@ export class AuthService {
               consultationFee: Number(dto.consultationFee ?? 0),
               biography: dto.biography || null,
               profileImage: dto.profileImage || null,
+              approvalStatus: 'PENDING',
             }),
           });
         } catch {
           // Log or silently ignore upstream profile sync error so user registration completes
         }
+
+        return {
+          requiresApproval: true,
+          message:
+            'Your doctor registration has been submitted and is pending admin approval.',
+          user: this.usersService.toPublic(user),
+        };
       }
+
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
 
       return {
         accessToken: tokens.accessToken,
@@ -122,6 +134,54 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new ForbiddenException('User account is deactivated');
+    }
+
+    if (user.role === Role.DOCTOR) {
+      try {
+        const tempToken = await this.jwtService.signAsync(
+          { sub: user.id, email: user.email, role: user.role },
+          { expiresIn: '5m', secret: this.env.JWT_SECRET },
+        );
+        let doc: { approvalStatus?: string } | null = null;
+        const doctorRes = await fetch(`${this.env.API_UPSTREAM_URL}/doctors/me`, {
+          headers: {
+            Authorization: `Bearer ${tempToken}`,
+          },
+        });
+        if (doctorRes.ok) {
+          const docData = (await doctorRes.json()) as {
+            data?: { approvalStatus?: string };
+            approvalStatus?: string;
+          };
+          doc = docData.data || docData;
+        } else {
+          const allDocsRes = await fetch(
+            `${this.env.API_UPSTREAM_URL}/doctors?approvalStatus=ALL`,
+          );
+          if (allDocsRes.ok) {
+            const allDocs = (await allDocsRes.json()) as
+              | Array<{ userId?: string; approvalStatus?: string }>
+              | { data?: Array<{ userId?: string; approvalStatus?: string }> };
+            const docList = Array.isArray(allDocs) ? allDocs : allDocs.data || [];
+            doc = docList.find((d) => d.userId === user.id) || null;
+          }
+        }
+
+        if (doc) {
+          if (doc.approvalStatus === 'PENDING') {
+            throw new ForbiddenException(
+              'Your doctor registration has been sent to admin for approval. Please wait until admin approves your account.',
+            );
+          }
+          if (doc.approvalStatus === 'REJECTED') {
+            throw new ForbiddenException(
+              'Your doctor registration request has been rejected by administration.',
+            );
+          }
+        }
+      } catch (err) {
+        if (err instanceof ForbiddenException) throw err;
+      }
     }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);

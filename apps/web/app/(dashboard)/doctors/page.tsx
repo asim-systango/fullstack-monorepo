@@ -40,6 +40,7 @@ export default function DoctorsPage() {
   } = useDoctors({
     specialization: specialization === 'ALL' ? undefined : specialization,
     search: search || undefined,
+    approvalStatus: 'APPROVED',
   });
 
   const handleReset = () => {

@@ -7,31 +7,9 @@ import { StepSlotSelect } from './step-slot-select';
 import { StepConfirm } from './step-confirm';
 import type { DoctorInfo } from '../../doctors';
 import { useBookAppointment } from '@/features/appointment/hooks';
-import { useState } from 'react';
+import { useDoctors } from '@/features/doctor/hooks';
+import { useState, useMemo } from 'react';
 import { CheckCircle } from 'lucide-react';
-
-const MOCK_DOCTORS: DoctorInfo[] = [
-  {
-    id: 'doc-1',
-    name: 'Dr. Sarah Jenkins',
-    specialty: 'Cardiology',
-    rating: 4.9,
-    experienceYears: 12,
-    location: 'Building A, Suite 302',
-    consultationFee: 150,
-    availableDays: ['Mon', 'Wed', 'Fri'],
-  },
-  {
-    id: 'doc-2',
-    name: 'Dr. Michael Chen',
-    specialty: 'Neurology',
-    rating: 4.8,
-    experienceYears: 9,
-    location: 'Building B, Suite 105',
-    consultationFee: 180,
-    availableDays: ['Tue', 'Thu'],
-  },
-];
 
 export function BookingWizardModal() {
   const isOpen = useUiStore((state) => state.isBookingModalOpen);
@@ -44,6 +22,21 @@ export function BookingWizardModal() {
   const setLockId = useAppointmentStore((state) => state.setLockId);
   const setNotes = useAppointmentStore((state) => state.setNotes);
   const resetBooking = useAppointmentStore((state) => state.resetBooking);
+
+  const { data: doctorProfiles = [] } = useDoctors();
+
+  const formattedDoctors: DoctorInfo[] = useMemo(() => {
+    return doctorProfiles.map((doc) => ({
+      id: doc.id,
+      name: `Dr. ${doc.firstName} ${doc.lastName}`.trim(),
+      specialty: doc.specialization,
+      rating: 4.9,
+      experienceYears: doc.experienceYears ?? 5,
+      location: 'Main Medical Center',
+      consultationFee: Number(doc.consultationFee ?? 100),
+      availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    }));
+  }, [doctorProfiles]);
 
   const bookMutation = useBookAppointment();
   const [isSuccess, setIsSuccess] = useState(false);
@@ -107,7 +100,7 @@ export function BookingWizardModal() {
           <div className="py-2">
             {booking.step === 1 && (
               <StepDoctorSelect
-                doctors={MOCK_DOCTORS}
+                doctors={formattedDoctors}
                 selectedDoctorId={booking.selectedDoctorId}
                 onSelect={handleSelectDoctor}
               />

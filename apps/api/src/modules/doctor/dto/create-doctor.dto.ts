@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsPositive,
   IsUUID,
+  IsBoolean,
 } from 'class-validator';
 
 /** DTO for creating a new doctor profile. */
@@ -68,4 +69,14 @@ export class CreateDoctorDto {
   @IsOptional()
   @MaxLength(255)
   profileImage?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ example: 'PENDING' })
+  @IsString()
+  @IsOptional()
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
 }

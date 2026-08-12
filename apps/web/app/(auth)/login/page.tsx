@@ -108,7 +108,7 @@ export default function LoginPage() {
                 size="xs"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => fillDemoUser('admin@hospital.com', 'Admin@123')}
+                onClick={() => fillDemoUser('admin@pulsecare.com', 'Test@123')}
               >
                 <Settings className="size-3.5" /> Admin
               </Button>
@@ -175,7 +175,7 @@ export default function LoginPage() {
                 href="/register"
                 className="font-semibold text-primary hover:underline"
               >
-                Register as Patient
+                Register
               </Link>
             </p>
           </Card>

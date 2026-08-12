@@ -1,93 +1,17 @@
 import { apiClient } from '@/lib/api';
 import type { Slot, SlotStatus, CreateSlotInput, BulkCreateSlotInput } from './types';
 
-const MOCK_DOCTOR_ID = 'd1111111-1111-1111-1111-111111111111';
-
-export const MOCK_SLOTS: Slot[] = [
-  {
-    id: 's1111111-1111-1111-1111-111111111111',
-    doctorId: MOCK_DOCTOR_ID,
-    startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
-    endsAt: new Date(Date.now() + 2.5 * 3600 * 1000).toISOString(),
-    status: 'BOOKED',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 's1111111-1111-1111-1111-111111111112',
-    doctorId: MOCK_DOCTOR_ID,
-    startsAt: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
-    endsAt: new Date(Date.now() + 3.5 * 3600 * 1000).toISOString(),
-    status: 'AVAILABLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 's1111111-1111-1111-1111-111111111113',
-    doctorId: MOCK_DOCTOR_ID,
-    startsAt: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
-    endsAt: new Date(Date.now() + 4.5 * 3600 * 1000).toISOString(),
-    status: 'AVAILABLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 's1111111-1111-1111-1111-111111111114',
-    doctorId: MOCK_DOCTOR_ID,
-    startsAt: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
-    endsAt: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString(),
-    status: 'BLOCKED',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 export const slotApi = {
   /** Fetch slots for a doctor with optional status filter. */
   async getByDoctor(doctorId: string, status?: SlotStatus): Promise<Slot[]> {
     try {
-      const { data } = await apiClient.get<{ data: Slot[] }>('/slots', {
+      const { data } = await apiClient.get<Slot[] | { data: Slot[] }>('/slots', {
         params: { doctorId, status },
       });
-      return data.data ?? data;
-    } catch {
-      let filtered = MOCK_SLOTS.filter((s) => s.doctorId === doctorId);
-      if (filtered.length === 0) {
-        // Generate default mock slots for any doctor ID
-        filtered = [
-          {
-            id: `mock-slot-1-${doctorId.slice(0, 4)}`,
-            doctorId,
-            startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
-            endsAt: new Date(Date.now() + 2.5 * 3600 * 1000).toISOString(),
-            status: 'AVAILABLE',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: `mock-slot-2-${doctorId.slice(0, 4)}`,
-            doctorId,
-            startsAt: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
-            endsAt: new Date(Date.now() + 3.5 * 3600 * 1000).toISOString(),
-            status: 'AVAILABLE',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: `mock-slot-3-${doctorId.slice(0, 4)}`,
-            doctorId,
-            startsAt: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
-            endsAt: new Date(Date.now() + 4.5 * 3600 * 1000).toISOString(),
-            status: 'BOOKED',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ];
-      }
-      if (status) {
-        filtered = filtered.filter((s) => s.status === status);
-      }
-      return filtered;
+      return Array.isArray(data) ? data : (data?.data ?? []);
+    } catch (err) {
+      console.error('Failed to fetch slots:', err);
+      return [];
     }
   },
 
@@ -98,39 +22,31 @@ export const slotApi = {
 
   /** Create a single consultation slot. */
   async create(payload: CreateSlotInput): Promise<Slot> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      payload.doctorId,
-    );
-    const cleanPayload = {
-      ...payload,
-      doctorId: isUuid ? payload.doctorId : MOCK_DOCTOR_ID,
-    };
-    const { data } = await apiClient.post<{ data: Slot }>('/slots', cleanPayload);
-    return data.data ?? data;
+    const { data } = await apiClient.post<Slot | { data: Slot }>('/slots', payload);
+    return 'data' in data && data.data ? data.data : (data as Slot);
   },
 
   /** Bulk generate consultation slots for a doctor. */
   async createBulk(payload: BulkCreateSlotInput): Promise<Slot[]> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      payload.doctorId,
-    );
-    const cleanPayload: Record<string, unknown> = {
-      ...payload,
-      doctorId: isUuid ? payload.doctorId : MOCK_DOCTOR_ID,
-    };
+    const cleanPayload: Record<string, unknown> = { ...payload };
     Object.keys(cleanPayload).forEach((key) => {
       if (cleanPayload[key] === '' || cleanPayload[key] === undefined) {
         delete cleanPayload[key];
       }
     });
-    const { data } = await apiClient.post<{ data: Slot[] }>('/slots/bulk', cleanPayload);
-    return data.data ?? data;
+    const { data } = await apiClient.post<Slot[] | { data: Slot[] }>(
+      '/slots/bulk',
+      cleanPayload,
+    );
+    return Array.isArray(data) ? data : (data?.data ?? []);
   },
 
   /** Update slot status (e.g. Block / Unblock). */
   async updateStatus(id: string, status: SlotStatus): Promise<Slot> {
-    const { data } = await apiClient.patch<{ data: Slot }>(`/slots/${id}`, { status });
-    return data.data ?? data;
+    const { data } = await apiClient.patch<Slot | { data: Slot }>(`/slots/${id}`, {
+      status,
+    });
+    return 'data' in data && data.data ? data.data : (data as Slot);
   },
 
   /** Delete an unbooked consultation slot. */

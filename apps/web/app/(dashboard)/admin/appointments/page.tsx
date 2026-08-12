@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { RoleRoute } from '@/components/auth';
-import { useAppointments } from '@/features/appointment/hooks';
+import { useAdminAppointments } from '@/features/appointment/hooks';
 import type { Appointment, AppointmentStatus } from '@/features/appointment/types';
 import { useDoctors } from '@/features/doctor/hooks';
 import {
@@ -37,7 +37,13 @@ export default function AdminAppointmentsPage() {
     dateTo: dateTo || undefined,
   };
 
-  const { data: appointments, isLoading, isError, refetch } = useAppointments(filters);
+  const {
+    data: adminAppointmentsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useAdminAppointments(filters);
+  const appointments = adminAppointmentsData?.items;
 
   const handleSearchSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { RoleRoute } from '@/components/auth';
-import { useDoctors, useUpdateDoctor, useDeleteDoctor } from '@/features/doctor/hooks';
+import { useDoctors, useUpdateDoctor } from '@/features/doctor/hooks';
 import type { DoctorProfile } from '@/features/doctor/types';
 import {
   Page,
@@ -24,9 +23,7 @@ import {
 import {
   Search,
   Filter,
-  UserPlus,
   Edit,
-  Power,
   RefreshCw,
   Award,
   Stethoscope,
@@ -35,12 +32,22 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Check,
+  X,
+  LayoutGrid,
+  List,
+  AlertCircle,
+  Power,
 } from 'lucide-react';
 
 export default function AdminDoctorsPage() {
   const [search, setSearch] = useState('');
+  const [approvalFilter, setApprovalFilter] = useState<
+    'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'
+  >('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [specFilter, setSpecFilter] = useState<string>('ALL');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Edit Doctor Modal state
@@ -53,9 +60,14 @@ export default function AdminDoctorsPage() {
     biography: '',
   });
 
+  // Action Confirmation state (Approve, Reject, Deactivate)
+  const [actionConfirm, setActionConfirm] = useState<{
+    doc: DoctorProfile;
+    type: 'APPROVE' | 'REJECT' | 'DEACTIVATE' | 'ACTIVATE';
+  } | null>(null);
+
   const { data: doctors = [], isLoading, isError, refetch } = useDoctors();
   const updateMutation = useUpdateDoctor();
-  const deleteMutation = useDeleteDoctor();
 
   const handleEditClick = (doc: DoctorProfile) => {
     setEditingDoctor(doc);
@@ -89,37 +101,37 @@ export default function AdminDoctorsPage() {
     );
   };
 
-  const [statusConfirmDoctor, setStatusConfirmDoctor] = useState<DoctorProfile | null>(
-    null,
-  );
+  const handleExecuteAction = () => {
+    if (!actionConfirm) return;
+    const { doc, type } = actionConfirm;
 
-  const handleToggleStatus = (doc: DoctorProfile) => {
-    setStatusConfirmDoctor(doc);
-  };
-
-  const confirmToggleStatus = () => {
-    if (!statusConfirmDoctor) return;
-    if (statusConfirmDoctor.isActive) {
-      deleteMutation.mutate(statusConfirmDoctor.id, {
-        onSuccess: () => setStatusConfirmDoctor(null),
-      });
-    } else {
-      updateMutation.mutate(
-        {
-          id: statusConfirmDoctor.id,
-          payload: { isActive: true },
-        },
-        {
-          onSuccess: () => setStatusConfirmDoctor(null),
-        },
-      );
+    let payload: Partial<DoctorProfile> = {};
+    if (type === 'APPROVE') {
+      payload = { approvalStatus: 'APPROVED', isActive: true };
+    } else if (type === 'REJECT') {
+      payload = { approvalStatus: 'REJECTED', isActive: false };
+    } else if (type === 'DEACTIVATE') {
+      payload = { isActive: false };
+    } else if (type === 'ACTIVATE') {
+      payload = { isActive: true };
     }
+
+    updateMutation.mutate(
+      { id: doc.id, payload },
+      {
+        onSuccess: () => setActionConfirm(null),
+      },
+    );
   };
 
   // Filtered doctors logic
-  const specializations = Array.from(new Set(doctors.map((d) => d.specialization)));
+  const specializations = Array.from(
+    new Set(doctors.map((d) => d.specialization).filter(Boolean)),
+  );
 
   const filteredDoctors = doctors.filter((doc) => {
+    const appStatus = doc.approvalStatus || 'APPROVED';
+    if (approvalFilter !== 'ALL' && appStatus !== approvalFilter) return false;
     if (statusFilter === 'ACTIVE' && !doc.isActive) return false;
     if (statusFilter === 'INACTIVE' && doc.isActive) return false;
     if (specFilter !== 'ALL' && doc.specialization !== specFilter) return false;
@@ -133,43 +145,136 @@ export default function AdminDoctorsPage() {
     return true;
   });
 
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredDoctors.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedDocs = filteredDoctors.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
+  );
+
+  const getApprovalBadge = (doc: DoctorProfile) => {
+    const status = doc.approvalStatus || 'APPROVED';
+    if (status === 'PENDING') {
+      return (
+        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[10px] font-semibold flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" /> Pending Approval
+        </span>
+      );
+    }
+    if (status === 'REJECTED') {
+      return (
+        <span className="px-2 py-0.5 rounded-full bg-destructive/15 text-destructive border border-destructive/20 text-[10px] font-semibold flex items-center gap-1">
+          <XCircle className="w-3 h-3" /> Rejected
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold flex items-center gap-1">
+        <CheckCircle2 className="w-3 h-3" /> Approved
+      </span>
+    );
+  };
+
+  const renderActionButtons = (doc: DoctorProfile) => {
+    const appStatus = doc.approvalStatus || 'APPROVED';
+
+    if (appStatus === 'PENDING') {
+      return (
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setActionConfirm({ doc, type: 'APPROVE' })}
+            className="text-xs h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+          >
+            <Check className="w-3.5 h-3.5" /> Approve
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setActionConfirm({ doc, type: 'REJECT' })}
+            className="text-xs h-7 px-2.5 gap-1"
+          >
+            <X className="w-3.5 h-3.5" /> Reject
+          </Button>
+        </div>
+      );
+    }
+
+    if (appStatus === 'REJECTED') {
+      return (
+        <Badge tone="danger" className="text-[10px]">
+          Rejected
+        </Badge>
+      );
+    }
+
+    // Approved status: Option to Deactivate / Activate and Edit
+    return (
+      <div className="flex items-center gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEditClick(doc)}
+          className="text-xs h-7 px-2 gap-1"
+        >
+          <Edit className="w-3 h-3" /> Edit
+        </Button>
+        {doc.isActive ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActionConfirm({ doc, type: 'DEACTIVATE' })}
+            className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10 border-destructive/30 gap-1"
+          >
+            <Power className="w-3 h-3" /> Deactivate
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setActionConfirm({ doc, type: 'ACTIVATE' })}
+            className="text-xs h-7 px-2 gap-1"
+          >
+            <Power className="w-3 h-3" /> Activate
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <RoleRoute roles={['ADMIN', 'admin']}>
       <Page>
         <PageHeader
           title="Doctor & Practitioner Management"
-          description="Manage practitioner profiles, assign medical specializations, toggle active status, and update consultation fees."
+          description="Review doctor registrations, manage approval status, toggle active profiles, and update consultation credentials."
           actions={
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void refetch()}
-                className="text-xs h-8 gap-1"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh
-              </Button>
-              <Link href="/register?role=doctor">
-                <Button variant="primary" size="sm" className="text-xs gap-1.5">
-                  <UserPlus className="w-3.5 h-3.5" /> Onboard Doctor
-                </Button>
-              </Link>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void refetch()}
+              className="text-xs h-8 gap-1"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
+            </Button>
           }
         />
 
-        {/* Filter & Search Bar */}
+        {/* Filter & View Mode Controls Bar */}
         <div className="mt-6 bg-card p-4 rounded-xl border border-border/80 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search by doctor name, specialization, or qualification..."
                 value={search}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearch(e.target.value)
-                }
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -177,17 +282,37 @@ export default function AdminDoctorsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5 text-xs">
                 <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="font-semibold text-foreground">Status:</span>
+                <span className="font-semibold text-foreground">Approval Status:</span>
+                <select
+                  value={approvalFilter}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                    setApprovalFilter(
+                      e.target.value as 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED',
+                    );
+                    setCurrentPage(1);
+                  }}
+                  className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">All Approvals</option>
+                  <option value="PENDING">Pending Approval</option>
+                  <option value="APPROVED">Approved Only</option>
+                  <option value="REJECTED">Rejected Only</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="font-semibold text-foreground">Active Status:</span>
                 <select
                   value={statusFilter}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')
-                  }
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                    setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE');
+                    setCurrentPage(1);
+                  }}
                   className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="ALL">All Statuses</option>
-                  <option value="ACTIVE">Active Only</option>
-                  <option value="INACTIVE">Deactivated Only</option>
+                  <option value="ACTIVE">Active Profiles</option>
+                  <option value="INACTIVE">Deactivated Profiles</option>
                 </select>
               </div>
 
@@ -195,9 +320,10 @@ export default function AdminDoctorsPage() {
                 <span className="font-semibold text-foreground">Specialization:</span>
                 <select
                   value={specFilter}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setSpecFilter(e.target.value)
-                  }
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                    setSpecFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="ALL">All Specializations</option>
@@ -208,11 +334,32 @@ export default function AdminDoctorsPage() {
                   ))}
                 </select>
               </div>
+
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/50">
+                <Button
+                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-7 px-2 text-xs gap-1"
+                  title="Table View"
+                >
+                  <List className="w-3.5 h-3.5" /> Table
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="h-7 px-2 text-xs gap-1"
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" /> Grid
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Doctors Grid */}
+        {/* Main Content Area */}
         <div className="mt-6">
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16 space-y-2">
@@ -237,27 +384,86 @@ export default function AdminDoctorsPage() {
                 No doctor profiles found
               </h3>
               <p className="text-xs text-muted-foreground">
-                No doctor profiles matched your search or filter parameters.
+                No doctor records match the selected approval or status filters.
               </p>
             </div>
           )}
 
           {!isLoading && !isError && filteredDoctors.length > 0 && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {(() => {
-                  const pageSize = 10;
-                  const totalPages = Math.max(
-                    1,
-                    Math.ceil(filteredDoctors.length / pageSize),
-                  );
-                  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-                  const paginatedDocs = filteredDoctors.slice(
-                    (safePage - 1) * pageSize,
-                    safePage * pageSize,
-                  );
-
-                  return paginatedDocs.map((doc) => (
+              {viewMode === 'table' ? (
+                <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-muted/50 border-b border-border text-muted-foreground font-semibold">
+                          <th className="py-3 px-4">Doctor Name</th>
+                          <th className="py-3 px-4">Specialization</th>
+                          <th className="py-3 px-4">Qualifications</th>
+                          <th className="py-3 px-4">Experience</th>
+                          <th className="py-3 px-4">Fee</th>
+                          <th className="py-3 px-4">Approval Status</th>
+                          <th className="py-3 px-4">Active State</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {paginatedDocs.map((doc) => (
+                          <tr
+                            key={doc.id}
+                            className="hover:bg-muted/30 transition-colors"
+                          >
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center shrink-0 border border-primary/20">
+                                  {doc.firstName[0]}
+                                  {doc.lastName[0]}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-foreground">
+                                    Dr. {doc.firstName} {doc.lastName}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground">
+                                    ID: {doc.id.slice(0, 8)}...
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-[11px] font-medium">
+                                {doc.specialization}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground font-medium">
+                              {doc.qualification}
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {doc.experienceYears} Years
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-foreground">
+                              ₹{doc.consultationFee}
+                            </td>
+                            <td className="py-3 px-4">{getApprovalBadge(doc)}</td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                tone={doc.isActive ? 'success' : 'neutral'}
+                                className="text-[10px]"
+                              >
+                                {doc.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              {renderActionButtons(doc)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {paginatedDocs.map((doc) => (
                     <Card
                       key={doc.id}
                       className={`transition-all duration-200 ${
@@ -285,22 +491,7 @@ export default function AdminDoctorsPage() {
                             </div>
                           </div>
 
-                          <Badge
-                            tone={doc.isActive ? 'success' : 'neutral'}
-                            className="text-[10px] shrink-0"
-                          >
-                            {doc.isActive ? (
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />{' '}
-                                Active
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <XCircle className="w-3 h-3 text-muted-foreground" />{' '}
-                                Inactive
-                              </span>
-                            )}
-                          </Badge>
+                          {getApprovalBadge(doc)}
                         </div>
 
                         <div className="bg-muted/30 p-3 rounded-lg border border-border/40 space-y-2 text-xs">
@@ -341,48 +532,81 @@ export default function AdminDoctorsPage() {
                           </p>
                         )}
 
-                        <div className="pt-2 flex items-center justify-end gap-2 border-t border-border/40">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditClick(doc)}
-                            className="text-xs h-7 gap-1"
-                          >
-                            <Edit className="w-3 h-3" /> Edit
-                          </Button>
-
-                          <Button
-                            variant={doc.isActive ? 'outline' : 'primary'}
-                            size="sm"
-                            onClick={() => handleToggleStatus(doc)}
-                            className={`text-xs h-7 gap-1 ${
-                              doc.isActive
-                                ? 'text-destructive hover:bg-destructive/10'
-                                : ''
-                            }`}
-                            disabled={
-                              deleteMutation.isPending || updateMutation.isPending
-                            }
-                          >
-                            <Power className="w-3 h-3" />
-                            {doc.isActive ? 'Deactivate' : 'Activate'}
-                          </Button>
+                        <div className="pt-2 flex items-center justify-end border-t border-border/40">
+                          {renderActionButtons(doc)}
                         </div>
                       </CardBody>
                     </Card>
-                  ));
-                })()}
-              </div>
+                  ))}
+                </div>
+              )}
 
               <Pagination
-                currentPage={currentPage}
+                currentPage={safePage}
                 totalItems={filteredDoctors.length}
-                pageSize={10}
+                pageSize={pageSize}
                 onPageChange={setCurrentPage}
               />
             </div>
           )}
         </div>
+
+        {/* Action Confirmation Modal */}
+        <Modal
+          open={Boolean(actionConfirm)}
+          onOpenChange={(open) => !open && setActionConfirm(null)}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              Confirm Doctor Action - Dr. {actionConfirm?.doc.firstName}{' '}
+              {actionConfirm?.doc.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3 text-xs text-muted-foreground">
+            {actionConfirm?.type === 'APPROVE' && (
+              <p>
+                Are you sure you want to <strong>APPROVE</strong> this doctor? Approved
+                doctors will be activated and displayed in the patient public directory.
+              </p>
+            )}
+            {actionConfirm?.type === 'REJECT' && (
+              <p>
+                Are you sure you want to <strong>REJECT</strong> this doctor registration?
+                The profile will be marked as REJECTED and hidden from patients.
+              </p>
+            )}
+            {actionConfirm?.type === 'DEACTIVATE' && (
+              <p>
+                Are you sure you want to <strong>DEACTIVATE</strong> Dr.{' '}
+                {actionConfirm.doc.firstName} {actionConfirm.doc.lastName}? Future
+                available slots will be unpublished.
+              </p>
+            )}
+            {actionConfirm?.type === 'ACTIVATE' && (
+              <p>
+                Are you sure you want to <strong>REACTIVATE</strong> Dr.{' '}
+                {actionConfirm.doc.firstName} {actionConfirm.doc.lastName}?
+              </p>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setActionConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant={
+                actionConfirm?.type === 'REJECT' || actionConfirm?.type === 'DEACTIVATE'
+                  ? 'danger'
+                  : 'primary'
+              }
+              size="sm"
+              onClick={handleExecuteAction}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? 'Processing...' : 'Confirm Action'}
+            </Button>
+          </DialogFooter>
+        </Modal>
 
         {/* Edit Doctor Details Modal */}
         <Modal
@@ -463,56 +687,6 @@ export default function AdminDoctorsPage() {
               disabled={updateMutation.isPending}
             >
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </Modal>
-
-        {/* Toggle Status Confirmation Modal */}
-        <Modal
-          open={Boolean(statusConfirmDoctor)}
-          onOpenChange={(open) => !open && setStatusConfirmDoctor(null)}
-        >
-          <DialogHeader>
-            <DialogTitle>Confirm Doctor Status Change</DialogTitle>
-          </DialogHeader>
-          <DialogBody className="space-y-3 text-xs text-muted-foreground">
-            <p>
-              Are you sure you want to{' '}
-              <strong className="text-foreground">
-                {statusConfirmDoctor?.isActive ? 'deactivate' : 'reactivate'}
-              </strong>{' '}
-              Dr. {statusConfirmDoctor?.firstName} {statusConfirmDoctor?.lastName}?
-            </p>
-            {statusConfirmDoctor?.isActive && (
-              <p className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
-                Deactivating this practitioner will soft-delete their profile and
-                unpublish all future available slots.
-              </p>
-            )}
-          </DialogBody>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStatusConfirmDoctor(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant={statusConfirmDoctor?.isActive ? 'danger' : 'primary'}
-              size="sm"
-              onClick={confirmToggleStatus}
-              disabled={deleteMutation.isPending || updateMutation.isPending}
-            >
-              {(deleteMutation.isPending || updateMutation.isPending) && 'Processing...'}
-              {!deleteMutation.isPending &&
-                !updateMutation.isPending &&
-                statusConfirmDoctor?.isActive &&
-                'Deactivate Doctor'}
-              {!deleteMutation.isPending &&
-                !updateMutation.isPending &&
-                !statusConfirmDoctor?.isActive &&
-                'Reactivate Doctor'}
             </Button>
           </DialogFooter>
         </Modal>

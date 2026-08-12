@@ -12,7 +12,6 @@ export {
   adminAppointmentApi,
   prescriptionApi,
   medicalNoteApi,
-  MOCK_APPOINTMENTS,
 } from './services';
 export {
   useAppointments,

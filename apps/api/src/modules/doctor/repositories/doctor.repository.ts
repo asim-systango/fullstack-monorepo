@@ -13,6 +13,7 @@ export class DoctorRepository {
   async findAll(options?: {
     specialization?: string;
     isActive?: boolean;
+    approvalStatus?: string;
     search?: string;
   }): Promise<DoctorProfile[]> {
     const query = this.repo.createQueryBuilder('doctor');
@@ -25,6 +26,12 @@ export class DoctorRepository {
 
     if (options?.isActive !== undefined) {
       query.andWhere('doctor.isActive = :isActive', { isActive: options.isActive });
+    }
+
+    if (options?.approvalStatus) {
+      query.andWhere('doctor.approvalStatus = :approvalStatus', {
+        approvalStatus: options.approvalStatus,
+      });
     }
 
     if (options?.search) {

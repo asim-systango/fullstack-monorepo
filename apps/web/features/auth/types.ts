@@ -36,7 +36,9 @@ export interface RegisterPayload {
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  accessToken?: string;
   refreshToken?: string;
   user: AuthUser;
+  message?: string;
+  requiresApproval?: boolean;
 }
