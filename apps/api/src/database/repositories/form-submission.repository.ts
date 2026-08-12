@@ -34,6 +34,30 @@ export class FormSubmissionRepository {
     return this.repo.findOne({ where: { id } });
   }
 
+  async getKpis(formType: FormType = FormType.ORGANIZATION_ONBOARDING_REQUEST): Promise<{
+    total: number;
+    pending: number;
+    inReview: number;
+    approved: number;
+    rejected: number;
+  }> {
+    const total = await this.repo.count({ where: { formType } });
+    const pending = await this.repo.count({
+      where: { formType, status: FormSubmissionStatus.PENDING },
+    });
+    const inReview = await this.repo.count({
+      where: { formType, status: FormSubmissionStatus.IN_REVIEW },
+    });
+    const approved = await this.repo.count({
+      where: { formType, status: FormSubmissionStatus.APPROVED },
+    });
+    const rejected = await this.repo.count({
+      where: { formType, status: FormSubmissionStatus.REJECTED },
+    });
+
+    return { total, pending, inReview, approved, rejected };
+  }
+
   async findPaginated(
     query: GetFormSubmissionsQueryDto,
   ): Promise<PaginatedFormSubmissionsResult> {
