@@ -69,8 +69,8 @@ export function AppointmentCard({
       };
     }
     return {
-      name: `Patient #${appointment.patientId.slice(0, 8)}`,
-      phone: `+1 (555) ${appointment.patientId.slice(0, 3)}-${appointment.patientId.slice(3, 7)}`,
+      name: appointment.patientId ? 'Registered Patient' : 'Patient',
+      phone: '+1 (555) 019-2831',
       email: undefined,
     };
   };

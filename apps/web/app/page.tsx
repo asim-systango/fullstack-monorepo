@@ -3,13 +3,10 @@
 import Link from 'next/link';
 import { ShellHeader } from '@/components/auth';
 import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/api';
 import { useAuth } from '@/components/auth';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
-  User as UserIcon,
   Stethoscope,
-  Settings,
   Lock,
   FileText,
   ClipboardList,
@@ -22,27 +19,13 @@ import { Button, Card, LoadingState } from '@shared/ui/components';
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, loading, refresh } = useAuth();
-  const [loadingRole, setLoadingRole] = useState<string | null>(null);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && user) {
       router.replace('/dashboard');
     }
   }, [user, loading, router]);
-
-  const handleQuickLogin = async (email: string, role: string) => {
-    setLoadingRole(role);
-    try {
-      await authApi.login({ email, password: 'password123' });
-      await refresh();
-      router.push('/dashboard');
-    } catch {
-      router.push('/login');
-    } finally {
-      setLoadingRole(null);
-    }
-  };
 
   if (user) {
     return (
@@ -118,112 +101,6 @@ export default function HomePage() {
             <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Patients Cared For
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Demo Access Section */}
-      <section className="border-b border-border py-16 px-6 bg-background">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-              1-Click Demo Portals
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Instantly test role-based access for Patients, Doctors, and Admins.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Patient Preset */}
-            <Card className="flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
-                    <UserIcon className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Patient Portal</h3>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      user@demo.local
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Browse specialist directory, view open consultation slots, and manage
-                  personal bookings.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="mt-6 w-full gap-2"
-                onClick={() => void handleQuickLogin('user@demo.local', 'Patient')}
-                loading={loadingRole === 'Patient'}
-                loadingText="Authenticating…"
-              >
-                Enter as Patient <ArrowRight className="size-4" />
-              </Button>
-            </Card>
-
-            {/* Doctor Preset */}
-            <Card className="flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
-                    <Stethoscope className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Doctor Portal</h3>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      staff@demo.local
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Manage consultation schedules, issue prescriptions, and record clinical
-                  medical notes.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="mt-6 w-full gap-2"
-                onClick={() => void handleQuickLogin('staff@demo.local', 'Doctor')}
-                loading={loadingRole === 'Doctor'}
-                loadingText="Authenticating…"
-              >
-                Enter as Doctor <ArrowRight className="size-4" />
-              </Button>
-            </Card>
-
-            {/* Admin Preset */}
-            <Card className="flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
-                    <Settings className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Hospital Admin</h3>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      admin@demo.local
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Oversee hospital operations, manage practitioner profiles, and monitor
-                  system analytics.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="mt-6 w-full gap-2"
-                onClick={() => void handleQuickLogin('admin@demo.local', 'Admin')}
-                loading={loadingRole === 'Admin'}
-                loadingText="Authenticating…"
-              >
-                Enter as Admin <ArrowRight className="size-4" />
-              </Button>
-            </Card>
           </div>
         </div>
       </section>

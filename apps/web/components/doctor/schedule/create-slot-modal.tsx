@@ -159,8 +159,20 @@ export function CreateSlotModal({
     setShifts((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const isDatesValid =
+    Boolean(startDate) && (frequency === 'single_day' || Boolean(endDate));
+  const isWeeklyValid = frequency !== 'weekly' || daysOfWeek.length > 0;
+  const isShiftsValid =
+    shifts.length > 0 &&
+    shifts.every(
+      (s) => Boolean(s.name.trim()) && Boolean(s.startTime) && Boolean(s.endTime),
+    );
+  const isFormValid =
+    isDatesValid && isWeeklyValid && isShiftsValid && estimatedSlots > 0;
+
   const handleBulkSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
+    if (!isFormValid) return;
     try {
       const formattedShifts: ShiftInput[] = shifts.map((s) => ({
         name: s.name.trim() || 'Consultation Shift',
@@ -225,7 +237,8 @@ export function CreateSlotModal({
             {/* Frequency / Range Options */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
-                Schedule Range & Frequency
+                Schedule Range & Frequency{' '}
+                <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
 
               <div className="grid grid-cols-3 gap-2">
@@ -297,7 +310,8 @@ export function CreateSlotModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  {frequency === 'single_day' ? 'Target Date' : 'Start Date'}
+                  {frequency === 'single_day' ? 'Target Date' : 'Start Date'}{' '}
+                  <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -318,7 +332,7 @@ export function CreateSlotModal({
               {frequency !== 'single_day' && (
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    End Date
+                    End Date <span className="text-red-500 font-bold ml-0.5">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -339,7 +353,8 @@ export function CreateSlotModal({
             {frequency === 'weekly' && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                  Active Days of the Week
+                  Active Days of the Week{' '}
+                  <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {WEEKDAYS.map((day) => {
@@ -367,7 +382,8 @@ export function CreateSlotModal({
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Working Shifts / Consultation Windows
+                  Working Shifts / Consultation Windows{' '}
+                  <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
                 <Button
                   type="button"
@@ -392,10 +408,11 @@ export function CreateSlotModal({
                         <input
                           type="text"
                           value={shift.name}
-                          placeholder={`Shift ${idx + 1} Name...`}
+                          placeholder={`Shift ${idx + 1} Name *`}
                           onChange={(e) =>
                             handleUpdateShift(shift.id, 'name', e.target.value)
                           }
+                          required
                           className="bg-transparent text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded px-1.5 py-0.5 w-full max-w-[200px]"
                         />
                       </div>
@@ -415,7 +432,8 @@ export function CreateSlotModal({
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[11px] text-muted-foreground mb-1">
-                          Start Time
+                          Start Time{' '}
+                          <span className="text-red-500 font-bold ml-0.5">*</span>
                         </label>
                         <input
                           type="time"
@@ -429,7 +447,8 @@ export function CreateSlotModal({
                       </div>
                       <div>
                         <label className="block text-[11px] text-muted-foreground mb-1">
-                          End Time
+                          End Time{' '}
+                          <span className="text-red-500 font-bold ml-0.5">*</span>
                         </label>
                         <input
                           type="time"
@@ -484,7 +503,13 @@ export function CreateSlotModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" loading={isLoading}>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isLoading}
+                disabled={!isFormValid || isLoading}
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Generate All Slots
               </Button>
             </div>

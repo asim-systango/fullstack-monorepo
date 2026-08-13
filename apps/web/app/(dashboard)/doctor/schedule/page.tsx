@@ -13,10 +13,18 @@ import { TodayAppointmentsCard } from '@/components/doctor/schedule/today-appoin
 import { CreateSlotModal } from '@/components/doctor/schedule/create-slot-modal';
 import { Plus } from 'lucide-react';
 
+function formatLocalDate(dateInput: Date | string | number): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function DoctorSchedulePage() {
-  const [selectedDate, setSelectedDate] = useState(
-    () => new Date().toISOString().split('T')[0] ?? '',
-  );
+  const [selectedDate, setSelectedDate] = useState(() => formatLocalDate(new Date()));
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { data: doctor, isLoading: isDoctorLoading } = useCurrentDoctor();

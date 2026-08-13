@@ -670,7 +670,10 @@ export default function AdminDoctorsPage() {
                                       Dr. {doc.firstName} {doc.lastName}
                                     </div>
                                     <div className="text-[10px] text-muted-foreground">
-                                      ID: {doc.id.slice(0, 8)}... &bull; {docCount} Docs
+                                      {docCount}{' '}
+                                      {docCount === 1
+                                        ? 'Credential Document'
+                                        : 'Credential Documents'}
                                     </div>
                                   </div>
                                 </div>
@@ -904,9 +907,6 @@ export default function AdminDoctorsPage() {
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <span className="px-2.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold text-[11px]">
                           {selectedDoctorForModal.specialization}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          ID: {selectedDoctorForModal.id}
                         </span>
                       </div>
                     </div>

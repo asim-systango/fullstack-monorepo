@@ -4,26 +4,39 @@ import type { SlotStatus, BulkCreateSlotInput } from './types';
 
 export const slotKeys = {
   all: ['slots'] as const,
-  byDoctor: (doctorId: string, status?: SlotStatus) =>
-    ['slots', doctorId, status] as const,
+  byDoctor: (
+    doctorId: string,
+    status?: SlotStatus,
+    startDate?: string,
+    endDate?: string,
+  ) => ['slots', doctorId, status, startDate, endDate] as const,
 };
 
-/** Fetch slots for a doctor with optional status filter. */
-export function useSlots(doctorId: string, status?: SlotStatus) {
+/** Fetch slots for a doctor with optional status and date filters. */
+export function useSlots(
+  doctorId: string,
+  status?: SlotStatus,
+  startDate?: string,
+  endDate?: string,
+) {
   return useQuery({
-    queryKey: slotKeys.byDoctor(doctorId, status),
-    queryFn: () => slotApi.getByDoctor(doctorId, status),
+    queryKey: slotKeys.byDoctor(doctorId, status, startDate, endDate),
+    queryFn: () => slotApi.getByDoctor(doctorId, status, startDate, endDate),
     enabled: Boolean(doctorId),
     placeholderData: (previousData) => previousData,
     staleTime: 10_000,
   });
 }
 
-/** Fetch available future slots for a doctor. */
-export function useAvailableSlots(doctorId: string) {
+/** Fetch available future slots for a doctor with date range filters. */
+export function useAvailableSlots(
+  doctorId: string,
+  startDate?: string,
+  endDate?: string,
+) {
   return useQuery({
-    queryKey: slotKeys.byDoctor(doctorId, 'AVAILABLE'),
-    queryFn: () => slotApi.getAvailableByDoctor(doctorId),
+    queryKey: slotKeys.byDoctor(doctorId, 'AVAILABLE', startDate, endDate),
+    queryFn: () => slotApi.getAvailableByDoctor(doctorId, startDate, endDate),
     enabled: Boolean(doctorId),
     placeholderData: (previousData) => previousData,
     staleTime: 10_000,

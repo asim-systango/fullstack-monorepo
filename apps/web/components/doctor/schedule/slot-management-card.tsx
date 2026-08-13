@@ -56,6 +56,16 @@ function getEmptyStateDescription(statusFilter: string): string {
   return `No slots with status "${statusFilter}" found for this date.`;
 }
 
+function formatLocalDate(dateInput: Date | string | number): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function SlotManagementCard({
   slots,
   isLoading,
@@ -69,16 +79,26 @@ export function SlotManagementCard({
   const updateStatus = useUpdateSlotStatus();
   const deleteSlot = useDeleteSlot();
 
-  const todayStr = new Date().toISOString().split('T')[0] ?? '';
-  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0] ?? '';
+  const todayStr = formatLocalDate(new Date());
+  const tomorrowStr = formatLocalDate(new Date(Date.now() + 86400000));
 
   const isSelectedDateToday = selectedDate === todayStr;
 
   const filteredSlots = slots.filter((slot) => {
-    // If viewing today's date, automatically hide slots whose end time has already passed
+    // 1. Date Filter
+    if (slot.startsAt) {
+      const slotDateStr = formatLocalDate(slot.startsAt);
+      if (slotDateStr !== selectedDate) {
+        return false;
+      }
+    }
+
+    // 2. Hide past slots for today
     if (isSelectedDateToday && new Date(slot.endsAt).getTime() <= Date.now()) {
       return false;
     }
+
+    // 3. Status Filter
     return statusFilter === 'ALL' || slot.status === statusFilter;
   });
 
@@ -127,7 +147,7 @@ export function SlotManagementCard({
       );
     }
 
-    const pageSize = 10;
+    const pageSize = 9;
     const totalPages = Math.max(1, Math.ceil(filteredSlots.length / pageSize));
     const safePage = Math.min(Math.max(1, currentPage), totalPages);
     const paginatedSlots = filteredSlots.slice(
@@ -137,7 +157,7 @@ export function SlotManagementCard({
 
     return (
       <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {paginatedSlots.map((slot) => {
             const startTime = new Date(slot.startsAt).toLocaleTimeString([], {
               hour: '2-digit',
@@ -151,18 +171,20 @@ export function SlotManagementCard({
             return (
               <div
                 key={slot.id}
-                className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-3 ${getSlotCardStyle(slot.status)}`}
+                className={`p-3 rounded-xl border transition-all flex flex-col justify-between gap-2.5 ${getSlotCardStyle(slot.status)}`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-lg ${getSlotIconStyle(slot.status)}`}>
-                      <Clock className="w-4 h-4" />
+                <div className="flex items-start justify-between gap-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className={`p-1.5 rounded-lg shrink-0 ${getSlotIconStyle(slot.status)}`}
+                    >
+                      <Clock className="w-3.5 h-3.5" />
                     </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-foreground truncate">
                         {startTime} – {endTime}
                       </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                      <div className="text-[10px] text-muted-foreground">
                         30 mins duration
                       </div>
                     </div>
@@ -170,14 +192,14 @@ export function SlotManagementCard({
 
                   <Badge
                     tone={getSlotBadgeTone(slot.status)}
-                    className="text-[11px] px-2 py-0.5"
+                    className="text-[10px] px-1.5 py-0.5 shrink-0"
                   >
                     {slot.status}
                   </Badge>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-border/40">
+                <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/40">
                   {slot.status !== 'BOOKED' && (
                     <>
                       <Button
@@ -187,18 +209,18 @@ export function SlotManagementCard({
                         loading={
                           updateStatus.isPending && updateStatus.variables?.id === slot.id
                         }
-                        className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                        className="h-6 text-[11px] px-1.5 text-muted-foreground hover:text-foreground"
                         title={
                           slot.status === 'AVAILABLE' ? 'Block Slot' : 'Unblock Slot'
                         }
                       >
                         {slot.status === 'AVAILABLE' ? (
                           <>
-                            <Ban className="w-3.5 h-3.5 mr-1 text-rose-500" /> Block
+                            <Ban className="w-3 h-3 mr-1 text-rose-500" /> Block
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-500" />{' '}
+                            <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-500" />{' '}
                             Unblock
                           </>
                         )}
@@ -209,16 +231,16 @@ export function SlotManagementCard({
                         variant="ghost"
                         onClick={() => handleDelete(slot.id)}
                         loading={deleteSlot.isPending && deleteSlot.variables === slot.id}
-                        className="h-7 text-xs px-2 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                        className="h-6 text-[11px] px-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
                         title="Delete Slot"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </>
                   )}
 
                   {slot.status === 'BOOKED' && (
-                    <span className="text-[11px] italic text-amber-600 font-medium">
+                    <span className="text-[10px] italic text-amber-600 font-medium">
                       Patient Scheduled
                     </span>
                   )}
@@ -240,13 +262,13 @@ export function SlotManagementCard({
 
   return (
     <Card className="shadow-sm border-border bg-card">
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
         <div>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
             Upcoming Consultation Slots
           </CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-[11px] text-muted-foreground mt-0.5">
             Manage slot availability, block/unblock time, or delete unused slots
           </p>
         </div>
@@ -255,24 +277,24 @@ export function SlotManagementCard({
           size="sm"
           variant="primary"
           onClick={onOpenCreateModal}
-          className="gap-1.5 text-xs shadow-sm hover:shadow shrink-0 whitespace-nowrap"
+          className="gap-1 text-xs h-8 shadow-sm hover:shadow shrink-0 whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" /> Add / Generate Slots
+          <Plus className="w-3.5 h-3.5" /> Add / Generate Slots
         </Button>
       </CardHeader>
 
-      <CardBody className="pt-4 space-y-4">
+      <CardBody className="pt-3 space-y-3">
         {/* Date Selector & Filters */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col gap-2.5 bg-muted/30 p-2.5 rounded-xl border border-border/50">
           {/* Quick Date Pills */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => handleDateSelect(todayStr)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                 selectedDate === todayStr
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
+                  : 'bg-background border border-border/60 text-muted-foreground hover:text-foreground'
               }`}
             >
               Today
@@ -280,10 +302,10 @@ export function SlotManagementCard({
             <button
               type="button"
               onClick={() => handleDateSelect(tomorrowStr)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                 selectedDate === tomorrowStr
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
+                  : 'bg-background border border-border/60 text-muted-foreground hover:text-foreground'
               }`}
             >
               Tomorrow
@@ -294,24 +316,26 @@ export function SlotManagementCard({
                 type="date"
                 value={selectedDate}
                 onChange={(e) => handleDateSelect(e.target.value)}
-                className="pl-8 pr-2 py-1 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                className="pl-7 pr-2 py-1 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
               />
-              <Calendar className="w-3.5 h-3.5 absolute left-2.5 text-muted-foreground pointer-events-none" />
+              <Calendar className="w-3.5 h-3.5 absolute left-2 text-muted-foreground pointer-events-none" />
             </div>
           </div>
 
           {/* Status Filter Pills */}
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg text-xs">
-            <Filter className="w-3.5 h-3.5 text-muted-foreground ml-1.5 mr-1" />
+          <div className="flex flex-wrap items-center gap-1 text-xs">
+            <span className="flex items-center text-[11px] font-semibold text-muted-foreground mr-1">
+              <Filter className="w-3 h-3 mr-1" /> Filter:
+            </span>
             {(['ALL', 'AVAILABLE', 'BOOKED', 'BLOCKED'] as const).map((st) => (
               <button
                 key={st}
                 type="button"
                 onClick={() => handleStatusSelect(st)}
-                className={`px-2.5 py-1 rounded-md capitalize transition-all ${
+                className={`px-2 py-0.5 rounded-md text-[11px] capitalize transition-all ${
                   statusFilter === st
-                    ? 'bg-background text-foreground font-semibold shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary/15 text-primary font-bold border border-primary/30'
+                    : 'bg-background text-muted-foreground hover:text-foreground border border-border/40'
                 }`}
               >
                 {st.toLowerCase()}

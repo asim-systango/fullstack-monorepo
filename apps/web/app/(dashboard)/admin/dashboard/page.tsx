@@ -278,11 +278,10 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-foreground">
-                      Appointment #{appt.id.slice(0, 8)}
+                      Clinical Consultation
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Patient ID: {appt.patientId.slice(0, 8)}... | Reason:{' '}
-                      {appt.reason || 'General Consultation'}
+                      Reason: {appt.reason || 'General Consultation'}
                     </p>
                   </div>
                 </div>

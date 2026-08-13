@@ -2,11 +2,16 @@ import { apiClient } from '@/lib/api';
 import type { Slot, SlotStatus, BulkCreateSlotInput } from './types';
 
 export const slotApi = {
-  /** Fetch slots for a doctor with optional status filter. */
-  async getByDoctor(doctorId: string, status?: SlotStatus): Promise<Slot[]> {
+  /** Fetch slots for a doctor with optional status and date filters. */
+  async getByDoctor(
+    doctorId: string,
+    status?: SlotStatus,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Slot[]> {
     try {
       const { data } = await apiClient.get<Slot[] | { data: Slot[] }>('/slots', {
-        params: { doctorId, status },
+        params: { doctorId, status, startDate, endDate },
       });
       return Array.isArray(data) ? data : (data?.data ?? []);
     } catch (err) {
@@ -15,9 +20,13 @@ export const slotApi = {
     }
   },
 
-  /** Fetch available slots for a doctor. */
-  async getAvailableByDoctor(doctorId: string): Promise<Slot[]> {
-    return this.getByDoctor(doctorId, 'AVAILABLE');
+  /** Fetch available slots for a doctor with optional date range filters. */
+  async getAvailableByDoctor(
+    doctorId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Slot[]> {
+    return this.getByDoctor(doctorId, 'AVAILABLE', startDate, endDate);
   },
 
   /** Bulk generate consultation slots for a doctor. */

@@ -12,6 +12,7 @@ import {
   Button,
   EmptyState,
   Spinner,
+  Pagination,
 } from '@shared/ui/components';
 import { useDoctor } from '@/features/doctor/hooks';
 import { useAvailableSlots } from '@/features/slot/hooks';
@@ -26,12 +27,24 @@ import {
   Stethoscope,
   Award,
   IndianRupee,
-  Calendar,
+  Calendar as CalendarIcon,
   CheckCircle2,
   AlertCircle,
   Building2,
+  Filter,
+  RotateCcw,
 } from 'lucide-react';
 import type { Slot } from '@/features/slot/types';
+
+function formatLocalDate(dateInput: Date | string | number): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export default function DoctorDetailPage({
   params,
@@ -44,7 +57,34 @@ export default function DoctorDetailPage({
     isLoading: isDoctorLoading,
     isError: isDoctorError,
   } = useDoctor(id);
-  const { data: slots = [], isLoading: isSlotsLoading } = useAvailableSlots(id);
+
+  // Date Filter & Pagination States
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [quickDate, setQuickDate] = useState<'ALL' | 'TODAY' | 'TOMORROW'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Compute API query dates
+  const todayStr = formatLocalDate(new Date());
+  const tomorrowStr = formatLocalDate(new Date(Date.now() + 86400000));
+
+  let apiStartDate: string | undefined = dateFrom || undefined;
+  let apiEndDate: string | undefined = dateTo || undefined;
+
+  if (quickDate === 'TODAY') {
+    apiStartDate = todayStr;
+    apiEndDate = todayStr;
+  } else if (quickDate === 'TOMORROW') {
+    apiStartDate = tomorrowStr;
+    apiEndDate = tomorrowStr;
+  }
+
+  const { data: slots = [], isLoading: isSlotsLoading } = useAvailableSlots(
+    id,
+    apiStartDate ? `${apiStartDate}T00:00:00` : undefined,
+    apiEndDate ? `${apiEndDate}T23:59:59` : undefined,
+  );
+
   const bookMutation = useBookAppointment();
   const checkoutMutation = useCreatePaymentCheckout();
 
@@ -52,6 +92,27 @@ export default function DoctorDetailPage({
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<Slot | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
+  const handleQuickDateSelect = (mode: 'ALL' | 'TODAY' | 'TOMORROW') => {
+    setQuickDate(mode);
+    setDateFrom('');
+    setDateTo('');
+    setCurrentPage(1);
+  };
+
+  const handleCustomDateChange = (from: string, to: string) => {
+    setQuickDate('ALL');
+    setDateFrom(from);
+    setDateTo(to);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setQuickDate('ALL');
+    setDateFrom('');
+    setDateTo('');
+    setCurrentPage(1);
+  };
 
   const handleBookSlotClick = (slot: Slot) => {
     setBookingSuccess(null);
@@ -76,10 +137,8 @@ export default function DoctorDetailPage({
           res.url &&
           (res.url.startsWith('http://') || res.url.startsWith('https://'))
         ) {
-          // Open real Stripe Checkout Portal in browser
           window.location.href = res.url;
         } else if (res.url) {
-          // Relative URL (mock/fallback flow)
           window.location.href = res.url;
         } else {
           executeDirectBooking(slotId, reason);
@@ -124,6 +183,19 @@ export default function DoctorDetailPage({
     );
   };
 
+  // Filter out slots whose end time has already passed
+  const futureAvailableSlots = slots.filter(
+    (slot) => new Date(slot.endsAt).getTime() > Date.now(),
+  );
+
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(futureAvailableSlots.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedSlots = futureAvailableSlots.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
+  );
+
   const renderSlotsContent = () => {
     if (isSlotsLoading) {
       return (
@@ -136,33 +208,54 @@ export default function DoctorDetailPage({
       );
     }
 
-    // Filter out slots whose end time has already passed
-    const futureAvailableSlots = slots.filter(
-      (slot) => new Date(slot.endsAt).getTime() > Date.now(),
-    );
-
     if (futureAvailableSlots.length === 0) {
       return (
         <EmptyState
           title="No Slots Available"
-          description={`Dr. ${doctor?.firstName || 'this practitioner'} ${doctor?.lastName || ''} has no open future consultation slots at this time. Please check back later.`}
+          description={
+            quickDate !== 'ALL' || dateFrom || dateTo
+              ? 'No consultation slots match your selected date filter parameters.'
+              : `Dr. ${doctor?.firstName || 'this practitioner'} ${doctor?.lastName || ''} has no open future consultation slots at this time.`
+          }
+          action={
+            quickDate !== 'ALL' || dateFrom || dateTo ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetFilters}
+                className="text-xs gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Clear Date Filters
+              </Button>
+            ) : undefined
+          }
         />
       );
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {futureAvailableSlots.map((slot) => (
-          <SlotCard
-            key={slot.id}
-            slot={slot}
-            onBook={handleBookSlotClick}
-            isBooking={
-              selectedSlotForBooking?.id === slot.id &&
-              (bookMutation.isPending || checkoutMutation.isPending)
-            }
-          />
-        ))}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {paginatedSlots.map((slot) => (
+            <SlotCard
+              key={slot.id}
+              slot={slot}
+              onBook={handleBookSlotClick}
+              isBooking={
+                selectedSlotForBooking?.id === slot.id &&
+                (bookMutation.isPending || checkoutMutation.isPending)
+              }
+            />
+          ))}
+        </div>
+
+        {/* Pagination Bar */}
+        <Pagination
+          currentPage={safePage}
+          totalItems={futureAvailableSlots.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+        />
       </div>
     );
   };
@@ -283,24 +376,103 @@ export default function DoctorDetailPage({
           </Card>
         </div>
 
-        {/* Right Column: Slot Schedule Grid */}
+        {/* Right Column: Slot Schedule Grid & Date Filter */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="border border-border bg-card p-6">
-            <CardHeader className="mb-4 pb-4 border-b border-border/40 flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="mb-4 pb-4 border-b border-border/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 space-y-0">
               <div>
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" /> Available Consultation
+                  <CalendarIcon className="w-5 h-5 text-primary" /> Available Consultation
                   Schedule
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Select an open time slot below to reserve your appointment.
                 </p>
               </div>
-              <Badge tone="accent" className="text-xs">
-                {slots.filter((s) => new Date(s.endsAt).getTime() > Date.now()).length}{' '}
-                Slots Open
+              <Badge tone="accent" className="text-xs shrink-0">
+                {futureAvailableSlots.length} Slots Open
               </Badge>
             </CardHeader>
+
+            {/* Backend-Driven Date Filter Bar */}
+            <div className="mb-6 bg-muted/30 p-3 rounded-xl border border-border/60 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-muted-foreground flex items-center gap-1 text-[11px]">
+                  <Filter className="w-3.5 h-3.5" /> Filter Date:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDateSelect('ALL')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    quickDate === 'ALL' && !dateFrom && !dateTo
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'bg-card border border-border/60 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  All Dates
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDateSelect('TODAY')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    quickDate === 'TODAY'
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'bg-card border border-border/60 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDateSelect('TOMORROW')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    quickDate === 'TOMORROW'
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'bg-card border border-border/60 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Tomorrow
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground font-medium text-[11px]">
+                    From:
+                  </span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => handleCustomDateChange(e.target.value, dateTo)}
+                    className="px-2 py-1 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground font-medium text-[11px]">
+                    To:
+                  </span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => handleCustomDateChange(dateFrom, e.target.value)}
+                    className="px-2 py-1 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                {(quickDate !== 'ALL' || dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground gap-1"
+                    title="Clear Date Filters"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
 
             {renderSlotsContent()}
           </Card>

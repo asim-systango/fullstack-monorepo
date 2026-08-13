@@ -36,14 +36,24 @@ function getPatientDisplayName(patientName?: string, patientId?: string): string
   if (patientName) return patientName;
   if (patientId === '44444444-4444-4444-4444-444444444444') return 'John Doe';
   if (patientId === '55555555-5555-5555-5555-555555555555') return 'Sarah Smith';
-  return patientId ? `Patient #${patientId.slice(0, 8)}` : 'Patient';
+  return patientId ? 'Registered Patient' : 'Patient';
 }
 
 function getPatientDisplayPhone(patientPhone?: string, patientId?: string): string {
   if (patientPhone) return patientPhone;
   if (patientId === '44444444-4444-4444-4444-444444444444') return '+1 (555) 019-2831';
   if (patientId === '55555555-5555-5555-5555-555555555555') return '+1 (555) 018-7712';
-  return patientId ? `+1 (555) ${patientId.slice(0, 3)}-${patientId.slice(3, 7)}` : '';
+  return patientId ? '+1 (555) 019-2831' : '';
+}
+
+function formatLocalDate(dateInput: Date | string | number): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function TodayAppointmentsCard({
@@ -58,11 +68,11 @@ export function TodayAppointmentsCard({
   // Filter appointments for the selected date
   const filteredAppointments = appointments.filter((app) => {
     if (!app.slot?.startsAt) return true;
-    const appDate = new Date(app.slot.startsAt).toISOString().split('T')[0] ?? '';
+    const appDate = formatLocalDate(app.slot.startsAt);
     return appDate === selectedDate;
   });
 
-  const isToday = selectedDate === (new Date().toISOString().split('T')[0] ?? '');
+  const isToday = selectedDate === formatLocalDate(new Date());
 
   const renderAppointmentContent = () => {
     if (isLoading) {

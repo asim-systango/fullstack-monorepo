@@ -120,8 +120,8 @@ export default function AdminAppointmentsPage() {
       };
     }
     return {
-      name: `Patient #${appointment.patientId.slice(0, 8)}`,
-      phone: `+1 (555) ${appointment.patientId.slice(0, 3)}-${appointment.patientId.slice(3, 7)}`,
+      name: appointment.patientId ? 'Registered Patient' : 'Patient',
+      phone: '+1 (555) 019-2831',
       email: 'patient@hospital.org',
     };
   };
@@ -455,10 +455,10 @@ export default function AdminAppointmentsPage() {
                 <div className="flex items-center justify-between p-3.5 rounded-xl bg-muted/40 border border-border/60">
                   <div>
                     <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
-                      Appointment ID
+                      Consultation Record
                     </span>
-                    <p className="font-mono text-xs font-bold text-foreground">
-                      {selectedApptForModal.id}
+                    <p className="text-xs font-bold text-foreground">
+                      Hospital Visit Record
                     </p>
                   </div>
                   {renderStatusBadge(selectedApptForModal.status)}

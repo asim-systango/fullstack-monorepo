@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, type SyntheticEvent } from 'react';
-import { User as UserIcon, Stethoscope, Settings, ArrowRight } from 'lucide-react';
 import {
   Button,
   Field,
@@ -15,14 +14,12 @@ import {
 import { ShellHeader, useAuth } from '@/components/auth';
 import { useLogin } from '@/features/auth/hooks/use-auth';
 
-const isProd = process.env.NODE_ENV === 'production';
-
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const loginMutation = useLogin();
-  const [email, setEmail] = useState(isProd ? '' : 'patient@hospital.com');
-  const [password, setPassword] = useState(isProd ? '' : 'Patient@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (!loading && user) {
@@ -54,11 +51,6 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemoUser = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <ShellHeader />
@@ -74,42 +66,6 @@ export default function LoginPage() {
               Sign in to manage your appointments, schedules, or medical records
             </p>
           </div>
-
-          {/* Quick Demo Preset Chips */}
-          <Card className="bg-muted/30 p-4 space-y-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Quick Demo Accounts
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => fillDemoUser('patient@hospital.com', 'Patient@123')}
-              >
-                <UserIcon className="size-3.5" /> Patient
-              </Button>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => fillDemoUser('doctor2@hospital.com', 'Doctor@123')}
-              >
-                <Stethoscope className="size-3.5" /> Doctor
-              </Button>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => fillDemoUser('admin@pulsecare.com', 'Test@123')}
-              >
-                <Settings className="size-3.5" /> Admin
-              </Button>
-            </div>
-          </Card>
 
           {/* Login Form Card */}
           <Card className="p-6">
@@ -131,7 +87,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                  placeholder="patient@hospital.com"
+                  placeholder="admin@pulsecare.com"
                 />
               </Field>
 
@@ -159,7 +115,7 @@ export default function LoginPage() {
                 loadingText="Signing in…"
                 className="w-full mt-2 gap-2"
               >
-                Sign in to Portal <ArrowRight className="size-4" />
+                Sign in to Portal
               </Button>
             </Form>
 

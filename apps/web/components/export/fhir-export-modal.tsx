@@ -95,9 +95,20 @@ export function FhirExportModal({
     const doctorQual = doctor?.qualification || 'M.B.B.S, M.D. (Internal Medicine)';
     const doctorRegNo = `REG-2026-MED-${(doctor?.id || appointmentId).slice(0, 6).toUpperCase()}`;
 
-    const patientName = appointment?.patientId
-      ? `Patient (${appointment.patientId.slice(0, 8)})`
-      : 'Patient Record';
+    const getPatientName = () => {
+      if (appointment?.patient?.name) {
+        return appointment.patient.name;
+      }
+      if (appointment?.patientId === '44444444-4444-4444-4444-444444444444') {
+        return 'John Doe';
+      }
+      if (appointment?.patientId === '55555555-5555-5555-5555-555555555555') {
+        return 'Sarah Smith';
+      }
+      return 'Patient Record';
+    };
+
+    const patientName = getPatientName();
 
     const visitDate = appointment?.slot?.startsAt
       ? new Date(appointment.slot.startsAt).toLocaleDateString(undefined, {
@@ -161,7 +172,7 @@ export function FhirExportModal({
             </div>
             <div className="text-right">
               <span className="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-mono text-[11px] font-semibold">
-                Rx #{appointmentId.slice(0, 8).toUpperCase()}
+                Rx #PRES-2026-MED
               </span>
               <p className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1">
                 <Award className="w-3 h-3 text-emerald-600" /> NABH Accredited
@@ -189,7 +200,7 @@ export function FhirExportModal({
                 Visit Date: <strong className="text-slate-900">{visitDate}</strong>
               </p>
               <p className="text-slate-600">
-                Appt Ref: <span className="font-mono">{appointmentId.slice(0, 8)}</span>
+                Appt Ref: <span className="font-mono">Consultation Record</span>
               </p>
               <p className="text-slate-600">
                 Consultation Status:{' '}
