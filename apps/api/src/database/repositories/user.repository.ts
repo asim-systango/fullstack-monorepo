@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User, UserStatus } from '../entities/user.entity';
 import { RoleName } from '../entities/role.entity';
 
 @Injectable()
@@ -58,6 +58,85 @@ export class UserRepository {
       relations: ['role'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findPaginated(query: {
+    organizationId?: string | null;
+    search?: string;
+    roleName?: RoleName;
+    status?: string;
+    page?: number;
+    limit?: number;
+    allowedRoleNames?: RoleName[];
+    exactUserId?: string;
+    excludeUserId?: string;
+  }): Promise<{
+    data: User[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const {
+      organizationId,
+      search,
+      roleName,
+      status,
+      page = 1,
+      limit = 10,
+      allowedRoleNames,
+      exactUserId,
+      excludeUserId,
+    } = query;
+    const skip = (page - 1) * limit;
+
+    const qb = this.userRepo
+      .createQueryBuilder('u')
+      .leftJoinAndSelect('u.role', 'role')
+      .leftJoinAndSelect('u.organization', 'organization');
+
+    if (exactUserId) {
+      qb.andWhere('u.id = :exactUserId', { exactUserId });
+    } else {
+      if (organizationId !== undefined) {
+        if (organizationId === null) {
+          qb.andWhere('u.organizationId IS NULL');
+        } else {
+          qb.andWhere('u.organizationId = :organizationId', { organizationId });
+        }
+      }
+
+      if (excludeUserId) {
+        qb.andWhere('u.id != :excludeUserId', { excludeUserId });
+      }
+
+      if (search) {
+        const searchTerm = `%${search.trim().toLowerCase()}%`;
+        qb.andWhere(
+          '(LOWER(u.firstName) LIKE :search OR LOWER(u.lastName) LIKE :search OR LOWER(u.email) LIKE :search)',
+          { search: searchTerm },
+        );
+      }
+
+      if (roleName) {
+        qb.andWhere('role.name = :roleName', { roleName });
+      }
+
+      if (allowedRoleNames && allowedRoleNames.length > 0) {
+        qb.andWhere('role.name IN (:...allowedRoleNames)', { allowedRoleNames });
+      }
+
+      if (status) {
+        qb.andWhere('u.status = :status', { status });
+      }
+    }
+
+    qb.orderBy('u.createdAt', 'DESC').skip(skip).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return { data, total, page, limit, totalPages };
   }
 
   async findByRoleName(roleName: RoleName): Promise<User[]> {
@@ -127,6 +206,7 @@ export class UserRepository {
   async markPasswordChanged(id: string): Promise<void> {
     await this.userRepo.update(id, {
       isPasswordChangeRequired: false,
+      status: UserStatus.ACTIVE,
       updatedAt: Date.now(),
     });
   }
