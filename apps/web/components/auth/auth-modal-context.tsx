@@ -19,7 +19,7 @@ type AuthModalContextValue = {
   openAuth: (mode: AuthModalMode, returnTo?: string) => void;
   closeAuth: () => void;
   switchAuth: (mode: AuthModalMode) => void;
-  returnTo: string;
+  returnTo: string | null;
 };
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -34,15 +34,16 @@ export function useAuthModal(): AuthModalContextValue {
 
 export function AuthModalProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [mode, setMode] = useState<AuthModalMode | null>(null);
-  const [returnTo, setReturnTo] = useState('/write');
+  const [returnTo, setReturnTo] = useState<string | null>(null);
 
-  const openAuth = useCallback((nextMode: AuthModalMode, nextReturnTo = '/write') => {
-    setReturnTo(nextReturnTo);
+  const openAuth = useCallback((nextMode: AuthModalMode, nextReturnTo?: string) => {
+    setReturnTo(nextReturnTo ?? null);
     setMode(nextMode);
   }, []);
 
   const closeAuth = useCallback(() => {
     setMode(null);
+    setReturnTo(null);
   }, []);
 
   const switchAuth = useCallback((nextMode: AuthModalMode) => {

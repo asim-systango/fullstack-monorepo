@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button, Input } from '@/components/ui';
+import { resolvePostAuthRedirect } from '@/lib/auth/roles';
 import { ApiClientError } from '@/lib/api';
 import { useRegister } from '@/hooks/use-auth';
 import { useAuthModal } from './auth-modal-context';
@@ -43,7 +44,7 @@ export function RegisterForm() {
     setFormError(null);
 
     try {
-      await registerMutation.mutateAsync({
+      const newUser = await registerMutation.mutateAsync({
         name: name.trim(),
         email: email.trim(),
         password,
@@ -54,7 +55,7 @@ export function RegisterForm() {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
       }
       closeAuth();
-      router.push(returnTo);
+      router.push(resolvePostAuthRedirect(newUser, returnTo));
     } catch (error) {
       setFormError(getFieldError(error));
     }

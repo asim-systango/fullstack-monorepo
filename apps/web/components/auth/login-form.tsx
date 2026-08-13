@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button, Input } from '@/components/ui';
 import { ApiClientError } from '@/lib/api';
 import { useLogin, useMe } from '@/hooks/use-auth';
+import { resolvePostAuthRedirect } from '@/lib/auth/roles';
 import { useAuthModal } from './auth-modal-context';
 import { AuthFooterLink } from './auth-modal';
 
@@ -43,14 +44,17 @@ export function LoginForm() {
     setFormError(null);
 
     try {
-      await loginMutation.mutateAsync({ email: email.trim(), password });
+      const loggedInUser = await loginMutation.mutateAsync({
+        email: email.trim(),
+        password,
+      });
       if (rememberMe) {
         localStorage.setItem(REMEMBER_EMAIL_KEY, email.trim());
       } else {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
       }
       closeAuth();
-      router.push(returnTo);
+      router.push(resolvePostAuthRedirect(loggedInUser, returnTo));
     } catch (error) {
       setFormError(getFieldError(error));
     }
@@ -77,7 +81,7 @@ export function LoginForm() {
             className="h-12 w-full"
             onClick={() => {
               closeAuth();
-              router.push(returnTo);
+              router.push(resolvePostAuthRedirect(user, returnTo));
             }}
           >
             Continue
