@@ -30,6 +30,8 @@ export type CreateDraftInput = {
   slug: string;
   content: ContentBlock[];
   tagIds?: string[];
+  /** Optional cover image media UUID (must be an image resource). */
+  coverMediaId?: string;
 };
 
 export type ListArticlesInput = {
@@ -96,20 +98,37 @@ export class ArticlesRepository {
       }
     }
 
-    // 2. Validate inline media references (must exist and not be soft-deleted)
-    if (mediaRefs.length > 0) {
-      const mediaIds = [...new Set(mediaRefs.map((ref) => ref.mediaId))];
+    // 2. Validate inline + cover media references (must exist and not be soft-deleted)
+    const coverMediaId = input.coverMediaId ?? null;
+    const mediaIdsToValidate = [
+      ...new Set([
+        ...mediaRefs.map((ref) => ref.mediaId),
+        ...(coverMediaId ? [coverMediaId] : []),
+      ]),
+    ];
+
+    if (mediaIdsToValidate.length > 0) {
       const mediaRows = await this.mediaRepo.find({
-        where: { id: In(mediaIds), deletedAt: IsNull() },
+        where: { id: In(mediaIdsToValidate), deletedAt: IsNull() },
       });
       const byId = new Map(mediaRows.map((row) => [row.id, row]));
 
-      const missing = mediaIds.filter((id) => !byId.has(id));
+      const missing = mediaIdsToValidate.filter((id) => !byId.has(id));
       if (missing.length > 0) {
         throw new BadRequestException({
           message: 'One or more media IDs are invalid',
           details: { mediaIds: missing },
         });
+      }
+
+      if (coverMediaId) {
+        const cover = byId.get(coverMediaId);
+        if (cover && cover.resourceType !== 'image') {
+          throw new BadRequestException({
+            message: 'Cover media must be an image',
+            details: { coverMediaId, actual: cover.resourceType },
+          });
+        }
       }
 
       const typeMismatches = mediaRefs.filter((ref) => {
@@ -149,19 +168,31 @@ export class ArticlesRepository {
         articleId: article.id,
         content: input.content,
         createdBy: input.authorId,
-        coverMediaId: null,
+        coverMediaId,
       });
 
-      // 5. Derived revision_media index for inline image/video blocks
-      if (mediaRefs.length > 0) {
-        await this.revisionMediaRepo.save(
-          mediaRefs.map((ref) => ({
-            revisionId: revision.id,
-            mediaId: ref.mediaId,
-            blockId: ref.blockId,
-            role: 'inline' as const,
-          })),
-        );
+      // 5. Derived revision_media index for cover + inline image/video blocks
+      const revisionMediaRows = [
+        ...(coverMediaId
+          ? [
+              {
+                revisionId: revision.id,
+                mediaId: coverMediaId,
+                blockId: 'cover',
+                role: 'cover' as const,
+              },
+            ]
+          : []),
+        ...mediaRefs.map((ref) => ({
+          revisionId: revision.id,
+          mediaId: ref.mediaId,
+          blockId: ref.blockId,
+          role: 'inline' as const,
+        })),
+      ];
+
+      if (revisionMediaRows.length > 0) {
+        await this.revisionMediaRepo.save(revisionMediaRows);
       }
 
       // 6. Attach tags
