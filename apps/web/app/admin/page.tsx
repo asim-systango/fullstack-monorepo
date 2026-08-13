@@ -27,15 +27,14 @@ function AdminDashboardContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const articles = articlesData?.data ?? [];
-  const stats = useMemo(
-    () => ({
+  const stats = useMemo(() => {
+    const articles = articlesData?.data ?? [];
+    return {
       totalArticles: articles.length,
       publishedArticles: articles.filter((a) => isPublished(a)).length,
       draftArticles: articles.filter((a) => !isPublished(a)).length,
-    }),
-    [articles],
-  );
+    };
+  }, [articlesData]);
 
   const editors = usersData?.users.filter((u) => u.role === 'staff') ?? [];
 

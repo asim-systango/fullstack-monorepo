@@ -50,12 +50,12 @@ function StudioContent() {
   const { data, isLoading } = useStudioArticles();
   const [tab, setTab] = useState<'all' | 'drafts' | 'published'>('all');
 
-  const articles = data?.data ?? [];
   const filtered = useMemo(() => {
+    const articles = data?.data ?? [];
     if (tab === 'drafts') return articles.filter((a) => !isPublished(a));
     if (tab === 'published') return articles.filter((a) => isPublished(a));
     return articles;
-  }, [articles, tab]);
+  }, [data, tab]);
 
   return (
     <DashboardShell

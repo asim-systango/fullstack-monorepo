@@ -14,10 +14,14 @@ const EDITOR_NAV = [
 
 function EditorDashboardContent() {
   const { data, isLoading } = useStudioArticles();
-  const articles = data?.data ?? [];
-
-  const pending = useMemo(() => articles.filter((a) => !isPublished(a)), [articles]);
-  const published = useMemo(() => articles.filter((a) => isPublished(a)), [articles]);
+  const { pending, published, totalArticles } = useMemo(() => {
+    const articles = data?.data ?? [];
+    return {
+      pending: articles.filter((a) => !isPublished(a)),
+      published: articles.filter((a) => isPublished(a)),
+      totalArticles: articles.length,
+    };
+  }, [data]);
 
   return (
     <DashboardShell
@@ -29,7 +33,7 @@ function EditorDashboardContent() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <StatCard label="Awaiting review" value={pending.length} />
         <StatCard label="Published" value={published.length} />
-        <StatCard label="Total articles" value={articles.length} />
+        <StatCard label="Total articles" value={totalArticles} />
       </div>
 
       <section>
