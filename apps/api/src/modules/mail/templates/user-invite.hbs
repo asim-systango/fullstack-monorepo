@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>You're Invited!</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #6d28d9; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+    .credentials { background: #ffffff; padding: 15px; border: 1px solid #e5e7eb; border-radius: 6px; margin: 20px 0; font-family: monospace; }
+    .button { display: inline-block; padding: 12px 24px; background: #6d28d9; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+    .footer { margin-top: 30px; font-size: 12px; color: #6b7280; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Welcome to Systango CRM</h2>
+    </div>
+    <div class="content">
+      <p>Hello <strong>{{userName}}</strong>,</p>
+      <p>You have been invited to join <strong>{{organizationName}}</strong> on our platform.</p>
+      
+      <div class="credentials">
+        <p style="margin: 0;"><strong>Email:</strong> {{toEmail}}</p>
+        <p style="margin: 0; margin-top: 10px;"><strong>Temporary Password:</strong> {{tempPassword}}</p>
+      </div>
+
+      <p>Please log in using these credentials. For your security, you will be required to change this temporary password during your first login.</p>
+      
+      <div style="text-align: center;">
+        <a href="{{loginUrl}}" class="button">Log In Now</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
