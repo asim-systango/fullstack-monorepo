@@ -10,13 +10,6 @@ import type { DoctorDocumentDto } from '../dto/create-doctor.dto';
  */
 @Entity({ name: 'doctor_profiles' })
 export class DoctorProfile extends BaseEntity {
-  @Index()
-  @Column({ name: 'hospital_id', type: 'uuid', nullable: true })
-  hospitalId!: string | null;
-
-  @Column({ name: 'medical_license', type: 'varchar', length: 100, nullable: true })
-  medicalLicense!: string | null;
-
   @Column({ type: 'uuid', unique: true })
   userId!: string;
 

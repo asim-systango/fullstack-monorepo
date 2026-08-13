@@ -13,7 +13,6 @@ import { PrescriptionModule } from './modules/prescription';
 import { MedicalNoteModule } from './modules/medical-note';
 import { PaymentModule } from './modules/payment/payment.module';
 import { UploadModule } from './modules/upload/upload.module';
-import { ExportModule } from './modules/export';
 
 const db = databaseConfig();
 
@@ -35,7 +34,6 @@ const db = databaseConfig();
     MedicalNoteModule,
     PaymentModule,
     UploadModule,
-    ExportModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

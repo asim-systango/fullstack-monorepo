@@ -21,10 +21,6 @@ export class MedicalNote {
   id!: string;
 
   @Index()
-  @Column({ name: 'encounter_id', type: 'uuid', nullable: true })
-  encounterId!: string | null;
-
-  @Index()
   @Column({ type: 'uuid' })
   appointmentId!: string;
 
@@ -34,18 +30,6 @@ export class MedicalNote {
 
   @Column({ type: 'text' })
   notes!: string;
-
-  @Column({ type: 'text', nullable: true })
-  subjective!: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  objective!: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  assessment!: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  plan!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
