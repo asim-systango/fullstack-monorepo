@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Badge,
@@ -18,17 +18,43 @@ import {
 } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
+import { dashboardApi, type OverallKpis } from '@/lib/api/dashboard.api';
 import { MOCK_ORGANIZATIONS, SUPER_ADMIN_MESSAGES } from '@/lib/constants';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { isAuthenticated, user, organization, loading } = useAuth();
 
+  const isSuperAdmin =
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'super-admin' ||
+    (!organization && user);
+
+  const [kpis, setKpis] = useState<OverallKpis | null>(null);
+  const [kpisLoading, setKpisLoading] = useState(false);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
     }
   }, [loading, isAuthenticated, router]);
+
+  useEffect(() => {
+    async function fetchKpis() {
+      if (isSuperAdmin) {
+        setKpisLoading(true);
+        try {
+          const data = await dashboardApi.getOverallKpis();
+          setKpis(data);
+        } catch (error) {
+          console.error('Failed to fetch KPIs', error);
+        } finally {
+          setKpisLoading(false);
+        }
+      }
+    }
+    fetchKpis();
+  }, [isSuperAdmin]);
 
   if (loading || !isAuthenticated || !user) {
     return (
@@ -60,14 +86,12 @@ export default function DashboardPage() {
     );
   }
 
-  const isSuperAdmin =
-    user.role === 'SUPER_ADMIN' || user.role === 'super-admin' || !organization;
-
   // Stats Calculations
-  const totalOrgs = MOCK_ORGANIZATIONS.length;
-  const activeOrgs = MOCK_ORGANIZATIONS.filter((o) => o.status === 'ACTIVE').length;
-  const totalUsers = MOCK_ORGANIZATIONS.reduce((acc, o) => acc + o.usersCount, 0);
-  const pendingInvitesCount = 8;
+  const totalOrgs = kpis ? kpis.organizations.total : 0;
+  const activeOrgs = kpis ? kpis.organizations.active : 0;
+  const totalUsers = kpis ? kpis.platformUsers.total : 0;
+  const pendingInvitesCount = kpis ? kpis.platformUsers.pendingInvites : 0;
+  const totalRequests = kpis ? kpis.organizationRequests.total : 0;
 
   return (
     <AppShell
@@ -86,11 +110,13 @@ export default function DashboardPage() {
                 {SUPER_ADMIN_MESSAGES.TOTAL_ORGANIZATIONS}
               </CardDescription>
               <CardTitle className="text-3xl font-bold text-violet-400 mt-1">
-                {totalOrgs}
+                {kpisLoading ? '...' : totalOrgs}
               </CardTitle>
             </CardHeader>
             <CardBody className="p-0">
-              <p className="text-xs text-zinc-500">{activeOrgs} Active Tenants</p>
+              <p className="text-xs text-zinc-500">
+                {kpisLoading ? '...' : activeOrgs} Active Tenants
+              </p>
             </CardBody>
           </Card>
 
@@ -100,7 +126,7 @@ export default function DashboardPage() {
                 {SUPER_ADMIN_MESSAGES.TOTAL_USERS}
               </CardDescription>
               <CardTitle className="text-3xl font-bold text-cyan-400 mt-1">
-                {totalUsers}
+                {kpisLoading ? '...' : totalUsers}
               </CardTitle>
             </CardHeader>
             <CardBody className="p-0">
@@ -114,7 +140,7 @@ export default function DashboardPage() {
                 {SUPER_ADMIN_MESSAGES.PENDING_INVITES}
               </CardDescription>
               <CardTitle className="text-3xl font-bold text-amber-400 mt-1">
-                {pendingInvitesCount}
+                {kpisLoading ? '...' : pendingInvitesCount}
               </CardTitle>
             </CardHeader>
             <CardBody className="p-0">
@@ -128,7 +154,7 @@ export default function DashboardPage() {
                 {SUPER_ADMIN_MESSAGES.TOTAL_REQUESTS}
               </CardDescription>
               <CardTitle className="text-3xl font-bold text-emerald-400 mt-1">
-                5
+                {kpisLoading ? '...' : totalRequests}
               </CardTitle>
             </CardHeader>
             <CardBody className="p-0">
