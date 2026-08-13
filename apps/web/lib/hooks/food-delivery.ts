@@ -215,6 +215,19 @@ export function useCreateRestaurant() {
   });
 }
 
+export function useUpdateRestaurant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Parameters<typeof foodApi.updateRestaurant>[1] }) =>
+      foodApi.updateRestaurant(id, input),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: foodKeys.restaurants() });
+      void queryClient.invalidateQueries({ queryKey: foodKeys.restaurant(vars.id) });
+      void queryClient.invalidateQueries({ queryKey: [...foodKeys.all, 'restaurant', 'mine'] });
+    },
+  });
+}
+
 export function useCreatePaymentCheckout() {
   return useMutation({
     mutationFn: (orderId: string) => foodApi.createPaymentCheckout(orderId),

@@ -5,6 +5,7 @@ import type {
   CartSummary,
   CreateMenuItemInput,
   CreateRestaurantInput,
+  CreateRestaurantResult,
   MenuItem,
   Order,
   OrderFilters,
@@ -14,12 +15,14 @@ import type {
   Restaurant,
   RestaurantFilters,
   UpdateMenuItemInput,
+  UpdateRestaurantInput,
   PaymentCheckout,
   VerifyPaymentInput,
   VerifyPaymentResult,
 } from '@/lib/types/food-delivery';
 import { createMockStore, type MockStore } from './data';
 import { saveMockDeliveryAddress } from './auth';
+import { staffPasswordFromRestaurantName } from '@/lib/staff-password';
 
 let store: MockStore = createMockStore();
 
@@ -88,19 +91,44 @@ export const mockFoodApi = {
     return item;
   },
 
-  async createRestaurant(input: CreateRestaurantInput): Promise<Restaurant> {
+  async createRestaurant(input: CreateRestaurantInput): Promise<CreateRestaurantResult> {
     await delay();
-    const existing = store.restaurants.find((r) => r.ownerUserId === input.ownerUserId);
-    if (existing) {
-      throw new ApiClientError({
-        statusCode: 409,
-        error: 'Conflict',
-        message: 'This staff user already owns a restaurant',
-      });
-    }
-    const created: Restaurant = { id: uuid(), ...input };
+    const ownerUserId = crypto.randomUUID();
+    const created: Restaurant = {
+      id: uuid(),
+      ownerUserId,
+      name: input.name,
+      cuisine: input.cuisine,
+      address: input.address,
+      description: input.description,
+      imageUrl: input.imageUrl,
+      eta: input.eta,
+      rating: input.rating ?? 0,
+    };
     store.restaurants.push(created);
-    return created;
+    return {
+      restaurant: created,
+      staffLogin: {
+        email: input.ownerEmail.trim().toLowerCase(),
+        password: staffPasswordFromRestaurantName(input.name),
+        role: 'staff',
+      },
+    };
+  },
+
+  async updateRestaurant(id: string, input: UpdateRestaurantInput): Promise<Restaurant> {
+    await delay();
+    const index = store.restaurants.findIndex((r) => r.id === id);
+    if (index === -1) {
+      throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Restaurant not found' });
+    }
+    const existing = store.restaurants[index];
+    if (!existing) {
+      throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Restaurant not found' });
+    }
+    const updated: Restaurant = { ...existing, ...input };
+    store.restaurants[index] = updated;
+    return updated;
   },
 
   async listMenuItems(restaurantId: string, includeDeleted = false): Promise<MenuItem[]> {

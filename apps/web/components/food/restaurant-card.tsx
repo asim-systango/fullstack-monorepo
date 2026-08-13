@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Clock, Star } from 'lucide-react';
+import { FoodImage } from '@/components/food';
 import type { Restaurant } from '@/lib/types/food-delivery';
 
 export function RestaurantCard({ restaurant }: Readonly<{ restaurant: Restaurant }>) {
@@ -11,37 +12,30 @@ export function RestaurantCard({ restaurant }: Readonly<{ restaurant: Restaurant
       className="tg-card tg-card-hover"
       style={{
         display: 'flex',
-        gap: 14,
-        alignItems: 'center',
-        padding: '16px 18px',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        padding: 0,
         textDecoration: 'none',
         color: 'inherit',
       }}
     >
-      <div
-        style={{
-          width: 54,
-          height: 54,
-          borderRadius: 12,
-          background: 'var(--tg-brand-soft)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 24,
-          flexShrink: 0,
-        }}
-      >
-        {restaurant.emoji ?? '🍽️'}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontWeight: 500, fontSize: 14.5, margin: 0, color: 'var(--tg-text)' }}>
+      <FoodImage
+        imageUrl={restaurant.imageUrl}
+        emoji={restaurant.emoji}
+        alt={restaurant.name}
+        variant="hero"
+        height={168}
+        borderRadius={0}
+      />
+      <div style={{ padding: '14px 16px 16px' }}>
+        <p style={{ fontWeight: 500, fontSize: 15, margin: 0, color: 'var(--tg-text)' }}>
           {restaurant.name}
         </p>
         <p
           style={{
             fontSize: 12.5,
             color: 'var(--tg-text-muted)',
-            margin: '3px 0 6px',
+            margin: '4px 0 8px',
             display: 'flex',
             alignItems: 'center',
             gap: 10,

@@ -64,6 +64,7 @@ export class MenuItemsService {
       restaurantId: dto.restaurantId,
       name: dto.name,
       description: dto.description ?? null,
+      imageUrl: dto.imageUrl ?? null,
       price: dto.price,
     });
 
@@ -84,6 +85,7 @@ export class MenuItemsService {
 
     if (dto.name !== undefined) item.name = dto.name;
     if (dto.description !== undefined) item.description = dto.description;
+    if (dto.imageUrl !== undefined) item.imageUrl = dto.imageUrl;
     if (dto.price !== undefined) item.price = dto.price;
 
     return this.menuItemRepo.save(item);

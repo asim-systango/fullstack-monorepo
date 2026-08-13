@@ -1,4 +1,8 @@
 export { RestaurantCard } from './restaurant-card';
+export { FoodImage } from './food-image';
+export { ImageUpload } from './image-upload';
+export { ImageUploadModal } from './image-upload-modal';
+export { StaffCredentialsModal } from './staff-credentials-modal';
 export { CartSwitchDialog } from './cart-switch-dialog';
 export { PriceBreakdown } from './price-breakdown';
 export { MockPaymentDialog } from './mock-payment-dialog';

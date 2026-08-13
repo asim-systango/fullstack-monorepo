@@ -3,12 +3,14 @@
 import { useState, type SyntheticEvent } from 'react';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { AppShell } from '@/components/layout';
+import { FoodImage, ImageUpload } from '@/components/food';
 import {
   useCreateMenuItem,
   useDeleteMenuItem,
   useMenuItems,
   useMyRestaurant,
   useUpdateMenuItem,
+  useUpdateRestaurant,
 } from '@/lib/hooks/food-delivery';
 import { useFormErrors } from '@/lib/hooks/use-form-errors';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
@@ -26,12 +28,14 @@ export default function RestaurantMenuPage() {
   const createItem = useCreateMenuItem(restaurantId);
   const updateItem = useUpdateMenuItem(restaurantId);
   const deleteItem = useDeleteMenuItem(restaurantId);
+  const updateRestaurant = useUpdateRestaurant();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | undefined>();
   const { errors, applyParse, clearErrors } = useFormErrors();
 
   useToastQueryError(myRestaurant.isError, myRestaurant.error);
@@ -52,6 +56,7 @@ export default function RestaurantMenuPage() {
     setName('');
     setDescription('');
     setPrice('');
+    setImageUrl(undefined);
     clearErrors();
   }
 
@@ -67,6 +72,7 @@ export default function RestaurantMenuPage() {
     setName(item.name);
     setDescription(item.description ?? '');
     setPrice(String(item.price));
+    setImageUrl(item.imageUrl ?? undefined);
     clearErrors();
   }
 
@@ -87,7 +93,10 @@ export default function RestaurantMenuPage() {
     if (!applyParse(parsed, true) || !parsed.success) return;
 
     try {
-      await createItem.mutateAsync(parsed.data);
+      await createItem.mutateAsync({
+        ...parsed.data,
+        imageUrl,
+      });
       resetForm();
       setShowForm(false);
       toastSuccess('Menu item added');
@@ -104,7 +113,13 @@ export default function RestaurantMenuPage() {
     if (!applyParse(parsed, true) || !parsed.success) return;
 
     try {
-      await updateItem.mutateAsync({ id: itemId, input: parsed.data });
+      await updateItem.mutateAsync({
+        id: itemId,
+        input: {
+          ...parsed.data,
+          imageUrl,
+        },
+      });
       cancelEdit();
       toastSuccess('Menu item updated');
     } catch (err) {
@@ -182,6 +197,19 @@ export default function RestaurantMenuPage() {
         ) : (
           <div style={{ marginBottom: 12 }} />
         )}
+
+        <label className="tg-label">Dish photo</label>
+        <div style={{ marginBottom: 12 }}>
+          <ImageUpload
+            folder="menu-items"
+            imageUrl={imageUrl}
+            alt={name || 'Menu item'}
+            label="Choose photo"
+            size={52}
+            onUploaded={(url) => setImageUrl(url)}
+            onError={toastError}
+          />
+        </div>
       </>
     );
   }
@@ -215,6 +243,36 @@ export default function RestaurantMenuPage() {
           <Plus size={15} /> Add item
         </button>
       </div>
+
+      {restaurantId ? (
+        <div className="tg-card" style={{ padding: 18, marginBottom: 16 }}>
+          <p className="tg-section-label" style={{ marginTop: 0 }}>
+            Restaurant photo
+          </p>
+          <ImageUpload
+            folder="restaurants"
+            imageUrl={restaurant?.imageUrl}
+            emoji={restaurant?.emoji}
+            alt={restaurant?.name ?? 'Restaurant'}
+            label="Change photo"
+            variant="hero"
+            heroHeight={160}
+            disabled={updateRestaurant.isPending}
+            onUploaded={async (url) => {
+              try {
+                await updateRestaurant.mutateAsync({
+                  id: restaurantId,
+                  input: { imageUrl: url },
+                });
+                toastSuccess('Restaurant photo updated');
+              } catch (err) {
+                toastApiError(err);
+              }
+            }}
+            onError={toastError}
+          />
+        </div>
+      ) : null}
 
       {showForm ? (
         <form
@@ -279,9 +337,11 @@ export default function RestaurantMenuPage() {
                 gap: 10,
               }}
             >
-              <div>
-                <p style={{ margin: 0, fontWeight: 500, fontSize: 14, color: 'var(--tg-text)' }}>
-                  {m.name}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <FoodImage imageUrl={m.imageUrl} alt={m.name} size={44} borderRadius={10} />
+                <div>
+                  <p style={{ margin: 0, fontWeight: 500, fontSize: 14, color: 'var(--tg-text)' }}>
+                    {m.name}
                   {m.deletedAt ? (
                     <span
                       style={{
@@ -301,6 +361,7 @@ export default function RestaurantMenuPage() {
                   {formatInr(m.price)}
                   {m.description ? ` · ${m.description}` : ''}
                 </p>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {!m.deletedAt ? (

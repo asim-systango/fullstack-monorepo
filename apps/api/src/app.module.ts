@@ -8,6 +8,7 @@ import { CartModule } from './modules/cart';
 import { HealthModule } from './modules/health';
 import { OrdersModule } from './modules/orders';
 import { RestaurantsModule } from './modules/restaurants';
+import { UploadsModule } from './modules/uploads';
 
 const db = databaseConfig();
 
@@ -25,6 +26,7 @@ const db = databaseConfig();
     RestaurantsModule,
     CartModule,
     OrdersModule,
+    UploadsModule,
     HealthModule,
   ],
   providers: [

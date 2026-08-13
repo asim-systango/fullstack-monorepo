@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { AppShell } from '@/components/layout';
-import { CartSwitchDialog } from '@/components/food';
+import { CartSwitchDialog, FoodImage } from '@/components/food';
 import {
   useAddToCart,
   useCart,
@@ -106,23 +106,21 @@ export default function RestaurantDetailPage({ params }: PageProps) {
 
       <div
         className="tg-card"
-        style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', marginBottom: 22 }}
+        style={{
+          overflow: 'hidden',
+          padding: 0,
+          marginBottom: 22,
+        }}
       >
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 14,
-            background: 'var(--tg-brand-soft)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 30,
-          }}
-        >
-          {r.emoji ?? '🍽️'}
-        </div>
-        <div>
+        <FoodImage
+          imageUrl={r.imageUrl}
+          emoji={r.emoji}
+          alt={r.name}
+          variant="hero"
+          height={200}
+          borderRadius={0}
+        />
+        <div style={{ padding: '16px 20px' }}>
           <h1 style={{ fontSize: 19, fontWeight: 500, margin: 0, color: 'var(--tg-text)' }}>
             {r.name}
           </h1>
@@ -160,15 +158,23 @@ export default function RestaurantDetailPage({ params }: PageProps) {
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ flex: 1 }}>
-                <p style={{ fontWeight: 500, fontSize: 14, margin: 0, color: 'var(--tg-text)' }}>
-                  {m.name}
-                </p>
-                {m.description ? (
-                  <p style={{ fontSize: 12.5, color: 'var(--tg-text-muted)', margin: '3px 0 0' }}>
-                    {m.description}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                <FoodImage
+                  imageUrl={m.imageUrl}
+                  alt={m.name}
+                  size={48}
+                  borderRadius={10}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 500, fontSize: 14, margin: 0, color: 'var(--tg-text)' }}>
+                    {m.name}
                   </p>
-                ) : null}
+                  {m.description ? (
+                    <p style={{ fontSize: 12.5, color: 'var(--tg-text-muted)', margin: '3px 0 0' }}>
+                      {m.description}
+                    </p>
+                  ) : null}
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--tg-text)' }}>

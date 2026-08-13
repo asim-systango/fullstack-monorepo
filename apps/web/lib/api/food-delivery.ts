@@ -4,6 +4,7 @@ import type {
   CartSummary,
   CreateMenuItemInput,
   CreateRestaurantInput,
+  CreateRestaurantResult,
   MenuItem,
   Order,
   OrderFilters,
@@ -13,6 +14,7 @@ import type {
   Restaurant,
   RestaurantFilters,
   UpdateMenuItemInput,
+  UpdateRestaurantInput,
   PaymentCheckout,
   VerifyPaymentInput,
   VerifyPaymentResult,
@@ -38,7 +40,11 @@ export const foodApiClient = {
   },
 
   createRestaurant(input: CreateRestaurantInput) {
-    return apiClient.post('/restaurants', input).then((res) => unwrapData<Restaurant>(res.data));
+    return apiClient.post('/restaurants', input).then((res) => unwrapData<CreateRestaurantResult>(res.data));
+  },
+
+  updateRestaurant(id: string, input: UpdateRestaurantInput) {
+    return apiClient.patch(`/restaurants/${id}`, input).then((res) => unwrapData<Restaurant>(res.data));
   },
 
   listMenuItems(restaurantId: string, includeDeleted = false) {

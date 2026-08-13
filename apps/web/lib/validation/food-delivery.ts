@@ -13,7 +13,9 @@ export type RestaurantFormValues = {
   cuisine: string;
   address: string;
   description?: string;
-  ownerUserId: string;
+  ownerEmail: string;
+  eta?: string;
+  rating?: number;
 };
 
 export type LoginFormValues = {
@@ -137,13 +139,22 @@ export function parseRestaurant(input: {
   cuisine: string;
   address: string;
   description?: string;
-  ownerUserId: string;
+  ownerEmail: string;
+  eta?: string;
+  rating?: string | number;
 }): ParseResult<RestaurantFormValues> {
   const name = input.name.trim();
   const cuisine = input.cuisine.trim();
   const address = input.address.trim();
   const description = input.description?.trim();
-  const ownerUserId = input.ownerUserId.trim();
+  const ownerEmail = input.ownerEmail.trim();
+  const eta = input.eta?.trim();
+  const rating =
+    input.rating === '' || input.rating === undefined || input.rating === null
+      ? undefined
+      : typeof input.rating === 'number'
+        ? input.rating
+        : Number(input.rating);
   const errors: Record<string, string> = {};
 
   if (!name) errors.name = 'Name is required';
@@ -155,8 +166,16 @@ export function parseRestaurant(input: {
   if (address.length < 5) errors.address = 'Address must be at least 5 characters';
   else if (address.length > 500) errors.address = 'Address is too long';
 
-  if (!ownerUserId) errors.ownerUserId = 'Owner user id is required';
-  else if (!UUID_RE.test(ownerUserId)) errors.ownerUserId = 'Enter a valid owner user id';
+  if (!ownerEmail) errors.ownerEmail = 'Restaurant email is required';
+  else if (!EMAIL_RE.test(ownerEmail)) errors.ownerEmail = 'Enter a valid email';
+
+  if (eta && eta.length > 40) errors.eta = 'Delivery time is too long';
+
+  if (rating !== undefined) {
+    if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+      errors.rating = 'Rating must be between 0 and 5';
+    }
+  }
 
   if (description && description.length > 500) {
     errors.description = 'Description is too long';
@@ -170,7 +189,9 @@ export function parseRestaurant(input: {
       cuisine,
       address,
       description: description || undefined,
-      ownerUserId,
+      ownerEmail,
+      eta: eta || undefined,
+      rating,
     },
   };
 }

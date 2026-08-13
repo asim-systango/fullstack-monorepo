@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUrl, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class UpdateRestaurantDto {
   @ApiPropertyOptional()
@@ -33,7 +33,20 @@ export class UpdateRestaurantDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsUrl({ require_protocol: true, protocols: ['https'] })
+  @MaxLength(512)
+  imageUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
   @MaxLength(40)
   eta?: string;
+
+  @ApiPropertyOptional({ example: 4.5 })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(0)
+  @Max(5)
+  rating?: number;
 }

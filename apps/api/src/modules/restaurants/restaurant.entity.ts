@@ -37,6 +37,9 @@ export class Restaurant {
   @Column({ type: 'varchar', length: 10, nullable: true })
   emoji: string | null;
 
+  @Column({ name: 'image_url', type: 'varchar', length: 512, nullable: true })
+  imageUrl: string | null;
+
   @Column({
     type: 'numeric',
     precision: 2,

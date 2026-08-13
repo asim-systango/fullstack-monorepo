@@ -25,9 +25,9 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${isProd ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://cdn.razorpay.com",
+  "img-src 'self' data: blob: https://cdn.razorpay.com https://res.cloudinary.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com",
+  "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://api.cloudinary.com",
   "frame-src https://api.razorpay.com",
   "base-uri 'self'",
   "form-action 'self'",
@@ -56,6 +56,14 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@shared/ui', '@shared/api-client', '@shared/types'],
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
   async rewrites() {
     return [

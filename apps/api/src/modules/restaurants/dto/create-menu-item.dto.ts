@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
   MaxLength,
   Min,
@@ -20,6 +21,12 @@ export class CreateMenuItemDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/demo/image/upload/sample.jpg' })
+  @IsOptional()
+  @IsUrl({ require_protocol: true, protocols: ['https'] })
+  @MaxLength(512)
+  imageUrl?: string;
 
   @ApiProperty({ example: 225 })
   @IsNumber({ maxDecimalPlaces: 2 })

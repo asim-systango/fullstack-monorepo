@@ -6,11 +6,12 @@ import { MenuItemsService } from './menu-items.service';
 import { Restaurant } from './restaurant.entity';
 import { RestaurantsController } from './restaurants.controller';
 import { RestaurantsService } from './restaurants.service';
+import { StaffOwnerProvisioner } from './staff-owner.provisioner';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Restaurant, MenuItem])],
   controllers: [RestaurantsController, MenuItemsController],
-  providers: [RestaurantsService, MenuItemsService],
+  providers: [RestaurantsService, MenuItemsService, StaffOwnerProvisioner],
   exports: [TypeOrmModule, RestaurantsService, MenuItemsService],
 })
 export class RestaurantsModule {}

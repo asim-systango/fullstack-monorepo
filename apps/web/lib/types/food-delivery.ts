@@ -44,6 +44,7 @@ export type Restaurant = {
   address: string;
   description?: string;
   emoji?: string;
+  imageUrl?: string | null;
   rating?: number;
   eta?: string;
 };
@@ -54,6 +55,7 @@ export type MenuItem = {
   name: string;
   description?: string;
   price: number;
+  imageUrl?: string | null;
   deletedAt?: string | null;
 };
 
@@ -140,6 +142,7 @@ export type CreateMenuItemInput = {
   name: string;
   description?: string;
   price: number;
+  imageUrl?: string;
 };
 
 export type UpdateMenuItemInput = Partial<CreateMenuItemInput>;
@@ -149,5 +152,30 @@ export type CreateRestaurantInput = {
   cuisine: string;
   address: string;
   description?: string;
-  ownerUserId: string;
+  ownerEmail: string;
+  eta?: string;
+  rating?: number;
+  imageUrl?: string;
+};
+
+export type StaffLoginDetails = {
+  email: string;
+  password: string;
+  role: 'staff';
+};
+
+export type CreateRestaurantResult = {
+  restaurant: Restaurant;
+  staffLogin: StaffLoginDetails | null;
+};
+
+export type UpdateRestaurantInput = {
+  name?: string;
+  cuisine?: string;
+  address?: string;
+  description?: string;
+  emoji?: string;
+  imageUrl?: string;
+  eta?: string;
+  rating?: number;
 };
