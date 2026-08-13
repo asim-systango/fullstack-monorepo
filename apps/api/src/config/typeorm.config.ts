@@ -6,6 +6,10 @@ import { Organization } from '../database/entities/organization.entity';
 import { Permission } from '../database/entities/permission.entity';
 import { RoutePermission } from '../database/entities/route-permission.entity';
 import { FormSubmission } from '../database/entities/form-submission.entity';
+import { Contact } from '../database/entities/contact.entity';
+import { Lead } from '../database/entities/lead.entity';
+import { Deal } from '../database/entities/deal.entity';
+import { Activity } from '../database/entities/activity.entity';
 
 dotenv.config();
 
@@ -18,6 +22,10 @@ const entitiesList = [
   Permission,
   RoutePermission,
   FormSubmission,
+  Contact,
+  Lead,
+  Deal,
+  Activity,
 ];
 
 export const typeOrmConfig: DataSourceOptions = url
