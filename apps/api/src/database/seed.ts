@@ -209,6 +209,24 @@ async function seed() {
       profileImage:
         'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&q=80',
       isActive: true,
+      documents: [
+        {
+          id: 'doc-seed-1',
+          name: 'Medical_Council_License_Jenkins.pdf',
+          type: 'Medical License',
+          url: '/objects/sample-license-jenkins.pdf',
+          status: 'VERIFIED',
+          uploadedAt: '2026-01-15',
+        },
+        {
+          id: 'doc-seed-2',
+          name: 'Cardiology_Board_Certificate.pdf',
+          type: 'Board Certification',
+          url: '/objects/sample-board-cert-jenkins.pdf',
+          status: 'VERIFIED',
+          uploadedAt: '2026-02-10',
+        },
+      ],
     }),
   );
 
@@ -229,6 +247,16 @@ async function seed() {
       profileImage:
         'https://images.unsplash.com/photo-1594824813566-88855ce78965?w=400&q=80',
       isActive: true,
+      documents: [
+        {
+          id: 'doc-seed-3',
+          name: 'Medical_Council_License_Chen.pdf',
+          type: 'Medical License',
+          url: '/objects/sample-license-chen.pdf',
+          status: 'VERIFIED',
+          uploadedAt: '2026-01-20',
+        },
+      ],
     }),
   );
 

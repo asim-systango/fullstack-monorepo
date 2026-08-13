@@ -25,6 +25,7 @@ describe('AuthController', () => {
     register: jest.fn(),
     login: jest.fn(),
     logout: jest.fn(),
+    changePassword: jest.fn(),
   };
 
   let controller: AuthController;
@@ -100,5 +101,21 @@ describe('AuthController', () => {
       message: 'Successfully logged out',
     });
     expect(authService.logout).toHaveBeenCalledWith(publicUser, res);
+  });
+
+  it('changePassword delegates to the service', async () => {
+    authService.changePassword.mockResolvedValue({
+      message: 'Password updated successfully',
+    });
+    await expect(
+      controller.changePassword(publicUser, {
+        currentPassword: 'OldPassword1!',
+        newPassword: 'NewPassword1!',
+      }),
+    ).resolves.toEqual({ message: 'Password updated successfully' });
+    expect(authService.changePassword).toHaveBeenCalledWith(publicUser.id, {
+      currentPassword: 'OldPassword1!',
+      newPassword: 'NewPassword1!',
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../shared/entities/base.entity';
 import type { Slot } from '../../slot/entities/slot.entity';
+import type { DoctorDocumentDto } from '../dto/create-doctor.dto';
 
 /**
  * Doctor professional profile.
@@ -35,10 +36,10 @@ export class DoctorProfile extends BaseEntity {
   @Column({ type: 'int', default: 0 })
   experienceYears!: number;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   consultationFee!: number;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, default: 10 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   hospitalCharge!: number;
 
   @Column({ type: 'text', nullable: true })
@@ -46,6 +47,9 @@ export class DoctorProfile extends BaseEntity {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   profileImage!: string | null;
+
+  @Column({ type: 'jsonb', nullable: true, default: () => "'[]'" })
+  documents!: DoctorDocumentDto[] | Array<Record<string, unknown>> | null;
 
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;

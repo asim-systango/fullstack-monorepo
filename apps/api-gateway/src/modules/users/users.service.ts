@@ -56,6 +56,10 @@ export class UsersService {
     await this.users.update(userId, { hashedRefreshToken });
   }
 
+  async updatePassword(userId: string, passwordHash: string) {
+    await this.users.update(userId, { passwordHash });
+  }
+
   async updateProfile(
     userId: string,
     input: {

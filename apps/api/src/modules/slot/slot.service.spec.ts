@@ -55,41 +55,31 @@ describe('SlotService (Unit)', () => {
     });
   });
 
-  describe('create', () => {
-    it('creates a new available slot when valid', async () => {
-      const startsAt = new Date(Date.now() + 3600000).toISOString();
-      const endsAt = new Date(Date.now() + 5400000).toISOString();
-
+  describe('createBulk', () => {
+    it('creates bulk slots when valid payload provided', async () => {
       slotRepoMock.findOverlappingSlot.mockResolvedValue(null);
       slotRepoMock.create.mockResolvedValue(mockSlot);
 
-      const result = await service.create({
+      const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+      const result = await service.createBulk({
         doctorId: 'doctor-222',
-        startsAt,
-        endsAt,
+        date: futureDate!,
+        shifts: [{ startTime: '09:00', endTime: '12:00' }],
+        slotDurationMinutes: 30,
       });
 
-      expect(result).toEqual(mockSlot);
-      expect(slotRepoMock.create).toHaveBeenCalled();
+      expect(Array.isArray(result)).toBe(true);
     });
 
-    it('throws BadRequestException if startsAt >= endsAt', async () => {
-      const startsAt = new Date(Date.now() + 5400000).toISOString();
-      const endsAt = new Date(Date.now() + 3600000).toISOString();
-
+    it('throws BadRequestException if startDate > endDate', async () => {
       await expect(
-        service.create({ doctorId: 'doctor-222', startsAt, endsAt }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('throws BadRequestException if slot overlaps with existing slot', async () => {
-      const startsAt = new Date(Date.now() + 3600000).toISOString();
-      const endsAt = new Date(Date.now() + 5400000).toISOString();
-
-      slotRepoMock.findOverlappingSlot.mockResolvedValue(mockSlot);
-
-      await expect(
-        service.create({ doctorId: 'doctor-222', startsAt, endsAt }),
+        service.createBulk({
+          doctorId: 'doctor-222',
+          date: '2026-08-20',
+          endDate: '2026-08-10',
+          shifts: [{ startTime: '09:00', endTime: '12:00' }],
+        }),
       ).rejects.toThrow(BadRequestException);
     });
   });

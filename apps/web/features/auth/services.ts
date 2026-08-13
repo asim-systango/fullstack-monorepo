@@ -1,6 +1,12 @@
 import { unwrapData } from '@shared/api-client';
 import { apiClient } from '../../lib/api';
-import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from './types';
+import type {
+  AuthResponse,
+  AuthUser,
+  LoginPayload,
+  RegisterPayload,
+  ChangePasswordPayload,
+} from './types';
 
 export async function loginApi(payload: LoginPayload): Promise<AuthResponse> {
   const { data } = await apiClient.post('/auth/login', payload);
@@ -25,4 +31,11 @@ export async function logoutApi(): Promise<{ message: string }> {
 export async function fetchProfileApi(): Promise<AuthUser> {
   const { data } = await apiClient.get('/auth/me');
   return unwrapData<AuthUser>(data);
+}
+
+export async function changePasswordApi(
+  payload: ChangePasswordPayload,
+): Promise<{ message: string }> {
+  const { data } = await apiClient.post('/auth/change-password', payload);
+  return unwrapData<{ message: string }>(data);
 }

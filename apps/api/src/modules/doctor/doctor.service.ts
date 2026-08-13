@@ -138,7 +138,12 @@ export class DoctorService {
   }
 
   async findByUserId(userId: string): Promise<DoctorProfile | null> {
-    return this.doctorRepository.findByUserId(userId);
+    let doctor = await this.doctorRepository.findByUserId(userId);
+    if (!doctor) {
+      await this.syncUsersToDoctorProfiles();
+      doctor = await this.doctorRepository.findByUserId(userId);
+    }
+    return doctor;
   }
 
   async create(dto: CreateDoctorDto): Promise<DoctorProfile> {

@@ -63,9 +63,28 @@ export class DoctorController {
     if (!user) {
       throw new NotFoundException('Authentication required');
     }
-    const doctor = await this.doctorService.findByUserId(user.id);
+    let doctor = await this.doctorService.findByUserId(user.id);
     if (!doctor) {
-      throw new NotFoundException(`Doctor profile not found for user ID "${user.id}"`);
+      try {
+        const nameParts = (user.name || '').replace(/^Dr\.\s*/i, '').split(' ');
+        const firstName = nameParts[0] || 'Doctor';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        doctor = await this.doctorService.create({
+          userId: user.id,
+          firstName,
+          lastName,
+          specialization: 'General Medicine',
+          qualification: 'MBBS',
+          experienceYears: 5,
+          consultationFee: 100,
+          approvalStatus: 'PENDING',
+        });
+      } catch (err) {
+        throw new NotFoundException(
+          `Doctor profile not found for user ID "${user.id}": ${(err as Error).message}`,
+        );
+      }
     }
     return doctor;
   }

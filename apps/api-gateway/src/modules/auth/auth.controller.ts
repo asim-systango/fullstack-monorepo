@@ -7,13 +7,19 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { CurrentUser, Public } from '../../common/auth';
 import { PublicUser } from '../users';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto/auth.dto';
+import {
+  LoginDto,
+  RegisterDto,
+  RefreshTokenDto,
+  ChangePasswordDto,
+} from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -97,5 +103,17 @@ export class AuthController {
     dto: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string },
   ) {
     return this.authService.updateProfile(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @ApiCookieAuth('access_token')
+  @Post('change-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Change logged in user password' })
+  @ApiOkResponse({ description: 'Password changed successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid password details provided' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token' })
+  changePassword(@CurrentUser() user: PublicUser, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.id, dto);
   }
 }

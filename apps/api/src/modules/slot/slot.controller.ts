@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { SlotService } from './slot.service';
-import { CreateSlotDto } from './dto/create-slot.dto';
 import { BulkCreateSlotDto } from './dto/bulk-create-slot.dto';
 import { UpdateSlotDto } from './dto/update-slot.dto';
 import { SlotStatus } from '../../shared/enums/slot-status.enum';
@@ -55,15 +54,6 @@ export class SlotController {
   @ApiResponse({ status: 403, description: 'Forbidden — Doctor or Admin role required' })
   async createBulk(@Body() dto: BulkCreateSlotDto) {
     return this.slotService.createBulk(dto);
-  }
-
-  @Post()
-  @Roles('DOCTOR', 'ADMIN')
-  @ApiOperation({ summary: 'Create a consultation slot' })
-  @ApiResponse({ status: 201, description: 'Slot created successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden — Doctor or Admin role required' })
-  async create(@Body() dto: CreateSlotDto) {
-    return this.slotService.create(dto);
   }
 
   @Patch(':id')

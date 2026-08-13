@@ -12,12 +12,6 @@ export type Slot = {
   updatedAt: string;
 };
 
-export type CreateSlotInput = {
-  doctorId: string;
-  startsAt: string;
-  endsAt?: string;
-};
-
 export type ShiftInput = {
   name?: string;
   startTime: string;

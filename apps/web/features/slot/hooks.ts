@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { slotApi } from './services';
-import type { SlotStatus, CreateSlotInput, BulkCreateSlotInput } from './types';
+import type { SlotStatus, BulkCreateSlotInput } from './types';
 
 export const slotKeys = {
   all: ['slots'] as const,
@@ -27,17 +27,6 @@ export function useAvailableSlots(doctorId: string) {
     enabled: Boolean(doctorId),
     placeholderData: (previousData) => previousData,
     staleTime: 10_000,
-  });
-}
-
-/** Hook to create a single consultation slot. */
-export function useCreateSlot() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: CreateSlotInput) => slotApi.create(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: slotKeys.all });
-    },
   });
 }
 

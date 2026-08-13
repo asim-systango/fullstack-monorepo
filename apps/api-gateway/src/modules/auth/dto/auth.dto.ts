@@ -115,3 +115,27 @@ export class TokenResponseDto {
   @ApiProperty()
   user!: Record<string, unknown>;
 }
+
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'Current@123' })
+  @IsString()
+  @MinLength(1)
+  currentPassword!: string;
+
+  @ApiProperty({
+    example: 'NewPassword@123',
+    description:
+      'Must contain at least 8 characters, one uppercase, one lowercase, one number, and one special character',
+  })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_-])[A-Za-z\d@$!%*?&#^()_-]{8,}$/,
+    {
+      message:
+        'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character',
+    },
+  )
+  newPassword!: string;
+}

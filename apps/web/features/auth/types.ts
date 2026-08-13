@@ -42,3 +42,8 @@ export interface AuthResponse {
   message?: string;
   requiresApproval?: boolean;
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}

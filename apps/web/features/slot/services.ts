@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api';
-import type { Slot, SlotStatus, CreateSlotInput, BulkCreateSlotInput } from './types';
+import type { Slot, SlotStatus, BulkCreateSlotInput } from './types';
 
 export const slotApi = {
   /** Fetch slots for a doctor with optional status filter. */
@@ -18,12 +18,6 @@ export const slotApi = {
   /** Fetch available slots for a doctor. */
   async getAvailableByDoctor(doctorId: string): Promise<Slot[]> {
     return this.getByDoctor(doctorId, 'AVAILABLE');
-  },
-
-  /** Create a single consultation slot. */
-  async create(payload: CreateSlotInput): Promise<Slot> {
-    const { data } = await apiClient.post<Slot | { data: Slot }>('/slots', payload);
-    return 'data' in data && data.data ? data.data : (data as Slot);
   },
 
   /** Bulk generate consultation slots for a doctor. */

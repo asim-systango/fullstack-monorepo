@@ -1,3 +1,12 @@
+export type DoctorDocument = {
+  id: string;
+  name: string;
+  type: string;
+  url: string;
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  uploadedAt: string;
+};
+
 /** Doctor profile shape matching the backend DoctorProfile entity. */
 export type DoctorProfile = {
   id: string;
@@ -11,6 +20,8 @@ export type DoctorProfile = {
   hospitalCharge?: number;
   biography: string | null;
   profileImage: string | null;
+  medicalLicense?: string | null;
+  documents?: DoctorDocument[];
   isActive: boolean;
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;

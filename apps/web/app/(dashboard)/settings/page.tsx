@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/components/auth';
 import { useAuthStore } from '@/features/auth/store/use-auth-store';
+import { changePasswordApi } from '@/features/auth/services';
 import { apiClient } from '@/lib/api';
 import {
   Page,
@@ -23,6 +24,7 @@ import {
   DialogBody,
   DialogFooter,
 } from '@shared/ui/components';
+import { viewDocument, downloadDocument } from '@/lib/document-utils';
 import {
   User,
   Shield,
@@ -39,7 +41,39 @@ import {
   AlertCircle,
   Clock,
   Loader2,
+  Eye,
+  Download,
+  Trash2,
+  XCircle,
 } from 'lucide-react';
+
+function getDocBadgeTone(status: string): 'success' | 'danger' | 'warning' {
+  if (status === 'VERIFIED') return 'success';
+  if (status === 'REJECTED') return 'danger';
+  return 'warning';
+}
+
+function renderDocStatusContent(status: string) {
+  if (status === 'VERIFIED') {
+    return (
+      <span className="flex items-center gap-1">
+        <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified
+      </span>
+    );
+  }
+  if (status === 'REJECTED') {
+    return (
+      <span className="flex items-center gap-1">
+        <XCircle className="w-3 h-3 text-destructive" /> Rejected
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <Clock className="w-3 h-3 text-amber-500" /> Pending Review
+    </span>
+  );
+}
 
 export default function UserSettingsPage() {
   const { user } = useAuth();
@@ -65,6 +99,36 @@ export default function UserSettingsPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
 
+  // Security State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [securitySuccess, setSecuritySuccess] = useState(false);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Doctor Professional State
+  const [specialization, setSpecialization] = useState('Cardiology');
+  const [qualification, setQualification] = useState('MD, FACC');
+  const [consultationFee, setConsultationFee] = useState(150);
+  const [experienceYears, setExperienceYears] = useState(10);
+  const [biography, setBiography] = useState(
+    'Board-certified medical specialist dedicated to patient-centered care.',
+  );
+  const [doctorSuccess, setDoctorSuccess] = useState(false);
+
+  // Doctor Documents State
+  type DocItem = {
+    id: string;
+    name: string;
+    type: string;
+    status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    uploadedAt: string;
+    url: string;
+  };
+  const [doctorId, setDoctorId] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<DocItem[]>([]);
+
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName || user.name?.split(' ')[0] || '');
@@ -80,6 +144,7 @@ export default function UserSettingsPage() {
           .then((res) => {
             const doc = res.data?.data || res.data;
             if (doc) {
+              if (doc.id) setDoctorId(doc.id);
               if (doc.specialization) setSpecialization(doc.specialization);
               if (doc.qualification) setQualification(doc.qualification);
               if (doc.consultationFee !== undefined)
@@ -88,6 +153,19 @@ export default function UserSettingsPage() {
                 setExperienceYears(doc.experienceYears);
               if (doc.biography) setBiography(doc.biography);
               if (doc.profileImage) setProfileImage(doc.profileImage);
+
+              let loadedDocs: DocItem[] = [];
+              if (Array.isArray(doc.documents)) {
+                loadedDocs = doc.documents;
+              } else if (typeof doc.documents === 'string') {
+                try {
+                  const parsed = JSON.parse(doc.documents);
+                  if (Array.isArray(parsed)) loadedDocs = parsed;
+                } catch {
+                  // ignore parse error
+                }
+              }
+              if (loadedDocs.length > 0) setDocuments(loadedDocs);
             }
           })
           .catch((err) => {
@@ -96,47 +174,6 @@ export default function UserSettingsPage() {
       }
     }
   }, [user]);
-
-  // Security State
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [securitySuccess, setSecuritySuccess] = useState(false);
-
-  // Doctor Professional State
-  const [specialization, setSpecialization] = useState('Cardiology');
-  const [qualification, setQualification] = useState('MD, FACC');
-  const [consultationFee, setConsultationFee] = useState(150);
-  const [experienceYears, setExperienceYears] = useState(10);
-  const [biography, setBiography] = useState(
-    'Board-certified medical specialist dedicated to patient-centered care.',
-  );
-  const [doctorSuccess, setDoctorSuccess] = useState(false);
-
-  // Doctor Documents State
-  const [documents, setDocuments] = useState([
-    {
-      id: 'doc-1',
-      name: 'Medical Council License.pdf',
-      type: 'License',
-      status: 'VERIFIED',
-      uploadedAt: '2026-01-15',
-    },
-    {
-      id: 'doc-2',
-      name: 'Board Certification.pdf',
-      type: 'Certificate',
-      status: 'VERIFIED',
-      uploadedAt: '2026-02-10',
-    },
-    {
-      id: 'doc-3',
-      name: 'Government ID Proof.jpg',
-      type: 'ID Proof',
-      status: 'PENDING',
-      uploadedAt: '2026-08-01',
-    },
-  ]);
 
   // Patient Health State
   const [emergencyContactName, setEmergencyContactName] = useState('Jane Doe');
@@ -216,13 +253,60 @@ export default function UserSettingsPage() {
     }
   };
 
-  const handleSecuritySave = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSecuritySave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSecuritySuccess(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setTimeout(() => setSecuritySuccess(false), 3000);
+    setSecurityError(null);
+    setSecuritySuccess(false);
+
+    if (!currentPassword) {
+      setSecurityError('Current password is required.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setSecurityError('New password must be at least 8 characters long.');
+      return;
+    }
+    if (
+      !/[A-Z]/.test(newPassword) ||
+      !/[a-z]/.test(newPassword) ||
+      !/\d/.test(newPassword) ||
+      !/[@$!%*?&#^()_-]/.test(newPassword)
+    ) {
+      setSecurityError(
+        'New password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.',
+      );
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setSecurityError('New password and confirm password do not match.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await changePasswordApi({
+        currentPassword,
+        newPassword,
+      });
+      setSecuritySuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setSecuritySuccess(false), 4000);
+    } catch (err: unknown) {
+      console.error('Failed to change password:', err);
+      const apiErr = err as {
+        response?: { data?: { message?: string | string[] } };
+        message?: string;
+      };
+      const msg =
+        apiErr?.response?.data?.message ||
+        apiErr?.message ||
+        'Failed to update password. Please check your current password.';
+      setSecurityError(Array.isArray(msg) ? msg.join(', ') : msg);
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleDoctorSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -304,7 +388,7 @@ export default function UserSettingsPage() {
       const objectPath = uploadData?.objectPath || data.objectPath;
       const today = new Date().toISOString().split('T')[0] ?? '2026-08-11';
 
-      const newDoc = {
+      const newDoc: DocItem = {
         id: `doc-${Date.now()}`,
         name: selectedFile.name,
         type: docCategory,
@@ -313,7 +397,31 @@ export default function UserSettingsPage() {
         url: objectPath,
       };
 
-      setDocuments((prev) => [...prev, newDoc]);
+      const updatedDocs = [...documents, newDoc];
+      setDocuments(updatedDocs);
+
+      // Save updated documents to backend DoctorProfile
+      if (role === 'DOCTOR') {
+        try {
+          let targetDocId = doctorId;
+          if (!targetDocId) {
+            const meRes = await apiClient.get('/doctors/me');
+            const doctorMe = meRes.data?.data || meRes.data;
+            if (doctorMe && doctorMe.id) {
+              targetDocId = doctorMe.id;
+              setDoctorId(targetDocId);
+            }
+          }
+          if (targetDocId) {
+            await apiClient.patch(`/doctors/${targetDocId}`, {
+              documents: updatedDocs,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to sync document with backend profile:', err);
+        }
+      }
+
       setIsUploadModalOpen(false);
       setSelectedFile(null);
     } catch (err) {
@@ -321,6 +429,31 @@ export default function UserSettingsPage() {
       setDocumentError('Failed to upload document. Please try again.');
     } finally {
       setIsUploadingDocument(false);
+    }
+  };
+
+  const handleRemoveDocument = async (docId: string) => {
+    const updatedDocs = documents.filter((d) => d.id !== docId);
+    setDocuments(updatedDocs);
+    if (role === 'DOCTOR') {
+      try {
+        let targetDocId = doctorId;
+        if (!targetDocId) {
+          const meRes = await apiClient.get('/doctors/me');
+          const doctorMe = meRes.data?.data || meRes.data;
+          if (doctorMe && doctorMe.id) {
+            targetDocId = doctorMe.id;
+            setDoctorId(targetDocId);
+          }
+        }
+        if (targetDocId) {
+          await apiClient.patch(`/doctors/${targetDocId}`, {
+            documents: updatedDocs,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to remove document on backend:', err);
+      }
     }
   };
 
@@ -557,6 +690,12 @@ export default function UserSettingsPage() {
                     />
                   </Field>
 
+                  {securityError && (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> {securityError}
+                    </div>
+                  )}
+
                   {securitySuccess && (
                     <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4" /> Security password changed
@@ -569,9 +708,15 @@ export default function UserSettingsPage() {
                       type="submit"
                       variant="primary"
                       size="sm"
+                      disabled={isUpdatingPassword}
                       className="gap-1.5 text-xs"
                     >
-                      <Shield className="w-3.5 h-3.5" /> Update Password
+                      {isUpdatingPassword ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Shield className="w-3.5 h-3.5" />
+                      )}
+                      {isUpdatingPassword ? 'Updating...' : 'Update Password'}
                     </Button>
                   </div>
                 </form>
@@ -689,53 +834,86 @@ export default function UserSettingsPage() {
                   </Button>
                 </CardHeader>
                 <CardBody className="pt-4">
-                  <div className="space-y-3">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="p-3 rounded-lg bg-muted/20 border border-border/40 flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div>
-                            {'url' in doc && doc.url ? (
-                              <a
-                                href={doc.url as string}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="font-semibold text-primary hover:underline"
-                              >
-                                {doc.name}
-                              </a>
-                            ) : (
+                  {documents.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed border-border/60 rounded-xl bg-muted/10">
+                      <FileText className="w-8 h-8 mx-auto text-muted-foreground/60 mb-2" />
+                      <p className="text-xs font-medium text-foreground">
+                        No documents uploaded yet
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Upload your medical license or certification to complete
+                        verification.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {documents.map((doc, idx) => (
+                        <div
+                          key={doc.id || `doc-${idx}-${doc.name || 'item'}`}
+                          className="p-3 rounded-lg bg-muted/20 border border-border/40 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div>
                               <p className="font-semibold text-foreground">{doc.name}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                Type: {doc.type} &bull; Uploaded on {doc.uploadedAt}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              tone={getDocBadgeTone(doc.status)}
+                              className="text-[10px]"
+                            >
+                              {renderDocStatusContent(doc.status)}
+                            </Badge>
+
+                            {doc.url && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => viewDocument(doc.url)}
+                                  className="h-7 px-2 text-[11px] gap-1"
+                                  title="View Document"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-primary" /> View
+                                </Button>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => void downloadDocument(doc.name, doc.url)}
+                                  className="h-7 px-2 text-[11px] gap-1"
+                                  title="Download Document"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-foreground" />{' '}
+                                  Download
+                                </Button>
+                              </>
                             )}
-                            <p className="text-[10px] text-muted-foreground">
-                              Type: {doc.type} &bull; Uploaded on {doc.uploadedAt}
-                            </p>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveDocument(doc.id)}
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                              title="Remove Document"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </div>
-
-                        <Badge
-                          tone={doc.status === 'VERIFIED' ? 'success' : 'warning'}
-                          className="text-[10px]"
-                        >
-                          {doc.status === 'VERIFIED' ? (
-                            <span className="flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />{' '}
-                              Verified
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-amber-500" /> Pending Review
-                            </span>
-                          )}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardBody>
               </Card>
             </div>

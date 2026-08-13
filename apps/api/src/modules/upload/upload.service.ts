@@ -57,10 +57,18 @@ export class UploadService {
     if (this.isCloudinaryConfigured) {
       try {
         const publicId = path.parse(objectId).name;
+        const ext = path.extname(objectId).toLowerCase();
+        const isRawDocument =
+          ext === '.pdf' || ext === '.doc' || ext === '.docx' || ext === '.txt';
+
         const uploadResult = await new Promise<{ secure_url: string }>(
           (resolve, reject) => {
             const stream = cloudinary.uploader.upload_stream(
-              { public_id: publicId, folder: 'pulsecare_uploads' },
+              {
+                public_id: publicId,
+                folder: 'pulsecare_uploads',
+                resource_type: isRawDocument ? 'raw' : 'auto',
+              },
               (error, result) => {
                 if (error || !result) return reject(error);
                 resolve(result);

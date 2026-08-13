@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -11,7 +12,12 @@ import { QueryFailedError } from 'typeorm';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../common/env';
 import { Role } from '../users/user.entity';
 import { UsersService, type PublicUser } from '../users';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto/auth.dto';
+import {
+  LoginDto,
+  RegisterDto,
+  RefreshTokenDto,
+  ChangePasswordDto,
+} from './dto/auth.dto';
 import type { Response, Request } from 'express';
 
 export { AUTH_COOKIE_NAME };
@@ -340,6 +346,30 @@ export class AuthService {
     }
 
     return updatedUser;
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isValid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const isSamePassword = await bcrypt.compare(dto.newPassword, user.passwordHash);
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 12);
+    await this.usersService.updatePassword(userId, newPasswordHash);
+
+    return { message: 'Password updated successfully' };
   }
 
   private async generateTokens(userId: string, email: string, role: string) {

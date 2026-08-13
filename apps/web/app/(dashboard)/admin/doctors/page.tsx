@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { RoleRoute } from '@/components/auth';
 import { useDoctors, useUpdateDoctor } from '@/features/doctor/hooks';
-import type { DoctorProfile } from '@/features/doctor/types';
+import type { DoctorProfile, DoctorDocument } from '@/features/doctor/types';
 import {
   Page,
   PageHeader,
@@ -20,6 +20,8 @@ import {
   TextInput,
   Pagination,
 } from '@shared/ui/components';
+import { viewDocument, downloadDocument } from '@/lib/document-utils';
+import { apiClient } from '@/lib/api';
 import {
   Search,
   Filter,
@@ -38,7 +40,183 @@ import {
   List,
   AlertCircle,
   Power,
+  FileText,
+  Eye,
+  Download,
 } from 'lucide-react';
+
+function parseDocItem(docItem: unknown, idx: number) {
+  if (!docItem) return null;
+  if (Array.isArray(docItem) && docItem.length === 0) return null;
+
+  let item: Record<string, unknown> = {};
+  let rawStringUrl = '';
+
+  if (typeof docItem === 'string') {
+    const trimmed = docItem.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          item = parsed;
+        } else {
+          rawStringUrl = trimmed;
+        }
+      } catch {
+        rawStringUrl = trimmed;
+      }
+    } else {
+      rawStringUrl = trimmed;
+    }
+  } else if (docItem && typeof docItem === 'object' && !Array.isArray(docItem)) {
+    item = docItem as Record<string, unknown>;
+  } else {
+    return null;
+  }
+
+  let docUrl =
+    (typeof item.url === 'string' && item.url) ||
+    (typeof item.objectPath === 'string' && item.objectPath) ||
+    (typeof item.fileUrl === 'string' && item.fileUrl) ||
+    (typeof item.path === 'string' && item.path) ||
+    (typeof item.link === 'string' && item.link) ||
+    (typeof item.documentUrl === 'string' && item.documentUrl) ||
+    (typeof item.uri === 'string' && item.uri) ||
+    (typeof item.src === 'string' && item.src) ||
+    (typeof item.href === 'string' && item.href) ||
+    (typeof item.location === 'string' && item.location) ||
+    rawStringUrl ||
+    '';
+
+  if (!docUrl && item) {
+    for (const v of Object.values(item)) {
+      if (typeof v === 'string') {
+        const str = v.trim();
+        if (
+          str.startsWith('http://') ||
+          str.startsWith('https://') ||
+          str.startsWith('/objects/') ||
+          str.startsWith('objects/') ||
+          str.startsWith('/uploads/') ||
+          str.startsWith('uploads/') ||
+          str.includes('cloudinary.com') ||
+          /\.(pdf|png|jpg|jpeg|webp|doc|docx)$/i.test(str)
+        ) {
+          docUrl = str;
+          break;
+        }
+      }
+    }
+  }
+
+  const hasName = Boolean(item.name || item.fileName || item.title || item.documentName);
+  const hasType = Boolean(item.type || item.category || item.documentType);
+  if (!docUrl && !hasName && !hasType && !rawStringUrl) {
+    return null;
+  }
+
+  if (docUrl && (docUrl.startsWith('objects/') || docUrl.startsWith('uploads/'))) {
+    docUrl = `/${docUrl}`;
+  }
+
+  const docName =
+    (typeof item.name === 'string' && item.name) ||
+    (typeof item.fileName === 'string' && item.fileName) ||
+    (typeof item.title === 'string' && item.title) ||
+    (typeof item.documentName === 'string' && item.documentName) ||
+    (docUrl ? docUrl.split('/').pop()?.split('?')[0] : '') ||
+    `Document #${idx + 1}`;
+
+  const docType =
+    (typeof item.type === 'string' && item.type) ||
+    (typeof item.category === 'string' && item.category) ||
+    (typeof item.documentType === 'string' && item.documentType) ||
+    'Medical Credential';
+
+  const docDate =
+    (typeof item.uploadedAt === 'string' && item.uploadedAt) ||
+    (typeof item.createdAt === 'string' && item.createdAt) ||
+    (typeof item.date === 'string' && item.date) ||
+    'Recently';
+
+  const docStatus = (typeof item.status === 'string' && item.status) || 'PENDING';
+
+  const docId =
+    (typeof item.id === 'string' && item.id) ||
+    (typeof item.key === 'string' && item.key) ||
+    `doc-${idx}`;
+
+  return { docUrl, docName, docType, docDate, docStatus, docId };
+}
+
+function getDoctorDocuments(doc: DoctorProfile | null): DoctorDocument[] {
+  if (!doc) return [];
+
+  const flattenDocs = (docsInput: unknown): unknown[] => {
+    if (typeof docsInput === 'string') {
+      try {
+        const parsed = JSON.parse(docsInput);
+        return flattenDocs(parsed);
+      } catch {
+        return [docsInput];
+      }
+    }
+    if (!Array.isArray(docsInput)) return [];
+    const acc: unknown[] = [];
+    for (const d of docsInput) {
+      if (Array.isArray(d)) {
+        acc.push(...flattenDocs(d));
+      } else if (d) {
+        acc.push(d);
+      }
+    }
+    return acc;
+  };
+
+  const rawDocs = flattenDocs(doc.documents);
+  const parsedDocs: DoctorDocument[] = [];
+
+  rawDocs.forEach((item, idx) => {
+    const p = parseDocItem(item, idx);
+    if (p) {
+      parsedDocs.push({
+        id: p.docId,
+        name: p.docName,
+        type: p.docType,
+        url: p.docUrl,
+        status: (p.docStatus === 'VERIFIED' || p.docStatus === 'REJECTED'
+          ? p.docStatus
+          : 'PENDING') as 'PENDING' | 'VERIFIED' | 'REJECTED',
+        uploadedAt: p.docDate,
+      });
+    }
+  });
+
+  if (doc.medicalLicense) {
+    const hasLicenseDoc = parsedDocs.some(
+      (d) => d.name.includes(doc.medicalLicense!) || d.url.includes(doc.medicalLicense!),
+    );
+    if (!hasLicenseDoc) {
+      parsedDocs.unshift({
+        id: `med-license-${doc.id}`,
+        name: `Medical License (${doc.medicalLicense})`,
+        type: 'Medical Council License',
+        url: doc.medicalLicense,
+        status: doc.approvalStatus === 'APPROVED' ? 'VERIFIED' : 'PENDING',
+        uploadedAt: 'On Registration',
+      });
+    }
+  }
+
+  return parsedDocs;
+}
+
+const getAdminDocBadgeTone = (status: string): 'success' | 'danger' | 'warning' => {
+  if (status === 'VERIFIED') return 'success';
+  if (status === 'REJECTED') return 'danger';
+  return 'warning';
+};
 
 export default function AdminDoctorsPage() {
   const [search, setSearch] = useState('');
@@ -66,6 +244,9 @@ export default function AdminDoctorsPage() {
     doc: DoctorProfile;
     type: 'APPROVE' | 'REJECT' | 'DEACTIVATE' | 'ACTIVATE';
   } | null>(null);
+
+  // View & Verify Doctor Documents Modal state
+  const [viewingDocsDoctor, setViewingDocsDoctor] = useState<DoctorProfile | null>(null);
 
   const { data: doctors = [], isLoading, isError, refetch } = useDoctors();
   const updateMutation = useUpdateDoctor();
@@ -127,6 +308,50 @@ export default function AdminDoctorsPage() {
     );
   };
 
+  const handleUpdateDocumentStatus = (
+    docId: string,
+    newStatus: 'VERIFIED' | 'REJECTED',
+  ) => {
+    if (!viewingDocsDoctor) return;
+    const effectiveDocs = getDoctorDocuments(viewingDocsDoctor);
+    const updatedDocs: DoctorDocument[] = effectiveDocs.map((d) =>
+      d.id === docId ? { ...d, status: newStatus } : d,
+    );
+
+    updateMutation.mutate(
+      { id: viewingDocsDoctor.id, payload: { documents: updatedDocs } },
+      {
+        onSuccess: () => {
+          setViewingDocsDoctor({
+            ...viewingDocsDoctor,
+            documents: updatedDocs,
+          });
+        },
+      },
+    );
+  };
+
+  const handleVerifyAllDocuments = () => {
+    if (!viewingDocsDoctor) return;
+    const effectiveDocs = getDoctorDocuments(viewingDocsDoctor);
+    const updatedDocs: DoctorDocument[] = effectiveDocs.map((d) => ({
+      ...d,
+      status: 'VERIFIED',
+    }));
+
+    updateMutation.mutate(
+      { id: viewingDocsDoctor.id, payload: { documents: updatedDocs } },
+      {
+        onSuccess: () => {
+          setViewingDocsDoctor({
+            ...viewingDocsDoctor,
+            documents: updatedDocs,
+          });
+        },
+      },
+    );
+  };
+
   // Filtered doctors logic
   const specializations = Array.from(
     new Set(doctors.map((d) => d.specialization).filter(Boolean)),
@@ -179,85 +404,108 @@ export default function AdminDoctorsPage() {
     );
   };
 
+  const handleOpenDocsModal = async (doc: DoctorProfile) => {
+    setViewingDocsDoctor(doc);
+    try {
+      const res = await apiClient.get(`/doctors/${doc.id}`);
+      const freshDoc = res.data?.data || res.data;
+      if (freshDoc && freshDoc.id) {
+        setViewingDocsDoctor(freshDoc);
+      }
+    } catch (err) {
+      console.error('Failed to fetch fresh doctor documents:', err);
+    }
+  };
+
   const renderActionButtons = (doc: DoctorProfile) => {
     const appStatus = doc.approvalStatus || 'APPROVED';
     const isDocUpdating =
       updateMutation.isPending && updateMutation.variables?.id === doc.id;
+    const docCount = getDoctorDocuments(doc).length;
 
-    if (appStatus === 'PENDING') {
-      return (
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setActionConfirm({ doc, type: 'APPROVE' })}
-            loading={
-              isDocUpdating &&
-              updateMutation.variables?.payload?.approvalStatus === 'APPROVED'
-            }
-            className="text-xs h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-          >
-            <Check className="w-3.5 h-3.5" /> Approve
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => setActionConfirm({ doc, type: 'REJECT' })}
-            loading={
-              isDocUpdating &&
-              updateMutation.variables?.payload?.approvalStatus === 'REJECTED'
-            }
-            className="text-xs h-7 px-2.5 gap-1"
-          >
-            <X className="w-3.5 h-3.5" /> Reject
-          </Button>
-        </div>
-      );
-    }
-
-    if (appStatus === 'REJECTED') {
-      return (
-        <Badge tone="danger" className="text-[10px]">
-          Rejected
-        </Badge>
-      );
-    }
-
-    // Approved status: Option to Deactivate / Activate and Edit
     return (
       <div className="flex items-center gap-1.5">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleEditClick(doc)}
-          className="text-xs h-7 px-2 gap-1"
+          onClick={() => void handleOpenDocsModal(doc)}
+          className="text-xs h-7 px-2 gap-1 text-muted-foreground hover:text-foreground"
+          title="View Doctor Credentials & Verification Documents"
         >
-          <Edit className="w-3 h-3" /> Edit
+          <FileText className="w-3.5 h-3.5 text-primary" /> Docs ({docCount})
         </Button>
-        {doc.isActive ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setActionConfirm({ doc, type: 'DEACTIVATE' })}
-            loading={
-              isDocUpdating && updateMutation.variables?.payload?.isActive === false
-            }
-            className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10 border-destructive/30 gap-1"
-          >
-            <Power className="w-3 h-3" /> Deactivate
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setActionConfirm({ doc, type: 'ACTIVATE' })}
-            loading={
-              isDocUpdating && updateMutation.variables?.payload?.isActive === true
-            }
-            className="text-xs h-7 px-2 gap-1"
-          >
-            <Power className="w-3 h-3" /> Activate
-          </Button>
+
+        {appStatus === 'PENDING' && (
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setActionConfirm({ doc, type: 'APPROVE' })}
+              loading={
+                isDocUpdating &&
+                updateMutation.variables?.payload?.approvalStatus === 'APPROVED'
+              }
+              className="text-xs h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+            >
+              <Check className="w-3.5 h-3.5" /> Approve
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setActionConfirm({ doc, type: 'REJECT' })}
+              loading={
+                isDocUpdating &&
+                updateMutation.variables?.payload?.approvalStatus === 'REJECTED'
+              }
+              className="text-xs h-7 px-2.5 gap-1"
+            >
+              <X className="w-3.5 h-3.5" /> Reject
+            </Button>
+          </>
+        )}
+
+        {appStatus === 'REJECTED' && (
+          <Badge tone="danger" className="text-[10px]">
+            Rejected
+          </Badge>
+        )}
+
+        {appStatus === 'APPROVED' && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEditClick(doc)}
+              className="text-xs h-7 px-2 gap-1"
+            >
+              <Edit className="w-3 h-3" /> Edit
+            </Button>
+            {doc.isActive ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActionConfirm({ doc, type: 'DEACTIVATE' })}
+                loading={
+                  isDocUpdating && updateMutation.variables?.payload?.isActive === false
+                }
+                className="text-xs h-7 px-2 text-destructive hover:bg-destructive/10 border-destructive/30 gap-1"
+              >
+                <Power className="w-3 h-3" /> Deactivate
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setActionConfirm({ doc, type: 'ACTIVATE' })}
+                loading={
+                  isDocUpdating && updateMutation.variables?.payload?.isActive === true
+                }
+                className="text-xs h-7 px-2 gap-1"
+              >
+                <Power className="w-3 h-3" /> Activate
+              </Button>
+            )}
+          </>
         )}
       </div>
     );
@@ -720,6 +968,191 @@ export default function AdminDoctorsPage() {
               loading={updateMutation.isPending}
             >
               Save Changes
+            </Button>
+          </DialogFooter>
+        </Modal>
+
+        {/* View & Verify Doctor Documents Modal */}
+        <Modal
+          open={Boolean(viewingDocsDoctor)}
+          onOpenChange={(open) => !open && setViewingDocsDoctor(null)}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Verification Documents - Dr. {viewingDocsDoctor?.firstName}{' '}
+              {viewingDocsDoctor?.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4 text-xs">
+            <p className="text-muted-foreground">
+              Review credential documents submitted by Dr. {viewingDocsDoctor?.firstName}{' '}
+              {viewingDocsDoctor?.lastName}. You can open files directly or verify/reject
+              individual credentials.
+            </p>
+
+            {(() => {
+              const effectiveDocs = getDoctorDocuments(viewingDocsDoctor);
+              if (effectiveDocs.length === 0) {
+                return (
+                  <div className="text-center py-8 bg-muted/20 border border-dashed border-border/80 rounded-xl space-y-1">
+                    <FileText className="w-8 h-8 mx-auto text-muted-foreground/60" />
+                    <p className="font-semibold text-foreground">
+                      No documents submitted
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      This doctor has not uploaded any credentials yet.
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                  {effectiveDocs.map((docItem, idx) => {
+                    const docUrl = docItem.url;
+                    const docName = docItem.name;
+                    const docType = docItem.type;
+                    const docDate = docItem.uploadedAt;
+                    const docStatus = docItem.status;
+                    const docId = docItem.id;
+
+                    return (
+                      <div
+                        key={docId || `admin-doc-${idx}`}
+                        className="p-3 rounded-xl bg-card border border-border/70 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground text-xs">
+                              {docName}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Category:{' '}
+                              <span className="font-medium text-foreground">
+                                {docType}
+                              </span>{' '}
+                              &bull; Uploaded: {docDate}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge
+                              tone={getAdminDocBadgeTone(docStatus)}
+                              className="text-[10px]"
+                            >
+                              {docStatus === 'VERIFIED' && (
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-500" />{' '}
+                                  Verified
+                                </span>
+                              )}
+                              {docStatus === 'REJECTED' && (
+                                <span className="flex items-center gap-1">
+                                  <XCircle className="w-3 h-3 text-destructive" />{' '}
+                                  Rejected
+                                </span>
+                              )}
+                              {docStatus !== 'VERIFIED' && docStatus !== 'REJECTED' && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-amber-500" /> Pending
+                                  Review
+                                </span>
+                              )}
+                            </Badge>
+
+                            {(docUrl || docName) && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => viewDocument(docUrl || docName)}
+                                  className="h-7 px-2 text-[11px] gap-1"
+                                  title="View Document"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-primary" /> View
+                                </Button>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    void downloadDocument(docName, docUrl || docName)
+                                  }
+                                  className="h-7 px-2 text-[11px] gap-1"
+                                  title="Download Document"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-foreground" />{' '}
+                                  Download
+                                </Button>
+                              </>
+                            )}
+
+                            {docStatus !== 'VERIFIED' && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateDocumentStatus(docId, 'VERIFIED')
+                                }
+                                className="h-7 px-2 text-[11px] gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                title="Approve Document"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                              </Button>
+                            )}
+
+                            {docStatus !== 'REJECTED' && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateDocumentStatus(docId, 'REJECTED')
+                                }
+                                className="h-7 px-2 text-[11px] gap-1 text-destructive hover:bg-destructive/10"
+                                title="Reject Document"
+                              >
+                                <XCircle className="w-3.5 h-3.5" /> Reject
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </DialogBody>
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            {getDoctorDocuments(viewingDocsDoctor).length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleVerifyAllDocuments}
+                loading={updateMutation.isPending}
+                className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-300 gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Verify All
+                Documents
+              </Button>
+            ) : (
+              <div />
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewingDocsDoctor(null)}
+            >
+              Close
             </Button>
           </DialogFooter>
         </Modal>

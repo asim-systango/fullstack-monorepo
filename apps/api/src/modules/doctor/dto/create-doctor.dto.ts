@@ -10,7 +10,48 @@ import {
   IsPositive,
   IsUUID,
   IsBoolean,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+/** DTO for individual doctor verification document item. */
+export class DoctorDocumentDto {
+  @ApiPropertyOptional({ example: 'doc-1785933' })
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @ApiPropertyOptional({ example: 'medical_license.pdf' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'Medical Council License' })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/...' })
+  @IsString()
+  @IsOptional()
+  url?: string;
+
+  @ApiPropertyOptional({ example: '/objects/abcd.pdf' })
+  @IsString()
+  @IsOptional()
+  objectPath?: string;
+
+  @ApiPropertyOptional({ example: 'PENDING' })
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @ApiPropertyOptional({ example: '2026-08-13' })
+  @IsString()
+  @IsOptional()
+  uploadedAt?: string;
+}
 
 /** DTO for creating a new doctor profile. */
 export class CreateDoctorDto {
@@ -85,4 +126,14 @@ export class CreateDoctorDto {
   @IsString()
   @IsOptional()
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+
+  @ApiPropertyOptional({
+    description: 'Submitted verification documents',
+    type: [DoctorDocumentDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DoctorDocumentDto)
+  @IsOptional()
+  documents?: DoctorDocumentDto[];
 }

@@ -1,2 +1,2 @@
-export { CreateSlotDto } from './create-slot.dto';
+export { BulkCreateSlotDto } from './bulk-create-slot.dto';
 export { UpdateSlotDto } from './update-slot.dto';

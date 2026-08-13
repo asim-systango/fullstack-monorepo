@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { SlotRepository } from './repositories/slot.repository';
 import { Slot } from './entities/slot.entity';
-import { CreateSlotDto } from './dto/create-slot.dto';
 import { BulkCreateSlotDto } from './dto/bulk-create-slot.dto';
 import { UpdateSlotDto } from './dto/update-slot.dto';
 import { SlotStatus } from '../../shared/enums/slot-status.enum';
@@ -41,55 +40,6 @@ export class SlotService {
       throw new NotFoundException(`Slot with ID "${id}" not found`);
     }
     return slot;
-  }
-
-  async create(dto: CreateSlotDto): Promise<Slot> {
-    const startsAt = new Date(dto.startsAt);
-    const endsAt = dto.endsAt
-      ? new Date(dto.endsAt)
-      : new Date(startsAt.getTime() + 30 * 60 * 1000);
-
-    if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) {
-      throw new BadRequestException('Invalid start or end date format');
-    }
-
-    if (startsAt >= endsAt) {
-      throw new BadRequestException('Slot start time must be before end time');
-    }
-
-    // Ensure slot start time is valid (allow today's slots as long as end time is in the future)
-    if (endsAt.getTime() <= Date.now()) {
-      throw new BadRequestException('Slot end time must be in the future');
-    }
-
-    const durationMinutes = (endsAt.getTime() - startsAt.getTime()) / (1000 * 60);
-    if (durationMinutes < 5 || durationMinutes > 240) {
-      throw new BadRequestException(
-        `Consultation slot duration must be between 5 and 240 minutes (got ${durationMinutes} mins)`,
-      );
-    }
-
-    // Check for overlapping slots
-    const overlap = await this.slotRepository.findOverlappingSlot(
-      dto.doctorId,
-      startsAt,
-      endsAt,
-    );
-    if (overlap) {
-      throw new BadRequestException(
-        `Doctor already has an overlapping slot scheduled between ${overlap.startsAt.toISOString()} and ${overlap.endsAt.toISOString()}`,
-      );
-    }
-
-    this.logger.log(
-      `[SLOT_CREATED] Doctor: ${dto.doctorId}, Time: ${startsAt.toISOString()} - ${endsAt.toISOString()}`,
-    );
-    return this.slotRepository.create({
-      doctorId: dto.doctorId,
-      startsAt,
-      endsAt,
-      status: SlotStatus.AVAILABLE,
-    });
   }
 
   async createBulk(dto: BulkCreateSlotDto): Promise<Slot[]> {
