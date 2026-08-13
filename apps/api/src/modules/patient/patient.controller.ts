@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Patch, Body, ParseUUIDPipe } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { PatientProfile } from './entities/patient-profile.entity';
-import { Roles } from '../../common/auth/decorators/roles.decorator';
+import { Roles } from '../../common/auth';
 
 /**
  * Patient profile controller.
