@@ -6,6 +6,7 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
+import { AdminModule } from './modules/admin';
 import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
@@ -28,6 +29,7 @@ const db = databaseConfig();
     }),
     UsersModule,
     AuthModule,
+    AdminModule,
     HealthModule,
   ],
   providers: [

@@ -18,6 +18,19 @@ export class UsersService {
     return this.users.findOne({ where: { id } });
   }
 
+  findAll() {
+    return this.users.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async listPublic() {
+    const users = await this.findAll();
+    return users.map((user) => this.toPublic(user));
+  }
+
+  countByRole(role: UserRole) {
+    return this.users.count({ where: { role } });
+  }
+
   async create(input: {
     email: string;
     passwordHash: string;
