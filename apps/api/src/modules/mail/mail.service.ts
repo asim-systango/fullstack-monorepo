@@ -4,9 +4,19 @@ import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const DEFAULT_MAIL_FROM = '"CRM Platform" <no-reply@crm.com>';
+
 export interface SendOrgAdminInviteParams {
   toEmail: string;
   adminName: string;
+  organizationName: string;
+  tempPassword: string;
+  loginUrl?: string;
+}
+
+export interface SendUserInviteParams {
+  toEmail: string;
+  userName: string;
   organizationName: string;
   tempPassword: string;
   loginUrl?: string;
@@ -91,7 +101,7 @@ export class MailService {
       tempPassword,
       loginUrl = 'http://localhost:3000/login',
     } = params;
-    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const from = process.env.MAIL_FROM || DEFAULT_MAIL_FROM;
     const subject = `Welcome to CRM - Onboarding Invitation for ${organizationName}`;
 
     const html = this.renderTemplate('org-admin-invite', {
@@ -123,9 +133,49 @@ export class MailService {
     }
   }
 
+  async sendUserInvitationMail(params: SendUserInviteParams): Promise<void> {
+    const {
+      toEmail,
+      userName,
+      organizationName,
+      tempPassword,
+      loginUrl = 'http://localhost:3000/login',
+    } = params;
+    const from = process.env.MAIL_FROM || DEFAULT_MAIL_FROM;
+    const subject = `Welcome to CRM - Invitation to join ${organizationName}`;
+
+    const html = this.renderTemplate('user-invite', {
+      toEmail,
+      userName,
+      organizationName,
+      tempPassword,
+      loginUrl,
+    });
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from,
+          to: toEmail,
+          subject,
+          html,
+        });
+        this.logger.log(`User invitation email sent successfully to ${toEmail}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to send user invitation email to ${toEmail}: ${(error as Error).message}`,
+        );
+      }
+    } else {
+      this.logger.log(
+        `[EMAIL SIMULATION] To: ${toEmail} | Subject: ${subject} | TempPassword: ${tempPassword}`,
+      );
+    }
+  }
+
   async sendPasswordResetMail(params: SendPasswordResetParams): Promise<void> {
     const { toEmail, userName, resetUrl } = params;
-    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const from = process.env.MAIL_FROM || DEFAULT_MAIL_FROM;
     const subject = 'CRM Account - Password Reset Request';
 
     const html = this.renderTemplate('password-reset', {
@@ -170,7 +220,7 @@ export class MailService {
       dashboardUrl = 'http://localhost:3000/dashboard/onboarding-requests',
     } = params;
 
-    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const from = process.env.MAIL_FROM || DEFAULT_MAIL_FROM;
     const subject = `[Action Required] New Organization Onboarding Request: ${companyName}`;
 
     const html = this.renderTemplate('new-onboarding-request', {
@@ -208,7 +258,7 @@ export class MailService {
   async sendFormStatusUpdatedMail(params: SendFormStatusUpdatedParams): Promise<void> {
     const { toEmail, contactName, companyName, status, reviewNotes } = params;
 
-    const from = process.env.MAIL_FROM || '"CRM Platform" <no-reply@crm.com>';
+    const from = process.env.MAIL_FROM || DEFAULT_MAIL_FROM;
     const subject = `[Status Update] Your Onboarding Request for ${companyName} is ${status}`;
 
     const html = this.renderTemplate('form-status-updated', {
