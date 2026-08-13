@@ -33,6 +33,7 @@ export class ArticlesService {
       slug: dto.slug,
       content,
       tagIds: dto.tagIds,
+      coverMediaId: dto.coverMediaId,
     });
 
     return {

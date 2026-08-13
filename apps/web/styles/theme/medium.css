@@ -37,6 +37,8 @@
   /* ── Typography ── */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-source-serif), ui-serif, georgia, 'Times New Roman', serif;
+  --font-display:
+    var(--font-playfair), var(--font-source-serif), ui-serif, georgia, serif;
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 1.0625rem;
@@ -65,4 +67,16 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --duration-fast: 150ms;
   --duration-normal: 200ms;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }

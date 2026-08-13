@@ -90,6 +90,15 @@ export class CreateArticleDto {
   @IsArray()
   @IsUUID('4', { each: true })
   tagIds?: string[];
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Cover image media UUID from POST /media. Must be an image. Shown on public list/detail as coverMedia.',
+  })
+  @IsOptional()
+  @IsUUID('4')
+  coverMediaId?: string;
 }
 
 /** Response from POST /articles */
