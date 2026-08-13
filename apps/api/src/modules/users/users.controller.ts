@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Get,
+  Query,
   Body,
   HttpCode,
   HttpStatus,
@@ -13,9 +15,11 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { InviteUserDto } from './dto/invite-user.dto';
+import { GetUsersDto } from './dto/get-users.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/auth';
 import { InviteUserSwagger } from './decorators/swagger/invite-user.decorator';
+import { GetUsersSwagger } from './decorators/swagger/get-users.decorator';
 import { User } from '../../database/entities/user.entity';
 import { RoleName } from '../../database/entities/role.entity';
 import { USERS_ERRORS } from './constants/users.constants';
@@ -26,6 +30,25 @@ import { USERS_ERRORS } from './constants/users.constants';
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @GetUsersSwagger()
+  async getUsers(@CurrentUser() user: User, @Query() query: GetUsersDto) {
+    try {
+      return await this.usersService.getUsers(
+        user.id,
+        user.organizationId,
+        user.role?.name as RoleName,
+        query,
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(error.message);
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+  }
 
   @Post('invite')
   @HttpCode(HttpStatus.CREATED)
