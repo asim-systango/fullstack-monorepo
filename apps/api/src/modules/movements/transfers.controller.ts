@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { Roles } from '../../common/auth';
 import { MovementsService } from './movements.service';
+import { CreateTransferDto } from './dto';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -9,14 +10,6 @@ interface AuthenticatedRequest extends Request {
     email: string;
     role: string;
   };
-}
-
-export class CreateTransferDto {
-  sourceWarehouseId!: string;
-  destWarehouseId!: string;
-  productId!: string;
-  quantity!: number;
-  reason?: string;
 }
 
 @Controller('transfers')

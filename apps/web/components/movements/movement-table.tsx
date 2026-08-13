@@ -47,15 +47,21 @@ export function MovementTable() {
     });
   }, [movements, searchQuery]);
 
-  const getMovementBadge = (type: MovementType) => {
+  const getMovementBadge = (type: MovementType, reason?: string) => {
     let tone: BadgeTone = 'neutral';
     let label = 'Adjustment';
     let icon = '⇄';
 
     if (type === 'outbound') {
-      tone = 'danger';
-      label = 'Outbound (Order Fulfillment)';
-      icon = '↘';
+      if (reason?.toLowerCase().includes('transfer to')) {
+        tone = 'accent';
+        label = 'Transfer Outbound';
+        icon = '🔄';
+      } else {
+        tone = 'danger';
+        label = 'Outbound (Order Fulfillment)';
+        icon = '↘';
+      }
     } else if (type === 'inbound') {
       tone = 'success';
       label = 'Inbound (Receipt)';
@@ -77,8 +83,16 @@ export function MovementTable() {
     );
   };
 
-  const formatQuantity = (type: MovementType, qty: number) => {
+  const formatQuantity = (type: MovementType, qty: number, reason?: string) => {
     if (type === 'outbound') {
+      const isOutboundTransfer = reason?.toLowerCase().includes('transfer to');
+      if (isOutboundTransfer) {
+        return (
+          <span className="inline-flex items-center font-extrabold text-sm text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+            -{qty}
+          </span>
+        );
+      }
       return (
         <span className="inline-flex items-center font-extrabold text-sm text-red-600 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">
           -{qty}
@@ -88,6 +102,13 @@ export function MovementTable() {
     if (type === 'inbound') {
       return (
         <span className="inline-flex items-center font-extrabold text-sm text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+          +{qty}
+        </span>
+      );
+    }
+    if (type === 'transfer') {
+      return (
+        <span className="inline-flex items-center font-extrabold text-sm text-indigo-600 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">
           +{qty}
         </span>
       );
@@ -207,7 +228,9 @@ export function MovementTable() {
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium py-3">
                     {formatDate(m.createdAt)}
                   </TableCell>
-                  <TableCell className="py-3">{getMovementBadge(m.type)}</TableCell>
+                  <TableCell className="py-3">
+                    {getMovementBadge(m.type, m.reason)}
+                  </TableCell>
                   <TableCell className="py-3">
                     <div className="font-bold text-foreground text-sm">
                       {m.product?.name || 'Product'}
@@ -217,7 +240,7 @@ export function MovementTable() {
                     </div>
                   </TableCell>
                   <TableCell className="whitespace-nowrap py-3">
-                    {formatQuantity(m.type, m.quantity)}{' '}
+                    {formatQuantity(m.type, m.quantity, m.reason)}{' '}
                     <span className="text-xs font-semibold text-muted-foreground">
                       {m.product?.unit || 'pcs'}
                     </span>
