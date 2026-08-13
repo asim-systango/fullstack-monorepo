@@ -19,7 +19,8 @@ import {
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
 import { dashboardApi, type OverallKpis } from '@/lib/api/dashboard.api';
-import { MOCK_ORGANIZATIONS, SUPER_ADMIN_MESSAGES } from '@/lib/constants';
+import { organizationsApi, type OrganizationResult } from '@/lib/api/organizations.api';
+import { SUPER_ADMIN_MESSAGES } from '@/lib/constants';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,6 +33,8 @@ export default function DashboardPage() {
 
   const [kpis, setKpis] = useState<OverallKpis | null>(null);
   const [kpisLoading, setKpisLoading] = useState(false);
+  const [recentOrgs, setRecentOrgs] = useState<OrganizationResult[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -40,20 +43,26 @@ export default function DashboardPage() {
   }, [loading, isAuthenticated, router]);
 
   useEffect(() => {
-    async function fetchKpis() {
+    async function fetchDashboardData() {
       if (isSuperAdmin) {
         setKpisLoading(true);
+        setOrgsLoading(true);
         try {
-          const data = await dashboardApi.getOverallKpis();
-          setKpis(data);
+          const [kpisData, orgsData] = await Promise.all([
+            dashboardApi.getOverallKpis(),
+            organizationsApi.getOrganizations({ limit: 5 }),
+          ]);
+          setKpis(kpisData);
+          setRecentOrgs(orgsData.data);
         } catch (error) {
-          console.error('Failed to fetch KPIs', error);
+          console.error('Failed to fetch dashboard data', error);
         } finally {
           setKpisLoading(false);
+          setOrgsLoading(false);
         }
       }
     }
-    fetchKpis();
+    fetchDashboardData();
   }, [isSuperAdmin]);
 
   if (loading || !isAuthenticated || !user) {
@@ -219,47 +228,71 @@ export default function DashboardPage() {
                 Tenant Organizations Directory
               </CardTitle>
               <CardDescription className="text-xs text-zinc-400 mt-0.5">
-                Live list of client workspaces provisioned on the platform.
+                Recent workspaces provisioned on the platform.
               </CardDescription>
             </div>
-            <Badge tone="accent">{totalOrgs} Provisioned</Badge>
+            <Badge tone="accent">{kpisLoading ? '...' : totalOrgs} Provisioned</Badge>
           </CardHeader>
 
           <CardBody className="p-0">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>Organization Name</TableHeaderCell>
-                  <TableHeaderCell>Slug / Domain</TableHeaderCell>
-                  <TableHeaderCell>Admin Contact</TableHeaderCell>
-                  <TableHeaderCell>Users</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Created Date</TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {MOCK_ORGANIZATIONS.map((org) => (
-                  <TableRow key={org.id}>
-                    <TableCell className="font-semibold text-white">{org.name}</TableCell>
-                    <TableCell className="font-mono text-xs text-violet-300">
-                      {org.slug}.systangocrm.com
-                    </TableCell>
-                    <TableCell className="text-zinc-300">{org.adminEmail}</TableCell>
-                    <TableCell className="text-zinc-300 font-medium">
-                      {org.usersCount} members
-                    </TableCell>
-                    <TableCell>
-                      <Badge tone={org.status === 'ACTIVE' ? 'success' : 'neutral'}>
-                        {org.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-zinc-400 text-xs">
-                      {org.createdAt}
-                    </TableCell>
+            {orgsLoading ? (
+              <div className="py-8 text-center text-sm text-zinc-500">
+                Loading organizations...
+              </div>
+            ) : (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Organization Name</TableHeaderCell>
+                    <TableHeaderCell>Slug / Domain</TableHeaderCell>
+                    <TableHeaderCell>Admin Contact</TableHeaderCell>
+                    <TableHeaderCell>Users</TableHeaderCell>
+                    <TableHeaderCell>Status</TableHeaderCell>
+                    <TableHeaderCell>Created Date</TableHeaderCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {recentOrgs.map((org) => {
+                    const status = org.adminUser?.isPasswordChangeRequired
+                      ? 'PENDING'
+                      : org.status;
+                    let statusTone: 'success' | 'accent' | 'neutral' = 'neutral';
+                    if (status === 'ACTIVE') statusTone = 'success';
+                    else if (status === 'PENDING') statusTone = 'accent';
+
+                    return (
+                      <TableRow key={org.id}>
+                        <TableCell className="font-semibold text-white">
+                          {org.name}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-violet-300">
+                          {org.slug}.systangocrm.com
+                        </TableCell>
+                        <TableCell className="text-zinc-300">
+                          {org.adminUser?.email || org.email}
+                        </TableCell>
+                        <TableCell className="text-zinc-300 font-medium">
+                          {org.usersCount} members
+                        </TableCell>
+                        <TableCell>
+                          <Badge tone={statusTone}>{status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-zinc-400 text-xs">
+                          {new Date(org.createdAt).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {recentOrgs.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-zinc-500">
+                        No organizations found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardBody>
         </Card>
       )}

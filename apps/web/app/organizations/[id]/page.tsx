@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from '@shared/ui';
 import { AppShell } from '@/components/layout/app-shell';
-import { MOCK_ORGANIZATIONS, type OrganizationItem } from '@/lib/constants';
 
 type PageProps = Readonly<{
   params: Promise<{ id: string }>;
@@ -23,7 +22,7 @@ export default function OrganizationDetailPage({ params }: PageProps) {
   const { id } = use(params);
 
   // Find organization from mock dataset or create fallback item
-  const initialOrg = MOCK_ORGANIZATIONS.find((o) => o.id === id || o.slug === id) || {
+  const initialOrg = {
     id: id,
     name: id.replace(/-/g, ' ').toUpperCase(),
     slug: id,
@@ -33,7 +32,7 @@ export default function OrganizationDetailPage({ params }: PageProps) {
     createdAt: '2026-01-20',
   };
 
-  const [orgStatus, setOrgStatus] = useState<OrganizationItem['status']>(
+  const [orgStatus, setOrgStatus] = useState<'ACTIVE' | 'SUSPENDED' | 'PENDING'>(
     initialOrg.status,
   );
   const [notification, setNotification] = useState<string | null>(null);
