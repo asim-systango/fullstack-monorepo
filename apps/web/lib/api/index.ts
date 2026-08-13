@@ -25,3 +25,22 @@ export {
   type PublicArticleDetail,
   type PublicContentBlock,
 } from './articles';
+export {
+  fetchStudioArticles,
+  fetchStudioArticle,
+  createArticle,
+  publishArticle,
+  isPublished,
+  getLatestRevision,
+  getRevisionLabel,
+  type StudioArticleListItem,
+  type StudioArticleDetail,
+  type CreateArticleInput,
+  type CreatedArticle,
+} from './studio';
+export {
+  fetchAdminUsers,
+  createEditor,
+  type AdminUsersResponse,
+  type CreateEditorInput,
+} from './admin';
