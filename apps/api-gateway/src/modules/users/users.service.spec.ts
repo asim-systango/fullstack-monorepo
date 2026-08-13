@@ -17,6 +17,8 @@ function makeUser(overrides: Partial<User> = {}): User {
 describe('UsersService', () => {
   const repo = {
     findOne: jest.fn(),
+    find: jest.fn(),
+    count: jest.fn(),
     create: jest.fn((v: Partial<User>) => v),
     save: jest.fn(async (v: User) => v),
   };
@@ -44,6 +46,31 @@ describe('UsersService', () => {
 
     await expect(service.findById(user.id)).resolves.toBe(user);
     expect(repo.findOne).toHaveBeenCalledWith({ where: { id: user.id } });
+  });
+
+  it('findAll returns users ordered by createdAt DESC', async () => {
+    const users = [makeUser()];
+    repo.find.mockResolvedValue(users);
+
+    await expect(service.findAll()).resolves.toBe(users);
+    expect(repo.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+  });
+
+  it('listPublic maps users through toPublic', async () => {
+    const users = [makeUser(), makeUser({ id: '22222222-2222-2222-2222-222222222222' })];
+    repo.find.mockResolvedValue(users);
+
+    await expect(service.listPublic()).resolves.toEqual([
+      service.toPublic(users[0]!),
+      service.toPublic(users[1]!),
+    ]);
+  });
+
+  it('countByRole counts users with the given role', async () => {
+    repo.count.mockResolvedValue(2);
+
+    await expect(service.countByRole('staff')).resolves.toBe(2);
+    expect(repo.count).toHaveBeenCalledWith({ where: { role: 'staff' } });
   });
 
   it('create lowercases email and defaults role to user', async () => {
