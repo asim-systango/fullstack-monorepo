@@ -101,24 +101,3 @@ export const organizationsApi = {
     return unwrapData(response.data);
   },
 };
-
-export interface SubmitOnboardingRequestPayload {
-  contactName: string;
-  email: string;
-  companyName: string;
-  phone?: string;
-  companySize?: string;
-  industry?: string;
-  website?: string;
-  message?: string;
-}
-
-export const formsApi = {
-  async submitOnboardingRequest(payload: SubmitOnboardingRequestPayload) {
-    const endpoint = baseURL.endsWith('/v1')
-      ? '/forms/onboarding-request'
-      : '/v1/forms/onboarding-request';
-    const response = await apiClient.post(endpoint, payload);
-    return unwrapData<{ message: string; submissionId: string }>(response.data);
-  },
-};

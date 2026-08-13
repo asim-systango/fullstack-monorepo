@@ -16,7 +16,7 @@ import {
   TextInput,
   TextArea,
 } from '@shared/ui';
-import { formsApi } from '@/lib/api';
+import { formsApi } from '@/lib/api/forms.api';
 import { PUBLIC_ONBOARDING_REQUEST_MESSAGES, SYSTEM_MESSAGES } from '@/lib/constants';
 
 export default function OnboardingRequestPage() {

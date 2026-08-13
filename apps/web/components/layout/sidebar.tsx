@@ -21,6 +21,7 @@ export function Sidebar() {
         { label: 'Overview', icon: '📊', href: '/' },
         { label: 'Organizations', icon: '🏢', href: '/organizations' },
         { label: 'Global Users', icon: '👥', href: '/users' },
+        { label: 'Requests', icon: '📥', href: '/requests' },
       ]
     : [
         { label: 'Overview', icon: '📊', href: '/' },
