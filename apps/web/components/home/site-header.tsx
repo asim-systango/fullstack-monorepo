@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui';
-import { SearchIcon, WriteIcon } from './icons';
+import { SearchIcon } from './icons';
 import { pageGutter } from './page-gutter';
+import { AuthHeaderActions } from './auth-header-actions';
 
 export function SiteHeader() {
   return (
@@ -26,24 +26,7 @@ export function SiteHeader() {
         </label>
 
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
-          <Link
-            href="/write"
-            className="inline-flex items-center gap-1.5 px-1 py-1.5 text-[0.9375rem] text-muted-foreground no-underline hover:text-foreground hover:no-underline"
-          >
-            <WriteIcon className="size-4" />
-            <span className="hidden sm:inline">Write</span>
-          </Link>
-
-          <Link
-            href="/login"
-            className="px-1 py-1.5 text-[0.9375rem] text-foreground no-underline hover:underline"
-          >
-            Sign in
-          </Link>
-
-          <Button variant="primary" size="md" className="h-10 px-5 text-[0.9375rem]">
-            Get started
-          </Button>
+          <AuthHeaderActions />
         </div>
       </div>
     </header>

@@ -9,6 +9,14 @@ export { unwrapData } from './envelope';
 export { toApiClientError } from './errors';
 export { fetchHealth } from './health';
 export {
+  fetchMe,
+  login,
+  logout,
+  register,
+  type LoginInput,
+  type RegisterInput,
+} from './auth';
+export {
   fetchPublicArticles,
   fetchPublicArticleBySlug,
   type PublicArticleCoverMedia,
