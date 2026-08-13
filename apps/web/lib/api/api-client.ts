@@ -23,8 +23,9 @@ function isAuthPublicPath(url: string | undefined): boolean {
 
 function defaultUnauthorizedHandler(): void {
   if (typeof window === 'undefined') return;
-  if (window.location.pathname.startsWith('/login')) return;
-  window.location.assign('/login');
+  window.dispatchEvent(
+    new CustomEvent('wordnest:auth', { detail: { mode: 'login', from: '/write' } }),
+  );
 }
 
 function attachRequestInterceptor(client: AxiosInstance): void {
