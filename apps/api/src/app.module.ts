@@ -7,6 +7,7 @@ import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
 import { DoctorModule } from './modules/doctor';
+import { PatientModule } from './modules/patient';
 import { SlotModule } from './modules/slot';
 import { AppointmentModule } from './modules/appointment';
 import { PrescriptionModule } from './modules/prescription';
@@ -28,6 +29,7 @@ const db = databaseConfig();
     AuthModule,
     HealthModule,
     DoctorModule,
+    PatientModule,
     SlotModule,
     AppointmentModule,
     PrescriptionModule,

@@ -1,88 +1,92 @@
 # Folder Structure Documentation
 
 ```
-traning be/
-├── docker-compose.yml              # Container orchestration for PostgreSQL, pgAdmin & Redis
-├── .env                            # Environment variables for root docker services
+fullstack-monorepo/
+├── apps/
+│   ├── api-gateway/                    # NestJS BFF — Auth, Users, JWT cookies
+│   │   └── src/
+│   │       ├── modules/
+│   │       │   ├── auth/               # Login, register, refresh token, JWT strategies
+│   │       │   ├── health/             # Health check endpoint
+│   │       │   └── users/              # users table + hospital_admins table
+│   │       │       ├── user.entity.ts          # All roles: ADMIN | DOCTOR | PATIENT
+│   │       │       └── hospital-admin.entity.ts # Extended profile for ADMIN users
+│   │       ├── common/                 # Auth guards, decorators, interceptors
+│   │       ├── config/                 # Database & JWT config
+│   │       ├── database/
+│   │       │   ├── data-source.ts      # TypeORM CLI config (migrations ledger: "migrations")
+│   │       │   ├── migrations/         # Gateway DB migrations
+│   │       │   └── seed.ts             # Seeds initial ADMIN user
+│   │       ├── app.module.ts
+│   │       └── main.ts
+│   │
+│   ├── api/                            # NestJS Domain API — Clinical business logic
+│   │   └── src/
+│   │       ├── modules/
+│   │       │   ├── doctor/             # doctor_profiles table
+│   │       │   │   ├── entities/doctor-profile.entity.ts
+│   │       │   │   ├── repositories/
+│   │       │   │   ├── dto/
+│   │       │   │   ├── doctor.service.ts
+│   │       │   │   └── doctor.controller.ts
+│   │       │   ├── patient/            # patient_profiles table  ← NEW (Aug 2026)
+│   │       │   │   ├── entities/patient-profile.entity.ts
+│   │       │   │   ├── patient.service.ts
+│   │       │   │   └── patient.controller.ts
+│   │       │   ├── slot/               # slots table
+│   │       │   ├── appointment/        # appointments table
+│   │       │   ├── prescription/       # prescriptions table
+│   │       │   └── medical-note/       # medical_notes table
+│   │       ├── shared/
+│   │       │   └── entities/base.entity.ts   # UUID PK + createdAt + updatedAt
+│   │       ├── database/
+│   │       │   ├── data-source.ts      # TypeORM CLI config (migrations ledger: "migrations_api")
+│   │       │   ├── migrations/         # Domain DB migrations
+│   │       │   └── seed.ts
+│   │       ├── app.module.ts
+│   │       └── main.ts
+│   │
+│   └── web/                            # Next.js 15 App Router Frontend
+│       └── app/
+│           ├── (auth)/                 # Login / Register pages
+│           └── (dashboard)/            # Protected dashboard
+│               ├── admin/              # Admin panels (doctors, appointments)
+│               └── patient/            # Patient-facing pages (book, my-appointments)
 │
-├── docs/                           # Architectural & Setup Documentation
-│   ├── Architecture.md             # System architecture & scalability design
-│   ├── FolderStructure.md          # Comprehensive folder & module breakdown
-│   └── SetupGuide.md               # Step-by-step developer setup instructions
+├── docs/
+│   └── docs/
+│       ├── ERD.md                      # Entity Relationship Diagram (all tables)
+│       ├── DATABASE_DESIGN.md          # Full schema reference with column types
+│       ├── Architecture.md             # System architecture & module map
+│       ├── FolderStructure.md          # This file
+│       ├── RBAC.md                     # Role permissions matrix
+│       ├── API_CONTRACT.md             # REST endpoint reference
+│       ├── AUTHENTICATION.md           # Auth flow documentation
+│       └── SetupGuide.md               # Local dev setup steps
 │
-├── backend/                        # NestJS Enterprise API Application
-│   ├── .env                        # Backend environment configuration
-│   ├── src/
-│   │   ├── auth/                   # Passport JWT Auth Module (Controller, Module, Strategies)
-│   │   ├── common/                 # Global Shared Utilities
-│   │   │   ├── filters/            # Global HTTP Exception Filter
-│   │   │   ├── logger/             # HTTP Logging Middleware
-│   │   │   ├── pipes/              # Validation Pipes
-│   │   │   └── interceptors/       # Response Transform Interceptors
-│   │   ├── config/                 # ConfigModule typed namespaces (app, database, redis, auth)
-│   │   ├── database/               # Database connection configuration & migrations
-│   │   ├── modules/                # Core Business Domain Modules
-│   │   │   ├── doctor/             # Doctor entity, controller, module & services
-│   │   │   ├── slot/               # Doctor availability slots & schedule rules
-│   │   │   ├── appointment/        # Booking lifecycle engine
-│   │   │   ├── prescription/       # Patient prescription generation
-│   │   │   └── medical-note/       # Clinical consultation notes
-│   │   ├── shared/                 # Shared base entities and DTOs
-│   │   │   ├── entities/base.entity.ts
-│   │   │   └── dto/
-│   │   ├── app.module.ts           # Root NestJS Application Module
-│   │   └── main.ts                 # Application Bootstrap, ValidationPipe & Swagger UI setup
-│   ├── tsconfig.json
-│   └── package.json
-│
-└── frontend/                       # Next.js 15 App Router Web Application
-    ├── app/                        # Next.js App Router Structure
-    │   ├── (auth)/                 # Authentication route group
-    │   │   ├── layout.tsx          # Auth container layout
-    │   │   └── login/page.tsx      # Sign-in portal page
-    │   ├── (dashboard)/            # Protected Dashboard route group
-    │   │   ├── layout.tsx          # Dashboard layout with Sidebar & Header
-    │   │   ├── dashboard/page.tsx  # Overview metrics page
-    │   │   ├── doctors/page.tsx    # Doctor directory page
-    │   │   ├── appointments/page.tsx # Appointments management page
-    │   │   ├── doctor/schedule/page.tsx # Doctor availability schedule page
-    │   │   └── admin/page.tsx      # Admin control center page
-    │   ├── (public)/               # Public route group
-    │   │   ├── layout.tsx          # Public wrapper layout
-    │   │   └── page.tsx            # Landing page
-    │   ├── layout.tsx              # Root HTML/Body layout with AppProviders wrapper
-    │   └── globals.css             # Tailwind CSS & custom utility directives
-    ├── components/                 # Reusable UI Components
-    │   ├── header.tsx              # Application Top Header with theme toggle & user badge
-    │   ├── sidebar.tsx             # Responsive Sidebar navigation
-    │   ├── protected-route.tsx     # Auth gate client component
-    │   └── role-route.tsx          # RBAC gate client component
-    ├── features/                   # Feature-specific components and hooks
-    ├── hooks/                      # Custom React hooks
-    ├── lib/                        # Utility classes (cn helper, axios client)
-    │   └── utils.ts
-    ├── providers/                  # Context providers
-    │   ├── app-providers.tsx       # Combined Provider (Redux + Query + Auth)
-    │   └── auth-provider.tsx       # Auth State & Token persistence context
-    ├── services/                   # API Integration Clients
-    │   └── api-client.ts           # Axios instance with request/response interceptors
-    ├── store/                      # Redux Toolkit Store
-    │   ├── slices/authSlice.ts     # Auth State Redux Slice
-    │   └── store.ts                # Redux Store Configuration
-    ├── types/                      # TypeScript definitions (User, Doctor, Appointment, Role)
-    │   └── index.ts
-    ├── tsconfig.json
-    └── package.json
+└── package.json                        # Monorepo root scripts (dev, migration:run, seed)
 ```
+
+---
 
 ## Why Each Module & Folder Exists
 
-### Backend Folder Rationale
-- `src/common/`: Houses reusable cross-cutting concerns (logging, exception handling, data sanitization) so domain controllers remain pure and focused solely on business logic.
-- `src/config/`: Separates application settings from code. Uses environment variables to maintain parity across Development, Staging, and Production environments.
-- `src/modules/`: Keeps domain bounded contexts separate. For example, `appointment` code never pollutes `prescription` code, ensuring maintainability and ease of scaling into microservices if required in the future.
+### `api-gateway` Rationale
 
-### Frontend Folder Rationale
-- `app/(group)/`: Utilizes Next.js 15 Route Groups to isolate layouts without polluting the public URL structure.
-- `providers/`: Centralized state wrapper keeping `layout.tsx` clean and readable while facilitating SSR and hydration.
-- `services/`: Encapsulates network operations using `axios`. Abstracting API calls guarantees that UI components are decoupled from raw HTTP logic.
+- **Owns `users` + `hospital_admins`**: Auth (JWT, cookies, refresh tokens) and user identity are managed here. Keeping this separate from the domain API means the gateway can scale independently.
+- **`hospital_admins` table**: Admin-specific data (hospital name, department) is an extension of `users`. It lives in the gateway because it's in the same DB schema boundary as `users`.
+
+### `api` (Domain) Rationale
+
+- **`modules/doctor/`**: Doctor profiles are the foundation of the scheduling system. Keeping them separate from `users` means a doctor's professional data (fees, specialization) can evolve without touching auth logic.
+- **`modules/patient/`**: Patient health data (blood group, allergies, DOB) is clinical and belongs in the domain API. Separate from `users` so it can hold medical fields without polluting the auth table.
+- **`shared/entities/base.entity.ts`**: All domain tables extend `BaseEntity` to get `id`, `createdAt`, `updatedAt` without repeating those columns in every entity class.
+- **Separate `migrations_api` ledger**: Both apps share one database. Two separate ledger tables prevent `migration:revert` on the gateway from accidentally touching a domain migration it can't resolve.
+
+### `web` (Frontend) Rationale
+
+- **`app/(auth)/`**: Route group isolating login/register without adding those paths to the dashboard URL tree.
+- **`app/(dashboard)/admin/`**: Admin-only pages (doctor management, appointments overview).
+- **`app/(dashboard)/patient/`**: Patient-facing pages (book appointment, my appointments, profile).
+- **`components/`**: Reusable UI pieces shared across pages.
+- **`services/`**: All API calls go through typed service functions — UI components never call `fetch`/`axios` directly.
