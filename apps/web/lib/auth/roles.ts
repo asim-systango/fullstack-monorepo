@@ -62,7 +62,10 @@ export function resolvePostAuthRedirect(
     return requestedPath;
   }
 
-  if (user.role === 'staff' && requestedPath.startsWith('/editor')) {
+  if (
+    user.role === 'staff' &&
+    (requestedPath.startsWith('/editor') || requestedPath.startsWith('/studio'))
+  ) {
     return requestedPath;
   }
 

@@ -26,8 +26,8 @@ export function useStudioArticles(params?: StudioArticleFilters) {
 }
 
 /**
- * Platform-wide counts for editor and admin dashboards. Restricted to
- * staff/admin by the API, so authors must not render this.
+ * Counts for the signed-in caller. Authors are scoped to their own articles;
+ * editors and admins receive the platform.
  */
 export function useArticleStats() {
   return useQuery({
