@@ -1,23 +1,36 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Button } from '@shared/ui/components';
+import { ROUTES } from '@/lib/auth/routes';
 
 function AuthNav() {
-  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+  const { user, isLoading, logout } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return <span className="text-sm text-muted-foreground">…</span>;
   }
 
   if (user) {
     return (
       <>
+        <Link href={ROUTES.dashboard}>Dashboard</Link>
         <span className="font-mono text-xs text-muted-foreground">
           {user.name} · {user.role}
         </span>
-        <Button variant="ghost" size="sm" onClick={() => void logout()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            void logout().then(() => {
+              router.replace(ROUTES.login);
+              router.refresh();
+            });
+          }}
+        >
           Log out
         </Button>
       </>
@@ -26,9 +39,9 @@ function AuthNav() {
 
   return (
     <>
-      <Link href="/login">Log in</Link>
+      <Link href={ROUTES.login}>Log in</Link>
       <Link
-        href="/register"
+        href={ROUTES.register}
         className="ui-button ui-button-sm ui-button-primary no-underline hover:no-underline"
       >
         Register
@@ -39,17 +52,16 @@ function AuthNav() {
 
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle,
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <header className="ui-shell-header">
       <div>
         <h1 className="ui-shell-title">{title}</h1>
-        <p className="ui-shell-subtitle">{subtitle}</p>
+        {subtitle ? <p className="ui-shell-subtitle">{subtitle}</p> : null}
       </div>
-      <nav className="ui-shell-nav">
-        <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+      <nav className="ui-shell-nav" aria-label="Site">
+        <Link href={ROUTES.home}>Home</Link>
         <AuthNav />
       </nav>
     </header>

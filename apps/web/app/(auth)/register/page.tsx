@@ -3,56 +3,60 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
+import { Button, Field, Form, StatusMessage, TextInput } from '@shared/ui/components';
 import {
-  Button,
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Field,
-  Form,
-  Page,
-  TextInput,
-  StatusMessage,
-} from '@shared/ui/components';
-import { ApiClientError } from '@shared/api-client';
-import { ShellHeader } from '@/components/auth';
-import { authApi } from '@/lib/api';
+  AuthCard,
+  AuthFormFooter,
+  AuthLayout,
+  PasswordField,
+  useAuthForm,
+} from '@/components/auth';
+import { useRegister } from '@/lib/auth/hooks';
+import { ROUTES } from '@/lib/auth/routes';
+import { useAuthUiStore } from '@/lib/store';
+import { PASSWORD_HINT, registerSchema } from '@/lib/validation/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const register = useRegister();
+  const setPendingEmail = useAuthUiStore((s) => s.setPendingEmail);
+  const { pending, error, fieldErrors, submit } = useAuthForm();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
-    setError(null);
-    try {
-      await authApi.register({ name, email, password });
-      router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Register failed');
-    } finally {
-      setPending(false);
-    }
+    await submit({
+      schema: registerSchema,
+      values: { name, email, password, confirmPassword },
+      onValid: async (values) => {
+        await register.mutateAsync({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+        });
+        setPendingEmail(values.email);
+        router.push(`${ROUTES.verifyOtp}?email=${encodeURIComponent(values.email)}`);
+      },
+    });
   }
 
   return (
-    <Page>
-      <ShellHeader title="Register" subtitle="Create an account to continue" />
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Create account</CardTitle>
-          <CardDescription>
-            We will email a verification code before you can sign in.
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Join Bookly to browse the catalog, manage loans, and more."
+    >
+      <AuthCard title="Register">
         <Form pending={pending} onSubmit={onSubmit}>
-          <Field label="Name" htmlFor="register-name" required disabled={pending}>
+          <Field
+            label="Full name"
+            htmlFor="register-name"
+            required
+            disabled={pending}
+            error={fieldErrors.name}
+          >
             <TextInput
               id="register-name"
               name="name"
@@ -61,7 +65,13 @@ export default function RegisterPage() {
               autoComplete="name"
             />
           </Field>
-          <Field label="Email" htmlFor="register-email" required disabled={pending}>
+          <Field
+            label="Email address"
+            htmlFor="register-email"
+            required
+            disabled={pending}
+            error={fieldErrors.email}
+          >
             <TextInput
               id="register-email"
               name="email"
@@ -75,28 +85,44 @@ export default function RegisterPage() {
             label="Password"
             htmlFor="register-password"
             required
-            hint="At least 8 characters"
+            hint={PASSWORD_HINT}
             disabled={pending}
+            error={fieldErrors.password}
           >
-            <TextInput
+            <PasswordField
               id="register-password"
               name="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
               autoComplete="new-password"
             />
           </Field>
+          <Field
+            label="Confirm password"
+            htmlFor="register-confirm"
+            required
+            disabled={pending}
+            error={fieldErrors.confirmPassword}
+          >
+            <PasswordField
+              id="register-confirm"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
           <Button type="submit" loading={pending} loadingText="Creating…">
-            Create account
+            Create account →
           </Button>
         </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Already registered? <Link href="/login">Log in</Link>
-        </p>
-      </Card>
-    </Page>
+        <AuthFormFooter>
+          Already registered? <Link href={ROUTES.login}>Log in</Link>
+        </AuthFormFooter>
+      </AuthCard>
+    </AuthLayout>
   );
 }

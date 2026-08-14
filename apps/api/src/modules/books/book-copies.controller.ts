@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -28,6 +29,7 @@ import { Roles } from '../../common/auth';
 import { BookCopiesService } from './book-copies.service';
 import { BookCopyResponseDto } from './dto/book-response.dto';
 import { CreateBookCopyDto } from './dto/create-book-copy.dto';
+import { ListBookCopiesQueryDto } from './dto/list-book-copies-query.dto';
 import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 
 @ApiTags('book-copies')
@@ -47,8 +49,11 @@ export class BookCopiesController {
   @ApiNotFoundResponse({ description: 'Book missing or soft-deleted' })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
-  list(@Param('bookId', ParseUUIDPipe) bookId: string) {
-    return this.copiesService.listByBook(bookId);
+  list(
+    @Param('bookId', ParseUUIDPipe) bookId: string,
+    @Query() query: ListBookCopiesQueryDto,
+  ) {
+    return this.copiesService.listByBook(bookId, query.status);
   }
 
   @Roles('staff', 'admin')

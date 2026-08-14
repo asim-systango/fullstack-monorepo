@@ -1,72 +1,78 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, type SyntheticEvent } from 'react';
-import {
-  Button,
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Field,
-  Form,
-  Page,
-  TextInput,
-  StatusMessage,
-} from '@shared/ui/components';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState, type SyntheticEvent } from 'react';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
-import { authApi } from '@/lib/api';
+import { Button, Field, Form, StatusMessage, TextInput } from '@shared/ui/components';
+import {
+  AuthCard,
+  AuthFormFooter,
+  AuthLayout,
+  AuthPageFallback,
+  PasswordField,
+  useAuth,
+  useAuthForm,
+} from '@/components/auth';
+import { isEmailUnverifiedError } from '@/lib/auth/errors';
+import { useLogin } from '@/lib/auth/hooks';
+import { ROUTES } from '@/lib/auth/routes';
+import { getSafeNextPath } from '@/lib/auth/safe-next';
+import { useAuthUiStore } from '@/lib/store';
+import { loginSchema } from '@/lib/validation/auth';
 
 const isProd = process.env.NODE_ENV === 'production';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const searchParams = useSearchParams();
+  const { setSessionUser } = useAuth();
+  const login = useLogin();
+  const setPendingEmail = useAuthUiStore((s) => s.setPendingEmail);
+  const { pending, error, setError, fieldErrors, submit } = useAuthForm();
   const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
   const [password, setPassword] = useState(isProd ? '' : 'password123');
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
-    setError(null);
-    try {
-      await authApi.login({ email, password });
-      await refresh();
-      router.push('/');
-    } catch (err) {
-      if (err instanceof ApiClientError && err.statusCode === 403) {
-        const msg = err.message.toLowerCase();
-        if (msg.includes('not verified') || msg.includes('email not verified')) {
-          router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
-          return;
+    await submit({
+      schema: loginSchema,
+      values: { email, password },
+      onValid: async (values) => {
+        const tokens = await login.mutateAsync(values);
+        setSessionUser(tokens.user);
+        router.push(getSafeNextPath(searchParams.get('next')));
+        router.refresh();
+      },
+      onError: (err) => {
+        if (isEmailUnverifiedError(err)) {
+          setPendingEmail(email);
+          router.push(`${ROUTES.verifyOtp}?email=${encodeURIComponent(email)}`);
+          return true;
         }
-        setError(err.message);
-      } else if (err instanceof ApiClientError && err.statusCode === 503) {
-        setError('Library profile setup is temporarily unavailable. Please try again.');
-      } else {
-        setError(err instanceof ApiClientError ? err.message : 'Login failed');
-      }
-    } finally {
-      setPending(false);
-    }
+        if (err instanceof ApiClientError && err.statusCode === 503) {
+          setError('Library profile setup is temporarily unavailable. Please try again.');
+          return true;
+        }
+        return false;
+      },
+    });
   }
 
   return (
-    <Page>
-      <ShellHeader title="Log in" subtitle="Sign in with your account" />
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>
-            Primary actions use ink. Links and focus rings use accent blue.
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Enter your credentials to access the library dashboard."
+    >
+      <AuthCard title="Sign in">
         <Form pending={pending} onSubmit={onSubmit}>
-          <Field label="Email" htmlFor="login-email" required disabled={pending}>
+          <Field
+            label="Email address"
+            htmlFor="login-email"
+            required
+            disabled={pending}
+            error={fieldErrors.email}
+          >
             <TextInput
               id="login-email"
               name="email"
@@ -76,11 +82,16 @@ export default function LoginPage() {
               autoComplete="email"
             />
           </Field>
-          <Field label="Password" htmlFor="login-password" required disabled={pending}>
-            <TextInput
+          <Field
+            label="Password"
+            htmlFor="login-password"
+            required
+            disabled={pending}
+            error={fieldErrors.password}
+          >
+            <PasswordField
               id="login-password"
               name="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -88,15 +99,26 @@ export default function LoginPage() {
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
           <Button type="submit" loading={pending} loadingText="Signing in…">
-            Sign in
+            Secure access →
           </Button>
         </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          <Link href="/forgot-password">Forgot password?</Link>
-          {' · '}
-          No account? <Link href="/register">Register</Link>
-        </p>
-      </Card>
-    </Page>
+        <AuthFormFooter>
+          <Link className="auth-footer-primary" href={ROUTES.forgotPassword}>
+            Forgot password?
+          </Link>
+          <span className="auth-footer-secondary">
+            No account? <Link href={ROUTES.register}>Register</Link>
+          </span>
+        </AuthFormFooter>
+      </AuthCard>
+    </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthPageFallback title="Welcome back" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

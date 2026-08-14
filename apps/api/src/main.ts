@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { appConfig } from './config';
 import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/filters';
@@ -16,10 +17,22 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   app.use(compression());
+  app.use(
+    securityHeadersMiddleware({
+      hsts: appSettings.COOKIE_SECURE,
+    }),
+  );
+  app.use(cookieParser());
   app.use(requestIdMiddleware());
-  app.use(securityHeadersMiddleware());
 
-  // Internal service — browser CORS/cookies live on api-gateway only.
+  const corsOrigins = appSettings.CORS_ORIGIN.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+    credentials: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -34,16 +47,17 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
   await setupSwagger(app, {
-    title: 'BOOKLY Domain API',
+    title: 'BOOKLY API',
     description:
-      'Internal Nest domain API (Bearer JWT). Prefer the **gateway** docs at the BFF port for a full catalog including auth. ' +
-      'This UI is for direct upstream debugging only. ' +
+      'Unified Nest API — auth (`/auth/*`, `/users/*`) and domain routes (`/books`, `/loans`, …) in one process. ' +
+      '1) `POST /auth/login` (cookie set) 2) call domain routes with cookie or Bearer. ' +
       'Successful responses are wrapped as `{ data: ... }`.',
-    auth: 'bearer',
+    auth: 'cookie-and-bearer',
+    cookieName: 'access_token',
   });
 
   await app.listen(appSettings.PORT);
-  console.log(`Domain API listening on http://localhost:${appSettings.PORT}`);
+  console.log(`API listening on http://localhost:${appSettings.PORT}`);
   if (appSettings.NODE_ENV !== 'production') {
     console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
   }

@@ -50,10 +50,10 @@ export class BookCopiesService {
     private readonly booksService: BooksService,
   ) {}
 
-  async listByBook(bookId: string): Promise<BookCopy[]> {
+  async listByBook(bookId: string, status?: BookCopyStatus): Promise<BookCopy[]> {
     await this.booksService.requireActiveBook(bookId);
     return this.copies.find({
-      where: { bookId },
+      where: status ? { bookId, status } : { bookId },
       order: { acquiredAt: 'ASC', createdAt: 'ASC' },
     });
   }

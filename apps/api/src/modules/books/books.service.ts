@@ -91,6 +91,7 @@ export class BooksService {
       .addSelect(`SUM(CASE WHEN copy.status = :available THEN 1 ELSE 0 END)`, 'available')
       .addSelect(`SUM(CASE WHEN copy.status = :onLoan THEN 1 ELSE 0 END)`, 'onLoan')
       .where('copy.bookId = :bookId', { bookId: id })
+      .andWhere('copy.deleted_at IS NULL')
       .setParameters({
         available: BookCopyStatus.Available,
         onLoan: BookCopyStatus.OnLoan,

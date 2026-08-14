@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
@@ -12,24 +13,30 @@ import { LoansModule } from './modules/loans';
 import { MembersModule } from './modules/members';
 import { ReservationsModule } from './modules/reservations';
 import { SettingsModule } from './modules/settings';
-import { InternalModule } from './modules/internal';
+import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
 
 /**
- * Internal domain API — Bearer JWT only (cookie auth lives on api-gateway).
- * Add your domain modules here (do not put product CRUD in Next).
- * Entities registered via TypeOrmModule.forFeature are auto-loaded.
+ * Unified Nest API — auth (cookies + Bearer) and domain modules in one process.
+ * Browser talks here directly; api-gateway is not required.
  */
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: 120,
+      },
+    ]),
     TypeOrmModule.forRoot({
       ...db,
     }),
+    UsersModule,
     AuthModule,
     HealthModule,
     MembersModule,
-    InternalModule,
     BooksModule,
     DashboardModule,
     LoansModule,
@@ -38,6 +45,7 @@ const db = databaseConfig();
     SettingsModule,
   ],
   providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

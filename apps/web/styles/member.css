@@ -1,0 +1,339 @@
+/* Member application shell — login-aligned Bookly chrome + restrained motion. */
+
+.member-shell {
+  --background: var(--bookly-paper);
+  --foreground: var(--bookly-navy);
+  --card: #fff;
+  --card-foreground: var(--bookly-navy);
+  --muted: color-mix(in srgb, var(--bookly-navy) 5%, #fff);
+  --muted-foreground: var(--bookly-muted);
+  --border: var(--bookly-border);
+  --primary: var(--bookly-navy);
+  --primary-foreground: #fff;
+  --accent: var(--bookly-teal);
+  --accent-foreground: var(--bookly-navy-deep);
+  --ring: var(--bookly-teal);
+
+  background-color: var(--bookly-paper);
+  background-image:
+    radial-gradient(
+      ellipse 70% 50% at 0% 0%,
+      color-mix(in srgb, var(--bookly-teal) 8%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 100% 0%,
+      color-mix(in srgb, var(--bookly-navy) 6%, transparent),
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #fff 70%, var(--bookly-paper)) 0%,
+      var(--bookly-paper) 32%
+    );
+  background-attachment: fixed;
+  color: var(--bookly-navy);
+}
+
+.member-shell .ui-button-primary {
+  background: var(--bookly-teal);
+  color: var(--bookly-navy-deep);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.member-shell .ui-button-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bookly-teal) 88%, #000);
+}
+
+.member-shell a:not(.ui-button, .member-nav-link, .member-card-link) {
+  color: var(--bookly-navy);
+}
+
+.member-sidebar {
+  background: #fff;
+  border-color: var(--bookly-border);
+}
+
+.member-sidebar-brand {
+  min-height: 4.5rem;
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      color-mix(in srgb, var(--bookly-teal) 22%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      165deg,
+      var(--bookly-navy-deep) 0%,
+      var(--bookly-navy) 70%,
+      #014058 100%
+    );
+  color: #e8f4f1;
+  border-bottom: 0;
+}
+
+.member-sidebar-brand .member-brand-title {
+  color: var(--bookly-teal-soft);
+}
+
+.member-sidebar-brand .member-brand-sub {
+  color: color-mix(in srgb, #e8f4f1 70%, transparent);
+}
+
+.member-nav-section {
+  margin: 0;
+  padding: 0.75rem 0.75rem 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bookly-muted);
+}
+
+.member-nav-link {
+  position: relative;
+  display: block;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--bookly-muted);
+  text-decoration: none;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.member-nav-link:hover {
+  color: var(--bookly-navy);
+  background: color-mix(in srgb, var(--bookly-teal) 8%, #fff);
+  text-decoration: none;
+}
+
+.member-nav-link[aria-current='page'] {
+  color: var(--bookly-navy);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--bookly-teal) 12%, #fff);
+}
+
+.member-nav-link[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--bookly-teal);
+}
+
+.member-header {
+  min-height: 4.5rem;
+  background: color-mix(in srgb, #fff 88%, transparent);
+  border-color: var(--bookly-border);
+  backdrop-filter: blur(8px);
+}
+
+.member-card {
+  background: #fff;
+  border: 1px solid var(--bookly-border);
+  border-radius: 0.9rem;
+  box-shadow: var(--bookly-card-shadow);
+}
+
+.member-metric {
+  transition:
+    transform var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard);
+}
+
+.member-metric:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--bookly-teal) 35%, var(--bookly-border));
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--bookly-navy) 6%, transparent),
+    0 12px 28px color-mix(in srgb, var(--bookly-navy) 7%, transparent);
+}
+
+.member-book-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard);
+}
+
+.member-book-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--bookly-teal) 40%, var(--bookly-border));
+  box-shadow:
+    0 4px 8px color-mix(in srgb, var(--bookly-navy) 6%, transparent),
+    0 16px 32px color-mix(in srgb, var(--bookly-navy) 8%, transparent);
+  text-decoration: none;
+}
+
+.member-cover {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  aspect-ratio: 3 / 4;
+  padding: 0.75rem;
+  border-radius: 0.65rem;
+  background:
+    radial-gradient(
+      circle at 30% 20%,
+      color-mix(in srgb, var(--bookly-teal) 28%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      165deg,
+      var(--bookly-navy-deep) 0%,
+      var(--bookly-navy) 55%,
+      #014058 100%
+    );
+  color: var(--bookly-teal-soft);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.member-cover-sm {
+  width: 3.5rem;
+  height: 4.65rem;
+  aspect-ratio: auto;
+  padding: 0.4rem;
+  font-size: 0.875rem;
+}
+
+.member-cover-md {
+  width: 100%;
+}
+
+.member-cover-lg {
+  width: 10rem;
+  max-width: 100%;
+}
+
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: fit-content;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.member-chip-healthy {
+  background: color-mix(in srgb, var(--bookly-teal) 14%, #fff);
+  color: color-mix(in srgb, var(--bookly-navy) 85%, var(--bookly-teal));
+}
+
+.member-chip-dueSoon {
+  background: color-mix(in srgb, #d97706 12%, #fff);
+  color: #92400e;
+}
+
+.member-chip-overdue,
+.member-chip-unpaid {
+  background: color-mix(in srgb, #dc2626 10%, #fff);
+  color: #991b1b;
+}
+
+.member-chip-neutral {
+  background: color-mix(in srgb, var(--bookly-navy) 6%, #fff);
+  color: var(--bookly-muted);
+}
+
+.member-chip-available {
+  background: color-mix(in srgb, var(--bookly-teal) 14%, #fff);
+  color: var(--bookly-navy);
+}
+
+.member-enter {
+  animation: member-enter var(--duration-normal) var(--ease-standard) both;
+  animation-delay: calc(var(--member-stagger, 0) * 40ms);
+}
+
+.member-queue {
+  font-variant-numeric: tabular-nums;
+  color: var(--bookly-teal);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.member-user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  min-width: 11rem;
+  padding: 0.35rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--bookly-border);
+  background: #fff;
+  box-shadow: var(--bookly-card-shadow);
+  z-index: 40;
+}
+
+.member-user-menu a,
+.member-user-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--bookly-navy);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.member-user-menu a:hover,
+.member-user-menu button:hover {
+  background: color-mix(in srgb, var(--bookly-teal) 10%, #fff);
+  text-decoration: none;
+}
+
+@keyframes member-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .member-shell {
+    background-image: none;
+  }
+
+  .member-enter {
+    animation: none;
+  }
+
+  .member-metric:hover,
+  .member-book-card:hover {
+    transform: none;
+  }
+
+  .member-nav-link,
+  .member-metric,
+  .member-book-card {
+    transition: none;
+  }
+}

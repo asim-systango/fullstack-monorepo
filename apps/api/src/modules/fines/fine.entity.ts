@@ -45,6 +45,16 @@ export class Fine {
   @Column({ name: 'marked_paid_by', type: 'uuid', nullable: true })
   markedPaidBy!: string | null;
 
+  @Column({ name: 'waived_reason', type: 'text', nullable: true })
+  waivedReason!: string | null;
+
+  @Column({ name: 'waived_at', type: 'timestamptz', nullable: true })
+  waivedAt!: Date | null;
+
+  /** Gateway user UUID (staff/admin) — no DB FK. */
+  @Column({ name: 'waived_by', type: 'uuid', nullable: true })
+  waivedBy!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

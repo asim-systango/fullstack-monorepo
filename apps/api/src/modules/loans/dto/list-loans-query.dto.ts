@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 export class ListLoansQueryDto {
   @IsOptional()
@@ -18,4 +18,13 @@ export class ListLoansQueryDto {
   @IsOptional()
   @IsUUID()
   userId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  bookId?: string;
+
+  /** Derived status filter. */
+  @IsOptional()
+  @IsIn(['active', 'returned', 'overdue'])
+  status?: 'active' | 'returned' | 'overdue';
 }

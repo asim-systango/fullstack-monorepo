@@ -1,44 +1,66 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
-import { Public } from '../../common/auth';
-import { Book } from '../books/book.entity';
-import { BookCopy } from '../books/book-copy.entity';
-import { BookCopyStatus } from '../books/enums/book-copy-status.enum';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiProperty,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { CurrentUser, Public, Roles, type JwtUser } from '../../common/auth';
+import { DashboardService } from './dashboard.service';
 
 export class PublicDashboardDto {
-  @ApiProperty({ description: 'Non-deleted book titles' })
+  @ApiProperty()
   totalTitles!: number;
 
-  @ApiProperty({ description: 'Copies with status available (non-deleted)' })
+  @ApiProperty()
   availableCopies!: number;
 }
 
 @ApiTags('dashboard')
 @Controller('dashboard')
 export class DashboardController {
-  constructor(
-    @InjectRepository(Book)
-    private readonly books: Repository<Book>,
-    @InjectRepository(BookCopy)
-    private readonly copies: Repository<BookCopy>,
-  ) {}
+  constructor(private readonly dashboardService: DashboardService) {}
 
   @Public()
   @Get('public')
-  @ApiOperation({
-    summary: 'Public landing stats',
-    description: 'Total titles and available copies — no private counts.',
-  })
+  @ApiOperation({ summary: 'Public landing stats' })
   @ApiOkResponse({ type: PublicDashboardDto })
-  async publicStats(): Promise<PublicDashboardDto> {
-    const [totalTitles, availableCopies] = await Promise.all([
-      this.books.count({ where: { deletedAt: IsNull() } }),
-      this.copies.count({
-        where: { status: BookCopyStatus.Available, deletedAt: IsNull() },
-      }),
-    ]);
-    return { totalTitles, availableCopies };
+  publicStats() {
+    return this.dashboardService.publicStats();
+  }
+
+  @Roles('user')
+  @Get('member')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Member home dashboard' })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse()
+  member(@CurrentUser() user: JwtUser) {
+    return this.dashboardService.memberDashboard(user.id);
+  }
+
+  @Roles('staff')
+  @Get('librarian')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Librarian home dashboard' })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  librarian() {
+    return this.dashboardService.librarianDashboard();
+  }
+
+  @Roles('admin')
+  @Get('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin home dashboard' })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  admin() {
+    return this.dashboardService.adminDashboard();
   }
 }

@@ -1,47 +1,14 @@
-import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+export { useUiStore } from './ui-store';
+export { useLibraryStore, type DeskPanel } from './library-store';
+export { useAuthUiStore } from './auth-ui-store';
 
-/**
- * Ownership rule:
- * - RTK owns unfinished drafts, selection, and filter chrome only.
- * - TanStack Query owns server lists and mutations.
- * Never put Nest entity arrays into this store.
- *
- * Extend this slice (or add slices) for your domain drafts.
- */
-type UiState = {
-  filterDraft: string;
-  appliedFilter: string;
-};
+import { useAuthUiStore } from './auth-ui-store';
+import { useLibraryStore } from './library-store';
+import { useUiStore } from './ui-store';
 
-const initialState: UiState = {
-  filterDraft: '',
-  appliedFilter: '',
-};
-
-const uiSlice = createSlice({
-  name: 'ui',
-  initialState,
-  reducers: {
-    setFilterDraft(state, action: PayloadAction<string>) {
-      state.filterDraft = action.payload;
-    },
-    applyFilter(state) {
-      state.appliedFilter = state.filterDraft.trim();
-    },
-  },
-});
-
-export const { setFilterDraft, applyFilter } = uiSlice.actions;
-
-export const store = configureStore({
-  reducer: {
-    ui: uiSlice.reducer,
-  },
-});
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-
-export const useAppDispatch: () => AppDispatch = useDispatch;
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+/** Clear all client/workflow stores (e.g. on logout). */
+export function resetClientStores(): void {
+  useUiStore.getState().reset();
+  useLibraryStore.getState().reset();
+  useAuthUiStore.getState().reset();
+}
