@@ -83,4 +83,16 @@ export class DealsService {
 
     return savedDeal;
   }
+
+  async getAllDeals(currentUser: User, userRole: string): Promise<Deal[]> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(DEALS_ERRORS.USER_NO_ORG);
+    }
+
+    // SALES_REP can only see their assigned deals
+    const ownerId = userRole === 'SALES_REP' ? currentUser.id : undefined;
+
+    return this.dealRepository.findAllDeals(orgId, ownerId);
+  }
 }
