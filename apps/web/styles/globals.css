@@ -1,3 +1,4 @@
 /* All @import rules must come first (css:S8778 / CSS spec). */
 @import 'tailwindcss';
+@import './theme.css';
 @import './base.css';

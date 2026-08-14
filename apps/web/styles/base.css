@@ -4,10 +4,18 @@
   }
 
   body {
-    @apply min-h-full bg-white font-sans text-neutral-900;
+    @apply min-h-full bg-canvas font-sans text-primary text-base leading-normal;
+  }
+
+  a {
+    @apply text-link;
   }
 
   code {
-    @apply rounded-sm bg-neutral-100 px-1.5 py-0.5 font-mono text-sm;
+    @apply rounded-sm bg-surface-hover px-1.5 py-0.5 font-mono text-sm text-primary;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
   }
 }
