@@ -54,10 +54,7 @@ export function FeaturedStoryCard({ story }: Readonly<{ story: FeedStory }>) {
   return (
     <article className="flex h-full flex-col">
       <AuthorMeta story={story} />
-      <Link
-        href={`/stories/${story.slug}`}
-        className="mt-3 no-underline hover:no-underline"
-      >
+      <Link href={`/blog/${story.slug}`} className="mt-3 no-underline hover:no-underline">
         {story.coverUrl ? (
           <StoryThumb story={story} className="mb-4 aspect-[16/9] w-full" />
         ) : null}
@@ -76,13 +73,13 @@ export function GridStoryCard({ story }: Readonly<{ story: FeedStory }>) {
   return (
     <article className="flex h-full flex-col">
       {story.coverUrl ? (
-        <Link href={`/stories/${story.slug}`} className="mb-4 block no-underline">
+        <Link href={`/blog/${story.slug}`} className="mb-4 block no-underline">
           <StoryThumb story={story} className="aspect-[16/10] w-full" />
         </Link>
       ) : null}
       <AuthorMeta story={story} />
       <Link
-        href={`/stories/${story.slug}`}
+        href={`/blog/${story.slug}`}
         className="mt-2.5 no-underline hover:no-underline"
       >
         <h3 className="font-sans text-lg leading-snug font-bold tracking-tight text-foreground">
@@ -102,10 +99,7 @@ export function LatestStoryCard({ story }: Readonly<{ story: FeedStory }>) {
       <AuthorMeta story={story} />
       <div className="mt-3 flex gap-5 sm:gap-8">
         <div className="min-w-0 flex-1">
-          <Link
-            href={`/stories/${story.slug}`}
-            className="no-underline hover:no-underline"
-          >
+          <Link href={`/blog/${story.slug}`} className="no-underline hover:no-underline">
             <h3 className="font-sans text-xl leading-snug font-bold tracking-tight text-foreground md:text-[1.35rem]">
               {story.title}
             </h3>
@@ -116,7 +110,7 @@ export function LatestStoryCard({ story }: Readonly<{ story: FeedStory }>) {
         </div>
 
         {story.coverUrl ? (
-          <Link href={`/stories/${story.slug}`} className="block shrink-0 no-underline">
+          <Link href={`/blog/${story.slug}`} className="block shrink-0 no-underline">
             <StoryThumb
               story={story}
               className="size-20 rounded-sm sm:h-[108px] sm:w-[160px]"

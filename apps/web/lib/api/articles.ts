@@ -32,6 +32,16 @@ export type PublicContentBlock =
   | { id: string; type: 'video'; mediaId: string; caption?: string }
   | { id: string; type: 'code'; code: string; language?: string };
 
+/** Resolved asset for the `mediaId` carried by inline image/video blocks. */
+export type ArticleMedia = {
+  id: string;
+  secureUrl: string;
+  resourceType: string;
+  width: number | null;
+  height: number | null;
+  defaultAltText: string | null;
+};
+
 export type PublicArticleDetail = {
   id: string;
   title: string;
@@ -42,17 +52,29 @@ export type PublicArticleDetail = {
     id: string;
     content: PublicContentBlock[];
     coverMedia: PublicArticleCoverMedia | null;
+    media: ArticleMedia[];
   };
 };
 
-export async function fetchPublicArticles(params?: {
+export type PublicArticlesParams = {
   page?: number;
   limit?: number;
-}): Promise<PublicArticleListResponse> {
+  /** Partial, case-insensitive title match. */
+  q?: string;
+  /** Exact tag name, case-insensitive. */
+  tag?: string;
+};
+
+export async function fetchPublicArticles(
+  params?: PublicArticlesParams,
+): Promise<PublicArticleListResponse> {
   const { data } = await apiClient.get<PublicArticleListResponse>('/articles/public', {
     params: {
       page: params?.page ?? 1,
       limit: params?.limit ?? 20,
+      // Omitted rather than sent empty: the API rejects unknown/blank filters.
+      ...(params?.q ? { q: params.q } : {}),
+      ...(params?.tag ? { tag: params.tag } : {}),
     },
   });
   return data;

@@ -6,6 +6,7 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -17,7 +18,8 @@ import { Revision } from './revision.entity';
 
 /**
  * CMS article aggregate. Publication is derived from `publishedRevisionId`
- * (not a boolean flag). Soft-delete via `deletedAt`.
+ * (not a boolean flag) and review submission from `submittedRevisionId`; the two
+ * pointers are independent and neither implies the other. Soft-delete via `deletedAt`.
  *
  * `authorId` is an opaque gateway user UUID — no local User FK.
  */
@@ -26,11 +28,23 @@ import { Revision } from './revision.entity';
   'CHK_articles_published_pair',
   `(("published_revision_id" IS NULL AND "published_at" IS NULL) OR ("published_revision_id" IS NOT NULL AND "published_at" IS NOT NULL))`,
 )
+@Check(
+  'CHK_articles_submitted_pair',
+  `(("submitted_revision_id" IS NULL AND "submitted_at" IS NULL) OR ("submitted_revision_id" IS NOT NULL AND "submitted_at" IS NOT NULL))`,
+)
 @Index('IDX_articles_author_id', ['authorId'])
 @Index('IDX_articles_published_revision_id', ['publishedRevisionId'])
 @Index('IDX_articles_deleted_at', ['deletedAt'])
+@Index('IDX_articles_submitted_revision_id', ['submittedRevisionId'], {
+  where: '"submitted_revision_id" IS NOT NULL',
+})
 @Index('IDX_articles_public', ['publishedAt'], {
   where: '"published_revision_id" IS NOT NULL AND "deleted_at" IS NULL',
+})
+// Editor review queue: submitted, and not already the live revision.
+@Index('IDX_articles_review_queue', ['submittedAt'], {
+  where:
+    '"submitted_revision_id" IS NOT NULL AND "submitted_revision_id" IS DISTINCT FROM "published_revision_id" AND "deleted_at" IS NULL',
 })
 export class Article {
   @PrimaryGeneratedColumn('uuid')
@@ -61,6 +75,22 @@ export class Article {
 
   @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
   publishedAt!: Date | null;
+
+  /**
+   * Review workflow, intentionally independent of the publish pointer.
+   * The Author sets this; only an Editor moves `publishedRevisionId`.
+   * It is not advanced automatically when a newer revision is created — the
+   * Editor must always see exactly the revision that was submitted.
+   */
+  @Column({ name: 'submitted_revision_id', type: 'uuid', nullable: true })
+  submittedRevisionId!: string | null;
+
+  @ManyToOne(() => Revision, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'submitted_revision_id' })
+  submittedRevision!: Revision | null;
+
+  @Column({ name: 'submitted_at', type: 'timestamptz', nullable: true })
+  submittedAt!: Date | null;
 
   @OneToMany(() => Revision, (revision) => revision.article)
   revisions!: Revision[];

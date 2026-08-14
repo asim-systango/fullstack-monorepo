@@ -28,10 +28,17 @@ function defaultUnauthorizedHandler(): void {
   );
 }
 
+function isFormDataPayload(data: unknown): boolean {
+  return typeof FormData !== 'undefined' && data instanceof FormData;
+}
+
 function attachRequestInterceptor(client: AxiosInstance): void {
   client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers.set('Accept', 'application/json');
-    if (!config.headers.has('Content-Type') && config.method !== 'get') {
+    // A JSON Content-Type makes axios serialize FormData as JSON, which breaks
+    // multipart uploads; leave it unset so the browser adds the part boundary.
+    const skipJsonContentType = config.method === 'get' || isFormDataPayload(config.data);
+    if (!skipJsonContentType && !config.headers.has('Content-Type')) {
       config.headers.set('Content-Type', 'application/json');
     }
     return config;

@@ -1,14 +1,20 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createArticle,
+  createRevision,
+  deleteArticle,
   fetchStudioArticle,
   fetchStudioArticles,
+  publishArticle,
+  submitArticleForReview,
+  updateArticle,
   type CreateArticleInput,
+  type CreateRevisionInput,
+  type UpdateArticleInput,
 } from '@/lib/api/studio';
 import { queryKeys } from '@/lib/query';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createArticle, publishArticle } from '@/lib/api/studio';
 
 export function useStudioArticles(params?: { page?: number; limit?: number }) {
   return useQuery({
@@ -30,7 +36,62 @@ export function useCreateArticle() {
   return useMutation({
     mutationFn: (input: CreateArticleInput) => createArticle(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['articles', 'studio'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+/**
+ * Saving an edit appends a revision instead of overwriting one, so the article
+ * detail has to be refetched to pick up the new entry in the history.
+ */
+export function useCreateRevision(articleId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateRevisionInput) => createRevision(articleId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.articles.studioById(articleId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useUpdateArticle(articleId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateArticleInput) => updateArticle(articleId, input),
+    onSuccess: (article) => {
+      queryClient.setQueryData(queryKeys.articles.studioById(articleId), article);
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useDeleteArticle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (articleId: string) => deleteArticle(articleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+/**
+ * Author-side counterpart to publishing: hands the newest revision to an editor
+ * without changing what the public blog serves.
+ */
+export function useSubmitForReview(articleId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => submitArticleForReview(articleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.articles.studioById(articleId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
   });
 }
@@ -41,7 +102,7 @@ export function usePublishArticle() {
     mutationFn: ({ articleId, revisionId }: { articleId: string; revisionId: string }) =>
       publishArticle(articleId, revisionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['articles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
   });
 }

@@ -10,6 +10,7 @@ import {
   MinLength,
   Max,
 } from 'class-validator';
+import type { ArticleMedia } from './article-media.dto';
 
 /** Route params for GET /articles/public/:slug */
 export class ArticleSlugParam {
@@ -41,6 +42,28 @@ export class ListPublicArticlesQuery {
   @Min(1)
   @Max(100)
   limit: number = 20;
+
+  @ApiPropertyOptional({
+    description: 'Case-insensitive partial match on the article title.',
+    example: 'react',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  q?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by tag name (case-insensitive, exact match).',
+    example: 'ai',
+  })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  tag?: string;
 }
 
 /** Cover media on a public article list item */
@@ -71,11 +94,16 @@ export type PublicArticleListResponse = {
   totalPages: number;
 };
 
+/** Media referenced by inline `image` / `video` blocks in the published content. */
+export type PublicArticleMedia = ArticleMedia;
+
 /** Published revision on GET /articles/public/:slug */
 export type PublicArticleRevision = {
   id: string;
   content: unknown[];
   coverMedia: PublicArticleCoverMedia | null;
+  /** Lookup for the `mediaId` on inline blocks — content itself stays unchanged. */
+  media: PublicArticleMedia[];
 };
 
 /** Response from GET /articles/public/:slug */

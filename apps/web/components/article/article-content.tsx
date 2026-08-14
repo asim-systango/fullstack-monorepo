@@ -1,4 +1,6 @@
-import type { PublicContentBlock } from '@/lib/api/articles';
+import Image from 'next/image';
+import type { ArticleMedia, PublicContentBlock } from '@/lib/api/articles';
+import { toMediaLookup } from './content-blocks';
 
 function Paragraph({ markdown }: Readonly<{ markdown: string }>) {
   const paragraphs = markdown
@@ -25,7 +27,32 @@ function Paragraph({ markdown }: Readonly<{ markdown: string }>) {
   );
 }
 
-export function ArticleContent({ blocks }: Readonly<{ blocks: PublicContentBlock[] }>) {
+function Caption({ text }: Readonly<{ text?: string }>) {
+  if (!text) return null;
+  return (
+    <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+      {text}
+    </figcaption>
+  );
+}
+
+function MissingMedia({ label }: Readonly<{ label: string }>) {
+  return (
+    <div className="flex aspect-[16/10] items-center justify-center rounded-lg bg-surface-muted text-sm text-muted-foreground">
+      {label}
+    </div>
+  );
+}
+
+type ArticleContentProps = {
+  blocks: PublicContentBlock[];
+  /** Resolves the `mediaId` on image and video blocks to a deliverable URL. */
+  media?: ArticleMedia[];
+};
+
+export function ArticleContent({ blocks, media = [] }: Readonly<ArticleContentProps>) {
+  const mediaById = toMediaLookup(media);
+
   if (blocks.length === 0) {
     return (
       <p className="font-serif text-xl text-muted-foreground">
@@ -77,24 +104,41 @@ export function ArticleContent({ blocks }: Readonly<{ blocks: PublicContentBlock
         }
 
         if (block.type === 'image') {
+          const asset = mediaById.get(block.mediaId);
           return (
             <figure key={block.id} className="mb-8">
-              <div className="flex aspect-[16/10] items-center justify-center rounded-lg bg-surface-muted text-sm text-muted-foreground">
-                {block.alt ?? 'Image'}
-              </div>
-              {block.caption ? (
-                <figcaption className="mt-2 text-center text-sm text-muted-foreground">
-                  {block.caption}
-                </figcaption>
-              ) : null}
+              {asset ? (
+                <Image
+                  src={asset.secureUrl}
+                  alt={block.alt ?? asset.defaultAltText ?? ''}
+                  width={asset.width ?? 1600}
+                  height={asset.height ?? 1000}
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  className="h-auto w-full rounded-lg"
+                />
+              ) : (
+                <MissingMedia label={block.alt ?? 'Image unavailable'} />
+              )}
+              <Caption text={block.caption} />
             </figure>
           );
         }
 
+        const asset = mediaById.get(block.mediaId);
         return (
-          <p key={block.id} className="mb-6 text-sm text-muted-foreground">
-            Unsupported media block
-          </p>
+          <figure key={block.id} className="mb-8">
+            {asset ? (
+              <video
+                src={asset.secureUrl}
+                controls
+                preload="metadata"
+                className="w-full rounded-lg bg-black"
+              />
+            ) : (
+              <MissingMedia label="Video unavailable" />
+            )}
+            <Caption text={block.caption} />
+          </figure>
         );
       })}
     </div>

@@ -10,7 +10,6 @@ import {
   type GatewayRole,
 } from '@/lib/auth/roles';
 import { useMe } from '@/hooks/use-auth';
-import { useAuthModal } from '@/components/auth/auth-modal-context';
 
 type RouteGuardProps = {
   children: ReactNode;
@@ -32,14 +31,12 @@ export function RouteGuard({
   const router = useRouter();
   const pathname = usePathname();
   const { data: user, isLoading } = useMe();
-  const { openAuth } = useAuthModal();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      openAuth('login', pathname);
-      router.replace('/');
-    }
-  }, [isLoading, user, openAuth, pathname, router]);
+    if (isLoading || user) return;
+    // /login owns the sign-in modal and returns here once the session exists.
+    router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+  }, [isLoading, user, pathname, router]);
 
   if (isLoading || !user) {
     return (
