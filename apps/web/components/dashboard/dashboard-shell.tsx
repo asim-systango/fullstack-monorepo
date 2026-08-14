@@ -17,6 +17,8 @@ type DashboardShellProps = {
   subtitle?: string;
   role: GatewayRole;
   navItems?: NavItem[];
+  /** Page-level actions rendered on the right of the title row. */
+  actions?: ReactNode;
   children: ReactNode;
 };
 
@@ -25,6 +27,7 @@ export function DashboardShell({
   subtitle,
   role,
   navItems = [],
+  actions,
   children,
 }: Readonly<DashboardShellProps>) {
   const pathname = usePathname();
@@ -93,11 +96,14 @@ export function DashboardShell({
         ) : null}
 
         <main className="min-w-0 flex-1">
-          <div className="mb-8">
-            <h1 className="font-display text-3xl font-bold text-foreground">{title}</h1>
-            {subtitle ? (
-              <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
-            ) : null}
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="font-display text-3xl font-bold text-foreground">{title}</h1>
+              {subtitle ? (
+                <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+              ) : null}
+            </div>
+            {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
           </div>
           {children}
         </main>
