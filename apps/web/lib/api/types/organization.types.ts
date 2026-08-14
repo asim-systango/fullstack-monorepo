@@ -1,6 +1,3 @@
-import { apiClient } from '../api';
-import { unwrapData } from '@shared/api-client';
-
 export interface AdminUser {
   id: string;
   firstName: string;
@@ -46,17 +43,3 @@ export interface GetOrganizationsQuery {
   status?: string;
   sortOrder?: 'ASC' | 'DESC';
 }
-
-export const organizationsApi = {
-  async getOrganizations(
-    query: GetOrganizationsQuery = {},
-  ): Promise<GetOrganizationsResponse> {
-    const baseURL = apiClient.defaults.baseURL || '';
-    const endpoint = baseURL.endsWith('/v1') ? '/organizations' : '/v1/organizations';
-
-    const response = await apiClient.get<GetOrganizationsResponse>(endpoint, {
-      params: query,
-    });
-    return unwrapData<GetOrganizationsResponse>(response.data);
-  },
-};

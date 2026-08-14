@@ -19,7 +19,7 @@ import {
 import { useAuth } from '@/components/auth';
 import { AUTH_ERROR_MESSAGES } from '@/lib/constants';
 import { useAppDispatch } from '@/lib/store';
-import { setPendingPasswordReset } from '@/lib/store/slices/auth-slice';
+import { setPendingPasswordReset } from '@/lib/store';
 
 export default function LoginPage() {
   const router = useRouter();

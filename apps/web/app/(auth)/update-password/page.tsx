@@ -18,7 +18,7 @@ import {
 } from '@shared/ui';
 import { authApi, type UserProfile } from '@/lib/api';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
-import { clearPendingPasswordReset } from '@/lib/store/slices/auth-slice';
+import { clearPendingPasswordReset } from '@/lib/store';
 
 interface UpdatePasswordFormState {
   newPassword: string;

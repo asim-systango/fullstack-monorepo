@@ -18,8 +18,8 @@ import {
 } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
-import { dashboardApi, type OverallKpis } from '@/lib/api/dashboard.api';
-import { organizationsApi, type OrganizationResult } from '@/lib/api/organizations.api';
+import { dashboardApi, type OverallKpis } from '@/lib/api';
+import { organizationsApi, type OrganizationResult } from '@/lib/api';
 import { SUPER_ADMIN_MESSAGES } from '@/lib/constants';
 
 export default function DashboardPage() {

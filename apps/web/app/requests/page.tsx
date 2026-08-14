@@ -20,11 +20,7 @@ import {
 } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
-import {
-  formsApi,
-  type FormSubmission,
-  type FormSubmissionStatus,
-} from '@/lib/api/forms.api';
+import { formsApi, type FormSubmission, type FormSubmissionStatus } from '@/lib/api';
 
 export default function RequestsPage() {
   const router = useRouter();

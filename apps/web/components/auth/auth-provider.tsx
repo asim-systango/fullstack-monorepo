@@ -15,6 +15,8 @@ import {
   type OrganizationContext,
   type LoginResponse,
 } from '@/lib/api';
+import { useAppDispatch, useAppSelector } from '@/lib/store';
+import { setSession, clearSession } from '@/lib/store/slices/auth.slice';
 
 type AuthContextValue = {
   user: UserProfile | null;
@@ -29,8 +31,10 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [organization, setOrganization] = useState<OrganizationContext | null>(null);
+  const dispatch = useAppDispatch();
+  const { user, organization, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Loading state remains local since it's just for initial mount rehydration
   const [loading, setLoading] = useState(true);
 
   // Restore session from localStorage on mount
@@ -41,38 +45,50 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       const storedOrg = localStorage.getItem('organization');
 
       if (storedToken && storedUser) {
-        setUser(JSON.parse(storedUser));
-        if (storedOrg) {
-          setOrganization(JSON.parse(storedOrg));
-        }
+        dispatch(
+          setSession({
+            user: JSON.parse(storedUser),
+            organization: storedOrg ? JSON.parse(storedOrg) : null,
+            accessToken: storedToken,
+          }),
+        );
       }
     } catch {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       localStorage.removeItem('organization');
+      dispatch(clearSession());
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
-  const setUserSession = useCallback((res: LoginResponse) => {
-    if (!res.accessToken) return;
+  const setUserSession = useCallback(
+    (res: LoginResponse) => {
+      if (!res.accessToken) return;
 
-    setUser(res.user);
-    setOrganization(res.organization);
+      dispatch(
+        setSession({
+          user: res.user,
+          organization: res.organization,
+          accessToken: res.accessToken,
+        }),
+      );
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', res.accessToken);
-      localStorage.setItem('user', JSON.stringify(res.user));
-      if (res.organization) {
-        localStorage.setItem('organization', JSON.stringify(res.organization));
-      } else {
-        localStorage.removeItem('organization');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', res.accessToken);
+        localStorage.setItem('user', JSON.stringify(res.user));
+        if (res.organization) {
+          localStorage.setItem('organization', JSON.stringify(res.organization));
+        } else {
+          localStorage.removeItem('organization');
+        }
+        // Set session cookie for Next.js middleware checking
+        document.cookie = `systango_session=${res.accessToken}; Path=/; Max-Age=604800; SameSite=Lax`;
       }
-      // Set session cookie for Next.js middleware checking
-      document.cookie = `systango_session=${res.accessToken}; Path=/; Max-Age=604800; SameSite=Lax`;
-    }
-  }, []);
+    },
+    [dispatch],
+  );
 
   const login = useCallback(
     async (email: string, password?: string) => {
@@ -87,24 +103,24 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const logout = useCallback(async () => {
     await authApi.logout();
-    setUser(null);
-    setOrganization(null);
+    dispatch(clearSession());
+
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
-  }, []);
+  }, [dispatch]);
 
   const value = useMemo(
     () => ({
       user,
       organization,
       loading,
-      isAuthenticated: Boolean(user),
+      isAuthenticated,
       login,
       logout,
       setUserSession,
     }),
-    [user, organization, loading, login, logout, setUserSession],
+    [user, organization, loading, isAuthenticated, login, logout, setUserSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

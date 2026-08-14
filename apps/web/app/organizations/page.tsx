@@ -21,7 +21,7 @@ import {
 } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
-import { organizationsApi, type OrganizationResult } from '@/lib/api/organizations.api';
+import { organizationsApi, type OrganizationResult } from '@/lib/api';
 
 export default function OrganizationsPage() {
   const router = useRouter();
