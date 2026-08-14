@@ -41,7 +41,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // After cookieParser: forward domain routes to apps/api with Bearer JWT.
   app.use(
     createProxyMiddleware({
       target: appSettings.API_UPSTREAM_URL,
@@ -85,8 +84,7 @@ async function bootstrap() {
     `API gateway listening on http://localhost:${appSettings.PORT} → upstream ${appSettings.API_UPSTREAM_URL}`,
   );
   if (appSettings.NODE_ENV !== 'production') {
-    console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
-  }
+    console.log(`Swagger UI: http:  }
 }
 
 void bootstrap();

@@ -1,4 +1,3 @@
-/** Same pricing rules as the frontend (apps/web/lib/pricing.ts). */
 
 const DELIVERY_FEE_FLAT = 40;
 const PLATFORM_FEE_PERCENT = 5;
@@ -35,7 +34,6 @@ export function calculatePricing(subtotal: number): OrderPricing {
   };
 }
 
-/** Razorpay amount is in paise (₹1 = 100 paise). */
 export function toPaise(amountInRupees: number): number {
   return Math.round(amountInRupees * 100);
 }

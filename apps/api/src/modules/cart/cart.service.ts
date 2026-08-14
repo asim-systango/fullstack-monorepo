@@ -87,7 +87,6 @@ export class CartService {
       relations: { menuItem: true },
     });
 
-    // One restaurant per cart — required by the project brief.
     const existingRestaurantId = currentCart[0]?.menuItem.restaurantId;
     if (existingRestaurantId && existingRestaurantId !== menuItem.restaurantId) {
       throw new BadRequestException(
@@ -142,7 +141,6 @@ export class CartService {
     return this.getCart(userId);
   }
 
-  /** Used by OrdersService inside a DB transaction. */
   async getCartEntities(userId: string) {
     return this.cartRepo
       .createQueryBuilder('c')

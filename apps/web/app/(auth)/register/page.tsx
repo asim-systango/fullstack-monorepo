@@ -14,7 +14,6 @@ import { parseRegister } from '@/lib/validation/food-delivery';
 
 export default function RegisterPage() {
   const router = useRouter();
-  // Rename so this never collides with HTML form / browser "register" semantics.
   const { register: registerAccount, isMock, pendingAction } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +27,6 @@ export default function RegisterPage() {
     nextPassword: string,
     forceShow = false,
   ) {
-    // Client-side field checks only — does not call the API.
     return applyParse(
       parseRegister({ name: nextName, email: nextEmail, password: nextPassword }),
       forceShow,
@@ -39,7 +37,6 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!syncValidation(name, email, password, true)) return;
 
-    // Register API runs only after a successful form submit.
     try {
       const user = await registerAccount({
         name: name.trim(),

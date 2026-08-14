@@ -8,7 +8,6 @@ export const foodKeys = {
   menuItems: (restaurantId: string, includeDeleted?: boolean) =>
     [...foodKeys.all, 'menu-items', restaurantId, includeDeleted] as const,
   menuItem: (id: string) => [...foodKeys.all, 'menu-item', id] as const,
-  /** Cart is per user — always pass the logged-in user id. */
   cart: (userId: string) => [...foodKeys.all, 'cart', userId] as const,
   orders: (
     userId: string,

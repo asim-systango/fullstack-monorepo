@@ -10,9 +10,7 @@ export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type PaymentCheckout = {
   mock?: boolean;
   keyId: string;
-  /** Amount in paise for Razorpay (₹290.06 → 29006). */
   amount: number;
-  /** Same total in rupees for UI / DB cross-check. */
   amountInr?: number;
   currency: string;
   orderId: string;
@@ -36,6 +34,8 @@ export type VerifyPaymentResult = {
   message: string;
 };
 
+export type RestaurantDietType = 'veg' | 'non_veg' | 'both';
+
 export type Restaurant = {
   id: string;
   ownerUserId: string;
@@ -47,6 +47,7 @@ export type Restaurant = {
   imageUrl?: string | null;
   rating?: number;
   eta?: string;
+  dietType: RestaurantDietType;
 };
 
 export type MenuItem = {
@@ -130,7 +131,6 @@ export type OrderFilters = {
   status?: OrderStatus | '';
   page?: number;
   limit?: number;
-  /** mine = your orders · restaurant = kitchen queue · all = admin */
   scope?: 'mine' | 'restaurant' | 'all';
 };
 
@@ -156,6 +156,7 @@ export type CreateRestaurantInput = {
   eta?: string;
   rating?: number;
   imageUrl?: string;
+  dietType?: RestaurantDietType;
 };
 
 export type StaffLoginDetails = {
@@ -178,4 +179,5 @@ export type UpdateRestaurantInput = {
   imageUrl?: string;
   eta?: string;
   rating?: number;
+  dietType?: RestaurantDietType;
 };

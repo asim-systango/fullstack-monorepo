@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, type SyntheticEvent } from 'react';
-import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, X } from 'lucide-react';
 import { AppShell } from '@/components/layout';
-import { ImageUpload, StaffCredentialsModal } from '@/components/food';
+import { DietBadge, DietTypePicker, ImageUpload, StaffCredentialsModal } from '@/components/food';
+import { ExpandCollapse } from '@/components/ui/expand-collapse';
 import { useCreateRestaurant, useRestaurants, useUpdateRestaurant } from '@/lib/hooks/food-delivery';
 import { useFormErrors } from '@/lib/hooks/use-form-errors';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
-import type { StaffLoginDetails } from '@/lib/types/food-delivery';
+import type { RestaurantDietType, StaffLoginDetails } from '@/lib/types/food-delivery';
 import { parseRestaurant } from '@/lib/validation/food-delivery';
 import { toastApiError, toastError, toastSuccess } from '@/lib/toast';
 
@@ -23,6 +25,7 @@ export default function AdminRestaurantsPage() {
   const [ownerEmail, setOwnerEmail] = useState('');
   const [eta, setEta] = useState('');
   const [rating, setRating] = useState('');
+  const [dietType, setDietType] = useState<RestaurantDietType>('both');
   const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [credentialsOpen, setCredentialsOpen] = useState(false);
   const [createdRestaurantName, setCreatedRestaurantName] = useState('');
@@ -40,6 +43,7 @@ export default function AdminRestaurantsPage() {
       ownerEmail,
       eta: eta || undefined,
       rating,
+      dietType,
     };
   }
 
@@ -52,6 +56,7 @@ export default function AdminRestaurantsPage() {
       ownerEmail: string;
       eta?: string;
       rating?: string;
+      dietType: RestaurantDietType;
     },
     forceShow = false,
   ) {
@@ -66,6 +71,7 @@ export default function AdminRestaurantsPage() {
     setOwnerEmail('');
     setEta('');
     setRating('');
+    setDietType('both');
     setImageUrl(undefined);
     clearErrors();
   }
@@ -112,18 +118,23 @@ export default function AdminRestaurantsPage() {
           type="button"
           className="tg-btn tg-btn-primary"
           onClick={() => {
-            setShowForm((v) => !v);
-            clearErrors();
+            if (showForm) {
+              setShowForm(false);
+              resetForm();
+            } else {
+              setShowForm(true);
+              clearErrors();
+            }
           }}
         >
           <Plus size={15} /> Add restaurant
         </button>
       </div>
 
-      {showForm ? (
+      <ExpandCollapse open={showForm}>
         <form
           className="tg-card"
-          style={{ padding: 18, marginBottom: 16 }}
+          style={{ padding: 18 }}
           onSubmit={(e) => void handleCreate(e)}
           noValidate
         >
@@ -188,6 +199,18 @@ export default function AdminRestaurantsPage() {
           />
           {errors.cuisine ? <p className="tg-field-error" style={{ marginBottom: 8 }}>{errors.cuisine}</p> : <div style={{ marginBottom: 10 }} />}
 
+          <label className="tg-label">Veg / Non-veg</label>
+          <DietTypePicker
+            value={dietType}
+            onChange={(next) => {
+              setDietType(next);
+              syncValidation({ ...currentInput(), dietType: next });
+            }}
+          />
+          {errors.dietType ? (
+            <p className="tg-field-error" style={{ marginBottom: 8 }}>{errors.dietType}</p>
+          ) : null}
+
           <label className="tg-label">Address</label>
           <textarea
             className={`tg-textarea${errors.address ? ' tg-input-invalid' : ''}`}
@@ -242,11 +265,24 @@ export default function AdminRestaurantsPage() {
           />
           <div style={{ marginBottom: 12 }} />
 
-          <button type="submit" className="tg-btn tg-btn-primary" disabled={createRestaurant.isPending}>
-            {createRestaurant.isPending ? 'Creating…' : 'Create restaurant'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="submit" className="tg-btn tg-btn-primary" disabled={createRestaurant.isPending}>
+              {createRestaurant.isPending ? 'Creating…' : 'Create restaurant'}
+            </button>
+            <button
+              type="button"
+              className="tg-btn tg-btn-secondary"
+              disabled={createRestaurant.isPending}
+              onClick={() => {
+                setShowForm(false);
+                resetForm();
+              }}
+            >
+              <X size={14} /> Cancel
+            </button>
+          </div>
         </form>
-      ) : null}
+      </ExpandCollapse>
 
       <div
         style={{
@@ -266,7 +302,6 @@ export default function AdminRestaurantsPage() {
               modalTitle={`Upload photo for ${r.name}`}
               variant="hero"
               heroHeight={180}
-              disabled={updateRestaurant.isPending}
               onUploaded={async (url) => {
                 try {
                   await updateRestaurant.mutateAsync({ id: r.id, input: { imageUrl: url } });
@@ -277,19 +312,31 @@ export default function AdminRestaurantsPage() {
               }}
               onError={toastError}
             />
-            <div style={{ padding: '14px 16px 16px' }}>
+            <Link
+              href={`/admin/restaurants/${r.id}`}
+              style={{
+                display: 'block',
+                padding: '14px 16px 16px',
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
+            >
               <p style={{ margin: 0, fontWeight: 500, fontSize: 15, color: 'var(--tg-text)' }}>
                 {r.name}
               </p>
-              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--tg-text-muted)' }}>
+              <p style={{ margin: '4px 0 8px', fontSize: 12.5, color: 'var(--tg-text-muted)' }}>
                 {r.cuisine}
                 {r.eta ? ` · ${r.eta}` : ''}
                 {r.rating != null ? ` · ★ ${r.rating}` : ''}
               </p>
-              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--tg-text-faint)' }}>
+              <DietBadge dietType={r.dietType} />
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--tg-text-faint)' }}>
                 {r.address}
               </p>
-            </div>
+              <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--tg-brand)', fontWeight: 500 }}>
+                View menu
+              </p>
+            </Link>
           </div>
         ))}
       </div>

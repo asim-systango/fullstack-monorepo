@@ -5,9 +5,9 @@ import { useAuth } from '@/components/auth';
 import { foodApi } from '@/lib/food-api';
 import { foodKeys } from '@/lib/query-keys';
 import { useAppSelector } from '@/lib/store';
+import type { CartSummary, Paginated, Restaurant } from '@/lib/types/food-delivery';
 
 type UseCartOptions = {
-  /** Set false to skip the API call (e.g. sidebar should not fetch cart). */
   enabled?: boolean;
 };
 
@@ -22,7 +22,6 @@ export function useRestaurants(page = 1, enabled = true) {
   });
 }
 
-/** Staff kitchen: the one restaurant owned by the logged-in user. */
 export function useMyRestaurant(enabled = true) {
   const { user, loading } = useAuth();
   const canLoad =
@@ -54,7 +53,6 @@ export function useMenuItems(restaurantId: string, includeDeleted = false) {
   });
 }
 
-/** Fetch cart only for the logged-in customer and only when enabled. */
 export function useCart(options: UseCartOptions = {}) {
   const { user, loading } = useAuth();
   const canLoadCart =
@@ -74,9 +72,9 @@ export function useAddToCart() {
   return useMutation({
     mutationFn: ({ menuItemId, quantity }: { menuItemId: string; quantity?: number }) =>
       foodApi.addToCart(menuItemId, quantity),
-    onSuccess: () => {
+    onSuccess: (cart) => {
       if (user?.id) {
-        void queryClient.invalidateQueries({ queryKey: foodKeys.cart(user.id) });
+        queryClient.setQueryData(foodKeys.cart(user.id), cart);
       }
     },
   });
@@ -85,13 +83,35 @@ export function useAddToCart() {
 export function useUpdateCartItem() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const cartKey = foodKeys.cart(user?.id ?? 'guest');
+
   return useMutation({
     mutationFn: ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) =>
       foodApi.updateCartItem(cartItemId, quantity),
-    onSuccess: () => {
-      if (user?.id) {
-        void queryClient.invalidateQueries({ queryKey: foodKeys.cart(user.id) });
+    onMutate: async ({ cartItemId, quantity }) => {
+      await queryClient.cancelQueries({ queryKey: cartKey });
+      const previous = queryClient.getQueryData<CartSummary>(cartKey);
+      if (previous) {
+        const items =
+          quantity <= 0
+            ? previous.items.filter((line) => line.id !== cartItemId)
+            : previous.items.map((line) =>
+                line.id === cartItemId ? { ...line, quantity } : line,
+              );
+        queryClient.setQueryData<CartSummary>(cartKey, {
+          ...previous,
+          items,
+          restaurantId: items[0]?.restaurantId ?? null,
+          restaurantName: items[0]?.restaurantName ?? null,
+        });
       }
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(cartKey, ctx.previous);
+    },
+    onSuccess: (cart) => {
+      queryClient.setQueryData(cartKey, cart);
     },
   });
 }
@@ -220,10 +240,22 @@ export function useUpdateRestaurant() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Parameters<typeof foodApi.updateRestaurant>[1] }) =>
       foodApi.updateRestaurant(id, input),
-    onSuccess: (_data, vars) => {
-      void queryClient.invalidateQueries({ queryKey: foodKeys.restaurants() });
-      void queryClient.invalidateQueries({ queryKey: foodKeys.restaurant(vars.id) });
-      void queryClient.invalidateQueries({ queryKey: [...foodKeys.all, 'restaurant', 'mine'] });
+    onSuccess: (restaurant) => {
+      queryClient.setQueryData(foodKeys.restaurant(restaurant.id), restaurant);
+      queryClient.setQueriesData<Paginated<Restaurant>>(
+        { queryKey: [...foodKeys.all, 'restaurants'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.map((item) => (item.id === restaurant.id ? restaurant : item)),
+          };
+        },
+      );
+      queryClient.setQueriesData<Restaurant | null>(
+        { queryKey: [...foodKeys.all, 'restaurant', 'mine'] },
+        (old) => (old && old.id === restaurant.id ? restaurant : old),
+      );
     },
   });
 }

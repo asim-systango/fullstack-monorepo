@@ -11,13 +11,19 @@ import {
 import { decimalToNumber } from '../../common/decimal.transformer';
 import { MenuItem } from './menu-item.entity';
 
+export enum RestaurantDietType {
+  VEG = 'veg',
+  NON_VEG = 'non_veg',
+  BOTH = 'both',
+}
+
 @Entity({ name: 'restaurants' })
 @Check('CHK_restaurants_rating', '"rating" >= 0 AND "rating" <= 5')
+@Check('CHK_restaurants_diet_type', `"diet_type" IN ('veg', 'non_veg', 'both')`)
 export class Restaurant {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // The user is stored in api-gateway, so only its id is kept here.
   @Index('IDX_restaurants_owner_user_id')
   @Column({ name: 'owner_user_id', type: 'uuid' })
   ownerUserId: string;
@@ -51,6 +57,14 @@ export class Restaurant {
 
   @Column({ type: 'varchar', length: 40, nullable: true })
   eta: string | null;
+
+  @Column({
+    name: 'diet_type',
+    type: 'varchar',
+    length: 16,
+    default: RestaurantDietType.BOTH,
+  })
+  dietType: RestaurantDietType;
 
   @OneToMany(() => MenuItem, (menuItem) => menuItem.restaurant)
   menuItems: MenuItem[];

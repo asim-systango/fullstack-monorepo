@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** Rename `staff` to a domain role (company, agent, coach, …). */
 export type UserRole = 'admin' | 'user' | 'staff';
 
 @Entity({ name: 'users' })
@@ -26,7 +25,6 @@ export class User {
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role!: UserRole;
 
-  /** Last saved delivery address — reused on future orders (Swiggy/Zomato style). */
   @Column({ name: 'delivery_address', type: 'text', nullable: true })
   deliveryAddress!: string | null;
 

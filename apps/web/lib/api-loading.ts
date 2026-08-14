@@ -9,7 +9,7 @@ function notify() {
   }
 }
 
-/** Global in-flight API request counter (axios + mock food API). */
+
 export const apiLoading = {
   start() {
     pending += 1;
@@ -33,13 +33,23 @@ export const apiLoading = {
 
 type AsyncFn = (...args: never[]) => Promise<unknown>;
 
-/** Wrap async API methods so the global loading overlay tracks them. */
+const SILENT_API_KEYS = new Set([
+  'getCart',
+  'addToCart',
+  'updateCartItem',
+  'clearCart',
+  'updateRestaurant',
+  'listOrders',
+  'getOrder',
+]);
+
 export function withApiLoading<T extends Record<string, unknown>>(api: T): T {
   const wrapped = { ...api };
 
   for (const key of Object.keys(api) as (keyof T)[]) {
     const value = api[key];
     if (typeof value !== 'function') continue;
+    if (SILENT_API_KEYS.has(String(key))) continue;
 
     const fn = value as AsyncFn;
     (wrapped as Record<string, unknown>)[key as string] = async (...args: never[]) => {

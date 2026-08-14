@@ -1,4 +1,3 @@
-/** Matches backend staff password: name without spaces + @123 */
 export function staffPasswordFromRestaurantName(restaurantName: string): string {
   const compact = restaurantName.trim().replace(/\s+/g, '');
   if (!compact) return 'Restaurant@123';

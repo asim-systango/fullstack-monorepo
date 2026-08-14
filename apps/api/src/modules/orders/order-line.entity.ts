@@ -34,7 +34,6 @@ export class OrderLine {
   @JoinColumn({ name: 'menu_item_id' })
   menuItem: MenuItem | null;
 
-  // Name and price are copied from the menu when the order is created.
   @Column({ name: 'item_name', length: 120 })
   itemName: string;
 

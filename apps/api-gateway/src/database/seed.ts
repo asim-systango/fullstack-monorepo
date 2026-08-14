@@ -4,11 +4,6 @@ import * as bcrypt from 'bcryptjs';
 import dataSource from './data-source';
 import { User } from '../modules/users';
 
-/**
- * Demo accounts for Swagger / local testing.
- * Passwords: min 8 chars, upper + lower + number + special.
- * Restaurant/menu data is seeded by apps/api (`pnpm seed:api`).
- */
 export const DEMO_ACCOUNTS = [
   {
     id: '00000000-0000-4000-8000-000000000001',

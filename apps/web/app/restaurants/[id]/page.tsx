@@ -1,10 +1,12 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
+import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout';
-import { CartSwitchDialog, FoodImage } from '@/components/food';
+import { CartSwitchDialog, DietBadge, FoodImage } from '@/components/food';
 import {
   useAddToCart,
   useCart,
@@ -14,32 +16,49 @@ import {
   useUpdateCartItem,
 } from '@/lib/hooks/food-delivery';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
+import { foodKeys } from '@/lib/query-keys';
 import { formatInr } from '@/lib/pricing';
 import { toastApiError } from '@/lib/toast';
+import type { CartSummary } from '@/lib/types/food-delivery';
 
 type PageProps = Readonly<{ params: Promise<{ id: string }> }>;
 
 export default function RestaurantDetailPage({ params }: PageProps) {
   const { id } = use(params);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const restaurant = useRestaurant(id);
   const menu = useMenuItems(id, false);
   const cart = useCart({ enabled: true });
   const addToCart = useAddToCart();
   const updateCart = useUpdateCartItem();
   const clearCart = useClearCart();
+  const qtyJobs = useRef<Record<string, Promise<void>>>({});
 
   const [switchOpen, setSwitchOpen] = useState(false);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+  const [qtyOverride, setQtyOverride] = useState<Record<string, number>>({});
 
   useToastQueryError(restaurant.isError, restaurant.error);
   useToastQueryError(menu.isError, menu.error);
 
-  const cartCount = cart.data?.items.reduce((s, i) => s + i.quantity, 0) ?? 0;
   const qtyByMenuId = new Map(
     (cart.data?.items ?? [])
       .filter((i) => i.restaurantId === id)
       .map((i) => [i.menuItemId, { qty: i.quantity, cartItemId: i.id }] as const),
   );
+
+  function displayQty(menuItemId: string): number {
+    if (menuItemId in qtyOverride) return qtyOverride[menuItemId] ?? 0;
+    return qtyByMenuId.get(menuItemId)?.qty ?? 0;
+  }
+
+  const cartCount =
+    (cart.data?.items.reduce((s, i) => s + i.quantity, 0) ?? 0) +
+    Object.entries(qtyOverride).reduce((s, [menuItemId, qty]) => {
+      const server = qtyByMenuId.get(menuItemId)?.qty ?? 0;
+      return s + (qty - server);
+    }, 0);
 
   async function setQty(menuItemId: string, nextQty: number) {
     const existing = qtyByMenuId.get(menuItemId);
@@ -52,15 +71,37 @@ export default function RestaurantDetailPage({ params }: PageProps) {
       return;
     }
 
-    try {
-      if (existing) {
-        await updateCart.mutateAsync({ cartItemId: existing.cartItemId, quantity: nextQty });
-      } else if (nextQty > 0) {
-        await addToCart.mutateAsync({ menuItemId, quantity: nextQty });
-      }
-    } catch (err) {
-      toastApiError(err);
-    }
+    const safeQty = Math.max(0, nextQty);
+    setQtyOverride((prev) => ({ ...prev, [menuItemId]: safeQty }));
+
+    const previous = qtyJobs.current[menuItemId] ?? Promise.resolve();
+    const job = previous
+      .catch(() => undefined)
+      .then(async () => {
+        const latest = queryClient.getQueryData<CartSummary>(foodKeys.cart(user?.id ?? 'guest'));
+        const line = latest?.items.find((item) => item.menuItemId === menuItemId);
+        if (line) {
+          await updateCart.mutateAsync({ cartItemId: line.id, quantity: safeQty });
+        } else if (safeQty > 0) {
+          await addToCart.mutateAsync({ menuItemId, quantity: safeQty });
+        }
+        setQtyOverride((prev) => {
+          const next = { ...prev };
+          delete next[menuItemId];
+          return next;
+        });
+      })
+      .catch((err: unknown) => {
+        setQtyOverride((prev) => {
+          const next = { ...prev };
+          delete next[menuItemId];
+          return next;
+        });
+        toastApiError(err);
+      });
+
+    qtyJobs.current[menuItemId] = job;
+    await job;
   }
 
   async function confirmSwitch() {
@@ -124,11 +165,12 @@ export default function RestaurantDetailPage({ params }: PageProps) {
           <h1 style={{ fontSize: 19, fontWeight: 500, margin: 0, color: 'var(--tg-text)' }}>
             {r.name}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '4px 0 8px' }}>
             {r.cuisine}
             {r.eta ? ` · ${r.eta}` : ''}
             {r.rating != null ? ` · ★ ${r.rating}` : ''} · {r.address}
           </p>
+          <DietBadge dietType={r.dietType} />
         </div>
       </div>
 
@@ -143,8 +185,7 @@ export default function RestaurantDetailPage({ params }: PageProps) {
         }}
       >
         {items.map((m) => {
-          const entry = qtyByMenuId.get(m.id);
-          const qty = entry?.qty ?? 0;
+          const qty = displayQty(m.id);
           return (
             <div
               key={m.id}

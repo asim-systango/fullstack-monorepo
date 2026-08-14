@@ -33,7 +33,6 @@ export function RequireRole({ roles, children }: RequireRoleProps) {
     );
   }
 
-  // Silent redirect — no extra copy.
   if (!user) return null;
 
   if (!roles.includes(user.role)) {

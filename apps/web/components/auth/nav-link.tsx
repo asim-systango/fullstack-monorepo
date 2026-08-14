@@ -9,10 +9,6 @@ type NavLinkProps = Omit<ComponentProps<typeof Link>, 'prefetch' | 'onClick'> & 
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
-/**
- * Client navigation only — never triggers auth APIs.
- * Prefetch is off so hovering/clicking does not look like a backend call.
- */
 export function NavLink({ href, children, onClick, ...rest }: NavLinkProps) {
   const router = useRouter();
 

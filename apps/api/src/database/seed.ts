@@ -2,9 +2,8 @@ import '../load-env';
 import 'reflect-metadata';
 import dataSource from './data-source';
 import { MenuItem } from '../modules/restaurants/menu-item.entity';
-import { Restaurant } from '../modules/restaurants/restaurant.entity';
+import { Restaurant, RestaurantDietType } from '../modules/restaurants/restaurant.entity';
 
-/** Must match apps/api-gateway seed staff emails. */
 const RESTAURANT_SEEDS = [
   {
     id: '11111111-1111-4111-8111-111111111111',
@@ -16,6 +15,7 @@ const RESTAURANT_SEEDS = [
     emoji: '🍛',
     rating: 4.6,
     eta: '25-35 min',
+    dietType: RestaurantDietType.BOTH,
     menu: [
       { name: 'Butter Chicken', description: 'Creamy tomato curry, served with rice', price: 225 },
       { name: 'Garlic Naan', description: 'Tandoor-baked flatbread', price: 60 },
@@ -33,6 +33,7 @@ const RESTAURANT_SEEDS = [
     emoji: '🍔',
     rating: 4.3,
     eta: '20-30 min',
+    dietType: RestaurantDietType.NON_VEG,
     menu: [
       { name: 'Classic Cheeseburger', description: 'Double patty, cheddar', price: 175 },
       { name: 'Crispy Fries', description: 'Salted shoestring fries', price: 120 },
@@ -49,6 +50,7 @@ const RESTAURANT_SEEDS = [
     emoji: '🍣',
     rating: 4.8,
     eta: '30-40 min',
+    dietType: RestaurantDietType.NON_VEG,
     menu: [
       { name: "Chef's Platter", description: 'Assorted nigiri and rolls', price: 890 },
       { name: 'Salmon Roll', description: 'Fresh salmon maki', price: 320 },
@@ -65,6 +67,7 @@ const RESTAURANT_SEEDS = [
     emoji: '🍝',
     rating: 4.4,
     eta: '25-35 min',
+    dietType: RestaurantDietType.BOTH,
     menu: [
       { name: 'Penne Arrabbiata', description: 'Spicy tomato pasta', price: 240 },
       { name: 'Garlic Bread', description: 'Toasted with herbs', price: 80 },
@@ -81,6 +84,7 @@ const RESTAURANT_SEEDS = [
     emoji: '🌶️',
     rating: 4.5,
     eta: '20-30 min',
+    dietType: RestaurantDietType.VEG,
     menu: [
       { name: 'Pani Puri', description: 'Crispy puris with spicy water', price: 70 },
       { name: 'Veg Thali', description: 'Full plate with roti and rice', price: 199 },
@@ -123,6 +127,7 @@ async function seed() {
         emoji: row.emoji,
         rating: row.rating,
         eta: row.eta,
+        dietType: row.dietType,
       });
     } else {
       restaurant.ownerUserId = ownerUserId;
@@ -133,6 +138,7 @@ async function seed() {
       restaurant.emoji = row.emoji;
       restaurant.rating = row.rating;
       restaurant.eta = row.eta;
+      restaurant.dietType = row.dietType;
     }
 
     await restaurantRepo.save(restaurant);

@@ -34,7 +34,6 @@ export class OrdersService {
     private readonly restaurantRepo: Repository<Restaurant>,
   ) {}
 
-  /** Shape that matches the frontend Order type. */
   private toResponse(order: Order) {
     return {
       id: order.id,
@@ -77,7 +76,6 @@ export class OrdersService {
       .createQueryBuilder('o')
       .leftJoinAndSelect('o.lines', 'lines')
       .leftJoinAndSelect('o.deliveryStatuses', 'deliveryStatuses')
-      // Only show orders after successful payment (hide pending / failed).
       .where('o.payment_status = :paid', { paid: OrderPaymentStatus.PAID })
       .orderBy('o.createdAt', 'DESC')
       .addOrderBy('deliveryStatuses.createdAt', 'ASC')
@@ -85,7 +83,6 @@ export class OrdersService {
       .take(limit);
 
     if (scope === 'mine') {
-      // Orders this account placed as a customer (all roles).
       qb.andWhere('o.user_id = :userId', { userId: user.id });
     } else if (scope === 'restaurant') {
       if (user.role !== 'staff' && user.role !== 'admin') {
@@ -98,7 +95,6 @@ export class OrdersService {
         }
         qb.andWhere('o.restaurant_id = :restaurantId', { restaurantId: mine.id });
       }
-      // admin + restaurant scope → all restaurants
     } else if (scope === 'all') {
       if (user.role !== 'admin') {
         throw new ForbiddenException('Only admin can list all orders');
@@ -164,7 +160,6 @@ export class OrdersService {
         throw new BadRequestException('Cart is empty');
       }
 
-      // Make sure every menu item is still available.
       for (const cartItem of cartItems) {
         if (!cartItem.menuItem || cartItem.menuItem.deletedAt) {
           throw new BadRequestException(
@@ -257,16 +252,36 @@ export class OrdersService {
       );
     }
 
-    order.status = nextStatus;
-    if (nextStatus === OrderStatus.PREPARING && !order.estimatedMinutes) {
-      order.estimatedMinutes = 30;
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const orderRepo = manager.getRepository(Order);
+      const statusRepo = manager.getRepository(DeliveryStatus);
 
-    await this.orderRepo.save(order);
+      order.status = nextStatus;
+      if (nextStatus === OrderStatus.PREPARING && !order.estimatedMinutes) {
+        order.estimatedMinutes = 30;
+      }
+      await orderRepo.save(order);
 
-    await this.dataSource.getRepository(DeliveryStatus).save({
-      orderId: order.id,
-      status: nextStatus,
+      const rows = await statusRepo.find({
+        where: { orderId: order.id },
+        order: { createdAt: 'DESC' },
+      });
+      const current = rows[0];
+
+      if (current) {
+        current.status = nextStatus;
+        await statusRepo.save(current);
+        if (rows.length > 1) {
+          await statusRepo.remove(rows.slice(1));
+        }
+      } else {
+        await statusRepo.save(
+          statusRepo.create({
+            orderId: order.id,
+            status: nextStatus,
+          }),
+        );
+      }
     });
 
     return this.getById(order.id, user);

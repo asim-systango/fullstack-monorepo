@@ -1,4 +1,5 @@
 export { RestaurantCard } from './restaurant-card';
+export { DietBadge, DietTypePicker } from './diet-badge';
 export { FoodImage } from './food-image';
 export { ImageUpload } from './image-upload';
 export { ImageUploadModal } from './image-upload-modal';

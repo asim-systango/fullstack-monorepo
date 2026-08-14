@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge } from '@/components/food';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { useOrders, useRestaurants } from '@/lib/hooks/food-delivery';
 import { formatInr } from '@/lib/pricing';
 
 export default function AdminOverviewPage() {
   const restaurants = useRestaurants();
-  const orders = useOrders('all');
-
-  const list = orders.data?.items ?? [];
+  const { data, refetch, isRefetching } = useOrders('all');
+  const list = data?.items ?? [];
   const revenue = list
     .filter((o) => o.status !== 'cancelled')
     .reduce((s, o) => s + o.total, 0);
@@ -28,9 +28,21 @@ export default function AdminOverviewPage() {
 
   return (
     <AppShell>
-      <h1 style={{ fontSize: 19, fontWeight: 500, margin: '0 0 16px', color: 'var(--tg-text)' }}>
-        Platform overview
-      </h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <h1 style={{ fontSize: 19, fontWeight: 500, margin: 0, color: 'var(--tg-text)' }}>
+          Platform overview
+        </h1>
+        <RefreshButton onRefresh={() => refetch()} loading={isRefetching} />
+      </div>
 
       <div
         style={{

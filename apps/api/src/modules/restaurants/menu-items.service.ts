@@ -23,7 +23,6 @@ export class MenuItemsService {
   async list(query: ListMenuItemsQueryDto, user?: JwtUser | null) {
     const includeDeleted = query.includeDeleted === true;
 
-    // Only staff/admin can ask for deleted items.
     if (includeDeleted) {
       if (!user || (user.role !== 'staff' && user.role !== 'admin')) {
         throw new ForbiddenException('Only staff can view deleted menu items');

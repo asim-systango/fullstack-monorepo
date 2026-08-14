@@ -12,7 +12,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly usersService: UsersService) {
     const env = loadGatewayEnv();
     super({
-      // Browser (cookie) + Swagger/API clients (Bearer) — one process serves both.
+      
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
           const cookies = req?.cookies as Record<string, string> | undefined;

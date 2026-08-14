@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type DragEvent } from 'react';
-import { ImagePlus, Loader2, Upload, X } from 'lucide-react';
+import { ImagePlus, Upload, X } from 'lucide-react';
 import {
   uploadImageToCloudinary,
   validateImageFile,
@@ -222,11 +222,7 @@ export function ImageUploadModal({
             disabled={!selectedFile || uploading || disabled}
             onClick={() => void handleUpload()}
           >
-            {uploading ? (
-              <>
-                <Loader2 size={14} style={{ animation: 'tg-spin 0.7s linear infinite' }} /> Uploading…
-              </>
-            ) : (
+            {uploading ? 'Uploading…' : (
               <>
                 <Upload size={14} /> Upload photo
               </>

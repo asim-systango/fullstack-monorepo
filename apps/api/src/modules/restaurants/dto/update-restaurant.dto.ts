@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsUrl, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUrl, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { RestaurantDietType } from '../restaurant.entity';
 
 export class UpdateRestaurantDto {
   @ApiPropertyOptional()
@@ -49,4 +50,9 @@ export class UpdateRestaurantDto {
   @Min(0)
   @Max(5)
   rating?: number;
+
+  @ApiPropertyOptional({ enum: RestaurantDietType, example: RestaurantDietType.BOTH })
+  @IsOptional()
+  @IsEnum(RestaurantDietType)
+  dietType?: RestaurantDietType;
 }

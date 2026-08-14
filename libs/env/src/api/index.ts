@@ -1,22 +1,18 @@
 import { z } from 'zod';
 import { nodeEnv } from '../node-env';
 
-/** Internal domain API (`apps/api`) — Bearer JWT only, no browser cookies. */
 export const apiEnvSchema = z
   .object({
     NODE_ENV: nodeEnv,
     PORT: z.coerce.number().default(3002),
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().min(16),
-    /** Razorpay test/live keys — both required to enable real checkout. */
     RAZORPAY_KEY_ID: z.string().optional(),
     RAZORPAY_KEY_SECRET: z.string().optional(),
-    /** Dev-only: skip TLS verification when a corporate proxy breaks Razorpay HTTPS. */
     RAZORPAY_TLS_INSECURE: z
       .enum(['true', 'false'])
       .default('false')
       .transform((v) => v === 'true'),
-    /** Cloudinary — all three required to enable image uploads. */
     CLOUDINARY_CLOUD_NAME: z
       .string()
       .regex(

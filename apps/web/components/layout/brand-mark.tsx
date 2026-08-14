@@ -5,7 +5,6 @@ import { useAuth } from '@/components/auth';
 import { homePathForRole } from '@/lib/auth-routes';
 
 type BrandMarkProps = Readonly<{
-  /** Optional override. Defaults to `/` when logged out, role home when logged in. */
   href?: string;
 }>;
 

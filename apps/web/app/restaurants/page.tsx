@@ -29,7 +29,6 @@ export default function RestaurantsPage() {
 
   useToastQueryError(isError, error);
 
-  // Debounced search → applied filter (triggers React Query refetch).
   useEffect(() => {
     if (debouncedSearch.trim() === appliedSearch) return;
     dispatch(applyRestaurantFilters());

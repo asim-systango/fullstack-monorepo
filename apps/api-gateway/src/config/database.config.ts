@@ -1,6 +1,5 @@
 import { loadGatewayEnv } from '@shared/env/gateway';
 
-/** Database connection settings for Nest TypeORM. */
 export function databaseConfig() {
   const env = loadGatewayEnv();
   return {

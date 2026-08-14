@@ -33,7 +33,6 @@ export class RestaurantsController {
     return this.restaurantsService.list(query);
   }
 
-  /** Must stay above `@Get(':id')` so `mine` is not parsed as a UUID. */
   @ApiBearerAuth()
   @Roles('staff', 'admin')
   @Get('mine')

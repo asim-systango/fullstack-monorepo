@@ -19,7 +19,7 @@ export class DeliveryStatus {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index('IDX_delivery_statuses_order_id')
+  @Index('UQ_delivery_statuses_order_id', { unique: true })
   @Column({ name: 'order_id', type: 'uuid' })
   orderId: string;
 

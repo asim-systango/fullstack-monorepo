@@ -8,7 +8,6 @@ const LABELS = {
   register: 'Creating account…',
 } as const;
 
-/** Full-screen overlay for login / logout / register (not generic API loading). */
 export function AuthBusyOverlay() {
   const { pendingAction } = useAuth();
 

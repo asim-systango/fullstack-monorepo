@@ -40,7 +40,6 @@ type AuthContextValue = {
   login: (input: { email: string; password: string }) => Promise<User>;
   register: (input: { name: string; email: string; password: string }) => Promise<User>;
   saveAddress: (input: { deliveryAddress: string }) => Promise<User>;
-  /** Mock-only: switch demo role without retyping password. */
   switchDemoRole?: (role: User['role']) => Promise<void>;
   isMock: boolean;
 };
@@ -78,7 +77,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     void refresh();
   }, [refresh]);
 
-  // Keep mock food store user id in sync with logged-in demo user
   useEffect(() => {
     if (!mock || !user) return;
     mockFoodApi.setCurrentUser(user.id);

@@ -3,7 +3,6 @@ import type { User } from '@shared/api-client';
 const STORAGE_KEY = 'food-delivery-mock-user';
 const ADDRESS_KEY = 'food-delivery-mock-addresses';
 
-/** Same demo accounts as gateway seed (strong passwords). */
 export const MOCK_USERS: Array<User & { password: string; restaurant?: string }> = [
   {
     id: '00000000-0000-4000-8000-000000000001',
@@ -183,7 +182,6 @@ export function mockSaveAddress(deliveryAddress: string): User {
   return updated;
 }
 
-/** Quick switch between demo roles (mock mode only). */
 export function mockSwitchRole(role: User['role']): User {
   const found = MOCK_USERS.find((u) => u.role === role);
   if (!found) throw new Error('Unknown role');

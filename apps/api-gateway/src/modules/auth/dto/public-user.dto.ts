@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** Safe user fields returned after login / register / me. */
 export class PublicUserDto {
   @ApiProperty({ example: '11111111-1111-4111-8111-111111111111' })
   id!: string;

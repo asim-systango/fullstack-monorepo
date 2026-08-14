@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge } from '@/components/food';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { useOrders } from '@/lib/hooks/food-delivery';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
@@ -21,7 +22,7 @@ function matches(order: Order, filter: (typeof FILTERS)[number]) {
 }
 
 export default function AdminOrdersPage() {
-  const { data, isError, error } = useOrders('all');
+  const { data, isLoading, isError, error, refetch, isRefetching } = useOrders('all');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
 
   useToastQueryError(isError, error);
@@ -50,7 +51,8 @@ export default function AdminOrdersPage() {
             Platform-wide, across every restaurant
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <RefreshButton onRefresh={() => refetch()} loading={isRefetching} />
           {FILTERS.map((s) => (
             <button
               key={s}
@@ -99,6 +101,11 @@ export default function AdminOrdersPage() {
             </div>
           </Link>
         ))}
+        {!isLoading && filtered.length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--tg-text-faint)', padding: '24px 0', textAlign: 'center' }}>
+            No orders yet.
+          </p>
+        ) : null}
       </div>
     </AppShell>
   );

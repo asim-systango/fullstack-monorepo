@@ -10,7 +10,6 @@ export type ProvisionedStaffOwner = {
   plainPassword: string;
 };
 
-/** Password pattern: restaurant name (no spaces) + @123, e.g. HastyTasty@123 */
 export function staffPasswordFromRestaurantName(restaurantName: string): string {
   const compact = restaurantName.trim().replace(/\s+/g, '');
   if (!compact) return 'Restaurant@123';

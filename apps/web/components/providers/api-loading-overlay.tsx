@@ -13,7 +13,6 @@ export function ApiLoadingOverlay() {
 
   useEffect(() => {
     if (pending > 0) {
-      // Show immediately so page copy never peeks under the overlay.
       setVisible(true);
       return;
     }
@@ -22,7 +21,6 @@ export function ApiLoadingOverlay() {
     return () => window.clearTimeout(hideTimer);
   }, [pending]);
 
-  // Login / logout / register own their own overlay copy.
   if (pendingAction || !visible) return null;
 
   return (

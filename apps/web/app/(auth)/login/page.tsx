@@ -30,15 +30,12 @@ function LoginForm() {
   }
 
   function syncValidation(nextEmail: string, nextPassword: string, forceShow = false) {
-    // Client-side field checks only — does not call the API.
     return applyParse(parseLogin({ email: nextEmail, password: nextPassword }), forceShow);
   }
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!syncValidation(email, password, true)) return;
-
-    // Login API runs only after a successful form submit.
     try {
       const user = await loginAccount({ email: email.trim(), password });
       goHome(user.role);

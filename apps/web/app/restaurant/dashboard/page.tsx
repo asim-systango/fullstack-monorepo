@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { UtensilsCrossed } from 'lucide-react';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge } from '@/components/food';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import {
   useMyRestaurant,
   useOrders,
@@ -16,7 +18,7 @@ import type { OrderStatus } from '@/lib/types/food-delivery';
 
 export default function RestaurantDashboardPage() {
   const myRestaurant = useMyRestaurant();
-  const { data, isLoading, isError, error } = useOrders('restaurant');
+  const { data, isLoading, isError, error, refetch, isRefetching } = useOrders('restaurant');
   const updateStatus = useUpdateOrderStatus();
 
   useToastQueryError(myRestaurant.isError, myRestaurant.error);
@@ -39,12 +41,26 @@ export default function RestaurantDashboardPage() {
 
   return (
     <AppShell>
-      <h1 style={{ fontSize: 19, fontWeight: 500, margin: '0 0 4px', color: 'var(--tg-text)' }}>
-        Incoming orders
-      </h1>
-      <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '0 0 18px' }}>
-        {restaurantName} · live queue, scoped to your restaurant
-      </p>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 18,
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: 19, fontWeight: 500, margin: '0 0 4px', color: 'var(--tg-text)' }}>
+            Incoming orders
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: 0 }}>
+            {restaurantName} · live queue, scoped to your restaurant
+          </p>
+        </div>
+        <RefreshButton onRefresh={() => refetch()} loading={isRefetching} />
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {active.map((o) => {
@@ -107,11 +123,15 @@ export default function RestaurantDashboardPage() {
         ) : null}
       </div>
 
-      <p style={{ marginTop: 16, fontSize: 13 }}>
-        <Link href="/restaurant/menu" style={{ color: 'var(--tg-brand-accent)' }}>
-          Manage menu →
+      <div style={{ marginTop: 20 }}>
+        <Link
+          href="/restaurant/menu"
+          className="tg-btn tg-btn-secondary"
+          style={{ textDecoration: 'none' }}
+        >
+          <UtensilsCrossed size={15} /> Manage menu
         </Link>
-      </p>
+      </div>
     </AppShell>
   );
 }

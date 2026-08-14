@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { RequireRole } from '@/components/auth';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge, OrderTimeline, PriceBreakdown } from '@/components/food';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { useOrder } from '@/lib/hooks/food-delivery';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
@@ -13,7 +14,7 @@ import { formatInr } from '@/lib/pricing';
 type PageProps = Readonly<{ params: Promise<{ id: string }> }>;
 
 function OrderDetail({ id }: Readonly<{ id: string }>) {
-  const { data: order, isLoading, isError, error } = useOrder(id);
+  const { data: order, isLoading, isError, error, refetch, isRefetching } = useOrder(id);
 
   useToastQueryError(isError, error);
 
@@ -46,12 +47,26 @@ function OrderDetail({ id }: Readonly<{ id: string }>) {
         >
           <ArrowLeft size={14} /> Back to orders
         </Link>
-        <h1 style={{ fontSize: 18, fontWeight: 500, margin: '0 0 4px', color: 'var(--tg-text)' }}>
-          Order {order.id.slice(0, 8)}
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '0 0 18px' }}>
-          {order.restaurantName} · {new Date(order.createdAt).toLocaleString()}
-        </p>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 12,
+            flexWrap: 'wrap',
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <h1 style={{ fontSize: 18, fontWeight: 500, margin: '0 0 4px', color: 'var(--tg-text)' }}>
+              Order {order.id.slice(0, 8)}
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: 0 }}>
+              {order.restaurantName} · {new Date(order.createdAt).toLocaleString()}
+            </p>
+          </div>
+          <RefreshButton onRefresh={() => refetch()} loading={isRefetching} />
+        </div>
 
         <div className="tg-card" style={{ padding: '18px 20px' }}>
           <p className="tg-section-label">Delivery timeline</p>

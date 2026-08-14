@@ -1,6 +1,5 @@
 import { loadGatewayEnv, type GatewayEnv } from '@shared/env/gateway';
 
-/** App config from `@shared/env/gateway`. */
 export function appConfig(): Pick<
   GatewayEnv,
   | 'NODE_ENV'

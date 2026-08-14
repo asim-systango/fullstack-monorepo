@@ -12,7 +12,7 @@ import type { JwtUser } from '../../common/auth';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { ListRestaurantsQueryDto } from './dto/list-restaurants-query.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
-import { Restaurant } from './restaurant.entity';
+import { Restaurant, RestaurantDietType } from './restaurant.entity';
 import { StaffOwnerProvisioner } from './staff-owner.provisioner';
 
 export type StaffLoginDetails = {
@@ -106,6 +106,7 @@ export class RestaurantsService {
         emoji: dto.emoji ?? null,
         imageUrl: dto.imageUrl ?? null,
         eta: dto.eta ?? null,
+        dietType: dto.dietType ?? RestaurantDietType.BOTH,
         ownerUserId: staff.id,
         rating: dto.rating ?? 0,
       });
@@ -147,6 +148,7 @@ export class RestaurantsService {
       emoji: dto.emoji ?? null,
       imageUrl: dto.imageUrl ?? null,
       eta: dto.eta ?? null,
+      dietType: dto.dietType ?? RestaurantDietType.BOTH,
       ownerUserId,
       rating: dto.rating ?? 0,
     });
@@ -166,6 +168,7 @@ export class RestaurantsService {
     if (dto.imageUrl !== undefined) restaurant.imageUrl = dto.imageUrl;
     if (dto.eta !== undefined) restaurant.eta = dto.eta;
     if (dto.rating !== undefined) restaurant.rating = dto.rating;
+    if (dto.dietType !== undefined) restaurant.dietType = dto.dietType;
 
     return this.restaurantRepo.save(restaurant);
   }

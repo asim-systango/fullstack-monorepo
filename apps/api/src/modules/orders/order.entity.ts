@@ -61,7 +61,6 @@ export class Order {
   @JoinColumn({ name: 'restaurant_id' })
   restaurant: Restaurant;
 
-  // This snapshot keeps old receipts correct if the restaurant is renamed.
   @Column({ name: 'restaurant_name', length: 120 })
   restaurantName: string;
 

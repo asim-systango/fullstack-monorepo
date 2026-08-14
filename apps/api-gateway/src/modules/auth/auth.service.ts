@@ -40,7 +40,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  /** Shared helper — puts JWT in httpOnly cookie after login or register. */
   private async issueSession(user: User, res: Response) {
     const token = await this.jwtService.signAsync({
       sub: user.id,
@@ -72,7 +71,6 @@ export class AuthService {
         role: 'user',
       });
 
-      // New accounts are signed in right away (same cookie as login).
       await this.issueSession(user, res);
       return this.usersService.toPublic(user);
     } catch (err) {
@@ -85,7 +83,6 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
-    // Always bcrypt.compare (including missing users) to avoid timing-based email enumeration.
     const hash =
       user?.passwordHash ??
       '$2b$12$N/6IAT14.CPmctktUygdXuFR/ryV4IYaHdV7ilF3IfY2Cpsj/X3q.';

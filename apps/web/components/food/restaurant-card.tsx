@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Clock, Star } from 'lucide-react';
-import { FoodImage } from '@/components/food';
+import { DietBadge, FoodImage } from '@/components/food';
 import type { Restaurant } from '@/lib/types/food-delivery';
 
 export function RestaurantCard({ restaurant }: Readonly<{ restaurant: Restaurant }>) {
@@ -49,20 +49,23 @@ export function RestaurantCard({ restaurant }: Readonly<{ restaurant: Restaurant
             </span>
           ) : null}
         </p>
-        {restaurant.rating != null ? (
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--tg-rating)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-            }}
-          >
-            <Star size={12} fill="currentColor" /> {restaurant.rating}
-          </span>
-        ) : null}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <DietBadge dietType={restaurant.dietType} />
+          {restaurant.rating != null ? (
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--tg-rating)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 3,
+              }}
+            >
+              <Star size={12} fill="currentColor" /> {restaurant.rating}
+            </span>
+          ) : null}
+        </div>
       </div>
     </Link>
   );

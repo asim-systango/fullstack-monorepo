@@ -42,7 +42,6 @@ export class PaymentsService {
     return this.toResponse(payment, order);
   }
 
-  /** Creates or returns a Razorpay checkout payload (real keys) or mock test checkout. */
   async createCheckout(orderId: string, user: JwtUser) {
     const order = await this.getOrderOrFail(orderId);
     await this.assertCanPay(order, user);
@@ -126,7 +125,6 @@ export class PaymentsService {
     return {
       mock,
       keyId: mock ? 'rzp_test_mock_key' : keyId,
-      /** Razorpay unit: paise (₹290.06 → 29006). */
       amount: payment.amount,
       amountInr: Number(order.total),
       currency: payment.currency,
@@ -246,7 +244,6 @@ export class PaymentsService {
       provider: payment.provider,
       providerOrderId: payment.providerOrderId,
       providerPaymentId: payment.providerPaymentId,
-      /** Stored in paise for Razorpay (₹1 = 100). */
       amount: payment.amount,
       amountInr: Number((payment.amount / 100).toFixed(2)),
       currency: payment.currency,

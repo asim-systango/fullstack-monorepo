@@ -19,7 +19,6 @@ async function bootstrap() {
   app.use(requestIdMiddleware());
   app.use(securityHeadersMiddleware());
 
-  // Internal service — browser CORS/cookies live on api-gateway only.
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -44,8 +43,7 @@ async function bootstrap() {
   await app.listen(appSettings.PORT);
   console.log(`Domain API listening on http://localhost:${appSettings.PORT}`);
   if (appSettings.NODE_ENV !== 'production') {
-    console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
-  }
+    console.log(`Swagger UI: http:  }
 }
 
 void bootstrap();

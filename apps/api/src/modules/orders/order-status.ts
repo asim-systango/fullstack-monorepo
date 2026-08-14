@@ -1,6 +1,5 @@
 import { OrderStatus } from './order.entity';
 
-/** Allowed next statuses for the kitchen workflow. */
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus[]>> = {
   [OrderStatus.PLACED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
   [OrderStatus.PREPARING]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CANCELLED],

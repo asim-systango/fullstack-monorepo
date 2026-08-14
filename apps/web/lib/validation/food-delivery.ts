@@ -1,3 +1,5 @@
+import type { RestaurantDietType } from '@/lib/types/food-delivery';
+
 export type PlaceOrderFormValues = {
   deliveryAddress: string;
 };
@@ -16,6 +18,7 @@ export type RestaurantFormValues = {
   ownerEmail: string;
   eta?: string;
   rating?: number;
+  dietType: RestaurantDietType;
 };
 
 export type LoginFormValues = {
@@ -38,7 +41,6 @@ const UUID_RE =
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Matches api-gateway RegisterDto strong password rules. */
 const STRONG_PASSWORD_RE =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -142,6 +144,7 @@ export function parseRestaurant(input: {
   ownerEmail: string;
   eta?: string;
   rating?: string | number;
+  dietType: RestaurantDietType;
 }): ParseResult<RestaurantFormValues> {
   const name = input.name.trim();
   const cuisine = input.cuisine.trim();
@@ -149,6 +152,7 @@ export function parseRestaurant(input: {
   const description = input.description?.trim();
   const ownerEmail = input.ownerEmail.trim();
   const eta = input.eta?.trim();
+  const dietType = input.dietType;
   const rating =
     input.rating === '' || input.rating === undefined || input.rating === null
       ? undefined
@@ -181,6 +185,10 @@ export function parseRestaurant(input: {
     errors.description = 'Description is too long';
   }
 
+  if (dietType !== 'veg' && dietType !== 'non_veg' && dietType !== 'both') {
+    errors.dietType = 'Choose veg, non-veg, or both';
+  }
+
   if (Object.keys(errors).length) return { success: false, errors };
   return {
     success: true,
@@ -192,6 +200,7 @@ export function parseRestaurant(input: {
       ownerEmail,
       eta: eta || undefined,
       rating,
+      dietType,
     },
   };
 }

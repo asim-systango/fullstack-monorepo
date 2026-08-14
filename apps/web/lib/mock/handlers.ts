@@ -48,7 +48,6 @@ function paginate<T>(items: T[], page = 1, limit = 12): Paginated<T> {
   };
 }
 
-/** Each logged-in user has their own cart in mock mode. */
 function userCart() {
   const userId = store.currentUserId;
   if (!store.cartsByUser[userId]) {
@@ -104,6 +103,7 @@ export const mockFoodApi = {
       imageUrl: input.imageUrl,
       eta: input.eta,
       rating: input.rating ?? 0,
+      dietType: input.dietType ?? 'both',
     };
     store.restaurants.push(created);
     return {
@@ -247,7 +247,6 @@ export const mockFoodApi = {
       const mine = store.restaurants.find((r) => r.ownerUserId === store.currentUserId);
       items = mine ? items.filter((o) => o.restaurantId === mine.id) : [];
     }
-    // scope === 'all' → no extra filter
 
     if (filters.status) items = items.filter((o) => o.status === filters.status);
     return paginate(items, filters.page, filters.limit);
@@ -320,7 +319,14 @@ export const mockFoodApi = {
     }
 
     order.status = status;
-    order.deliveryStatuses.push({ id: uuid(), status, createdAt: new Date().toISOString() });
+    const existing = order.deliveryStatuses[0];
+    order.deliveryStatuses = [
+      {
+        id: existing?.id ?? uuid(),
+        status,
+        createdAt: existing?.createdAt ?? new Date().toISOString(),
+      },
+    ];
     if (status === 'preparing' && !order.estimatedMinutes) order.estimatedMinutes = 30;
     return order;
   },
@@ -361,7 +367,6 @@ export const mockFoodApi = {
     };
   },
 
-  /** Swap mock user for demo login simulation. */
   setCurrentUser(userId: string) {
     store.currentUserId = userId;
   },

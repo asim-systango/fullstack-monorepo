@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Bell,
   ChevronDown,
   ClipboardList,
   Home,
@@ -20,6 +19,7 @@ import { ThemeToggle } from '@/components/theme';
 import { Avatar } from './avatar';
 import { BrandMark } from './brand-mark';
 import { RoleBadge } from '@/components/food/role-badge';
+import { useCart } from '@/lib/hooks/food-delivery';
 
 type NavItem = { href: string; label: string; icon: typeof Home };
 
@@ -63,6 +63,8 @@ export function AppShell({
   const loggingOut = pendingAction === 'logout';
 
   const items = navForRole(user?.role);
+  const cart = useCart();
+  const cartCount = cart.data?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -113,15 +115,12 @@ export function AppShell({
           >
             <ShoppingCart size={18} />
             <span>Cart</span>
+            {cartCount > 0 ? <span className="tg-sidebar-count">{cartCount}</span> : null}
           </Link>
         </nav>
 
         <div className="tg-sidebar-bottom">
           <div className="tg-sidebar-tools">
-            <button type="button" className="tg-sidebar-link" aria-label="Notifications">
-              <Bell size={18} />
-              <span>Notifications</span>
-            </button>
             <div className="tg-sidebar-theme">
               <span>Appearance</span>
               <ThemeToggle />
@@ -153,8 +152,13 @@ export function AppShell({
         <header className="tg-mobile-header">
           <BrandMark />
           <div className="tg-mobile-actions">
-            <Link href="/cart" className="tg-mobile-icon" aria-label="Cart">
+            <Link
+              href="/cart"
+              className="tg-mobile-icon"
+              aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : 'Cart'}
+            >
               <ShoppingCart size={18} />
+              {cartCount > 0 ? <span>{cartCount}</span> : null}
             </Link>
             <ThemeToggle />
             {user ? (

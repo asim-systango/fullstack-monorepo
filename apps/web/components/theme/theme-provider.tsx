@@ -30,7 +30,6 @@ function readDomTheme(): Theme {
     const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (saved === 'dark' || saved === 'light') return saved;
   } catch {
-    // ignore
   }
   return 'light';
 }
@@ -39,7 +38,6 @@ export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [theme, setTheme] = useState<Theme>('light');
   const [ready, setReady] = useState(false);
 
-  // Sync from the root bootstrap script before paint — never overwrite dark with light.
   useLayoutEffect(() => {
     setTheme(readDomTheme());
     setReady(true);
@@ -51,7 +49,6 @@ export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
-      // ignore
     }
   }, [theme, ready]);
 

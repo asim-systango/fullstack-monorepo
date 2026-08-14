@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { RequireRole } from '@/components/auth';
 import { AppShell } from '@/components/layout';
 import { OrderStatusBadge } from '@/components/food';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { useOrders } from '@/lib/hooks/food-delivery';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
 import { formatInr } from '@/lib/pricing';
@@ -22,7 +23,7 @@ function matchesFilter(order: Order, filter: (typeof FILTERS)[number]): boolean 
 }
 
 function OrdersList() {
-  const { data, isLoading, isError, error } = useOrders('mine');
+  const { data, isLoading, isError, error, refetch, isRefetching } = useOrders('mine');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
 
   useToastQueryError(isError, error);
@@ -52,7 +53,8 @@ function OrdersList() {
             Food you ordered as a customer
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <RefreshButton onRefresh={() => refetch()} loading={isRefetching} />
           {FILTERS.map((s) => (
             <button
               key={s}

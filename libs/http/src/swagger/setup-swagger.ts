@@ -7,18 +7,11 @@ export type SetupSwaggerOptions = {
   title: string;
   description: string;
   version?: string;
-  /** Mount path (default `docs` → `/docs`). */
   path?: string;
-  /** One or both of cookie / bearer (unified API uses both). */
   auth: SwaggerAuthMode | SwaggerAuthMode[];
-  /** Cookie name when cookie auth is enabled (default `access_token`). */
   cookieName?: string;
 };
 
-/**
- * OpenAPI UI for local/dev Nest apps. Skipped when `enabled` is false
- * (typically production).
- */
 export function setupSwagger(
   app: INestApplication,
   options: SetupSwaggerOptions,

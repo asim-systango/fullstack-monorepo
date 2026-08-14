@@ -6,10 +6,6 @@ type ParseResult<T> =
   | { success: true; data: T }
   | { success: false; errors: Record<string, string> };
 
-/**
- * Tracks field errors after the first submit (or when showErrors is forced).
- * Live re-validation is debounced so messages settle while typing / erasing.
- */
 export function useFormErrors(debounceMs = 350) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showErrors, setShowErrors] = useState(false);

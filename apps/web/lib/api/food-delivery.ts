@@ -20,7 +20,6 @@ import type {
   VerifyPaymentResult,
 } from '@/lib/types/food-delivery';
 
-/** Real API calls — same shapes the Nest backend will expose. */
 export const foodApiClient = {
   listRestaurants(filters: RestaurantFilters = {}) {
     return apiClient
@@ -28,7 +27,6 @@ export const foodApiClient = {
       .then((res) => unwrapData<Paginated<Restaurant>>(res.data));
   },
 
-  /** Staff: the single restaurant linked to the logged-in user. */
   getMyRestaurant() {
     return apiClient
       .get('/restaurants/mine')

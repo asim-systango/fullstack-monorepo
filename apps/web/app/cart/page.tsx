@@ -43,7 +43,6 @@ function CartContent() {
 
   useToastQueryError(isError, error);
 
-  // When user profile loads with a saved address, select it by default.
   useEffect(() => {
     if (savedAddress) {
       setUseSavedAddress(true);
@@ -238,7 +237,7 @@ function CartContent() {
                   <button
                     type="button"
                     className="tg-qty-btn"
-                    disabled={updateItem.isPending || paying}
+                    disabled={paying}
                     onClick={() => void changeQty(line.id, line.quantity - 1)}
                   >
                     <Minus size={13} />
@@ -249,7 +248,7 @@ function CartContent() {
                   <button
                     type="button"
                     className="tg-qty-btn"
-                    disabled={updateItem.isPending || paying}
+                    disabled={paying}
                     onClick={() => void changeQty(line.id, line.quantity + 1)}
                   >
                     <Plus size={13} />

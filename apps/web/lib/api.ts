@@ -13,20 +13,24 @@ export const apiClient = createApiClient({
   },
 });
 
-// Track every real HTTP call for the global loading overlay.
-// Skip auth session/login/logout/register — those use AuthBusyOverlay labels instead.
-function shouldTrackApiLoading(url: string): boolean {
+function shouldTrackApiLoading(url: string, method = 'get'): boolean {
+  const m = method.toLowerCase();
   return !(
     url.includes('/auth/me') ||
     url.includes('/auth/login') ||
     url.includes('/auth/logout') ||
-    url.includes('/auth/register')
+    url.includes('/auth/register') ||
+    url.includes('/cart') ||
+    url.includes('/uploads/cloudinary-signature') ||
+    (m === 'patch' && url.includes('/restaurants/')) ||
+    (m === 'get' && url.includes('/orders'))
   );
 }
 
 apiClient.interceptors.request.use((config) => {
   const url = config.url ?? '';
-  if (shouldTrackApiLoading(url)) {
+  const method = config.method ?? 'get';
+  if (shouldTrackApiLoading(url, method)) {
     apiLoading.start();
     (config as { __apiLoadingTracked?: boolean }).__apiLoadingTracked = true;
   }
@@ -36,7 +40,6 @@ apiClient.interceptors.request.use((config) => {
 function stopTrackedLoading(config: { __apiLoadingTracked?: boolean } | undefined) {
   if (!config?.__apiLoadingTracked) return;
   apiLoading.stop();
-  // Prevent double-stop if both response + error paths somehow run.
   config.__apiLoadingTracked = false;
 }
 

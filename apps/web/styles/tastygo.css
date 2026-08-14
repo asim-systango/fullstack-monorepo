@@ -1,4 +1,4 @@
-/* TastyGo theme — light / dark via data-theme on <html> */
+
 
 [data-theme='light'] {
   --tg-bg: #f8f6fd;
@@ -351,6 +351,47 @@
   }
 }
 
+.tg-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease,
+    margin-bottom 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tg-expand.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 16px;
+  pointer-events: auto;
+}
+
+.tg-expand-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.tg-expand-inner > .tg-card {
+  transform: translateY(-8px);
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tg-expand.is-open > .tg-expand-inner > .tg-card {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-expand,
+  .tg-expand-inner > .tg-card {
+    transition: none;
+  }
+}
+
 .tg-label {
   font-size: 12.5px;
   font-weight: 500;
@@ -387,7 +428,7 @@
   }
 }
 
-/* Marketing landing page */
+
 .tg-landing {
   overflow-x: hidden;
 }
@@ -775,7 +816,7 @@
   font-size: 12px;
 }
 
-/* Signed-in application shell */
+
 .tg-app-shell {
   display: grid;
   grid-template-columns: 242px minmax(0, 1fr);
@@ -933,6 +974,92 @@
   backdrop-filter: blur(5px);
 }
 
+.tg-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--tg-bg) 78%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.tg-modal-panel {
+  width: 100%;
+  max-width: 440px;
+  padding: 22px;
+  box-shadow: var(--tg-shadow-md);
+}
+
+.tg-credentials-box {
+  background: var(--tg-surface-alt);
+  border: 1px solid var(--tg-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tg-credentials-label {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--tg-text-faint);
+}
+
+.tg-credentials-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tg-credentials-value {
+  font-size: 13.5px;
+  color: var(--tg-text);
+  word-break: break-all;
+}
+
+.tg-credentials-role {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--tg-text);
+  text-transform: capitalize;
+}
+
+.tg-copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--tg-border-strong);
+  background: var(--tg-surface);
+  color: var(--tg-text);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.tg-copy-btn:hover {
+  background: var(--tg-brand-soft);
+  border-color: var(--tg-brand);
+  color: var(--tg-brand-accent);
+}
+
+.tg-copy-btn:focus-visible {
+  outline: 2px solid var(--tg-brand);
+  outline-offset: 2px;
+}
+
 .tg-api-loading-card {
   display: flex;
   align-items: center;
@@ -953,6 +1080,10 @@
   border-radius: 50%;
   border: 2px solid var(--tg-border);
   border-top-color: var(--tg-brand);
+  animation: tg-spin 0.7s linear infinite;
+}
+
+.tg-icon-spin {
   animation: tg-spin 0.7s linear infinite;
 }
 

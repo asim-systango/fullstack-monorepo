@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type SyntheticEvent } from 'react';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { AppShell } from '@/components/layout';
-import { FoodImage, ImageUpload } from '@/components/food';
+import { FoodImage, ImageUpload, DietTypePicker } from '@/components/food';
+import { ExpandCollapse } from '@/components/ui/expand-collapse';
 import {
   useCreateMenuItem,
   useDeleteMenuItem,
@@ -62,8 +64,18 @@ export default function RestaurantMenuPage() {
 
   function startCreate() {
     setEditingId(null);
+    if (showForm) {
+      setShowForm(false);
+      resetForm();
+    } else {
+      resetForm();
+      setShowForm(true);
+    }
+  }
+
+  function cancelCreate() {
+    setShowForm(false);
     resetForm();
-    setShowForm((v) => !v);
   }
 
   function startEdit(item: MenuItem) {
@@ -216,6 +228,14 @@ export default function RestaurantMenuPage() {
 
   return (
     <AppShell>
+      <Link
+        href="/restaurant/dashboard"
+        className="tg-btn tg-btn-ghost"
+        style={{ textDecoration: 'none', marginBottom: 14 }}
+      >
+        <ArrowLeft size={14} /> Back to dashboard
+      </Link>
+
       <div
         style={{
           display: 'flex',
@@ -257,7 +277,6 @@ export default function RestaurantMenuPage() {
             label="Change photo"
             variant="hero"
             heroHeight={160}
-            disabled={updateRestaurant.isPending}
             onUploaded={async (url) => {
               try {
                 await updateRestaurant.mutateAsync({
@@ -271,22 +290,46 @@ export default function RestaurantMenuPage() {
             }}
             onError={toastError}
           />
+          <p className="tg-section-label" style={{ marginTop: 16 }}>
+            Veg / Non-veg
+          </p>
+          <DietTypePicker
+            value={restaurant?.dietType ?? 'both'}
+            disabled={!restaurantId}
+            onChange={(next) => {
+              if (!restaurantId) return;
+              void updateRestaurant
+                .mutateAsync({ id: restaurantId, input: { dietType: next } })
+                .then(() => toastSuccess('Restaurant type updated'))
+                .catch((err: unknown) => toastApiError(err));
+            }}
+          />
         </div>
       ) : null}
 
-      {showForm ? (
+      <ExpandCollapse open={showForm}>
         <form
           className="tg-card"
-          style={{ padding: 18, marginBottom: 16 }}
+          style={{ padding: 18 }}
           onSubmit={(e) => void handleCreate(e)}
           noValidate
         >
           {renderItemFields('create')}
-          <button type="submit" className="tg-btn tg-btn-primary" disabled={createItem.isPending}>
-            {createItem.isPending ? 'Saving…' : 'Save item'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="submit" className="tg-btn tg-btn-primary" disabled={createItem.isPending}>
+              {createItem.isPending ? 'Saving…' : 'Save item'}
+            </button>
+            <button
+              type="button"
+              className="tg-btn tg-btn-secondary"
+              disabled={createItem.isPending}
+              onClick={cancelCreate}
+            >
+              <X size={14} /> Cancel
+            </button>
+          </div>
         </form>
-      ) : null}
+      </ExpandCollapse>
 
       {!myRestaurant.isLoading && !restaurantId ? (
         <p style={{ color: 'var(--tg-danger-fg)' }}>

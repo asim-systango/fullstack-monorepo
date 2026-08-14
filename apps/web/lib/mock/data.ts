@@ -45,6 +45,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     emoji: '🍛',
     rating: 4.6,
     eta: '25-35 min',
+    dietType: 'both',
   },
   {
     id: RESTAURANT_IDS.burger,
@@ -56,6 +57,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     emoji: '🍔',
     rating: 4.3,
     eta: '20-30 min',
+    dietType: 'non_veg',
   },
   {
     id: RESTAURANT_IDS.sushi,
@@ -67,6 +69,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     emoji: '🍣',
     rating: 4.8,
     eta: '30-40 min',
+    dietType: 'non_veg',
   },
   {
     id: RESTAURANT_IDS.pasta,
@@ -78,6 +81,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     emoji: '🍝',
     rating: 4.4,
     eta: '25-35 min',
+    dietType: 'both',
   },
   {
     id: RESTAURANT_IDS.spice,
@@ -89,6 +93,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     emoji: '🌶️',
     rating: 4.5,
     eta: '20-30 min',
+    dietType: 'veg',
   },
 ];
 
@@ -265,7 +270,6 @@ export function createMockStore() {
   return {
     restaurants: [...SEED_RESTAURANTS],
     menuItems: [...SEED_MENU_ITEMS],
-    /** Each user gets their own cart. */
     cartsByUser: {} as Record<string, CartLine[]>,
     orders: [...SEED_ORDERS],
     currentUserId: DEMO_USER_IDS.user as string,

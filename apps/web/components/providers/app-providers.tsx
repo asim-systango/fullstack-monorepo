@@ -22,7 +22,6 @@ export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
             refetchOnWindowFocus: false,
           },
           mutations: {
-            // Failures surface via toastApiError in callers; never keep UI pending forever.
             retry: 0,
           },
         },

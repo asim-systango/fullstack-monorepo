@@ -51,7 +51,6 @@ export class Payment {
   @Column({ name: 'provider_signature', type: 'text', nullable: true })
   providerSignature: string | null;
 
-  /** Amount in paise (₹1 = 100). Example: order total ₹290.06 → 29006. */
   @Column({ type: 'integer' })
   amount: number;
 

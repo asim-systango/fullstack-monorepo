@@ -19,5 +19,4 @@ export function OrderStatusBadge({ status }: Readonly<{ status: OrderStatus }>) 
   );
 }
 
-/** @deprecated Prefer OrderStatusBadge */
 export const StatusBadge = OrderStatusBadge;

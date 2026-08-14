@@ -9,7 +9,6 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-/** Same formula as backend PRD — keep in sync when API is wired. */
 export function calculatePricing(subtotal: number): OrderPricing {
   const deliveryFee = subtotal >= FREE_DELIVERY_MIN ? 0 : DELIVERY_FEE_FLAT;
   const platformFee = round2(subtotal * (PLATFORM_FEE_PERCENT / 100));

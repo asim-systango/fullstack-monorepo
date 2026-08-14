@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   description: 'Restaurant favorites, delivered without the chaos',
 };
 
-/** Runs before paint so saved dark/light theme applies without a flash. */
 const themeBootstrapScript = `
 (function () {
   try {
