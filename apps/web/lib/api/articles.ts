@@ -47,6 +47,9 @@ export type PublicArticleDetail = {
   title: string;
   slug: string;
   publishedAt: string;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  ogImage: string | null;
   tags: Array<{ id: string; name: string }>;
   revision: {
     id: string;

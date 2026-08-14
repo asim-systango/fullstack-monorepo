@@ -131,7 +131,9 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     description:
       'No authentication required. Returns the article only when `publishedRevisionId` is set ' +
       'and `deletedAt` is null. Content comes from the published revision pointer — ' +
-      'not the latest revision. Draft and soft-deleted slugs return 404.',
+      'not the latest revision. Also returns `metaTitle`, `metaDescription`, and `ogImage` ' +
+      '(null when unset; the public page falls back to title / excerpt / cover). ' +
+      'Draft and soft-deleted slugs return 404.',
   })
   @ApiParam({
     name: 'slug',
@@ -289,6 +291,7 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     description:
       'Metadata only — content is versioned, so body changes go through POST /articles/:id/revisions. ' +
       '`tagIds` replaces the whole tag set for the article. ' +
+      'Optional `metaTitle`, `metaDescription`, and `ogImage` drive public SEO; send an empty string to clear. ' +
       'At least one field must be provided. Authors may only update their own article.',
   })
   @ApiParam(ARTICLE_ID_PARAM)

@@ -23,6 +23,7 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: 'Wordnest — Where good ideas find you',
   description:
     'Read trending stories, join the conversation, and discover what writers published today.',

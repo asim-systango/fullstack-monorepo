@@ -232,7 +232,7 @@ export function CommentSection({ articleId }: Readonly<{ articleId: string }>) {
 
       {!isLoading && !isError && comments.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">
-          No comments yet. Be the first to respond.
+          No comments yet. Be the first to comment.
         </p>
       ) : null}
 

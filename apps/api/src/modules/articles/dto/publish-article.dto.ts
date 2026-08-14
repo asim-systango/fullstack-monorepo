@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsDefined, IsUUID } from 'class-validator';
 
 /** Request body for POST /articles/:id/publish */
 export class PublishArticleDto {
@@ -8,6 +8,7 @@ export class PublishArticleDto {
     format: 'uuid',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
+  @IsDefined({ message: 'revisionId is required' })
   @IsUUID('4')
   revisionId!: string;
 }

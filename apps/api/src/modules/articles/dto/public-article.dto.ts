@@ -44,7 +44,8 @@ export class ListPublicArticlesQuery {
   limit: number = 20;
 
   @ApiPropertyOptional({
-    description: 'Case-insensitive partial match on the article title.',
+    description:
+      'Case-insensitive partial match on the article title or the published revision content. Draft revisions are never searched.',
     example: 'react',
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -112,6 +113,9 @@ export type PublicArticleDetail = {
   title: string;
   slug: string;
   publishedAt: Date;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  ogImage: string | null;
   tags: Array<{ id: string; name: string }>;
   revision: PublicArticleRevision;
 };

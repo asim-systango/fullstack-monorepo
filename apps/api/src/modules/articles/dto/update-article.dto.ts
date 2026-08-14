@@ -8,7 +8,14 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
+
+function emptyToNull({ value }: { value: unknown }): unknown {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
+}
 
 /**
  * Request body for PATCH /articles/:id.
@@ -47,6 +54,43 @@ export class UpdateArticleDto {
   @IsArray()
   @IsUUID('4', { each: true })
   tagIds?: string[];
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Public <title> override. Empty string clears it.',
+    maxLength: 200,
+  })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(200)
+  metaTitle?: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'Public meta description / Open Graph description. Empty string clears it.',
+    maxLength: 500,
+  })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(500)
+  metaDescription?: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Open Graph image URL. Empty string clears it.',
+    maxLength: 2000,
+  })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(2000)
+  ogImage?: string | null;
 }
 
 /** Response from DELETE /articles/:id */
