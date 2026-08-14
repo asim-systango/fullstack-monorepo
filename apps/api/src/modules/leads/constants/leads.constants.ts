@@ -11,4 +11,5 @@ export const LEADS_MESSAGES = {
   LEAD_CREATED: 'Lead created successfully.',
   LEAD_UPDATED: 'Lead details updated successfully.',
   LEAD_STAGE_UPDATED: 'Lead stage updated successfully.',
+  LEAD_RETRIEVED: 'Lead retrieved successfully.',
 } as const;
