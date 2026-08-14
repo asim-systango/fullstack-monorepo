@@ -1,31 +1,7 @@
 import Image from 'next/image';
 import type { ArticleMedia, PublicContentBlock } from '@/lib/api/articles';
 import { toMediaLookup } from './content-blocks';
-
-function Paragraph({ markdown }: Readonly<{ markdown: string }>) {
-  const paragraphs = markdown
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  return (
-    <>
-      {paragraphs.map((part, index) => (
-        <p
-          key={`${index}-${part.length}`}
-          className="mb-6 font-serif text-xl leading-relaxed text-body last:mb-0"
-        >
-          {part.split('\n').map((line, lineIndex, lines) => (
-            <span key={`${lineIndex}-${line.length}`}>
-              {line}
-              {lineIndex < lines.length - 1 ? <br /> : null}
-            </span>
-          ))}
-        </p>
-      ))}
-    </>
-  );
-}
+import { MarkdownBody } from './markdown-body';
 
 function Caption({ text }: Readonly<{ text?: string }>) {
   if (!text) return null;
@@ -65,7 +41,7 @@ export function ArticleContent({ blocks, media = [] }: Readonly<ArticleContentPr
     <div className="mx-auto max-w-content">
       {blocks.map((block) => {
         if (block.type === 'paragraph') {
-          return <Paragraph key={block.id} markdown={block.markdown} />;
+          return <MarkdownBody key={block.id} markdown={block.markdown} />;
         }
 
         if (block.type === 'heading') {
