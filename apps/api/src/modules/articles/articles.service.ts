@@ -14,6 +14,9 @@ import type {
   PublicArticleDetail,
   PublicArticleListResponse,
 } from './dto/public-article.dto';
+import type { CreatedRevision, CreateRevisionDto } from './dto/revision.dto';
+import type { SubmittedArticle } from './dto/submit-review.dto';
+import type { DeletedArticle, UpdateArticleDto } from './dto/update-article.dto';
 import {
   markdownToContentBlocks,
   parseContentBlocks,
@@ -54,6 +57,75 @@ export class ArticlesService {
     };
   }
 
+  /**
+   * Appends a revision. The published pointer is never moved here — an editor
+   * has to call publishArticle for the new content to become public.
+   */
+  async createRevision(
+    articleId: string,
+    dto: CreateRevisionDto,
+    user: JwtUser,
+  ): Promise<CreatedRevision> {
+    const content = this.resolveContent(dto);
+
+    const created = await this.articlesRepository.createRevision({
+      articleId,
+      content,
+      createdBy: user.id,
+      coverMediaId: dto.coverMediaId,
+      authorId: this.ownershipScope(user),
+    });
+
+    return {
+      id: created.revision.id,
+      articleId,
+      content: created.revision.content as ContentBlock[],
+      coverMediaId: created.revision.coverMediaId,
+      createdBy: created.revision.createdBy,
+      createdAt: created.revision.createdAt,
+      revisionNumber: created.revisionNumber,
+      publishedRevisionId: created.publishedRevisionId,
+    };
+  }
+
+  async updateArticle(
+    articleId: string,
+    dto: UpdateArticleDto,
+    user: JwtUser,
+  ): Promise<StudioArticleDetail> {
+    if (dto.title === undefined && dto.slug === undefined && dto.tagIds === undefined) {
+      throw new BadRequestException('Provide at least one of title, slug, or tagIds');
+    }
+
+    await this.articlesRepository.updateArticle({
+      id: articleId,
+      title: dto.title,
+      slug: dto.slug,
+      tagIds: dto.tagIds,
+      authorId: this.ownershipScope(user),
+    });
+
+    return this.getStudioArticle(articleId, user);
+  }
+
+  async deleteArticle(articleId: string, user: JwtUser): Promise<DeletedArticle> {
+    return this.articlesRepository.softDeleteArticle({
+      id: articleId,
+      authorId: this.ownershipScope(user),
+    });
+  }
+
+  /**
+   * Author action. Records which revision an Editor should look at.
+   * Deliberately has no effect on publication.
+   */
+  async submitForReview(articleId: string, user: JwtUser): Promise<SubmittedArticle> {
+    return this.articlesRepository.submitForReview({
+      articleId,
+      authorId: this.ownershipScope(user),
+    });
+  }
+
   async publishArticle(
     articleId: string,
     dto: PublishArticleDto,
@@ -68,10 +140,8 @@ export class ArticlesService {
     query: ListArticlesQuery,
     user: JwtUser,
   ): Promise<ArticleListResponse> {
-    const isAuthor = user.role === Role.Author;
-
     const { items, total } = await this.articlesRepository.listArticles({
-      authorId: isAuthor ? user.id : undefined,
+      authorId: this.ownershipScope(user),
       page: query.page,
       limit: query.limit,
     });
@@ -93,11 +163,9 @@ export class ArticlesService {
   }
 
   async getStudioArticle(id: string, user: JwtUser): Promise<StudioArticleDetail> {
-    const isAuthor = user.role === Role.Author;
-
     const article = await this.articlesRepository.findStudioArticleById({
       id,
-      authorId: isAuthor ? user.id : undefined,
+      authorId: this.ownershipScope(user),
     });
 
     if (!article) {
@@ -113,6 +181,8 @@ export class ArticlesService {
     const { items, total } = await this.articlesRepository.listPublicArticles({
       page: query.page,
       limit: query.limit,
+      search: query.q,
+      tag: query.tag,
     });
 
     return {
@@ -134,7 +204,12 @@ export class ArticlesService {
     return article;
   }
 
-  private resolveContent(dto: CreateArticleDto): ContentBlock[] {
+  /** Authors are scoped to their own articles; editors and admins are not. */
+  private ownershipScope(user: JwtUser): string | undefined {
+    return user.role === Role.Author ? user.id : undefined;
+  }
+
+  private resolveContent(dto: { body?: string; content?: unknown[] }): ContentBlock[] {
     const hasBody = Boolean(dto.body);
     const hasContent = Array.isArray(dto.content) && dto.content.length > 0;
 
