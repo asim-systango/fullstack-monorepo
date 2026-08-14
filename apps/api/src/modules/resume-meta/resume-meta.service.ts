@@ -1,6 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CloudinaryService } from './cloudinary.service';
 import { ResumeMeta } from './resume-meta.entity';
 import { CreateResumeMetaDto } from './dto/create-resume-meta.dto';
 import { UpdateResumeMetaDto } from './dto/update-resume-meta.dto';
@@ -10,9 +16,18 @@ export class ResumeMetaService {
   constructor(
     @InjectRepository(ResumeMeta)
     private readonly resumeMetaRepo: Repository<ResumeMeta>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   create(candidateUserId: string, dto: CreateResumeMetaDto) {
+    if (
+      dto.cloudinaryPublicId &&
+      !dto.cloudinaryPublicId.startsWith(`resumes/${candidateUserId}/`)
+    ) {
+      throw new BadRequestException(
+        'cloudinaryPublicId does not belong to this candidate',
+      );
+    }
     const resume = this.resumeMetaRepo.create({ ...dto, candidateUserId });
     return this.resumeMetaRepo.save(resume);
   }
@@ -42,6 +57,10 @@ export class ResumeMetaService {
 
   async remove(id: string, candidateUserId: string) {
     const resume = await this.findOwnedOrThrow(id, candidateUserId);
+    // Pasted-URL resumes have no remote asset; Cloudinary uploads store public_id for destroy.
+    if (resume.cloudinaryPublicId) {
+      await this.cloudinaryService.deleteAsset(resume.cloudinaryPublicId);
+    }
     await this.resumeMetaRepo.remove(resume);
     return { ok: true };
   }

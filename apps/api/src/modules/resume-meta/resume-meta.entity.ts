@@ -1,10 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'resume_metas' })
 export class ResumeMeta {
@@ -21,6 +15,10 @@ export class ResumeMeta {
 
   @Column({ nullable: true })
   label?: string;
+
+  // Cloudinary public_id from direct browser upload — used to destroy the raw asset on delete.
+  @Column({ name: 'cloudinary_public_id', nullable: true })
+  cloudinaryPublicId?: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
