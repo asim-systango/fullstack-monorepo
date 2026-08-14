@@ -87,6 +87,9 @@ export type UpdateArticleInput = {
   title?: string;
   slug?: string;
   tagIds?: string[];
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  ogImage?: string | null;
   /** When set, ownership is enforced before the update is written. */
   authorId?: string;
 };
@@ -457,7 +460,10 @@ export class ArticlesRepository {
       .andWhere('article.publishedRevisionId IS NOT NULL');
 
     if (input.search) {
-      qb.andWhere('article.title ILIKE :search', { search: `%${input.search}%` });
+      qb.andWhere(
+        '(article.title ILIKE :search OR CAST(publishedRevision.content AS TEXT) ILIKE :search)',
+        { search: `%${input.search}%` },
+      );
     }
 
     if (input.tag) {
@@ -526,6 +532,9 @@ export class ArticlesRepository {
       title: article.title,
       slug: article.slug,
       publishedAt: article.publishedAt!,
+      metaTitle: article.metaTitle,
+      metaDescription: article.metaDescription,
+      ogImage: article.ogImage,
       tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
       revision: {
         id: published.id,
@@ -742,11 +751,23 @@ export class ArticlesRepository {
     // Resolve tags before writing anything so an invalid id fails the whole patch.
     const selectedTags = input.tagIds ? await this.resolveTags(input.tagIds) : null;
 
-    const changes: { title?: string; slug?: string; updatedAt: Date } = {
+    const changes: {
+      title?: string;
+      slug?: string;
+      metaTitle?: string | null;
+      metaDescription?: string | null;
+      ogImage?: string | null;
+      updatedAt: Date;
+    } = {
       updatedAt: new Date(),
     };
     if (input.title !== undefined) changes.title = input.title;
     if (input.slug !== undefined) changes.slug = input.slug;
+    if (input.metaTitle !== undefined) changes.metaTitle = input.metaTitle;
+    if (input.metaDescription !== undefined) {
+      changes.metaDescription = input.metaDescription;
+    }
+    if (input.ogImage !== undefined) changes.ogImage = input.ogImage;
 
     // Slug is the only uniqueness risk here, so take it before touching tags.
     try {

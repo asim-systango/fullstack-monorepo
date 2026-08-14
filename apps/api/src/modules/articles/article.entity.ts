@@ -59,6 +59,15 @@ export class Article {
   @Column({ type: 'varchar', unique: true })
   slug!: string;
 
+  @Column({ name: 'meta_title', type: 'varchar', length: 200, nullable: true })
+  metaTitle!: string | null;
+
+  @Column({ name: 'meta_description', type: 'varchar', length: 500, nullable: true })
+  metaDescription!: string | null;
+
+  @Column({ name: 'og_image', type: 'varchar', length: 2000, nullable: true })
+  ogImage!: string | null;
+
   @Column({ name: 'published_revision_id', type: 'uuid', nullable: true })
   publishedRevisionId!: string | null;
 

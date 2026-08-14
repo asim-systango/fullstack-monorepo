@@ -99,8 +99,17 @@ export class ArticlesService {
     dto: UpdateArticleDto,
     user: JwtUser,
   ): Promise<StudioArticleDetail> {
-    if (dto.title === undefined && dto.slug === undefined && dto.tagIds === undefined) {
-      throw new BadRequestException('Provide at least one of title, slug, or tagIds');
+    if (
+      dto.title === undefined &&
+      dto.slug === undefined &&
+      dto.tagIds === undefined &&
+      dto.metaTitle === undefined &&
+      dto.metaDescription === undefined &&
+      dto.ogImage === undefined
+    ) {
+      throw new BadRequestException(
+        'Provide at least one of title, slug, tagIds, metaTitle, metaDescription, or ogImage',
+      );
     }
 
     await this.articlesRepository.updateArticle({
@@ -108,6 +117,9 @@ export class ArticlesService {
       title: dto.title,
       slug: dto.slug,
       tagIds: dto.tagIds,
+      metaTitle: dto.metaTitle,
+      metaDescription: dto.metaDescription,
+      ogImage: dto.ogImage,
       authorId: this.ownershipScope(user),
     });
 
