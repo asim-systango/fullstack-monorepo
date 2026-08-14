@@ -70,8 +70,8 @@ export function RouteGuard({
 export function StudioGuard({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <RouteGuard
-      allowedRoles={['user']}
-      deniedMessage="Author Studio is for Authors only."
+      allowedRoles={['user', 'staff']}
+      deniedMessage="Author Studio is for Authors and Editors. Admins use the Admin dashboard."
     >
       {children}
     </RouteGuard>

@@ -143,15 +143,20 @@ export type StudioArticleFilters = {
   page?: number;
   limit?: number;
   /** `review` overlaps `published` when a live article has a newer submission. */
-  status?: 'draft' | 'review' | 'published';
+  status?: 'draft' | 'review' | 'published' | 'deleted';
   /** Case-insensitive partial title match. */
   q?: string;
+  /** Case-insensitive exact tag name match. */
+  tag?: string;
   authorId?: string;
   /** Editors and admins only in practice; authors stay scoped to their own rows. */
   includeDeleted?: boolean;
 };
 
-/** Dataset-wide counts from `GET /articles/stats` — never summed from a page. */
+/**
+ * Dataset-wide counts from `GET /articles/stats`.
+ * Authors receive their own articles; editors and admins receive the platform.
+ */
 export type ArticleStats = {
   total: number;
   published: number;
@@ -166,9 +171,10 @@ export async function fetchStudioArticles(
   const { data } = await apiClient.get<StudioArticleListResponse>('/articles/studio', {
     params: {
       page: params?.page ?? 1,
-      limit: params?.limit ?? 50,
+      limit: params?.limit ?? 20,
       ...(params?.status ? { status: params.status } : {}),
       ...(params?.q ? { q: params.q } : {}),
+      ...(params?.tag ? { tag: params.tag } : {}),
       ...(params?.authorId ? { authorId: params.authorId } : {}),
       ...(params?.includeDeleted ? { includeDeleted: true } : {}),
     },
@@ -176,7 +182,7 @@ export async function fetchStudioArticles(
   return data;
 }
 
-/** Editors and admins only — authors receive 403. */
+/** Editors, admins, and authors — authors are scoped to their own rows. */
 export async function fetchArticleStats(): Promise<ArticleStats> {
   const { data } = await apiClient.get<ArticleStats>('/articles/stats');
   return data;
@@ -271,15 +277,27 @@ export function getRevisionLabel(index: number): string {
 /** Pointers that together describe where an article sits in the workflow. */
 export type ReviewPointers = Pick<
   StudioArticleListItem,
-  'publishedRevisionId' | 'submittedRevisionId' | 'latestRevisionId'
+  | 'publishedRevisionId'
+  | 'submittedRevisionId'
+  | 'latestRevisionId'
+  | 'submittedRevisionNumber'
+  | 'publishedRevisionNumber'
 >;
 
 /** The list endpoint sends `latestRevisionId`; the detail endpoint sends the history. */
 export function toReviewPointers(article: StudioArticleDetail): ReviewPointers {
+  const submittedIndex = article.revisions.findIndex(
+    (revision) => revision.id === article.submittedRevisionId,
+  );
+  const publishedIndex = article.revisions.findIndex(
+    (revision) => revision.id === article.publishedRevisionId,
+  );
   return {
     publishedRevisionId: article.publishedRevisionId,
     submittedRevisionId: article.submittedRevisionId,
     latestRevisionId: article.revisions.at(-1)?.id ?? null,
+    submittedRevisionNumber: submittedIndex >= 0 ? submittedIndex + 1 : null,
+    publishedRevisionNumber: publishedIndex >= 0 ? publishedIndex + 1 : null,
   };
 }
 
@@ -316,14 +334,19 @@ export function getReviewState(article: ReviewPointers): ArticleReviewState {
 }
 
 /**
- * The editor review queue: an author has submitted a revision that is not
- * already the live one. Drafts that were never submitted stay out of the queue.
+ * Waiting on an editor: submitted, and that revision is not already live.
+ * A leftover submission older than the live revision is not in review.
  */
 export function isAwaitingReview(article: ReviewPointers): boolean {
-  return (
-    article.submittedRevisionId !== null &&
-    article.submittedRevisionId !== article.publishedRevisionId
-  );
+  if (article.submittedRevisionId === null) return false;
+  if (article.publishedRevisionId === null) return true;
+  if (
+    article.submittedRevisionNumber !== null &&
+    article.publishedRevisionNumber !== null
+  ) {
+    return article.submittedRevisionNumber > article.publishedRevisionNumber;
+  }
+  return article.submittedRevisionId !== article.publishedRevisionId;
 }
 
 /** True once the author has submitted, regardless of what happened after. */

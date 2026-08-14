@@ -15,7 +15,12 @@ import {
 } from '@/lib/api/studio';
 import type { GatewayRole } from '@/lib/auth/roles';
 import { formatLongDate, formatRelativeTime } from '@/lib/format/date';
-import { usePublishArticle, useStudioArticle } from '@/hooks/use-studio';
+import { useMe } from '@/hooks/use-auth';
+import {
+  useDeleteArticle,
+  usePublishArticle,
+  useStudioArticle,
+} from '@/hooks/use-studio';
 
 type NavItem = { href: string; label: string };
 
@@ -76,14 +81,18 @@ export function ArticleReviewView({
 }: Readonly<ArticleReviewViewProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: viewer } = useMe();
   const { data: article, isLoading, isError, error } = useStudioArticle(id);
   const publishMutation = usePublishArticle();
+  const deleteMutation = useDeleteArticle();
 
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | undefined>(
     () => searchParams.get('revision') ?? undefined,
   );
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   if (isLoading) {
@@ -124,9 +133,10 @@ export function ArticleReviewView({
     revision !== undefined && article.submittedRevisionId === revision.id;
   const newerThanSubmitted =
     submittedIndex >= 0 && submittedIndex < article.revisions.length - 1;
+  const isOwnArticle = role === 'staff' && viewer?.id === article.authorId;
 
   async function handlePublish() {
-    if (!revision) return;
+    if (!revision || isOwnArticle) return;
 
     setPublishError(null);
     try {
@@ -136,6 +146,19 @@ export function ArticleReviewView({
       router.push(backHref);
     } catch (err) {
       setPublishError(err instanceof ApiClientError ? err.message : 'Publish failed.');
+    }
+  }
+
+  async function handleDelete() {
+    setDeleteError(null);
+    try {
+      await deleteMutation.mutateAsync(id);
+      setShowDelete(false);
+      router.push(backHref);
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiClientError ? err.message : 'Could not delete article.',
+      );
     }
   }
 
@@ -161,20 +184,38 @@ export function ArticleReviewView({
               Edit
             </Link>
           ) : null}
+          {isOwnArticle ? null : (
+            <Button
+              type="button"
+              variant="brand"
+              disabled={!revision}
+              onClick={() => {
+                setPublishError(null);
+                setShowConfirm(true);
+              }}
+            >
+              Publish
+            </Button>
+          )}
           <Button
             type="button"
-            variant="brand"
-            disabled={!revision}
+            variant="ghost"
             onClick={() => {
-              setPublishError(null);
-              setShowConfirm(true);
+              setDeleteError(null);
+              setShowDelete(true);
             }}
           >
-            Publish
+            Delete
           </Button>
         </>
       }
     >
+      {isOwnArticle ? (
+        <output className="mb-6 block rounded-lg border border-border bg-accent-yellow/30 px-4 py-3 text-sm text-foreground">
+          You authored this article. Another editor must publish it.
+        </output>
+      ) : null}
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-surface-muted/40 p-4">
         <div className="text-sm text-muted-foreground">
           <p>
@@ -247,6 +288,18 @@ export function ArticleReviewView({
         error={publishError}
         onConfirm={handlePublish}
         onCancel={() => setShowConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={showDelete}
+        title="Delete Article?"
+        description="This article will no longer be publicly available."
+        details={<p className="font-medium">{article.title}</p>}
+        confirmLabel="Delete"
+        loading={deleteMutation.isPending}
+        error={deleteError}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDelete(false)}
       />
     </DashboardShell>
   );

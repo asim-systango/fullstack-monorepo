@@ -30,9 +30,9 @@ export const REVIEW_STATE_COPY: Record<ArticleReviewState, StateCopy> = {
     className: 'bg-brand/10 text-brand',
   },
   'published-pending-review': {
-    label: 'Published',
-    className: 'bg-brand/10 text-brand',
-    note: 'A newer revision is waiting for an editor to review it.',
+    label: 'In Review',
+    className: 'bg-accent-yellow/30 text-foreground',
+    note: 'Live on the blog, and a newer revision is waiting for an editor.',
   },
   'published-with-draft': {
     label: 'Published',

@@ -12,20 +12,19 @@ import {
   getRevisionLabel,
   getSubmittedRevisionIndex,
 } from '@/lib/api/studio';
+import { getStudioWorkspace } from '@/components/studio/studio-nav';
 import { formatRelativeTime } from '@/lib/format/date';
 import { useStudioArticle } from '@/hooks/use-studio';
-
-const STUDIO_NAV = [
-  { href: '/studio', label: 'My Articles' },
-  { href: '/studio/new', label: 'Create Article' },
-];
+import { useMe } from '@/hooks/use-auth';
 
 function DraftPreviewContent({ id }: Readonly<{ id: string }>) {
+  const { data: user } = useMe();
+  const workspace = getStudioWorkspace(user?.role);
   const { data: article, isLoading, isError, error } = useStudioArticle(id);
 
   if (isLoading) {
     return (
-      <DashboardShell title="Preview" role="user" navItems={STUDIO_NAV}>
+      <DashboardShell title="Preview" role={workspace.role} navItems={workspace.navItems}>
         <p className="text-sm text-muted-foreground">Loading preview…</p>
       </DashboardShell>
     );
@@ -34,14 +33,14 @@ function DraftPreviewContent({ id }: Readonly<{ id: string }>) {
   if (isError || !article) {
     const notFound = error instanceof ApiClientError && error.statusCode === 404;
     return (
-      <DashboardShell title="Preview" role="user" navItems={STUDIO_NAV}>
+      <DashboardShell title="Preview" role={workspace.role} navItems={workspace.navItems}>
         <p className="text-sm text-red-600" role="alert">
           {notFound
-            ? 'This article does not exist, was deleted, or is not yours.'
+            ? 'This article does not exist, was deleted, or is not available to you.'
             : 'Could not load this preview.'}
         </p>
         <Link href="/studio" className="mt-4 inline-block text-sm underline">
-          Back to My Articles
+          {workspace.backLabel}
         </Link>
       </DashboardShell>
     );
@@ -56,8 +55,8 @@ function DraftPreviewContent({ id }: Readonly<{ id: string }>) {
     <DashboardShell
       title="Draft Preview"
       subtitle="Exactly how this revision will read once an Editor publishes it."
-      role="user"
-      navItems={STUDIO_NAV}
+      role={workspace.role}
+      navItems={workspace.navItems}
       actions={
         <>
           <Link
