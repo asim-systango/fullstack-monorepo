@@ -11,4 +11,9 @@ export class ActivityRepository extends Repository<Activity> {
   async findById(id: string): Promise<Activity | null> {
     return this.findOne({ where: { id } });
   }
+
+  async createActivity(activity: Partial<Activity>): Promise<Activity> {
+    const newActivity = this.create(activity);
+    return this.save(newActivity);
+  }
 }
