@@ -114,4 +114,22 @@ export class LeadsService {
     await this.leadRepository.updateLead(id, { stage: updateLeadStageDto.stage });
     return (await this.leadRepository.findById(id))!;
   }
+
+  async getLeadDetails(id: string, currentUser: User, userRole: string): Promise<Lead> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(LEADS_ERRORS.USER_NO_ORG);
+    }
+
+    const lead = await this.leadRepository.findDetailsById(id);
+    if (!lead || lead.organizationId !== orgId) {
+      throw new Error(LEADS_ERRORS.LEAD_NOT_FOUND);
+    }
+
+    if (userRole === 'SALES_REP' && lead.ownerId !== currentUser.id) {
+      throw new Error(LEADS_ERRORS.UNAUTHORIZED_ACCESS);
+    }
+
+    return lead;
+  }
 }

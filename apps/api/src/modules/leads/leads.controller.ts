@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Patch,
+  Get,
   Param,
   Body,
   UseGuards,
@@ -23,6 +24,7 @@ import { CurrentUser } from '../../common/auth';
 import { SwaggerCreateLead } from './decorators/swagger/create-lead.decorator';
 import { SwaggerUpdateLead } from './decorators/swagger/update-lead.decorator';
 import { SwaggerUpdateLeadStage } from './decorators/swagger/update-lead-stage.decorator';
+import { SwaggerGetLeadDetails } from './decorators/swagger/get-lead-details.decorator';
 import { LEADS_ERRORS, LEADS_MESSAGES } from './constants/leads.constants';
 
 @ApiTags('Leads')
@@ -123,6 +125,37 @@ export class LeadsController {
           throw new NotFoundException(message);
         default:
           console.error('Error in updateLeadStage:', error);
+          throw new InternalServerErrorException(LEADS_ERRORS.UNEXPECTED_ERROR);
+      }
+    }
+  }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @SwaggerGetLeadDetails()
+  async getLeadDetails(@Param('id') id: string, @CurrentUser() user: User) {
+    try {
+      const lead = await this.leadsService.getLeadDetails(
+        id,
+        user,
+        user.role?.name || '',
+      );
+
+      return {
+        message: LEADS_MESSAGES.LEAD_RETRIEVED,
+        data: lead,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      switch (message) {
+        case LEADS_ERRORS.USER_NO_ORG:
+        case LEADS_ERRORS.UNAUTHORIZED_ACCESS:
+          throw new ForbiddenException(message);
+        case LEADS_ERRORS.LEAD_NOT_FOUND:
+          throw new NotFoundException(message);
+        default:
+          console.error('Error in getLeadDetails:', error);
           throw new InternalServerErrorException(LEADS_ERRORS.UNEXPECTED_ERROR);
       }
     }
