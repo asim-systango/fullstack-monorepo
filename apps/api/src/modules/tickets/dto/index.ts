@@ -3,3 +3,7 @@ export * from './assign-ticket.dto';
 export * from './update-status.dto';
 export * from './ticket-response.dto';
 export * from './ticket-event-response.dto';
+export * from './ticket-filter.dto';
+export * from './create-message.dto';
+export * from './message-response.dto';
+export * from './paginated-tickets-response.dto';

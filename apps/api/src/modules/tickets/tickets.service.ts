@@ -3,26 +3,39 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { Ticket, TicketStatus } from './ticket.entity';
 import { Message, MessageType } from './message.entity';
+import { Attachment } from './attachment.entity';
 import { Category } from '../categories/category.entity';
 import { SlaPolicy } from '../categories/sla-policy.entity';
 import { OutboxEvent } from '../events/outbox-event.entity';
 import { SlaDeadlineCalculator } from './sla-deadline.helper';
 import { TicketStatusMachine } from './ticket-status.machine';
 import { TicketEventsService } from './ticket-events.service';
-import { CreateTicketDto, AssignTicketDto, UpdateStatusDto } from './dto';
+import {
+  CreateTicketDto,
+  AssignTicketDto,
+  UpdateStatusDto,
+  TicketFilterDto,
+  CreateMessageDto,
+} from './dto';
 import { SlaPriority } from '../categories/sla-priority.enum';
+import { JwtUser } from '../../common/auth';
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
+    @InjectRepository(Message)
+    private readonly messageRepository: Repository<Message>,
+    @InjectRepository(Attachment)
+    private readonly attachmentRepository: Repository<Attachment>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(SlaPolicy)
@@ -119,6 +132,92 @@ export class TicketsService {
 
       return fullTicket || savedTicket;
     });
+  }
+
+  /**
+   * Paginated list of tickets with filters, customer scoping, and FTS search.
+   */
+  async findAll(query: TicketFilterDto, user: JwtUser) {
+    const qb = this.ticketRepository
+      .createQueryBuilder('ticket')
+      .leftJoinAndSelect('ticket.category', 'category')
+      .leftJoinAndSelect('category.slaPolicies', 'slaPolicies');
+
+    // Customer scoping: customers only see their own tickets
+    if (user.role === 'user') {
+      qb.andWhere('ticket.userId = :userId', { userId: user.id });
+    }
+
+    // Soft delete filtering
+    if (!query.includeDeleted || user.role === 'user') {
+      qb.andWhere('ticket.deletedAt IS NULL');
+    }
+
+    // Filters
+    if (query.categoryId) {
+      qb.andWhere('ticket.categoryId = :categoryId', { categoryId: query.categoryId });
+    }
+
+    if (query.status) {
+      qb.andWhere('ticket.status = :status', { status: query.status });
+    }
+
+    if (query.priority) {
+      qb.andWhere('ticket.priority = :priority', { priority: query.priority });
+    }
+
+    if (query.assigneeId === 'unassigned') {
+      qb.andWhere('ticket.assigneeId IS NULL');
+    } else if (query.assigneeId) {
+      qb.andWhere('ticket.assigneeId = :assigneeId', { assigneeId: query.assigneeId });
+    }
+
+    // Full text search or fallback ILIKE
+    if (query.search && query.search.trim() !== '') {
+      const searchTerm = query.search.trim();
+      qb.andWhere(
+        `(ticket.searchVector @@ plainto_tsquery('english', :searchTerm) OR ticket.subject ILIKE :searchLike)`,
+        { searchTerm, searchLike: `%${searchTerm}%` },
+      );
+    }
+
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = query.limit && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
+
+    qb.orderBy('ticket.createdAt', 'DESC').skip(skip).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Finds ticket by ID with customer ownership validation.
+   */
+  async findOne(id: string, user: JwtUser): Promise<Ticket> {
+    const ticket = await this.ticketRepository.findOne({
+      where: { id },
+      relations: ['category', 'category.slaPolicies'],
+    });
+
+    if (!ticket) {
+      throw new NotFoundException(`Ticket with ID '${id}' not found.`);
+    }
+
+    if (
+      user.role === 'user' &&
+      (ticket.userId !== user.id || ticket.deletedAt !== null)
+    ) {
+      throw new NotFoundException(`Ticket with ID '${id}' not found.`);
+    }
+
+    return ticket;
   }
 
   /**
@@ -258,7 +357,156 @@ export class TicketsService {
   }
 
   /**
-   * Finds ticket by ID.
+   * Retrieves messages for a ticket. Isolates internal notes for staff/admin only.
+   */
+  async getMessages(ticketId: string, user: JwtUser): Promise<Message[]> {
+    await this.findOne(ticketId, user); // Validates ticket existence and customer ownership
+
+    const qb = this.messageRepository
+      .createQueryBuilder('message')
+      .leftJoinAndSelect('message.attachments', 'attachments')
+      .where('message.ticketId = :ticketId', { ticketId });
+
+    if (user.role === 'user') {
+      qb.andWhere('message.messageType = :publicType', {
+        publicType: MessageType.PUBLIC,
+      });
+    }
+
+    qb.orderBy('message.createdAt', 'ASC');
+
+    return qb.getMany();
+  }
+
+  /**
+   * Adds a reply or internal staff note to a ticket thread.
+   */
+  async createMessage(
+    ticketId: string,
+    user: JwtUser,
+    dto: CreateMessageDto,
+  ): Promise<Message> {
+    const ticket = await this.findOne(ticketId, user);
+
+    if (ticket.status === TicketStatus.CLOSED) {
+      throw new BadRequestException('Cannot reply to a closed ticket.');
+    }
+
+    const messageType = dto.messageType ?? MessageType.PUBLIC;
+    if (messageType === MessageType.INTERNAL_NOTE && user.role === 'user') {
+      throw new ForbiddenException('Only staff members can post internal notes.');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const messageRepo = manager.getRepository(Message);
+      const attachmentRepo = manager.getRepository(Attachment);
+      const ticketRepo = manager.getRepository(Ticket);
+      const outboxRepo = manager.getRepository(OutboxEvent);
+
+      const message = messageRepo.create({
+        ticketId,
+        userId: user.id,
+        messageType,
+        body: dto.body,
+        metadata: {},
+      });
+      const savedMessage = await messageRepo.save(message);
+
+      if (dto.attachments && dto.attachments.length > 0) {
+        const attachments = dto.attachments.map((att) =>
+          attachmentRepo.create({
+            messageId: savedMessage.id,
+            url: att.url,
+            filename: att.filename,
+            mimeType: att.mimeType || 'application/octet-stream',
+            sizeBytes: att.sizeBytes || 0,
+          }),
+        );
+        await attachmentRepo.save(attachments);
+      }
+
+      // Record staff first response timestamp if applicable
+      if (
+        user.role !== 'user' &&
+        !ticket.firstResponseAt &&
+        messageType === MessageType.PUBLIC
+      ) {
+        await ticketRepo.update(ticketId, { firstResponseAt: new Date() });
+      }
+
+      // Outbox event
+      const outbox = outboxRepo.create({
+        aggregateType: 'TICKET',
+        aggregateId: ticketId,
+        eventType: 'ticket.replied',
+        payload: {
+          ticketId,
+          messageId: savedMessage.id,
+          userId: user.id,
+          messageType,
+        },
+      });
+      await outboxRepo.save(outbox);
+
+      const fullMessage = await messageRepo.findOne({
+        where: { id: savedMessage.id },
+        relations: ['attachments'],
+      });
+
+      return fullMessage || savedMessage;
+    });
+  }
+
+  /**
+   * Soft-deletes a ticket (Admin only).
+   */
+  async softDelete(
+    id: string,
+    adminUser: JwtUser,
+  ): Promise<{ id: string; deletedAt: Date; deletedBy: string }> {
+    if (adminUser.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can delete tickets.');
+    }
+
+    const ticket = await this.ticketRepository.findOne({ where: { id } });
+    if (!ticket) {
+      throw new NotFoundException(`Ticket with ID '${id}' not found.`);
+    }
+
+    const now = new Date();
+    await this.ticketRepository.update(id, {
+      deletedAt: now,
+      deletedBy: adminUser.id,
+    });
+
+    // Log audit ledger event
+    await this.eventsService.logEvent(id, adminUser.id, 'TICKET_DELETED', null, {
+      deletedAt: now,
+      deletedBy: adminUser.id,
+    });
+
+    // Outbox event
+    const outbox = this.outboxRepository.create({
+      aggregateType: 'TICKET',
+      aggregateId: id,
+      eventType: 'ticket.deleted',
+      payload: {
+        ticketId: id,
+        deletedBy: adminUser.id,
+        deletedAt: now,
+      },
+    });
+    await this.outboxRepository.save(outbox);
+
+    return {
+      id,
+      deletedAt: now,
+      deletedBy: adminUser.id,
+    };
+  }
+
+  /**
+   * Internal helper: finds ticket by ID.
    */
   async getTicketById(id: string): Promise<Ticket> {
     const ticket = await this.ticketRepository.findOne({
