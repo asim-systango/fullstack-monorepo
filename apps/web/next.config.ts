@@ -2,12 +2,9 @@ import type { NextConfig } from 'next';
 
 /**
  * Browser calls same-origin `/api/*` on :3000.
- * Next rewrites those to the Nest API gateway (default :3001).
+ * Next rewrites those to the Splitter API (default :3002).
  */
-const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3001').replace(
-  /\/$/,
-  '',
-);
+const apiOrigin = (process.env.API_URL ?? 'http://localhost:3002').replace(/\/$/, '');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -60,7 +57,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${gatewayOrigin}/:path*`,
+        destination: `${apiOrigin}/:path*`,
       },
     ];
   },

@@ -1,32 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
 import {
+  Alert,
   Button,
   Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Field,
   Form,
-  Page,
-  TextInput,
   StatusMessage,
+  TextInput,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
+import { AuthLayout } from '@/components/splitter';
 import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { refresh } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [done, setDone] = useState(false);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,31 +29,40 @@ export default function RegisterPage() {
     setError(null);
     try {
       await authApi.register({ name, email, password });
-      await authApi.login({ email, password });
-      await refresh();
-      router.push('/');
+      setDone(true);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Register failed');
+      setError(err instanceof ApiClientError ? err.message : 'Registration failed');
     } finally {
       setPending(false);
     }
   }
 
+  if (done) {
+    return (
+      <AuthLayout title="Check your email" subtitle="We sent you a verification link">
+        <Alert tone="success">
+          <p className="text-sm">
+            We sent a verification link to <strong>{email}</strong>. Click the link in the
+            email, then come back and log in.
+          </p>
+        </Alert>
+        <Link href="/login" className="mt-6 inline-block">
+          <Button>Go to login</Button>
+        </Link>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <Page>
-      <ShellHeader title="Register" subtitle="Create an account to continue" />
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Create account</CardTitle>
-          <CardDescription>
-            Ink primary CTA · accent only on links and focus.
-          </CardDescription>
-        </CardHeader>
-        <Form pending={pending} onSubmit={onSubmit}>
-          <Field label="Name" htmlFor="register-name" required disabled={pending}>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start splitting expenses in seconds"
+    >
+      <Card className="splitter-shadow border-0 sm:border">
+        <Form pending={pending} onSubmit={onSubmit} className="space-y-4">
+          <Field label="Full name" htmlFor="register-name" required disabled={pending}>
             <TextInput
               id="register-name"
-              name="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
@@ -67,7 +71,6 @@ export default function RegisterPage() {
           <Field label="Email" htmlFor="register-email" required disabled={pending}>
             <TextInput
               id="register-email"
-              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -83,7 +86,6 @@ export default function RegisterPage() {
           >
             <TextInput
               id="register-password"
-              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -92,14 +94,22 @@ export default function RegisterPage() {
             />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" loading={pending} loadingText="Creating…">
-            Create account
+          <Button
+            type="submit"
+            className="w-full"
+            loading={pending}
+            loadingText="Creating…"
+          >
+            Sign up
           </Button>
         </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          Already registered? <Link href="/login">Log in</Link>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-primary">
+            Log in
+          </Link>
         </p>
       </Card>
-    </Page>
+    </AuthLayout>
   );
 }

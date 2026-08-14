@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const hasSession = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
 
   if ((pathname === '/login' || pathname === '/register') && hasSession) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/groups', request.url));
   }
 
   return NextResponse.next();

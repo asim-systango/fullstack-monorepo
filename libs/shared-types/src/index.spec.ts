@@ -6,6 +6,7 @@ describe('userSchema', () => {
     email: 'user@demo.local',
     name: 'Demo User',
     role: 'user' as const,
+    emailVerified: true,
   };
 
   it('accepts a valid user', () => {

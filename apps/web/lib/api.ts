@@ -1,4 +1,9 @@
-import { createApiClient, createAuthApi, createHealthApi } from '@shared/api-client';
+import {
+  createApiClient,
+  createAuthApi,
+  createHealthApi,
+  createSplitterApi,
+} from '@shared/api-client';
 import { resolveApiBaseUrl } from './api-base-url';
 
 const baseURL = resolveApiBaseUrl();
@@ -13,4 +18,5 @@ export const apiClient = createApiClient({
 });
 
 export const authApi = createAuthApi(apiClient);
+export const splitterApi = createSplitterApi(apiClient);
 export const healthApi = createHealthApi(apiClient);

@@ -4,9 +4,45 @@ import axios, {
   type CreateAxiosDefaults,
 } from 'axios';
 import { z } from 'zod';
-import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
+import {
+  apiErrorSchema,
+  balancesSchema,
+  expenseSchema,
+  forgotPasswordInputSchema,
+  groupDetailSchema,
+  groupSummarySchema,
+  messageResponseSchema,
+  resetPasswordInputSchema,
+  resendVerificationInputSchema,
+  userSchema,
+  verifyEmailInputSchema,
+  type ApiErrorBody,
+  type Balances,
+  type Expense,
+  type GroupDetail,
+  type GroupSummary,
+  type User,
+} from '@shared/types';
 
-export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export {
+  apiErrorSchema,
+  balancesSchema,
+  expenseSchema,
+  forgotPasswordInputSchema,
+  groupDetailSchema,
+  groupSummarySchema,
+  messageResponseSchema,
+  resetPasswordInputSchema,
+  resendVerificationInputSchema,
+  userSchema,
+  verifyEmailInputSchema,
+  type ApiErrorBody,
+  type Balances,
+  type Expense,
+  type GroupDetail,
+  type GroupSummary,
+  type User,
+};
 
 export class ApiClientError extends Error {
   readonly statusCode: number;
@@ -103,6 +139,22 @@ export function createAuthApi(client: AxiosInstance) {
     async logout(): Promise<void> {
       await client.post('/auth/logout');
     },
+    async verifyEmail(input: { token: string }): Promise<User> {
+      const { data } = await client.post('/auth/verify-email', input);
+      return userSchema.parse(unwrapData(data));
+    },
+    async resendVerification(input: { email: string }): Promise<{ message: string }> {
+      const { data } = await client.post('/auth/resend-verification', input);
+      return messageResponseSchema.parse(unwrapData(data));
+    },
+    async forgotPassword(input: { email: string }): Promise<{ message: string }> {
+      const { data } = await client.post('/auth/forgot-password', input);
+      return messageResponseSchema.parse(unwrapData(data));
+    },
+    async resetPassword(input: { token: string; password: string }): Promise<User> {
+      const { data } = await client.post('/auth/reset-password', input);
+      return userSchema.parse(unwrapData(data));
+    },
   };
 }
 
@@ -112,6 +164,33 @@ export function createHealthApi(client: AxiosInstance) {
       const { data } = await client.get('/health');
       const parsed = z.object({ status: z.string() }).parse(unwrapData(data));
       return { status: parsed.status };
+    },
+  };
+}
+
+export function createSplitterApi(client: AxiosInstance) {
+  return {
+    async listGroups(): Promise<GroupSummary[]> {
+      const { data } = await client.get('/groups');
+      return z.array(groupSummarySchema).parse(unwrapData(data));
+    },
+    async getGroup(id: string): Promise<GroupDetail> {
+      const { data } = await client.get(`/groups/${id}`);
+      return groupDetailSchema.parse(unwrapData(data));
+    },
+    async createGroup(input: { name: string; currency: string }): Promise<GroupSummary> {
+      const { data } = await client.post('/groups', input);
+      return groupSummarySchema.parse(unwrapData(data));
+    },
+    async listExpenses(groupId: string, limit = 10): Promise<Expense[]> {
+      const { data } = await client.get(`/groups/${groupId}/expenses`, {
+        params: { limit },
+      });
+      return z.array(expenseSchema).parse(unwrapData(data));
+    },
+    async getBalances(groupId: string): Promise<Balances> {
+      const { data } = await client.get(`/groups/${groupId}/balances`);
+      return balancesSchema.parse(unwrapData(data));
     },
   };
 }
