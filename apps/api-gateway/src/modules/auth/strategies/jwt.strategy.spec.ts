@@ -47,6 +47,7 @@ describe('JwtStrategy (gateway)', () => {
       name: 'Demo',
       role: 'user',
       passwordHash: 'hash',
+      isActive: true,
     } as User;
     usersService.findById.mockResolvedValue(user);
 
@@ -62,6 +63,26 @@ describe('JwtStrategy (gateway)', () => {
       name: user.name,
       role: user.role,
     });
+  });
+
+  it('throws UnauthorizedException when the subject is deactivated', async () => {
+    usersService.findById.mockResolvedValue({
+      id: '11111111-1111-1111-1111-111111111111',
+      email: 'user@example.com',
+      name: 'Demo',
+      role: 'user',
+      passwordHash: 'hash',
+      isActive: false,
+    } as User);
+
+    await expect(
+      strategy.validate({
+        sub: '11111111-1111-1111-1111-111111111111',
+        email: 'user@example.com',
+        role: 'user',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(usersService.toPublic).not.toHaveBeenCalled();
   });
 
   it('throws UnauthorizedException when the subject is missing', async () => {

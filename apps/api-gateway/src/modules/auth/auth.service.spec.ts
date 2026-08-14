@@ -1,4 +1,8 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { QueryFailedError } from 'typeorm';
 import { AuthService } from './auth.service';
@@ -12,6 +16,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     passwordHash: '',
     name: 'Demo',
     role: 'user',
+    isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -159,6 +164,21 @@ describe('AuthService', () => {
         service.login({ email: 'missing@example.com', password: 'x' }, res),
       ).rejects.toBeInstanceOf(UnauthorizedException);
       expect(res.cookie).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when the password matches a deactivated account', async () => {
+      const password = 'password123';
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 4);
+      const user = makeUser({ passwordHash, isActive: false });
+      usersService.findByEmail.mockResolvedValue(user);
+      const res = { cookie: jest.fn() } as unknown as Response;
+
+      await expect(
+        service.login({ email: user.email, password }, res),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(res.cookie).not.toHaveBeenCalled();
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
     });
   });
 
