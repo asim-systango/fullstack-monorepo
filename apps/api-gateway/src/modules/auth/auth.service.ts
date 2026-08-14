@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
@@ -76,6 +81,14 @@ export class AuthService {
   async login(dto: LoginDto, res: Response) {
     const user = await this.validateUser(dto.email, dto.password);
     if (!user) throw new UnauthorizedException('Invalid email or password');
+
+    // Checked only after the password matched, so naming the real reason cannot be
+    // used to probe which emails have accounts.
+    if (!user.isActive) {
+      throw new ForbiddenException(
+        'This account has been deactivated. Contact an administrator to restore access.',
+      );
+    }
 
     const token = await this.jwtService.signAsync({
       sub: user.id,
