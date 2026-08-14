@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UseGuards,
   HttpCode,
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoutePermissionGuard } from '../../common/guards/route-permission.guard';
 import { CurrentUser } from '../../common/auth';
 import { SwaggerCreateDeal } from './decorators/swagger/create-deal.decorator';
+import { SwaggerGetAllDeals } from './decorators/swagger/get-all-deals.decorator';
 import { DEALS_ERRORS, DEALS_MESSAGES } from './constants/deals.constants';
 
 @ApiTags('Deals')
@@ -59,6 +61,30 @@ export class DealsController {
           console.error('Error in createDeal:', error);
           throw new InternalServerErrorException(DEALS_ERRORS.UNEXPECTED_ERROR);
       }
+    }
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RoutePermissionGuard)
+  @HttpCode(HttpStatus.OK)
+  @SwaggerGetAllDeals()
+  async getAllDeals(@CurrentUser() user: User) {
+    try {
+      const deals = await this.dealsService.getAllDeals(user, user.role?.name || '');
+
+      return {
+        message: DEALS_MESSAGES.DEALS_RETRIEVED,
+        data: deals,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (message === DEALS_ERRORS.USER_NO_ORG) {
+        throw new ForbiddenException(message);
+      }
+
+      console.error('Error in getAllDeals:', error);
+      throw new InternalServerErrorException(DEALS_ERRORS.UNEXPECTED_ERROR);
     }
   }
 }
