@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UseGuards,
   HttpCode,
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RoutePermissionGuard } from '../../common/guards/route-permission.guard';
 import { CurrentUser } from '../../common/auth';
 import { SwaggerCreateActivity } from './decorators/swagger/create-activity.decorator';
+import { SwaggerGetAllActivities } from './decorators/swagger/get-all-activities.decorator';
 import { ACTIVITIES_ERRORS, ACTIVITIES_MESSAGES } from './constants/activities.constants';
 
 @ApiTags('Activities')
@@ -61,6 +63,33 @@ export class ActivitiesController {
           console.error('Error in createActivity:', error);
           throw new InternalServerErrorException(ACTIVITIES_ERRORS.UNEXPECTED_ERROR);
       }
+    }
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @SwaggerGetAllActivities()
+  async getAllActivities(@CurrentUser() user: User) {
+    try {
+      const activities = await this.activitiesService.getAllActivities(
+        user,
+        user.role?.name || '',
+      );
+
+      return {
+        message: ACTIVITIES_MESSAGES.ACTIVITIES_RETRIEVED,
+        data: activities,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (message === ACTIVITIES_ERRORS.USER_NO_ORG) {
+        throw new ForbiddenException(message);
+      }
+
+      console.error('Error in getAllActivities:', error);
+      throw new InternalServerErrorException(ACTIVITIES_ERRORS.UNEXPECTED_ERROR);
     }
   }
 }
