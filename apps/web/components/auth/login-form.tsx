@@ -13,6 +13,8 @@ const REMEMBER_EMAIL_KEY = 'wordnest_remember_email';
 
 function getFieldError(error: unknown): string {
   if (error instanceof ApiClientError) {
+    // 401 is always "wrong credentials" so we never leak whether the email exists.
+    // Deactivated accounts come back as 403 with a specific message — show that.
     if (error.statusCode === 401) {
       return 'Invalid email or password.';
     }
