@@ -72,4 +72,32 @@ export class ActivitiesService {
 
     return this.activityRepository.findAllActivities(orgId, createdBy);
   }
+
+  async updateActivity(
+    id: string,
+    updateActivityDto: import('./dto/update-activity.dto').UpdateActivityDto,
+    currentUser: User,
+    userRole: string,
+  ): Promise<Activity> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(ACTIVITIES_ERRORS.USER_NO_ORG);
+    }
+
+    const activity = await this.activityRepository.findById(id);
+    if (!activity || activity.organizationId !== orgId) {
+      throw new Error(ACTIVITIES_ERRORS.ACTIVITY_NOT_FOUND);
+    }
+
+    // SALES_REP can only update their own activities
+    if (userRole === 'SALES_REP' && activity.createdBy !== currentUser.id) {
+      throw new Error(ACTIVITIES_ERRORS.UNAUTHORIZED_ACCESS);
+    }
+
+    const updatedActivity = await this.activityRepository.updateActivity(
+      id,
+      updateActivityDto,
+    );
+    return updatedActivity!;
+  }
 }

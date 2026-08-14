@@ -33,4 +33,12 @@ export class ActivityRepository extends Repository<Activity> {
 
     return query.orderBy('activity.createdAt', 'DESC').getMany();
   }
+
+  async updateActivity(
+    id: string,
+    updateData: Partial<Activity>,
+  ): Promise<Activity | null> {
+    await this.update({ id }, updateData);
+    return this.findById(id);
+  }
 }
