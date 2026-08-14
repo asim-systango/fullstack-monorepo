@@ -14,6 +14,8 @@ export type StudioArticleListItem = {
   submittedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Only ever non-null when the list was fetched with `includeDeleted`. */
+  deletedAt: string | null;
   revisionCount: number;
   latestRevisionId: string | null;
   /** 1-based position of the submitted/published revision in the history. */
@@ -132,13 +134,51 @@ export type SubmittedArticle = {
   publishedRevisionId: string | null;
 };
 
-export async function fetchStudioArticles(params?: {
+/**
+ * Server-side narrowing for the article list. Filtering here rather than in the
+ * browser keeps counts and pages correct once there are more articles than fit
+ * on one page.
+ */
+export type StudioArticleFilters = {
   page?: number;
   limit?: number;
-}): Promise<StudioArticleListResponse> {
+  /** `review` overlaps `published` when a live article has a newer submission. */
+  status?: 'draft' | 'review' | 'published';
+  /** Case-insensitive partial title match. */
+  q?: string;
+  authorId?: string;
+  /** Editors and admins only in practice; authors stay scoped to their own rows. */
+  includeDeleted?: boolean;
+};
+
+/** Dataset-wide counts from `GET /articles/stats` — never summed from a page. */
+export type ArticleStats = {
+  total: number;
+  published: number;
+  drafts: number;
+  pendingReview: number;
+  deleted: number;
+};
+
+export async function fetchStudioArticles(
+  params?: StudioArticleFilters,
+): Promise<StudioArticleListResponse> {
   const { data } = await apiClient.get<StudioArticleListResponse>('/articles/studio', {
-    params: { page: params?.page ?? 1, limit: params?.limit ?? 50 },
+    params: {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 50,
+      ...(params?.status ? { status: params.status } : {}),
+      ...(params?.q ? { q: params.q } : {}),
+      ...(params?.authorId ? { authorId: params.authorId } : {}),
+      ...(params?.includeDeleted ? { includeDeleted: true } : {}),
+    },
   });
+  return data;
+}
+
+/** Editors and admins only — authors receive 403. */
+export async function fetchArticleStats(): Promise<ArticleStats> {
+  const { data } = await apiClient.get<ArticleStats>('/articles/stats');
   return data;
 }
 
@@ -211,6 +251,11 @@ export function isPublished(
   article: Pick<StudioArticleListItem, 'publishedRevisionId'>,
 ): boolean {
   return article.publishedRevisionId !== null;
+}
+
+/** Soft-deleted: retained in the table but gone from every public surface. */
+export function isDeleted(article: Pick<StudioArticleListItem, 'deletedAt'>): boolean {
+  return article.deletedAt !== null;
 }
 
 export function getLatestRevision(

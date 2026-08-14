@@ -30,6 +30,7 @@ export {
 export {
   fetchStudioArticles,
   fetchStudioArticle,
+  fetchArticleStats,
   createArticle,
   createRevision,
   updateArticle,
@@ -37,6 +38,7 @@ export {
   publishArticle,
   submitArticleForReview,
   isPublished,
+  isDeleted,
   isAwaitingReview,
   isSubmittedForReview,
   getReviewState,
@@ -47,9 +49,11 @@ export {
   getSubmittedRevisionIndex,
   hasUnpublishedChanges,
   type ArticleReviewState,
+  type ArticleStats,
   type ReviewPointers,
   type ArticleContentBlock,
   type ArticleTag,
+  type StudioArticleFilters,
   type StudioArticleListItem,
   type StudioArticleDetail,
   type StudioRevision,
@@ -63,11 +67,16 @@ export {
 } from './studio';
 export {
   fetchComments,
+  fetchAllComments,
+  fetchCommentStats,
   createComment,
   updateComment,
   deleteComment,
   type Comment,
   type CommentListResponse,
+  type ModerationComment,
+  type ModerationCommentFilters,
+  type ModerationCommentListResponse,
 } from './comments';
 export {
   fetchTags,
@@ -75,12 +84,16 @@ export {
   updateTag,
   deleteTag,
   type Tag,
+  type TagDetail,
   type TagListResponse,
 } from './tags';
 export { uploadMedia, type MediaResourceType, type UploadedMedia } from './media';
 export {
   fetchAdminUsers,
   createEditor,
+  updateAdminUser,
+  type AdminUser,
   type AdminUsersResponse,
   type CreateEditorInput,
+  type UpdateAdminUserInput,
 } from './admin';

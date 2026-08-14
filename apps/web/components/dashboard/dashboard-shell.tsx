@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { cn } from '@/components/ui';
 import { getRoleLabel, type GatewayRole } from '@/lib/auth/roles';
 import { useLogout, useMe } from '@/hooks/use-auth';
@@ -16,7 +16,7 @@ type DashboardShellProps = {
   title: string;
   subtitle?: string;
   role: GatewayRole;
-  navItems?: NavItem[];
+  navItems?: readonly NavItem[];
   /** Page-level actions rendered on the right of the title row. */
   actions?: ReactNode;
   children: ReactNode;
@@ -34,6 +34,19 @@ export function DashboardShell({
   const router = useRouter();
   const { data: user } = useMe();
   const logoutMutation = useLogout();
+
+  // Longest match wins, so a section index ("/admin") does not stay highlighted
+  // while one of its children ("/admin/articles") is open.
+  const activeHref = useMemo(() => {
+    let match: string | null = null;
+    for (const item of navItems) {
+      const onPath = pathname === item.href || pathname.startsWith(`${item.href}/`);
+      if (onPath && (match === null || item.href.length > match.length)) {
+        match = item.href;
+      }
+    }
+    return match;
+  }, [navItems, pathname]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,8 +87,7 @@ export function DashboardShell({
           <aside className="hidden w-56 shrink-0 md:block">
             <nav className="space-y-1">
               {navItems.map((item) => {
-                const active =
-                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const active = item.href === activeHref;
                 return (
                   <Link
                     key={item.href + item.label}

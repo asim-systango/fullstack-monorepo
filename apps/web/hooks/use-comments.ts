@@ -4,8 +4,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createComment,
   deleteComment,
+  fetchAllComments,
+  fetchCommentStats,
   fetchComments,
   updateComment,
+  type ModerationCommentFilters,
 } from '@/lib/api/comments';
 import { queryKeys } from '@/lib/query';
 
@@ -51,6 +54,36 @@ export function useDeleteComment(articleId: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.comments.byArticle(articleId),
       });
+    },
+  });
+}
+
+/** Moderation queue for editors and admins. Authors receive 403. */
+export function useModerationComments(params?: ModerationCommentFilters) {
+  return useQuery({
+    queryKey: queryKeys.comments.moderation(params),
+    queryFn: () => fetchAllComments(params),
+  });
+}
+
+export function useCommentStats() {
+  return useQuery({
+    queryKey: queryKeys.comments.stats,
+    queryFn: fetchCommentStats,
+  });
+}
+
+/**
+ * Removes a comment from the moderation queue. Unlike `useDeleteComment` this is
+ * not scoped to one article, so it refreshes every comment query rather than a
+ * single article's thread.
+ */
+export function useModerateDeleteComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: string) => deleteComment(commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.comments.all });
     },
   });
 }

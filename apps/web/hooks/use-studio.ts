@@ -5,6 +5,7 @@ import {
   createArticle,
   createRevision,
   deleteArticle,
+  fetchArticleStats,
   fetchStudioArticle,
   fetchStudioArticles,
   publishArticle,
@@ -12,14 +13,26 @@ import {
   updateArticle,
   type CreateArticleInput,
   type CreateRevisionInput,
+  type StudioArticleFilters,
   type UpdateArticleInput,
 } from '@/lib/api/studio';
 import { queryKeys } from '@/lib/query';
 
-export function useStudioArticles(params?: { page?: number; limit?: number }) {
+export function useStudioArticles(params?: StudioArticleFilters) {
   return useQuery({
     queryKey: queryKeys.articles.studio(params),
     queryFn: () => fetchStudioArticles(params),
+  });
+}
+
+/**
+ * Platform-wide counts for editor and admin dashboards. Restricted to
+ * staff/admin by the API, so authors must not render this.
+ */
+export function useArticleStats() {
+  return useQuery({
+    queryKey: queryKeys.articles.stats,
+    queryFn: fetchArticleStats,
   });
 }
 
@@ -75,6 +88,8 @@ export function useDeleteArticle() {
     mutationFn: (articleId: string) => deleteArticle(articleId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+      // Comment counts exclude comments on removed articles.
+      queryClient.invalidateQueries({ queryKey: queryKeys.comments.all });
     },
   });
 }
