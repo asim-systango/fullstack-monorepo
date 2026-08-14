@@ -15,6 +15,16 @@ export class CompaniesService {
     return this.companiesRepo.findOne({ where: { userId } });
   }
 
+  findAll() {
+    return this.companiesRepo.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async findByIdOrThrow(id: string) {
+    const company = await this.companiesRepo.findOne({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+    return company;
+  }
+
   async findByUserIdOrThrow(userId: string) {
     const company = await this.findByUserId(userId);
     if (!company) {
@@ -30,6 +40,12 @@ export class CompaniesService {
     }
 
     const company = this.companiesRepo.create({ ...dto, userId });
+    return this.companiesRepo.save(company);
+  }
+
+  async suspend(id: string) {
+    const company = await this.findByIdOrThrow(id);
+    company.suspended = true;
     return this.companiesRepo.save(company);
   }
 }

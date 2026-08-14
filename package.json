@@ -29,6 +29,8 @@
     "migration:revert": "pnpm --filter @app/api-gateway migration:revert",
     "migration:revert:api": "pnpm --filter @app/api migration:revert",
     "migration:generate": "pnpm --filter @app/api migration:generate",
+    "seed": "pnpm --filter @app/api-gateway seed",
+    "seed:api": "pnpm --filter @app/api seed",
     "test": "pnpm --filter @app/api-gateway exec jest --config ../../jest.config.cjs --testPathPattern='(apps/api-gateway/src|apps/api/src|apps/web/lib|libs/http/src|libs/shared-types/src)'",
     "test:coverage": "pnpm --filter @app/api-gateway exec jest --config ../../jest.config.cjs --coverage --testPathPattern='(apps/api-gateway/src|apps/api/src|apps/web/lib|libs/http/src|libs/shared-types/src)'",
     "test:gateway": "pnpm --filter @app/api-gateway test",

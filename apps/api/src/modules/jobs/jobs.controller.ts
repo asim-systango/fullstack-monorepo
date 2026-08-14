@@ -52,4 +52,11 @@ export class JobsController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtUser) {
     return this.jobsService.remove(id, user.id);
   }
+
+  // Atomic close: job → closed + open applications → rejected (see JobsService.closeOwned).
+  @Roles('staff')
+  @Post('jobs/:id/close')
+  close(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+    return this.jobsService.closeOwned(id, user.id);
+  }
 }

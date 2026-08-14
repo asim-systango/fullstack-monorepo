@@ -1,11 +1,14 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { ApplicationsService } from '../applications/applications.service';
 import { CompaniesService } from '../companies/companies.service';
 import { Job } from './job.entity';
 import { JobStatus } from './job-status.enum';
@@ -19,27 +22,41 @@ export class JobsService {
     @InjectRepository(Job)
     private readonly jobsRepo: Repository<Job>,
     private readonly companiesService: CompaniesService,
+    private readonly dataSource: DataSource,
+    // forwardRef: Applications.create needs JobsService; close needs ApplicationsService.
+    @Inject(forwardRef(() => ApplicationsService))
+    private readonly applicationsService: ApplicationsService,
   ) {}
 
   async findAllPublic(query: ListJobsQueryDto) {
     const { page, limit, title, location } = query;
 
-    const [data, total] = await this.jobsRepo.findAndCount({
-      where: {
-        ...(title && { title: ILike(`%${title}%`) }),
-        ...(location && { location: ILike(`%${location}%`) }),
-      },
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    // Exclude suspended companies so admin suspension immediately hides their public listings.
+    const qb = this.jobsRepo
+      .createQueryBuilder('job')
+      .innerJoinAndSelect('job.company', 'company')
+      .where('company.suspended = false');
 
+    if (title) {
+      qb.andWhere('job.title ILIKE :title', { title: `%${title}%` });
+    }
+    if (location) {
+      qb.andWhere('job.location ILIKE :location', { location: `%${location}%` });
+    }
+
+    qb.orderBy('job.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
     return { data, page, limit, total };
   }
 
   async findOnePublic(id: string) {
     const job = await this.jobsRepo.findOne({ where: { id }, relations: ['company'] });
-    if (!job) throw new NotFoundException('Job not found');
+    if (!job || job.company.suspended) {
+      throw new NotFoundException('Job not found');
+    }
     return job;
   }
 
@@ -83,10 +100,42 @@ export class JobsService {
   }
 
   async findOpenOrThrow(id: string) {
-    const job = await this.findOnePublic(id); // throws 404 if missing/soft-deleted
+    const job = await this.findOnePublic(id); // throws 404 if missing/soft-deleted/suspended
     if (job.status !== JobStatus.OPEN) {
       throw new BadRequestException('This job is not accepting applications');
     }
     return job;
+  }
+
+  async closeOwned(id: string, userId: string) {
+    const job = await this.findOwnedByUser(id, userId);
+    return this.closeJobInTransaction(job);
+  }
+
+  // Admin force-close: same transactional write, no ownership check.
+  async forceClose(id: string) {
+    const job = await this.jobsRepo.findOne({ where: { id }, relations: ['company'] });
+    if (!job) throw new NotFoundException('Job not found');
+    return this.closeJobInTransaction(job);
+  }
+
+  private async closeJobInTransaction(job: Job) {
+    if (job.status === JobStatus.CLOSED) {
+      throw new BadRequestException('Job is already closed');
+    }
+
+    // Real transaction so job.status + application rejects commit or roll back together.
+    return this.dataSource.transaction(async (manager) => {
+      job.status = JobStatus.CLOSED;
+      const closed = await manager.save(job);
+      await this.applicationsService.rejectOpenForJob(job.id, manager);
+      return closed;
+    });
+  }
+
+  countOpenForCompany(companyId: string) {
+    return this.jobsRepo.count({
+      where: { companyId, status: JobStatus.OPEN },
+    });
   }
 }

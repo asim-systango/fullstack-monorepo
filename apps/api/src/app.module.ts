@@ -8,6 +8,10 @@ import { HealthModule } from './modules/health';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
+import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
+import { ResumeMetaModule } from './modules/resume-meta/resume-meta.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 const db = databaseConfig();
 
@@ -25,7 +29,11 @@ const db = databaseConfig();
     HealthModule,
     CompaniesModule,
     JobsModule,
-    ApplicationsModule
+    ApplicationsModule,
+    BookmarksModule,
+    ResumeMetaModule,
+    DashboardModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
