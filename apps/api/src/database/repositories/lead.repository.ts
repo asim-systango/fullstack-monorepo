@@ -11,4 +11,8 @@ export class LeadRepository extends Repository<Lead> {
   async findById(id: string): Promise<Lead | null> {
     return this.findOne({ where: { id } });
   }
+
+  async updateLead(id: string, data: Partial<Lead>): Promise<void> {
+    await this.update(id, { ...data, updatedAt: Date.now() });
+  }
 }
