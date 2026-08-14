@@ -9,13 +9,9 @@ import {
   Unique,
 } from 'typeorm';
 import { Category } from './category.entity';
+import { SlaPriority } from './sla-priority.enum';
 
-export enum SlaPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
+export { SlaPriority };
 
 @Entity('sla_policies')
 @Unique(['categoryId', 'priority'])

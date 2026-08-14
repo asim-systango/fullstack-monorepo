@@ -12,7 +12,7 @@ import { Category } from '../categories/category.entity';
 import { TicketEvent } from './ticket-event.entity';
 import { Message } from './message.entity';
 import { TicketTag } from './ticket-tag.entity';
-import { SlaPriority } from '../categories/sla-policy.entity';
+import { SlaPriority } from '../categories/sla-priority.enum';
 
 export enum TicketStatus {
   OPEN = 'open',
