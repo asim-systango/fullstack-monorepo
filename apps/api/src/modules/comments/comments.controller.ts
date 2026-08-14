@@ -32,9 +32,12 @@ import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import {
   CommentArticleIdParam,
   CommentIdParam,
+  ListAllCommentsQuery,
   ListCommentsQuery,
   type CommentListResponse,
   type CommentResponse,
+  type CommentStatsResponse,
+  type ModerationCommentListResponse,
 } from './dto/get-comment.dto';
 
 const SWAGGER = {
@@ -97,6 +100,45 @@ export class CommentsController {
     @Query() query: ListCommentsQuery,
   ): Promise<CommentListResponse> {
     return this.commentsService.listComments(params.articleId, query);
+  }
+
+  @Get('comments')
+  @ApiBearerAuth()
+  @Roles(Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'List every comment for moderation',
+    description:
+      'Editors and Admins only. Returns all non-deleted comments across the platform, ' +
+      'newest first, each with its article attached. Unlike the public comment routes this ' +
+      'deliberately includes comments on draft and soft-deleted articles, so abusive content ' +
+      'stays reachable — check `article.publishedRevisionId` and `article.deletedAt` to see ' +
+      'whether a comment is publicly visible. Optional `articleId` and `q` narrow the queue.',
+  })
+  @ApiOkResponse({ description: 'Paginated moderation queue (empty list is valid)' })
+  @ApiBadRequestResponse({ description: 'Invalid pagination parameters or UUID' })
+  @ApiUnauthorizedResponse({ description: SWAGGER.unauthorized })
+  @ApiForbiddenResponse({ description: 'Author (user) cannot moderate comments' })
+  listAllComments(
+    @Query() query: ListAllCommentsQuery,
+  ): Promise<ModerationCommentListResponse> {
+    return this.commentsService.listAllComments(query);
+  }
+
+  @Get('comments/stats')
+  @ApiBearerAuth()
+  @Roles(Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'Platform-wide comment count',
+    description:
+      'Editors and Admins only. Counts every comment that has not been soft-deleted, so a ' +
+      'dashboard never has to sum a paginated list. Matches the population of GET /comments, ' +
+      'including comments on draft and soft-deleted articles.',
+  })
+  @ApiOkResponse({ description: 'Body field: `total`.' })
+  @ApiUnauthorizedResponse({ description: SWAGGER.unauthorized })
+  @ApiForbiddenResponse({ description: 'Author (user) cannot read platform stats' })
+  getCommentStats(): Promise<CommentStatsResponse> {
+    return this.commentsService.getCommentStats();
   }
 
   @Get('comments/:id')

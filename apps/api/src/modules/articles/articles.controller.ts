@@ -32,6 +32,7 @@ import {
   ArticleIdParam,
   ListArticlesQuery,
   type ArticleListResponse,
+  type ArticleStatsResponse,
   type StudioArticleDetail,
 } from './dto/get-article.dto';
 import { PublishArticleDto, type PublishedArticle } from './dto/publish-article.dto';
@@ -146,14 +147,37 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     return this.articlesService.getPublicArticleBySlug(params.slug);
   }
 
+  @Get('stats')
+  @ApiBearerAuth()
+  @Roles(Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'Platform-wide article counts',
+    description:
+      'Editors and Admins only. Counts the whole table in a single query so a dashboard ' +
+      'never has to sum a paginated list. `total`, `published`, `drafts`, and `pendingReview` ' +
+      'exclude soft-deleted articles; `deleted` counts them on their own. ' +
+      '`published` and `pendingReview` overlap when a live article has a newer revision under review.',
+  })
+  @ApiOkResponse({
+    description:
+      'Body fields: `total`, `published`, `drafts`, `pendingReview`, `deleted`.',
+  })
+  @ApiUnauthorizedResponse({ description: UNAUTHORIZED })
+  @ApiForbiddenResponse({ description: 'Author (user) cannot read platform stats' })
+  getArticleStats(): Promise<ArticleStatsResponse> {
+    return this.articlesService.getArticleStats();
+  }
+
   @Get('studio')
   @ApiBearerAuth()
   @Roles(Role.Author, Role.Editor, Role.Admin)
   @ApiOperation({
     summary: 'List articles',
     description:
-      'Authors see only their own non-deleted articles. Editors and Admins see all non-deleted articles. ' +
-      'Sorted by `updatedAt DESC`. Soft-deleted articles are always excluded.',
+      'Authors see only their own articles. Editors and Admins see every article. ' +
+      'Sorted by `updatedAt DESC`. Optional `status`, `q`, and `authorId` narrow the list, ' +
+      'and `includeDeleted=true` keeps soft-deleted rows for moderation and trash views. ' +
+      '`authorId` is ignored for Authors, who are always scoped to themselves.',
   })
   @ApiOkResponse({ description: 'Paginated article list' })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED })
