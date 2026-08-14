@@ -9,4 +9,5 @@ export const ACTIVITIES_ERRORS = {
 
 export const ACTIVITIES_MESSAGES = {
   ACTIVITY_CREATED: 'Activity created successfully.',
+  ACTIVITIES_RETRIEVED: 'Activities retrieved successfully.',
 } as const;

@@ -60,4 +60,16 @@ export class ActivitiesService {
 
     return (await this.activityRepository.findById(newActivity.id))!;
   }
+
+  async getAllActivities(currentUser: User, userRole: string): Promise<Activity[]> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(ACTIVITIES_ERRORS.USER_NO_ORG);
+    }
+
+    // SALES_REP can only see their own activities (i.e. activities they created)
+    const createdBy = userRole === 'SALES_REP' ? currentUser.id : undefined;
+
+    return this.activityRepository.findAllActivities(orgId, createdBy);
+  }
 }
