@@ -24,4 +24,8 @@ export class DealRepository extends Repository<Deal> {
 
     return query.orderBy('deal.createdAt', 'DESC').getMany();
   }
+
+  async updateDeal(id: string, data: Partial<Deal>): Promise<void> {
+    await this.update(id, { ...data, updatedAt: Date.now() });
+  }
 }
