@@ -17,7 +17,7 @@ import {
   type StudioArticleDetail,
 } from '@/lib/api/studio';
 import type { GatewayRole } from '@/lib/auth/roles';
-import { formatRelativeTime } from '@/lib/format/date';
+import { formatDate, formatRelativeTime } from '@/lib/format/date';
 import {
   useCreateRevision,
   useStudioArticle,
@@ -34,7 +34,7 @@ const FORM_ID = 'edit-article-form';
 type EditArticleViewProps = {
   id: string;
   role: GatewayRole;
-  navItems: Array<{ href: string; label: string }>;
+  navItems: readonly { href: string; label: string }[];
   /** Where Cancel and the not-found fallback return to. */
   backHref: string;
   backLabel: string;
@@ -72,6 +72,39 @@ function RevisionSummary({ article }: Readonly<{ article: StudioArticleDetail }>
         </p>
       ) : null}
     </div>
+  );
+}
+
+function RevisionHistory({ article }: Readonly<{ article: StudioArticleDetail }>) {
+  const submittedIndex = getSubmittedRevisionIndex(article);
+  const publishedIndex = getPublishedRevisionIndex(article);
+
+  return (
+    <section className="max-w-2xl">
+      <h2 className="font-display text-lg font-bold text-foreground">Revision History</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Saving always appends a new revision. Older ones stay as history.
+      </p>
+      <ol className="mt-4 divide-y divide-border rounded-lg border border-border">
+        {[...article.revisions].reverse().map((revision, reversedIndex) => {
+          const index = article.revisions.length - 1 - reversedIndex;
+          const submitted = index === submittedIndex;
+          const live = index === publishedIndex;
+
+          return (
+            <li key={revision.id} className="px-4 py-3 text-sm">
+              <p className="font-medium text-foreground">{getRevisionLabel(index)}</p>
+              <p className="mt-1 text-muted-foreground">
+                {submitted && article.submittedAt
+                  ? `Submitted for review · ${formatDate(article.submittedAt)}`
+                  : `Created ${formatDate(revision.createdAt)}`}
+                {live ? ' · live on the blog' : ''}
+              </p>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 
@@ -149,10 +182,11 @@ export function EditArticleView({
 
   const saving = revisionMutation.isPending || updateMutation.isPending;
   const reviewState = getReviewState(toReviewPointers(article));
-  // Only Authors request review; Editors act through the Publish flow instead.
-  const canRequestReview = role === 'user' && SUBMITTABLE_STATES.has(reviewState);
+  // Authors and Editors both submit; publishing is always a different Editor.
+  const canRequestReview =
+    (role === 'user' || role === 'staff') && SUBMITTABLE_STATES.has(reviewState);
   const isPendingReview =
-    role === 'user' &&
+    (role === 'user' || role === 'staff') &&
     (reviewState === 'pending-review' || reviewState === 'published-pending-review');
   const latestLabel = getRevisionLabel(article.revisions.length - 1);
   const metadataChanged =
@@ -196,7 +230,9 @@ export function EditArticleView({
       const submitted = await reviewMutation.mutateAsync();
       setReviewOpen(false);
       setStatus(
-        `Submitted revision v${submitted.submittedRevisionNumber} for review. An Editor will decide whether to publish it.`,
+        role === 'staff'
+          ? `Submitted revision v${submitted.submittedRevisionNumber} for review. Another editor must publish it.`
+          : `Submitted revision v${submitted.submittedRevisionNumber} for review. An Editor will decide whether to publish it.`,
       );
     } catch (err) {
       setReviewError(
@@ -230,7 +266,7 @@ export function EditArticleView({
           <Button type="submit" form={FORM_ID} variant="outline" loading={saving}>
             Save Draft
           </Button>
-          {/* Authors request review; only an Editor ever sees a Publish button. */}
+          {/* Authors and Editors request review. Publish lives on the review page. */}
           {canRequestReview ? (
             <Button
               type="button"
@@ -303,10 +339,18 @@ export function EditArticleView({
         </p>
       </form>
 
+      <div className="mt-10">
+        <RevisionHistory article={article} />
+      </div>
+
       <ConfirmDialog
         open={reviewOpen}
         title="Request Review?"
-        description="An Editor will review this revision and decide whether to publish it. Nothing becomes public until they do."
+        description={
+          role === 'staff'
+            ? 'Another editor must review this revision and publish it. You cannot publish an article you authored.'
+            : 'An Editor will review this revision and decide whether to publish it. Nothing becomes public until they do.'
+        }
         details={
           <>
             <p className="font-medium">{article.title}</p>

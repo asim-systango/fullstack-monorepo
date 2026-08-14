@@ -11,15 +11,12 @@ import {
   toArticleContent,
   type StoryBlock,
 } from '@/components/studio/story-blocks';
+import { getStudioWorkspace } from '@/components/studio/studio-nav';
 import { TagPicker } from '@/components/studio/tag-picker';
 import { Button, Input } from '@/components/ui';
 import { ApiClientError } from '@/lib/api';
 import { useCreateArticle } from '@/hooks/use-studio';
-
-const STUDIO_NAV = [
-  { href: '/studio', label: 'My Articles' },
-  { href: '/studio/new', label: 'Create Article' },
-];
+import { useMe } from '@/hooks/use-auth';
 
 function slugify(value: string): string {
   return value
@@ -32,6 +29,8 @@ function slugify(value: string): string {
 
 function CreateArticleContent() {
   const router = useRouter();
+  const { data: user } = useMe();
+  const workspace = getStudioWorkspace(user?.role);
   const createMutation = useCreateArticle();
 
   const [title, setTitle] = useState('');
@@ -66,9 +65,9 @@ function CreateArticleContent() {
   return (
     <DashboardShell
       title="Create Article"
-      subtitle="Save a draft revision. Editors publish when ready."
-      role="user"
-      navItems={STUDIO_NAV}
+      subtitle={workspace.createSubtitle}
+      role={workspace.role}
+      navItems={workspace.navItems}
       actions={
         <>
           <Link
@@ -117,6 +116,7 @@ function CreateArticleContent() {
           selectedIds={tagIds}
           onChange={setTagIds}
           disabled={createMutation.isPending}
+          allowCreate={workspace.isEditor}
         />
 
         <div className="flex flex-col gap-1.5 pt-2">

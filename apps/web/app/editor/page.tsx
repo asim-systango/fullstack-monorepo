@@ -1,21 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useState } from 'react';
+import { Pagination } from '@/components/admin/pagination';
+import { AsyncListState } from '@/components/admin/data-states';
 import { EditorGuard } from '@/components/auth/route-guard';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import {
-  isAwaitingReview,
-  isPublished,
-  type StudioArticleListItem,
-} from '@/lib/api/studio';
+import { Button, ConfirmDialog } from '@/components/ui';
+import { ApiClientError } from '@/lib/api';
+import { isPublished, type StudioArticleListItem } from '@/lib/api/studio';
 import { formatDate } from '@/lib/format/date';
-import { useStudioArticles } from '@/hooks/use-studio';
+import { useMe } from '@/hooks/use-auth';
+import { useArticleStats, useDeleteArticle, useStudioArticles } from '@/hooks/use-studio';
 
 const EDITOR_NAV = [
   { href: '/editor', label: 'Review Queue' },
+  { href: '/studio', label: 'Articles' },
   { href: '/editor/tags', label: 'Tags' },
 ];
+
+const PAGE_SIZE = 20;
 
 const actionLink =
   'inline-flex h-9 items-center rounded-pill border border-border-strong px-4 text-sm text-foreground no-underline hover:bg-surface-muted';
@@ -29,7 +33,15 @@ function StatCard({ label, value }: Readonly<{ label: string; value: number }>) 
   );
 }
 
-function SubmittedArticleRow({ article }: Readonly<{ article: StudioArticleListItem }>) {
+function SubmittedArticleRow({
+  article,
+  isOwn,
+  onDelete,
+}: Readonly<{
+  article: StudioArticleListItem;
+  isOwn: boolean;
+  onDelete: () => void;
+}>) {
   const revised = isPublished(article);
 
   return (
@@ -37,11 +49,10 @@ function SubmittedArticleRow({ article }: Readonly<{ article: StudioArticleListI
       <div className="min-w-0">
         <h3 className="font-medium text-foreground">{article.title}</h3>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          <span>Author: {article.authorId}</span>
+          <span>Author {article.authorId.slice(0, 8)}</span>
           {article.submittedAt ? (
             <span>Submitted {formatDate(article.submittedAt)}</span>
           ) : null}
-          {/* The editor reviews the submitted revision, not necessarily the newest. */}
           {article.submittedRevisionNumber !== null ? (
             <span>Submitted revision v{article.submittedRevisionNumber}</span>
           ) : null}
@@ -52,6 +63,11 @@ function SubmittedArticleRow({ article }: Readonly<{ article: StudioArticleListI
           {revised ? (
             <span className="rounded-pill bg-accent-yellow/30 px-3 py-1 text-xs text-foreground">
               Update to a published article
+            </span>
+          ) : null}
+          {isOwn ? (
+            <span className="rounded-pill bg-accent-yellow/30 px-3 py-1 text-xs text-foreground">
+              Yours — another editor must publish
             </span>
           ) : null}
         </div>
@@ -66,37 +82,56 @@ function SubmittedArticleRow({ article }: Readonly<{ article: StudioArticleListI
         <Link href={`/editor/articles/${article.id}`} className={actionLink}>
           Review
         </Link>
+        <Button type="button" variant="ghost" size="sm" onClick={onDelete}>
+          Delete
+        </Button>
       </div>
     </li>
   );
 }
 
 function EditorDashboardContent() {
-  const { data, isLoading, isError } = useStudioArticles();
+  const { data: user } = useMe();
+  const [page, setPage] = useState(1);
+  const [pendingDelete, setPendingDelete] = useState<StudioArticleListItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { awaitingReview, publishedCount, draftCount, total } = useMemo(() => {
-    const articles = data?.data ?? [];
-    return {
-      // Only what an author explicitly submitted, never every draft.
-      awaitingReview: articles.filter(isAwaitingReview),
-      publishedCount: articles.filter(isPublished).length,
-      draftCount: articles.filter((article) => !isPublished(article)).length,
-      total: articles.length,
-    };
-  }, [data]);
+  const stats = useArticleStats();
+  const { data, isLoading, isError, isFetching } = useStudioArticles({
+    status: 'review',
+    page,
+    limit: PAGE_SIZE,
+  });
+  const deleteMutation = useDeleteArticle();
+
+  const awaitingReview = data?.data ?? [];
+
+  async function handleDelete() {
+    if (!pendingDelete) return;
+
+    setDeleteError(null);
+    try {
+      await deleteMutation.mutateAsync(pendingDelete.id);
+      setPendingDelete(null);
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiClientError ? err.message : 'Could not delete article.',
+      );
+    }
+  }
 
   return (
     <DashboardShell
       title="Editor Dashboard"
-      subtitle="Review the revisions authors submitted and publish the ones that are ready."
+      subtitle="Review submitted revisions and publish them. You cannot publish an article you authored."
       role="staff"
       navItems={EDITOR_NAV}
     >
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Awaiting review" value={awaitingReview.length} />
-        <StatCard label="Published" value={publishedCount} />
-        <StatCard label="Drafts" value={draftCount} />
-        <StatCard label="Total articles" value={total} />
+        <StatCard label="Awaiting review" value={stats.data?.pendingReview ?? 0} />
+        <StatCard label="Published" value={stats.data?.published ?? 0} />
+        <StatCard label="Drafts" value={stats.data?.drafts ?? 0} />
+        <StatCard label="Total articles" value={stats.data?.total ?? 0} />
       </div>
 
       <section>
@@ -104,32 +139,56 @@ function EditorDashboardContent() {
           Articles Awaiting Review
         </h2>
 
-        {isLoading ? (
-          <p className="mt-4 text-sm text-muted-foreground">Loading articles…</p>
-        ) : null}
-
-        {isError ? (
-          <p className="mt-4 text-sm text-red-600" role="alert">
-            Could not load articles. Check that the API is running, then try again.
-          </p>
-        ) : null}
-
-        {!isLoading && !isError && awaitingReview.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-dashed border-border p-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              No author has submitted an article for review right now.
-            </p>
-          </div>
-        ) : null}
+        <AsyncListState
+          isLoading={isLoading}
+          isError={isError}
+          isEmpty={awaitingReview.length === 0}
+          errorLabel="Could not load articles. Check that the API is running, then try again."
+          emptyLabel="Nothing is waiting for review right now."
+        />
 
         {awaitingReview.length > 0 ? (
-          <ul className="mt-4 divide-y divide-border rounded-lg border border-border">
-            {awaitingReview.map((article) => (
-              <SubmittedArticleRow key={article.id} article={article} />
-            ))}
-          </ul>
+          <>
+            <ul className="mt-4 divide-y divide-border rounded-lg border border-border">
+              {awaitingReview.map((article) => (
+                <SubmittedArticleRow
+                  key={article.id}
+                  article={article}
+                  isOwn={Boolean(user?.id && article.authorId === user.id)}
+                  onDelete={() => {
+                    setDeleteError(null);
+                    setPendingDelete(article);
+                  }}
+                />
+              ))}
+            </ul>
+
+            <Pagination
+              page={page}
+              totalPages={data?.totalPages ?? 1}
+              total={data?.total ?? 0}
+              pageSize={PAGE_SIZE}
+              busy={isFetching}
+              onPageChange={setPage}
+              label="articles"
+            />
+          </>
         ) : null}
       </section>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete Article?"
+        description="This article will no longer be publicly available."
+        details={
+          pendingDelete ? <p className="font-medium">{pendingDelete.title}</p> : null
+        }
+        confirmLabel="Delete"
+        loading={deleteMutation.isPending}
+        error={deleteError}
+        onConfirm={handleDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </DashboardShell>
   );
 }

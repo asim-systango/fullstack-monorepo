@@ -10,6 +10,7 @@ import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from '@/hooks/use-t
 
 const EDITOR_NAV = [
   { href: '/editor', label: 'Review Queue' },
+  { href: '/studio', label: 'Articles' },
   { href: '/editor/tags', label: 'Tags' },
 ];
 

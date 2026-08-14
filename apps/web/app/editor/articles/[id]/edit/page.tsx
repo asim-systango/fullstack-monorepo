@@ -6,6 +6,7 @@ import { EditArticleView } from '@/components/studio/edit-article-view';
 
 const EDITOR_NAV = [
   { href: '/editor', label: 'Review Queue' },
+  { href: '/studio', label: 'Articles' },
   { href: '/editor/tags', label: 'Tags' },
 ];
 
