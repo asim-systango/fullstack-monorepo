@@ -46,6 +46,13 @@ export class UsersService {
     return this.users.save(user);
   }
 
+  update(user: User, patch: { name?: string; email?: string; isActive?: boolean }) {
+    if (patch.name !== undefined) user.name = patch.name;
+    if (patch.email !== undefined) user.email = patch.email.toLowerCase();
+    if (patch.isActive !== undefined) user.isActive = patch.isActive;
+    return this.users.save(user);
+  }
+
   toPublic(user: User) {
     return {
       id: user.id,

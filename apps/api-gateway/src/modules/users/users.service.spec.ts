@@ -8,6 +8,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     passwordHash: 'hash',
     name: 'Demo',
     role: 'user',
+    isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -99,5 +100,20 @@ describe('UsersService', () => {
       name: user.name,
       role: user.role,
     });
+  });
+
+  it('update applies name, email, and isActive then saves', async () => {
+    const user = makeUser({ email: 'old@example.com', name: 'Old', isActive: true });
+
+    const updated = await service.update(user, {
+      name: 'New',
+      email: 'New@Example.com',
+      isActive: false,
+    });
+
+    expect(updated.name).toBe('New');
+    expect(updated.email).toBe('new@example.com');
+    expect(updated.isActive).toBe(false);
+    expect(repo.save).toHaveBeenCalledWith(user);
   });
 });

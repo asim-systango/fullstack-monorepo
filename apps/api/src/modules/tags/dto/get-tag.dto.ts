@@ -38,6 +38,12 @@ export type TagResponse = {
 export type TagListItem = {
   id: string;
   name: string;
+  /** Trimmed and lowercased key behind the case-insensitive unique constraint. */
+  normalizedName: string;
+  /** Articles carrying this tag, excluding soft-deleted ones. */
+  articleCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 /** Paginated response for GET /tags */

@@ -18,7 +18,12 @@ import {
   type ContentBlock,
   type MediaRef,
 } from './types/revision-content';
-import type { ArticleListItem, StudioArticleDetail } from './dto/get-article.dto';
+import type {
+  ArticleListItem,
+  ArticleStatsResponse,
+  ArticleStatusFilter,
+  StudioArticleDetail,
+} from './dto/get-article.dto';
 import type { PublishedArticle } from './dto/publish-article.dto';
 import type {
   PublicArticleDetail,
@@ -43,6 +48,12 @@ export type ListArticlesInput = {
   authorId?: string;
   page: number;
   limit: number;
+  /** Workflow position, derived from the revision pointers. */
+  status?: ArticleStatusFilter;
+  /** Case-insensitive partial title match. */
+  search?: string;
+  /** Keeps soft-deleted rows in the result for moderation and trash views. */
+  includeDeleted?: boolean;
 };
 
 export type GetStudioArticleInput = {
@@ -98,6 +109,24 @@ export type SubmitForReviewInput = {
   articleId: string;
   /** When set, ownership is enforced before the submission is written. */
   authorId?: string;
+};
+
+/**
+ * SQL for each workflow position. There is no status column, so every filter is
+ * expressed against the revision pointers. `IS DISTINCT FROM` is used instead of
+ * `<>` so a null published pointer still counts as "different from" a submission.
+ *
+ * Written with raw column names rather than entity property paths, because
+ * TypeORM only rewrites `alias.property` inside `where` expressions — a raw
+ * `select` used for aggregate counts is passed through untouched.
+ */
+const ARTICLE_STATUS_SQL: Record<ArticleStatusFilter, string> = {
+  draft:
+    'article.published_revision_id IS NULL AND article.submitted_revision_id IS NULL',
+  review:
+    'article.submitted_revision_id IS NOT NULL AND ' +
+    'article.submitted_revision_id IS DISTINCT FROM article.published_revision_id',
+  published: 'article.published_revision_id IS NOT NULL',
 };
 
 /**
@@ -237,11 +266,24 @@ export class ArticlesRepository {
       .leftJoinAndSelect('articleTag.tag', 'tag')
       // Ids and timestamps only — revision content would bloat every list response.
       .leftJoin('article.revisions', 'revision')
-      .addSelect(['revision.id', 'revision.createdAt'])
-      .where('article.deletedAt IS NULL');
+      .addSelect(['revision.id', 'revision.createdAt']);
+
+    if (input.includeDeleted) {
+      qb.withDeleted();
+    } else {
+      qb.andWhere('article.deletedAt IS NULL');
+    }
 
     if (input.authorId) {
       qb.andWhere('article.authorId = :authorId', { authorId: input.authorId });
+    }
+
+    if (input.search) {
+      qb.andWhere('article.title ILIKE :search', { search: `%${input.search}%` });
+    }
+
+    if (input.status) {
+      qb.andWhere(`(${ARTICLE_STATUS_SQL[input.status]})`);
     }
 
     const [rows, total] = await qb
@@ -267,6 +309,7 @@ export class ArticlesRepository {
           submittedAt: article.submittedAt,
           createdAt: article.createdAt,
           updatedAt: article.updatedAt,
+          deletedAt: article.deletedAt,
           revisionCount: revisions.length,
           latestRevisionId: revisions.at(-1)?.id ?? null,
           submittedRevisionNumber: revisionNumberOf(
@@ -281,6 +324,41 @@ export class ArticlesRepository {
         };
       }),
       total,
+    };
+  }
+
+  /**
+   * Counts the whole articles table in one pass so dashboards never derive
+   * platform totals from a single page of results.
+   */
+  async countArticlesByState(): Promise<ArticleStatsResponse> {
+    const live = 'article.deleted_at IS NULL';
+
+    const row = await this.articleRepo
+      .createQueryBuilder('article')
+      .withDeleted()
+      .select(`COUNT(*) FILTER (WHERE ${live})`, 'total')
+      .addSelect(
+        `COUNT(*) FILTER (WHERE ${live} AND ${ARTICLE_STATUS_SQL.published})`,
+        'published',
+      )
+      .addSelect(
+        `COUNT(*) FILTER (WHERE ${live} AND ${ARTICLE_STATUS_SQL.draft})`,
+        'drafts',
+      )
+      .addSelect(
+        `COUNT(*) FILTER (WHERE ${live} AND ${ARTICLE_STATUS_SQL.review})`,
+        'pendingReview',
+      )
+      .addSelect('COUNT(*) FILTER (WHERE article.deleted_at IS NOT NULL)', 'deleted')
+      .getRawOne<Record<keyof ArticleStatsResponse, string>>();
+
+    return {
+      total: Number(row?.total ?? 0),
+      published: Number(row?.published ?? 0),
+      drafts: Number(row?.drafts ?? 0),
+      pendingReview: Number(row?.pendingReview ?? 0),
+      deleted: Number(row?.deleted ?? 0),
     };
   }
 

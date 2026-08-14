@@ -6,8 +6,11 @@ import type { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import type {
   CommentListResponse,
   CommentResponse,
+  CommentStatsResponse,
   DeleteCommentResponse,
+  ListAllCommentsQuery,
   ListCommentsQuery,
+  ModerationCommentListResponse,
 } from './dto/get-comment.dto';
 
 const COMMENT_NOT_FOUND = 'Comment not found';
@@ -54,6 +57,33 @@ export class CommentsService {
     };
   }
 
+  /**
+   * Moderation queue for editors and admins. Not scoped to published articles —
+   * the whole point is to reach abusive content wherever it sits.
+   */
+  async listAllComments(
+    query: ListAllCommentsQuery,
+  ): Promise<ModerationCommentListResponse> {
+    const { items, total } = await this.commentsRepository.listAllComments({
+      page: query.page,
+      limit: query.limit,
+      articleId: query.articleId,
+      search: query.q,
+    });
+
+    return {
+      data: items,
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+    };
+  }
+
+  async getCommentStats(): Promise<CommentStatsResponse> {
+    return { total: await this.commentsRepository.countComments() };
+  }
+
   async getCommentById(id: string): Promise<CommentResponse> {
     const comment = await this.commentsRepository.findPublicCommentById(id);
     if (!comment) {
@@ -67,7 +97,7 @@ export class CommentsService {
     dto: UpdateCommentDto,
     user: JwtUser,
   ): Promise<CommentResponse> {
-    const resolved = await this.resolveMutableComment(id);
+    const resolved = await this.resolveMutableComment(id, user);
     this.assertCanModerateOrOwn(resolved.comment.userId, user);
 
     const updated = await this.commentsRepository.updateComment({
@@ -81,7 +111,7 @@ export class CommentsService {
   }
 
   async deleteComment(id: string, user: JwtUser): Promise<DeleteCommentResponse> {
-    const resolved = await this.resolveMutableComment(id);
+    const resolved = await this.resolveMutableComment(id, user);
     this.assertCanModerateOrOwn(resolved.comment.userId, user);
 
     const deleted = await this.commentsRepository.softDeleteComment(id);
@@ -99,7 +129,10 @@ export class CommentsService {
     }
   }
 
-  private async resolveMutableComment(id: string): Promise<{
+  private async resolveMutableComment(
+    id: string,
+    user: JwtUser,
+  ): Promise<{
     comment: CommentResponse;
   }> {
     const resolved = await this.commentsRepository.findCommentForMutation(id);
@@ -108,17 +141,24 @@ export class CommentsService {
     }
 
     // Public comment API must not expose or mutate comments on unavailable articles.
-    if (resolved.articleDeleted || !resolved.articlePublished) {
+    // Moderators are exempt: an abusive comment still has to be removable after its
+    // article has been unpublished or soft-deleted.
+    const unavailable = resolved.articleDeleted || !resolved.articlePublished;
+    if (unavailable && !this.canModerate(user)) {
       throw new NotFoundException(COMMENT_NOT_FOUND);
     }
 
     return { comment: resolved.comment };
   }
 
+  private canModerate(user: JwtUser): boolean {
+    return user.role === Role.Editor || user.role === Role.Admin;
+  }
+
   /** Owners may mutate; editors/admins may moderate any comment. */
   private assertCanModerateOrOwn(ownerUserId: string, user: JwtUser): void {
     if (ownerUserId === user.id) return;
-    if (user.role === Role.Editor || user.role === Role.Admin) return;
+    if (this.canModerate(user)) return;
     throw new ForbiddenException('You can only modify your own comments');
   }
 }

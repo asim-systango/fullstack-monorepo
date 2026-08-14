@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
 import {
   ApiCookieAuth,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -37,6 +38,9 @@ export class AuthController {
   })
   @ApiOkResponse({ description: 'Public user profile; Set-Cookie applied' })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
+  @ApiForbiddenResponse({
+    description: 'Credentials are valid but the account is deactivated',
+  })
   login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     return this.authService.login(dto, res);
   }

@@ -47,3 +47,59 @@ export async function updateComment(commentId: string, body: string): Promise<Co
 export async function deleteComment(commentId: string): Promise<void> {
   await apiClient.delete(`/comments/${commentId}`);
 }
+
+/**
+ * A comment plus its article, as returned by the moderation queue. `article`
+ * tells you whether the comment is publicly reachable: a null
+ * `publishedRevisionId` means the article is a draft, and a non-null `deletedAt`
+ * means it has been removed from the blog.
+ */
+export type ModerationComment = Comment & {
+  article: {
+    id: string;
+    title: string;
+    slug: string;
+    publishedRevisionId: string | null;
+    deletedAt: string | null;
+  };
+};
+
+export type ModerationCommentListResponse = {
+  data: ModerationComment[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type ModerationCommentFilters = {
+  page?: number;
+  limit?: number;
+  articleId?: string;
+  /** Case-insensitive partial match on the comment body. */
+  q?: string;
+};
+
+/**
+ * Every comment on the platform, newest first. Editors and admins only —
+ * authors receive 403. Includes comments on drafts and removed articles so
+ * abusive content stays reachable.
+ */
+export async function fetchAllComments(
+  params?: ModerationCommentFilters,
+): Promise<ModerationCommentListResponse> {
+  const { data } = await apiClient.get<ModerationCommentListResponse>('/comments', {
+    params: {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 20,
+      ...(params?.articleId ? { articleId: params.articleId } : {}),
+      ...(params?.q ? { q: params.q } : {}),
+    },
+  });
+  return data;
+}
+
+export async function fetchCommentStats(): Promise<{ total: number }> {
+  const { data } = await apiClient.get<{ total: number }>('/comments/stats');
+  return data;
+}

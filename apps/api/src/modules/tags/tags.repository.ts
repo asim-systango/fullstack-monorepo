@@ -40,14 +40,29 @@ export class TagsRepository {
   }
 
   async listTags(input: ListTagsInput): Promise<{ items: TagListItem[]; total: number }> {
-    const [rows, total] = await this.tagRepo.findAndCount({
-      select: { id: true, name: true },
-      order: { name: 'ASC' },
-      skip: (input.page - 1) * input.limit,
-      take: input.limit,
-    });
+    // GROUP BY rules out findAndCount, so the page and the total are two queries.
+    const { entities, raw } = await this.tagRepo
+      .createQueryBuilder('tag')
+      .leftJoin('tag.articleTags', 'articleTag')
+      .leftJoin('articleTag.article', 'article', 'article.deleted_at IS NULL')
+      .addSelect('COUNT(DISTINCT article.id)', 'articleCount')
+      .groupBy('tag.id')
+      .orderBy('tag.name', 'ASC')
+      .offset((input.page - 1) * input.limit)
+      .limit(input.limit)
+      .getRawAndEntities<{ articleCount: string }>();
+
+    const total = await this.tagRepo.count();
+
     return {
-      items: rows.map((tag) => ({ id: tag.id, name: tag.name })),
+      items: entities.map((tag, index) => ({
+        id: tag.id,
+        name: tag.name,
+        normalizedName: tag.normalizedName,
+        articleCount: Number(raw[index]?.articleCount ?? 0),
+        createdAt: tag.createdAt,
+        updatedAt: tag.updatedAt,
+      })),
       total,
     };
   }

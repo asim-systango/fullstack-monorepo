@@ -5,6 +5,7 @@ import { ArticlesRepository } from './articles.repository';
 import type { CreateArticleDto, CreatedArticle } from './dto/article.dto';
 import type {
   ArticleListResponse,
+  ArticleStatsResponse,
   ListArticlesQuery,
   StudioArticleDetail,
 } from './dto/get-article.dto';
@@ -140,10 +141,17 @@ export class ArticlesService {
     query: ListArticlesQuery,
     user: JwtUser,
   ): Promise<ArticleListResponse> {
+    // An Author is pinned to their own id; the optional authorId filter is only
+    // a narrowing tool for Editors and Admins looking at the whole platform.
+    const ownership = this.ownershipScope(user);
+
     const { items, total } = await this.articlesRepository.listArticles({
-      authorId: this.ownershipScope(user),
+      authorId: ownership ?? query.authorId,
       page: query.page,
       limit: query.limit,
+      status: query.status,
+      search: query.q,
+      includeDeleted: query.includeDeleted,
     });
 
     return {
@@ -153,6 +161,11 @@ export class ArticlesService {
       total,
       totalPages: Math.ceil(total / query.limit),
     };
+  }
+
+  /** Platform-wide counts for editor and admin dashboards. */
+  async getArticleStats(): Promise<ArticleStatsResponse> {
+    return this.articlesRepository.countArticlesByState();
   }
 
   async listStudioArticles(
