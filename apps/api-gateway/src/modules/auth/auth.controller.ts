@@ -1,59 +1,70 @@
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
 import {
-  ApiCookieAuth,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Res,
+  UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { CurrentUser, Public } from '../../common/auth';
-import { PublicUser } from '../users';
+import { CurrentUser, Public, type AuthPrincipal } from '../../common/auth';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto } from './dto/login.dto';
+import { LoginSwagger } from './decorators/swagger/login.decorator';
+import { LogoutSwagger } from './decorators/swagger/logout.decorator';
+import { MeSwagger } from './decorators/swagger/me.decorator';
+import { AUTH_ERRORS } from './constants/auth.constants';
 
-@ApiTags('auth')
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiOkResponse({ description: 'Public user profile (envelope `{ data }`)' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
-  }
-
-  @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
-  @HttpCode(200)
-  @ApiOperation({
-    summary: 'Log in',
-    description: 'Sets httpOnly `access_token` cookie on success.',
-  })
-  @ApiOkResponse({ description: 'Public user profile; Set-Cookie applied' })
-  @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
-  login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    return this.authService.login(dto, res);
+  @HttpCode(HttpStatus.OK)
+  @LoginSwagger()
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    try {
+      return await this.authService.login(dto, res);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      switch (message) {
+        case AUTH_ERRORS.INVALID_CREDENTIALS:
+        case AUTH_ERRORS.USER_NOT_FOUND:
+          throw new UnauthorizedException(message);
+        case AUTH_ERRORS.USER_INACTIVE:
+        case AUTH_ERRORS.ORGANIZATION_INACTIVE:
+          throw new ForbiddenException(message);
+        case AUTH_ERRORS.ORGANIZATION_MISMATCH:
+          throw new BadRequestException(message);
+        default:
+          console.error('Error in AuthController.login:', error);
+          throw new InternalServerErrorException(AUTH_ERRORS.UNEXPECTED_ERROR);
+      }
+    }
   }
 
   @Public()
   @Post('logout')
-  @HttpCode(200)
-  @ApiOperation({ summary: 'Log out (clears auth cookie)' })
+  @HttpCode(HttpStatus.OK)
+  @LogoutSwagger()
   logout(@Res({ passthrough: true }) res: Response) {
     return this.authService.logout(res);
   }
 
-  @ApiCookieAuth('access_token')
   @Get('me')
-  @ApiOperation({ summary: 'Current user from cookie JWT' })
-  @ApiUnauthorizedResponse({ description: 'Missing or invalid cookie' })
-  me(@CurrentUser() user: PublicUser) {
+  @MeSwagger()
+  me(@CurrentUser() user: AuthPrincipal) {
     return user;
   }
 }

@@ -8,12 +8,13 @@ export function LoginSwagger() {
     ApiOperation({
       summary: 'User Authentication / Login',
       description:
-        'Authenticates a user via email and password, validates user and organization status, and returns a JWT access token along with tenant context (organization slug, domain) and user profile details.',
+        'Authenticates a user via email and password, validates user and organization status, sets httpOnly access_token cookie, and returns JWT access token along with tenant context (organization slug, domain) and user profile details.',
     }),
     ApiBody({ type: LoginDto }),
     ApiResponse({
       status: 200,
-      description: 'Login successful. Returns JWT token and tenant context.',
+      description:
+        'Login successful. Returns JWT token, sets httpOnly cookie, and tenant context.',
       schema: {
         example: {
           accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
@@ -43,7 +44,7 @@ export function LoginSwagger() {
       schema: {
         example: {
           timestamp: '2026-08-10T12:00:00.000Z',
-          path: '/api/v1/auth/login',
+          path: '/auth/login',
           error: AUTH_ERRORS.INVALID_CREDENTIALS,
         },
       },
@@ -54,7 +55,7 @@ export function LoginSwagger() {
       schema: {
         example: {
           timestamp: '2026-08-10T12:00:00.000Z',
-          path: '/api/v1/auth/login',
+          path: '/auth/login',
           error: AUTH_ERRORS.USER_INACTIVE,
         },
       },
