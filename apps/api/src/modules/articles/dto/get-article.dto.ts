@@ -23,7 +23,12 @@ export class ArticleIdParam {
  * Workflow positions the list can be narrowed to. Derived from the revision
  * pointers, not from a status column — see `ArticleListItem`.
  */
-export const ARTICLE_STATUS_FILTERS = ['draft', 'review', 'published'] as const;
+export const ARTICLE_STATUS_FILTERS = [
+  'draft',
+  'review',
+  'published',
+  'deleted',
+] as const;
 
 export type ArticleStatusFilter = (typeof ARTICLE_STATUS_FILTERS)[number];
 
@@ -48,9 +53,10 @@ export class ListArticlesQuery {
     enum: ARTICLE_STATUS_FILTERS,
     description:
       '`draft` — never submitted and never published. ' +
-      '`review` — a submitted revision that is not the live one. ' +
+      '`review` — a submitted revision that is not live yet (unpublished, or newer than the live one). ' +
       '`published` — `publishedRevisionId` is set. ' +
-      '`review` and `published` overlap when a live article has a newer revision under review.',
+      '`deleted` — soft-deleted rows only (implies includeDeleted). ' +
+      '`review` and `published` overlap only when a live article has a *newer* revision under review.',
   })
   @IsOptional()
   @IsIn(ARTICLE_STATUS_FILTERS)
@@ -61,6 +67,14 @@ export class ListArticlesQuery {
   @IsString()
   @MaxLength(200)
   q?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by tag name (case-insensitive, exact match)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  tag?: string;
 
   @ApiPropertyOptional({ description: 'Restrict to a single gateway author UUID' })
   @IsOptional()

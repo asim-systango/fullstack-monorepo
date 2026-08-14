@@ -149,23 +149,24 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
 
   @Get('stats')
   @ApiBearerAuth()
-  @Roles(Role.Editor, Role.Admin)
+  @Roles(Role.Author, Role.Editor, Role.Admin)
   @ApiOperation({
-    summary: 'Platform-wide article counts',
+    summary: 'Article counts for the caller',
     description:
-      'Editors and Admins only. Counts the whole table in a single query so a dashboard ' +
-      'never has to sum a paginated list. `total`, `published`, `drafts`, and `pendingReview` ' +
-      'exclude soft-deleted articles; `deleted` counts them on their own. ' +
-      '`published` and `pendingReview` overlap when a live article has a newer revision under review.',
+      'A single aggregate query so dashboards never have to sum a paginated list. ' +
+      'Authors receive only their own articles. Editors and Admins receive the platform. ' +
+      '`total`, `published`, `drafts`, and `pendingReview` exclude soft-deleted articles; ' +
+      '`deleted` counts them on their own. `published` and `pendingReview` overlap when a ' +
+      'live article has a newer revision under review.',
   })
   @ApiOkResponse({
     description:
       'Body fields: `total`, `published`, `drafts`, `pendingReview`, `deleted`.',
   })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED })
-  @ApiForbiddenResponse({ description: 'Author (user) cannot read platform stats' })
-  getArticleStats(): Promise<ArticleStatsResponse> {
-    return this.articlesService.getArticleStats();
+  @ApiForbiddenResponse({ description: FORBIDDEN })
+  getArticleStats(@CurrentUser() user: JwtUser): Promise<ArticleStatsResponse> {
+    return this.articlesService.getArticleStats(user);
   }
 
   @Get('studio')
@@ -175,8 +176,8 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     summary: 'List articles',
     description:
       'Authors see only their own articles. Editors and Admins see every article. ' +
-      'Sorted by `updatedAt DESC`. Optional `status`, `q`, and `authorId` narrow the list, ' +
-      'and `includeDeleted=true` keeps soft-deleted rows for moderation and trash views. ' +
+      'Sorted by `updatedAt DESC`. Optional `status`, `q`, `tag`, and `authorId` narrow the list. ' +
+      '`status=deleted` (or `includeDeleted=true`) keeps soft-deleted rows for trash views. ' +
       '`authorId` is ignored for Authors, who are always scoped to themselves.',
   })
   @ApiOkResponse({ description: 'Paginated article list' })
@@ -338,6 +339,7 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     summary: 'Publish a specific article revision',
     description:
       'Editors (`staff`) and Admins only. Authors (`user`) receive 403. ' +
+      'An Editor cannot publish an article they authored — another Editor or an Admin must. ' +
       'Sets `publishedRevisionId` and `publishedAt` together on the selected revision. ' +
       'Does not copy revision content onto the article. ' +
       'Republishing a different revision moves the public pointer; older revisions remain as history. ' +
@@ -354,7 +356,8 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
   })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED })
   @ApiForbiddenResponse({
-    description: 'Author (user) cannot publish — Editor/Admin only',
+    description:
+      'Author (user) cannot publish; Editor cannot publish an article they authored',
   })
   @ApiNotFoundResponse({
     description:
@@ -363,7 +366,8 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
   publishArticle(
     @Param() params: ArticleIdParam,
     @Body() dto: PublishArticleDto,
+    @CurrentUser() user: JwtUser,
   ): Promise<PublishedArticle> {
-    return this.articlesService.publishArticle(params.id, dto);
+    return this.articlesService.publishArticle(params.id, dto, user);
   }
 }

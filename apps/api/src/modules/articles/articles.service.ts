@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { JwtUser } from '../../common/auth';
 import { Role } from '../../common/enums/role.enum';
 import { ArticlesRepository } from './articles.repository';
@@ -130,7 +135,21 @@ export class ArticlesService {
   async publishArticle(
     articleId: string,
     dto: PublishArticleDto,
+    user: JwtUser,
   ): Promise<PublishedArticle> {
+    const authorId = await this.articlesRepository.findLiveAuthorId(articleId);
+    if (!authorId) {
+      throw new NotFoundException('Article not found');
+    }
+
+    // Four-eyes: an Editor may not make their own article public.
+    // Admins can still publish anyone's work.
+    if (user.role === Role.Editor && user.id === authorId) {
+      throw new ForbiddenException(
+        'You cannot publish an article you authored. Another editor must publish it.',
+      );
+    }
+
     return this.articlesRepository.publishRevision({
       articleId,
       revisionId: dto.revisionId,
@@ -151,7 +170,8 @@ export class ArticlesService {
       limit: query.limit,
       status: query.status,
       search: query.q,
-      includeDeleted: query.includeDeleted,
+      tag: query.tag,
+      includeDeleted: query.includeDeleted || query.status === 'deleted',
     });
 
     return {
@@ -163,9 +183,9 @@ export class ArticlesService {
     };
   }
 
-  /** Platform-wide counts for editor and admin dashboards. */
-  async getArticleStats(): Promise<ArticleStatsResponse> {
-    return this.articlesRepository.countArticlesByState();
+  /** Authors receive their own counts; editors and admins receive the platform. */
+  async getArticleStats(user: JwtUser): Promise<ArticleStatsResponse> {
+    return this.articlesRepository.countArticlesByState(this.ownershipScope(user));
   }
 
   async listStudioArticles(

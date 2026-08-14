@@ -52,6 +52,8 @@ export type ListArticlesInput = {
   status?: ArticleStatusFilter;
   /** Case-insensitive partial title match. */
   search?: string;
+  /** Case-insensitive exact tag name match. */
+  tag?: string;
   /** Keeps soft-deleted rows in the result for moderation and trash views. */
   includeDeleted?: boolean;
 };
@@ -125,8 +127,15 @@ const ARTICLE_STATUS_SQL: Record<ArticleStatusFilter, string> = {
     'article.published_revision_id IS NULL AND article.submitted_revision_id IS NULL',
   review:
     'article.submitted_revision_id IS NOT NULL AND ' +
-    'article.submitted_revision_id IS DISTINCT FROM article.published_revision_id',
+    'article.submitted_revision_id IS DISTINCT FROM article.published_revision_id AND ' +
+    '(article.published_revision_id IS NULL OR (' +
+    '  (SELECT submitted_rev.created_at FROM revisions submitted_rev ' +
+    '    WHERE submitted_rev.id = article.submitted_revision_id) > ' +
+    '  (SELECT published_rev.created_at FROM revisions published_rev ' +
+    '    WHERE published_rev.id = article.published_revision_id)' +
+    '))',
   published: 'article.published_revision_id IS NOT NULL',
+  deleted: 'article.deleted_at IS NOT NULL',
 };
 
 /**
@@ -268,7 +277,10 @@ export class ArticlesRepository {
       .leftJoin('article.revisions', 'revision')
       .addSelect(['revision.id', 'revision.createdAt']);
 
-    if (input.includeDeleted) {
+    if (input.status === 'deleted') {
+      qb.withDeleted();
+      qb.andWhere('article.deletedAt IS NOT NULL');
+    } else if (input.includeDeleted) {
       qb.withDeleted();
     } else {
       qb.andWhere('article.deletedAt IS NULL');
@@ -282,7 +294,21 @@ export class ArticlesRepository {
       qb.andWhere('article.title ILIKE :search', { search: `%${input.search}%` });
     }
 
-    if (input.status) {
+    if (input.tag) {
+      qb.andWhere(
+        `EXISTS (${qb
+          .subQuery()
+          .select('1')
+          .from(ArticleTag, 'filterArticleTag')
+          .innerJoin(Tag, 'filterTag', 'filterTag.id = filterArticleTag.tagId')
+          .where('filterArticleTag.articleId = article.id')
+          .andWhere('LOWER(filterTag.name) = :tag')
+          .getQuery()})`,
+        { tag: input.tag.toLowerCase() },
+      );
+    }
+
+    if (input.status && input.status !== 'deleted') {
       qb.andWhere(`(${ARTICLE_STATUS_SQL[input.status]})`);
     }
 
@@ -331,10 +357,10 @@ export class ArticlesRepository {
    * Counts the whole articles table in one pass so dashboards never derive
    * platform totals from a single page of results.
    */
-  async countArticlesByState(): Promise<ArticleStatsResponse> {
+  async countArticlesByState(authorId?: string): Promise<ArticleStatsResponse> {
     const live = 'article.deleted_at IS NULL';
 
-    const row = await this.articleRepo
+    const qb = this.articleRepo
       .createQueryBuilder('article')
       .withDeleted()
       .select(`COUNT(*) FILTER (WHERE ${live})`, 'total')
@@ -350,8 +376,13 @@ export class ArticlesRepository {
         `COUNT(*) FILTER (WHERE ${live} AND ${ARTICLE_STATUS_SQL.review})`,
         'pendingReview',
       )
-      .addSelect('COUNT(*) FILTER (WHERE article.deleted_at IS NOT NULL)', 'deleted')
-      .getRawOne<Record<keyof ArticleStatsResponse, string>>();
+      .addSelect('COUNT(*) FILTER (WHERE article.deleted_at IS NOT NULL)', 'deleted');
+
+    if (authorId) {
+      qb.andWhere('article.authorId = :authorId', { authorId });
+    }
+
+    const row = await qb.getRawOne<Record<keyof ArticleStatsResponse, string>>();
 
     return {
       total: Number(row?.total ?? 0),
@@ -360,6 +391,14 @@ export class ArticlesRepository {
       pendingReview: Number(row?.pendingReview ?? 0),
       deleted: Number(row?.deleted ?? 0),
     };
+  }
+
+  async findLiveAuthorId(articleId: string): Promise<string | null> {
+    const article = await this.articleRepo.findOne({
+      where: { id: articleId, deletedAt: IsNull() },
+      select: { id: true, authorId: true },
+    });
+    return article?.authorId ?? null;
   }
 
   async findStudioArticleById(
@@ -542,15 +581,29 @@ export class ArticlesRepository {
       }
 
       const publishedAt = new Date();
+      const publishedIsSubmitted = article.submittedRevisionId === revision.id;
+      let submissionIsOlderThanPublish = false;
+      if (article.submittedRevisionId && !publishedIsSubmitted) {
+        const submitted = await manager.findOne(Revision, {
+          where: { id: article.submittedRevisionId, articleId: article.id },
+          select: { id: true, createdAt: true },
+        });
+        submissionIsOlderThanPublish = Boolean(
+          submitted && revision.createdAt >= submitted.createdAt,
+        );
+      }
 
-      // Only the publish pointer moves. The submission pointer is left alone so
-      // the history of what was reviewed stays intact.
+      // Consume the queue item when this publish covers (or outdates) it.
+      // An older republish must not drop a newer revision still waiting in review.
+      const clearSubmission = publishedIsSubmitted || submissionIsOlderThanPublish;
+
       await manager.update(
         Article,
         { id: article.id },
         {
           publishedRevisionId: revision.id,
           publishedAt,
+          ...(clearSubmission ? { submittedRevisionId: null, submittedAt: null } : {}),
         },
       );
 
