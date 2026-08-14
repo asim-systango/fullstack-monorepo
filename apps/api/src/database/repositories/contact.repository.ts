@@ -57,4 +57,8 @@ export class ContactRepository extends Repository<Contact> {
   async findByPhone(phone: string, organizationId: string): Promise<Contact | null> {
     return this.findOne({ where: { phone, organizationId } });
   }
+
+  async updateContact(id: string, data: Partial<Contact>): Promise<void> {
+    await this.update(id, { ...data, updatedAt: Date.now() });
+  }
 }
