@@ -22,7 +22,7 @@ import { ACTIVITIES_ERRORS, ACTIVITIES_MESSAGES } from './constants/activities.c
 
 @ApiTags('Activities')
 @ApiBearerAuth()
-@Controller({ path: 'activities', version: '1' })
+@Controller('api/v1/activities')
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
