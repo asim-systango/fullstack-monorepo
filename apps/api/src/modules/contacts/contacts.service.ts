@@ -1,13 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import { ContactRepository } from '../../database/repositories/contact.repository';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { GetContactsDto } from './dto/get-contacts.dto';
 import { Contact, ContactSource } from '../../database/entities/contact.entity';
 import { User } from '../../database/entities/user.entity';
+import { RoleName } from '../../database/entities/role.entity';
 import { CONTACTS_ERRORS } from './constants/contacts.constants';
 
 @Injectable()
 export class ContactsService {
   constructor(private readonly contactRepository: ContactRepository) {}
+
+  async getContacts(
+    userId: string,
+    userOrganizationId: string,
+    roleName: RoleName,
+    query: GetContactsDto,
+  ) {
+    let orgId = userOrganizationId;
+
+    if (roleName === RoleName.SUPER_ADMIN && query.organizationId) {
+      orgId = query.organizationId;
+    }
+
+    if (!orgId) {
+      throw new Error(CONTACTS_ERRORS.USER_NO_ORG);
+    }
+
+    const { search, source, status, page = 1, limit = 10 } = query;
+
+    const [contacts, total] = await this.contactRepository.getContactsList({
+      orgId,
+      search,
+      source,
+      status,
+      page,
+      limit,
+    });
+
+    return {
+      data: contacts,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 
   async createContact(
     createContactDto: CreateContactDto,
