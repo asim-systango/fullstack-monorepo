@@ -24,7 +24,12 @@ export class AdminController {
     return this.companiesService.suspend(id);
   }
 
-  // Same close transaction as staff close, but skips ownership (admin marketplace oversight).
+  @Post('companies/:id/reactivate')
+  reactivateCompany(@Param('id') id: string) {
+    return this.companiesService.reactivate(id);
+  }
+
+  // Delegates to existing JobsService.forceClose — do not duplicate the transaction here.
   @Post('jobs/:id/force-close')
   forceCloseJob(@Param('id') id: string) {
     return this.jobsService.forceClose(id);

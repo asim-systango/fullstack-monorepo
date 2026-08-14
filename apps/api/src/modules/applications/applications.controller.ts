@@ -1,6 +1,21 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Roles, RolesGuard, type JwtUser } from '../../common/auth';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  Roles,
+  RolesGuard,
+  type JwtUser,
+} from '../../common/auth';
 import { ApplicationsService } from './applications.service';
 import { ApplicationStatus } from './application-status.enum';
 import { CreateApplicationDto } from './dto/create-application.dto';
@@ -28,15 +43,12 @@ export class ApplicationsController {
     return this.applicationsService.findMine(user.id);
   }
 
-  @Roles('user')
-  @Get('my/applications/summary')
-  summaryMine(@CurrentUser() user: JwtUser) {
-    return this.applicationsService.summaryForCandidate(user.id);
-  }
-
   @Roles('staff')
   @Get('company/applications')
-  findForOwner(@CurrentUser() user: JwtUser, @Query('status') status?: ApplicationStatus) {
+  findForOwner(
+    @CurrentUser() user: JwtUser,
+    @Query('status') status?: ApplicationStatus,
+  ) {
     return this.applicationsService.findForOwner(user.id, status);
   }
 

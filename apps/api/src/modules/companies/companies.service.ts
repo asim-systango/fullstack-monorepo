@@ -1,14 +1,23 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from './company.entity';
 import { Repository } from 'typeorm';
 import { CreateCompanyDTO } from './dto/create-company.dto';
+import { JobsService } from '../jobs/jobs.service';
 
 @Injectable()
 export class CompaniesService {
   constructor(
     @InjectRepository(Company)
     private readonly companiesRepo: Repository<Company>,
+    @Inject(forwardRef(() => JobsService))
+    private readonly jobsService: JobsService,
   ) {}
 
   findByUserId(userId: string) {
@@ -46,6 +55,21 @@ export class CompaniesService {
   async suspend(id: string) {
     const company = await this.findByIdOrThrow(id);
     company.suspended = true;
+    await this.companiesRepo.save(company);
+
+    // Force-close every open job this company has, per the doc's suspend behavior.
+    const jobs = await this.jobsService.findAllForOwner(company.id);
+    const openJobs = jobs.filter((job) => job.status === 'open');
+    for (const job of openJobs) {
+      await this.jobsService.forceClose(job.id);
+    }
+
+    return company;
+  }
+
+  async reactivate(id: string) {
+    const company = await this.findByIdOrThrow(id);
+    company.suspended = false;
     return this.companiesRepo.save(company);
   }
 }

@@ -13,10 +13,14 @@ export class DashboardService {
 
   async staffDashboard(userId: string) {
     const company = await this.companiesService.findByUserIdOrThrow(userId);
-    const [applicationsByStatus, openJobCount] = await Promise.all([
+    const [openJobCount, applicationsByStatus] = await Promise.all([
+      this.jobsService.countOpenForOwner(company.id),
       this.applicationsService.summaryForCompany(company.id),
-      this.jobsService.countOpenForCompany(company.id),
     ]);
     return { openJobCount, applicationsByStatus };
+  }
+
+  summaryForCandidate(candidateUserId: string) {
+    return this.applicationsService.summaryForCandidate(candidateUserId);
   }
 }

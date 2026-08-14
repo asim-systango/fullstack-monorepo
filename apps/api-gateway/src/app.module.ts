@@ -31,7 +31,7 @@ const db = databaseConfig();
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // Order matters: authenticate before role checks.
+    // Jwt before Roles so role checks see an authenticated principal (or public skip).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

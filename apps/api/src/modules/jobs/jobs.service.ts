@@ -1,15 +1,15 @@
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
   Inject,
   Injectable,
   NotFoundException,
-  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { ApplicationsService } from '../applications/applications.service';
+import { Repository } from 'typeorm';
 import { CompaniesService } from '../companies/companies.service';
+import { ApplicationsService } from '../applications/applications.service';
 import { Job } from './job.entity';
 import { JobStatus } from './job-status.enum';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -22,8 +22,8 @@ export class JobsService {
     @InjectRepository(Job)
     private readonly jobsRepo: Repository<Job>,
     private readonly companiesService: CompaniesService,
-    private readonly dataSource: DataSource,
-    // forwardRef: Applications.create needs JobsService; close needs ApplicationsService.
+    // forwardRef: Applications needs JobsService (check open status), Jobs needs
+    // ApplicationsService (bulk-reject on close) — genuine circular dependency.
     @Inject(forwardRef(() => ApplicationsService))
     private readonly applicationsService: ApplicationsService,
   ) {}
@@ -54,8 +54,14 @@ export class JobsService {
 
   async findOnePublic(id: string) {
     const job = await this.jobsRepo.findOne({ where: { id }, relations: ['company'] });
-    if (!job || job.company.suspended) {
-      throw new NotFoundException('Job not found');
+    if (!job) throw new NotFoundException('Job not found');
+    return job;
+  }
+
+  async findOpenOrThrow(id: string) {
+    const job = await this.findOnePublic(id);
+    if (job.status !== JobStatus.OPEN) {
+      throw new BadRequestException('This job is not accepting applications');
     }
     return job;
   }
@@ -73,8 +79,12 @@ export class JobsService {
     return this.jobsRepo.find({
       where: { companyId },
       order: { createdAt: 'DESC' },
-      withDeleted: true, // owner can see their own history, including soft-deleted
+      withDeleted: true,
     });
+  }
+
+  async countOpenForOwner(companyId: string) {
+    return this.jobsRepo.count({ where: { companyId, status: JobStatus.OPEN } });
   }
 
   async create(userId: string, dto: CreateJobDto) {
@@ -94,48 +104,26 @@ export class JobsService {
   }
 
   async remove(id: string, userId: string) {
-    await this.findOwnedByUser(id, userId); // throws if not found / not owner
+    await this.findOwnedByUser(id, userId);
     await this.jobsRepo.softDelete(id);
     return { ok: true };
   }
 
-  async findOpenOrThrow(id: string) {
-    const job = await this.findOnePublic(id); // throws 404 if missing/soft-deleted/suspended
-    if (job.status !== JobStatus.OPEN) {
-      throw new BadRequestException('This job is not accepting applications');
-    }
-    return job;
+  private async runCloseTransaction(jobId: string) {
+    return this.jobsRepo.manager.transaction(async (manager) => {
+      await manager.update(Job, jobId, { status: JobStatus.CLOSED });
+      await this.applicationsService.rejectOpenForJob(jobId, manager);
+      return manager.findOneOrFail(Job, { where: { id: jobId } });
+    });
   }
 
-  async closeOwned(id: string, userId: string) {
-    const job = await this.findOwnedByUser(id, userId);
-    return this.closeJobInTransaction(job);
+  async close(id: string, userId: string) {
+    await this.findOwnedByUser(id, userId);
+    return this.runCloseTransaction(id);
   }
 
-  // Admin force-close: same transactional write, no ownership check.
   async forceClose(id: string) {
-    const job = await this.jobsRepo.findOne({ where: { id }, relations: ['company'] });
-    if (!job) throw new NotFoundException('Job not found');
-    return this.closeJobInTransaction(job);
-  }
-
-  private async closeJobInTransaction(job: Job) {
-    if (job.status === JobStatus.CLOSED) {
-      throw new BadRequestException('Job is already closed');
-    }
-
-    // Real transaction so job.status + application rejects commit or roll back together.
-    return this.dataSource.transaction(async (manager) => {
-      job.status = JobStatus.CLOSED;
-      const closed = await manager.save(job);
-      await this.applicationsService.rejectOpenForJob(job.id, manager);
-      return closed;
-    });
-  }
-
-  countOpenForCompany(companyId: string) {
-    return this.jobsRepo.count({
-      where: { companyId, status: JobStatus.OPEN },
-    });
+    await this.findOnePublic(id);
+    return this.runCloseTransaction(id);
   }
 }

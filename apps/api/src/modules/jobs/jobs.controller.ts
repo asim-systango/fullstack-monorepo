@@ -1,6 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Public, Roles, RolesGuard, type JwtUser } from '../../common/auth';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  Public,
+  Roles,
+  RolesGuard,
+  type JwtUser,
+} from '../../common/auth';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
@@ -13,8 +30,8 @@ import { CompaniesService } from '../companies/companies.service';
 export class JobsController {
   constructor(
     private readonly jobsService: JobsService,
-    private readonly companiesService: CompaniesService
-) {}
+    private readonly companiesService: CompaniesService,
+  ) {}
 
   @Public()
   @Get('jobs')
@@ -43,7 +60,11 @@ export class JobsController {
 
   @Roles('staff')
   @Patch('jobs/:id')
-  update(@Param('id') id: string, @CurrentUser() user: JwtUser, @Body() dto: UpdateJobDto) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUser,
+    @Body() dto: UpdateJobDto,
+  ) {
     return this.jobsService.update(id, user.id, dto);
   }
 
@@ -53,10 +74,10 @@ export class JobsController {
     return this.jobsService.remove(id, user.id);
   }
 
-  // Atomic close: job → closed + open applications → rejected (see JobsService.closeOwned).
+  // Atomic close: job → closed + open applications → rejected (see JobsService.close).
   @Roles('staff')
   @Post('jobs/:id/close')
   close(@Param('id') id: string, @CurrentUser() user: JwtUser) {
-    return this.jobsService.closeOwned(id, user.id);
+    return this.jobsService.close(id, user.id);
   }
 }
