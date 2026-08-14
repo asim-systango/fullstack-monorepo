@@ -1,7 +1,8 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { SearchIcon } from './icons';
 import { pageGutter } from './page-gutter';
 import { AuthHeaderActions } from './auth-header-actions';
+import { HeaderSearch } from './header-search';
 
 export function SiteHeader() {
   return (
@@ -14,16 +15,15 @@ export function SiteHeader() {
           Wordnest
         </Link>
 
-        <label className="relative hidden min-w-0 flex-1 max-w-lg sm:block">
-          <span className="sr-only">Search</span>
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            name="q"
-            placeholder="Search"
-            className="h-11 w-full rounded-pill border-0 bg-surface-muted pr-4 pl-10 text-[0.9375rem] text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-border-strong"
-          />
-        </label>
+        <Suspense
+          fallback={
+            <div className="hidden min-w-0 flex-1 max-w-lg sm:block">
+              <div className="h-11 rounded-pill bg-surface-muted" />
+            </div>
+          }
+        >
+          <HeaderSearch />
+        </Suspense>
 
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
           <AuthHeaderActions />
