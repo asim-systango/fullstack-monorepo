@@ -3,6 +3,8 @@ import { DealRepository } from '../../database/repositories/deal.repository';
 import { LeadRepository } from '../../database/repositories/lead.repository';
 import { UserRepository } from '../../database/repositories/user.repository';
 import { CreateDealDto } from './dto/create-deal.dto';
+import { UpdateDealDto } from './dto/update-deal.dto';
+import { UpdateDealStageDto } from './dto/update-deal-stage.dto';
 import { Deal, DealStage } from '../../database/entities/deal.entity';
 import { LeadStage } from '../../database/entities/lead.entity';
 import { User } from '../../database/entities/user.entity';
@@ -94,5 +96,73 @@ export class DealsService {
     const ownerId = userRole === 'SALES_REP' ? currentUser.id : undefined;
 
     return this.dealRepository.findAllDeals(orgId, ownerId);
+  }
+
+  async updateDeal(
+    id: string,
+    updateDealDto: UpdateDealDto,
+    currentUser: User,
+  ): Promise<Deal> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(DEALS_ERRORS.USER_NO_ORG);
+    }
+
+    const deal = await this.dealRepository.findById(id);
+    if (!deal || deal.organizationId !== orgId) {
+      throw new Error(DEALS_ERRORS.DEAL_NOT_FOUND);
+    }
+
+    // Owner checks if necessary. But update:deals is only given to admins and sales leads, who can update any deal.
+
+    if (updateDealDto.ownerId) {
+      const owner = await this.userRepository.findById(updateDealDto.ownerId);
+      if (!owner || owner.organizationId !== orgId) {
+        throw new Error(DEALS_ERRORS.OWNER_NOT_FOUND);
+      }
+    }
+
+    await this.dealRepository.updateDeal(id, updateDealDto);
+    return (await this.dealRepository.findById(id))!;
+  }
+
+  async updateDealStage(
+    id: string,
+    updateDealStageDto: UpdateDealStageDto,
+    currentUser: User,
+    userRole: string,
+  ): Promise<Deal> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(DEALS_ERRORS.USER_NO_ORG);
+    }
+
+    const deal = await this.dealRepository.findById(id);
+    if (!deal || deal.organizationId !== orgId) {
+      throw new Error(DEALS_ERRORS.DEAL_NOT_FOUND);
+    }
+
+    // If SALES_REP, must own the deal
+    if (userRole === 'SALES_REP' && deal.ownerId !== currentUser.id) {
+      throw new Error(DEALS_ERRORS.UNAUTHORIZED_ACCESS);
+    }
+
+    const updateData: Partial<Deal> = { stage: updateDealStageDto.stage };
+
+    // Update wonAt/lostAt metrics automatically based on stage
+    const now = Date.now();
+    if (updateDealStageDto.stage === DealStage.WON) {
+      updateData.wonAt = now;
+      updateData.lostAt = undefined;
+    } else if (updateDealStageDto.stage === DealStage.LOST) {
+      updateData.lostAt = now;
+      updateData.wonAt = undefined;
+    } else {
+      updateData.wonAt = undefined;
+      updateData.lostAt = undefined;
+    }
+
+    await this.dealRepository.updateDeal(id, updateData);
+    return (await this.dealRepository.findById(id))!;
   }
 }

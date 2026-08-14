@@ -3,12 +3,15 @@ export const DEALS_ERRORS = {
   LEAD_NOT_FOUND: 'Lead not found or does not belong to your organization',
   CONTACT_NOT_FOUND: 'Contact not found or does not belong to your organization',
   OWNER_NOT_FOUND: 'Assigned owner not found or does not belong to your organization',
-  UNAUTHORIZED_ACCESS: 'You are not authorized to convert this lead or assign deals',
+  UNAUTHORIZED_ACCESS: 'You are not authorized to perform this action',
   LEAD_ALREADY_CONVERTED: 'Lead has already been converted to a deal',
+  DEAL_NOT_FOUND: 'Deal not found or does not belong to your organization',
   UNEXPECTED_ERROR: 'An unexpected error occurred during deal processing.',
 } as const;
 
 export const DEALS_MESSAGES = {
   DEAL_CREATED: 'Deal created successfully.',
   DEALS_RETRIEVED: 'Deals retrieved successfully.',
+  DEAL_UPDATED: 'Deal details updated successfully.',
+  DEAL_STAGE_UPDATED: 'Deal stage updated successfully.',
 } as const;
