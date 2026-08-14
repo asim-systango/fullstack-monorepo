@@ -8,6 +8,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { UsersModule } from './modules/users/users.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { LeadsModule } from './modules/leads/leads.module';
+import { DealsModule } from './modules/deals/deals.module';
 
 /**
  * Internal domain API — DatabaseModule, MailModule, OrganizationModule, AuthModule, FormsModule, DashboardModule.
@@ -23,6 +24,7 @@ import { LeadsModule } from './modules/leads/leads.module';
     UsersModule,
     ContactsModule,
     LeadsModule,
+    DealsModule,
   ],
 })
 export class AppModule {}
