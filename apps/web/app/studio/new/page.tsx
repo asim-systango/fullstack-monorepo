@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { StudioGuard } from '@/components/auth/route-guard';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { StoryEditor } from '@/components/studio/story-editor';
+import {
+  createParagraphBlock,
+  toArticleContent,
+  type StoryBlock,
+} from '@/components/studio/story-blocks';
+import { TagPicker } from '@/components/studio/tag-picker';
 import { Button, Input } from '@/components/ui';
 import { ApiClientError } from '@/lib/api';
 import { useCreateArticle } from '@/hooks/use-studio';
@@ -29,20 +36,28 @@ function CreateArticleContent() {
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [body, setBody] = useState('');
+  const [blocks, setBlocks] = useState<StoryBlock[]>(() => [createParagraphBlock()]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: { preventDefault(): void }) {
     event.preventDefault();
     setError(null);
 
+    const content = toArticleContent(blocks);
+    if (content.length === 0) {
+      setError('Add some content before saving this revision.');
+      return;
+    }
+
     try {
-      const article = await createMutation.mutateAsync({
+      await createMutation.mutateAsync({
         title: title.trim(),
         slug: slug.trim() || slugify(title),
-        body: body.trim(),
+        content,
+        ...(tagIds.length > 0 ? { tagIds } : {}),
       });
-      router.push(`/studio/${article.id}`);
+      router.push('/studio');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Could not create article.');
     }
@@ -54,8 +69,31 @@ function CreateArticleContent() {
       subtitle="Save a draft revision. Editors publish when ready."
       role="user"
       navItems={STUDIO_NAV}
+      actions={
+        <>
+          <Link
+            href="/studio"
+            className="inline-flex h-10 items-center px-4 text-sm text-muted-foreground no-underline hover:text-foreground hover:underline"
+          >
+            Cancel
+          </Link>
+          <Button
+            type="submit"
+            form="create-article-form"
+            variant="primary"
+            loading={createMutation.isPending}
+          >
+            Save Draft
+          </Button>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
+      {/* id lets the Save Draft button in the page header submit this form */}
+      <form
+        id="create-article-form"
+        onSubmit={handleSubmit}
+        className="max-w-2xl space-y-4"
+      >
         <Input
           label="Title"
           name="title"
@@ -74,20 +112,25 @@ function CreateArticleContent() {
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
         />
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="body" className="text-sm font-medium text-foreground">
-            Body
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            required
-            rows={14}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-border-strong"
-            placeholder="Write your article in markdown…"
-          />
+
+        <TagPicker
+          selectedIds={tagIds}
+          onChange={setTagIds}
+          disabled={createMutation.isPending}
+        />
+
+        <div className="flex flex-col gap-1.5 pt-2">
+          <p className="text-sm font-medium text-foreground">Story</p>
+          <p className="text-xs text-muted-foreground">
+            Use the + button to add text, headings, images, video, or code.
+          </p>
+          <div className="mt-2">
+            <StoryEditor
+              blocks={blocks}
+              onBlocksChange={setBlocks}
+              disabled={createMutation.isPending}
+            />
+          </div>
         </div>
 
         {error ? (
@@ -95,18 +138,6 @@ function CreateArticleContent() {
             {error}
           </p>
         ) : null}
-
-        <div className="flex gap-3 pt-2">
-          <Button type="submit" variant="primary" loading={createMutation.isPending}>
-            Save Revision
-          </Button>
-          <Link
-            href="/studio"
-            className="inline-flex h-10 items-center px-4 text-sm underline"
-          >
-            Cancel
-          </Link>
-        </div>
       </form>
     </DashboardShell>
   );
