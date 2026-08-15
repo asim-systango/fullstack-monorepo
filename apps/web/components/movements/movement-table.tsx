@@ -19,6 +19,7 @@ import { useAuth } from '@/components/auth';
 import { TableSkeleton } from '@/components/layout/page-skeleton';
 import { useMovements, type MovementType } from '@/lib/hooks/use-movements';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
+import { ProductImage } from '@/components/products/product-image';
 
 export function MovementTable() {
   const { user } = useAuth();
@@ -293,11 +294,20 @@ export function MovementTable() {
                       {getMovementBadge(m.type, m.reason)}
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="font-bold text-foreground text-sm">
-                        {m.product?.name || 'Product'}
-                      </div>
-                      <div className="text-xs font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded w-fit mt-0.5">
-                        {m.product?.sku || m.productId}
+                      <div className="flex items-center gap-3">
+                        <ProductImage
+                          src={m.product?.imageUrl}
+                          alt={m.product?.name || 'Product'}
+                          size="table"
+                        />
+                        <div>
+                          <div className="font-bold text-foreground text-sm">
+                            {m.product?.name || 'Product'}
+                          </div>
+                          <div className="text-xs font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                            {m.product?.sku || m.productId}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="py-3">

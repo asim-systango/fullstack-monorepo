@@ -16,4 +16,8 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   unit?: string;
+
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
 }

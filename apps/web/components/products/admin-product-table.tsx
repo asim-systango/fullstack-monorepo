@@ -14,6 +14,7 @@ import {
   Pagination,
 } from '@shared/ui';
 import { TableSkeleton } from '@/components/layout/page-skeleton';
+import { ProductImage } from './product-image';
 import type { Product } from '@/lib/hooks/use-products';
 
 type AdminProductTableProps = {
@@ -83,29 +84,36 @@ export function AdminProductTable({
             return (
               <TableRow key={product.id} className="hover:bg-muted/40 transition-colors">
                 <TableCell>
-                  <span className="font-mono text-xs font-semibold text-foreground">
+                  <span className="font-mono text-xs font-bold text-[#4747A1] dark:text-[#7DA0FA]">
                     {product.sku}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div>
-                    <Link
-                      href={`/products/${product.id}`}
-                      className="font-semibold text-foreground hover:text-primary hover:underline transition-colors"
-                    >
-                      {product.name}
-                    </Link>
-                    {product.description && (
-                      <div className="text-xs text-muted-foreground line-clamp-1 max-w-xs">
-                        {product.description}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <ProductImage
+                      src={product.imageUrl}
+                      alt={product.name}
+                      size="table"
+                    />
+                    <div className="min-w-0">
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="font-bold text-sm text-foreground hover:text-[#4747A1] dark:hover:text-[#7DA0FA] hover:underline transition-colors block truncate"
+                      >
+                        {product.name}
+                      </Link>
+                      {product.description && (
+                        <div className="text-xs text-muted-foreground line-clamp-1 max-w-md">
+                          {product.description}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   {product.category?.name ? (
-                    <span className="text-xs font-medium text-foreground">
-                      {product.category.name}
+                    <span className="text-xs font-semibold text-foreground">
+                      🏷️ {product.category.name}
                     </span>
                   ) : (
                     <span className="text-xs text-muted-foreground italic">

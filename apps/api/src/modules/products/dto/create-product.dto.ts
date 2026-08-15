@@ -41,6 +41,10 @@ export class CreateProductDto {
   @IsOptional()
   unit?: string;
 
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => InitialStockItemDto)

@@ -25,6 +25,7 @@ import {
   EmptyState,
 } from '@shared/ui';
 import { toast } from '@/components/ui/toast';
+import { ProductImage } from '@/components/products/product-image';
 import { useProduct, useUpdateProduct } from '@/lib/hooks/use-products';
 import { useCategories } from '@/lib/hooks/use-categories';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
@@ -62,6 +63,7 @@ export default function ProductDetailPage({
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
 
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
@@ -78,6 +80,7 @@ export default function ProductDetailPage({
       setCategoryId(product.categoryId || '');
       setDescription(product.description || '');
       setUnit(product.unit || 'pcs');
+      setImageUrl(product.imageUrl || '');
       setLowStockThreshold(product.lowStockThreshold ?? 5);
     }
   }, [product]);
@@ -99,6 +102,7 @@ export default function ProductDetailPage({
       setCategoryId(product.categoryId || '');
       setDescription(product.description || '');
       setUnit(product.unit || 'pcs');
+      setImageUrl(product.imageUrl || '');
       setLowStockThreshold(product.lowStockThreshold ?? 5);
     }
     setFeedbackMessage(null);
@@ -122,6 +126,7 @@ export default function ProductDetailPage({
           categoryId: categoryId || undefined,
           description: description.trim() || undefined,
           unit: unit.trim() || 'pcs',
+          imageUrl: imageUrl.trim() || undefined,
           lowStockThreshold: Number(lowStockThreshold),
         },
       });
@@ -254,7 +259,59 @@ export default function ProductDetailPage({
         <StatusMessage tone={feedbackMessage.tone}>{feedbackMessage.text}</StatusMessage>
       )}
 
-      {/* Product Details Form Card (Structured cleanly one below the other) */}
+      {/* Product Hero Header with Uniform Image Display */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 rounded-2xl border-2 border-[#7DA0FA]/30 bg-card shadow-xs">
+        <ProductImage
+          src={product.imageUrl}
+          alt={product.name}
+          size="detail"
+          className="border-2 border-[#7DA0FA]/40 shadow-sm"
+        />
+        <div className="space-y-3 flex-1 min-w-0 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <span className="text-xs font-semibold text-foreground bg-muted/60 px-2.5 py-1 rounded-lg">
+              🏷️ {product.category?.name || 'Unassigned Category'}
+            </span>
+            <span className="font-mono text-xs font-bold text-[#4747A1] dark:text-[#7DA0FA] bg-[#4747A1]/10 px-2.5 py-1 rounded-lg">
+              {product.sku}
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            {product.name}
+          </h1>
+          {product.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+              {product.description}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-6 pt-2">
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                Total Stock Units
+              </div>
+              <div className="text-2xl font-mono font-black text-foreground">
+                {totalQuantity.toLocaleString()}{' '}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {product.unit || 'pcs'}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                Alert Threshold
+              </div>
+              <div className="text-2xl font-mono font-black text-foreground">
+                ≤ {threshold}{' '}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {product.unit || 'pcs'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Product Details Form Card */}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -294,7 +351,25 @@ export default function ProductDetailPage({
               />
             </Field>
 
-            {/* Field 3: Category */}
+            {/* Field 3: Image URL & Preview */}
+            <Field label="Product Image URL" hint="Direct link to hosted product picture">
+              <div className="flex items-center gap-3">
+                <TextInput
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1"
+                />
+                <ProductImage
+                  src={imageUrl}
+                  alt={name || 'Product Image Preview'}
+                  size="table"
+                />
+              </div>
+            </Field>
+
+            {/* Field 4: Category */}
             <Field label="Category" required hint="Product category classification">
               <Select
                 value={categoryId}
@@ -313,7 +388,7 @@ export default function ProductDetailPage({
               </Select>
             </Field>
 
-            {/* Field 4: Description */}
+            {/* Field 5: Description */}
             <Field
               label="Description"
               hint="Technical specifications or item description"
@@ -327,7 +402,7 @@ export default function ProductDetailPage({
               />
             </Field>
 
-            {/* Field 5: Unit of Measure */}
+            {/* Field 6: Unit of Measure */}
             <Field label="Unit of Measure" hint="Packaging unit e.g. pcs, kg, box">
               <TextInput
                 value={unit}
@@ -337,7 +412,7 @@ export default function ProductDetailPage({
               />
             </Field>
 
-            {/* Field 6: Low Stock Threshold */}
+            {/* Field 7: Low Stock Threshold */}
             <Field
               label="Low Stock Threshold"
               hint="Minimum inventory count before low-stock alert triggers"

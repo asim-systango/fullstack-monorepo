@@ -239,8 +239,18 @@ async function seed() {
     },
   ];
 
+  const SAMPLE_IMAGE_URLS = [
+    'https://fastly.picsum.photos/id/237/200/300.jpg?hmac=TmmQSbShHz9CdQm0NkEjx1Dyh_Y984R9LpNrpvH2D_U',
+    'https://fastly.picsum.photos/id/30/1280/901.jpg?hmac=A_hpFyEavMBB7Dsmmp53kPXKmatwM05MUDatlWSgATE',
+    'https://fastly.picsum.photos/id/89/4608/2592.jpg?hmac=G9E4z5RMJgMUjgTzeR4CFlORjvogsGtqFQozIRqugBk',
+    'https://fastly.picsum.photos/id/84/1280/848.jpg?hmac=YFRYDI4UsfbeTzI8ZakNOR98wVU7a-9a2tGF542539s',
+    'https://fastly.picsum.photos/id/96/4752/3168.jpg?hmac=KNXudB1q84CHl2opIFEY4ph12da5JD5GzKzH5SeuRVM',
+    'https://fastly.picsum.photos/id/119/3264/2176.jpg?hmac=PYRYBOGQhlUm6wS94EkpN8dTIC7-2GniC3pqOt6CpNU',
+  ];
+
   const productMap = new Map<string, ProductEntity>();
-  for (const p of productsData) {
+  for (const [idx, p] of productsData.entries()) {
+    const imgUrl = SAMPLE_IMAGE_URLS[idx % SAMPLE_IMAGE_URLS.length];
     let existing = await productRepo.findOne({ where: { sku: p.sku } });
     const category = categoryMap.get(p.category);
     if (!existing && category) {
@@ -251,8 +261,12 @@ async function seed() {
           categoryId: category.id,
           description: p.description,
           unit: p.unit,
+          imageUrl: imgUrl,
         }),
       );
+    } else if (existing) {
+      existing.imageUrl = imgUrl;
+      existing = await productRepo.save(existing);
     }
     if (existing) {
       productMap.set(p.sku, existing);

@@ -32,6 +32,9 @@ export class ProductEntity {
   @Column({ type: 'varchar', default: 'pcs', nullable: false })
   unit!: string;
 
+  @Column({ name: 'image_url', type: 'text', nullable: true })
+  imageUrl?: string;
+
   @Column({ name: 'is_deleted', type: 'boolean', default: false, nullable: false })
   isDeleted!: boolean;
 

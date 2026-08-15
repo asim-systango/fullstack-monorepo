@@ -25,6 +25,7 @@ import { useWarehouses } from '@/lib/hooks/use-warehouses';
 import { useProducts, type Product } from '@/lib/hooks/use-products';
 import { useTransfers, useCreateTransfer } from '@/lib/hooks/use-transfers';
 import { type StockMovement } from '@/lib/hooks/use-movements';
+import { ProductImage } from '@/components/products/product-image';
 
 function getSourceFacilityName(t: StockMovement): string {
   if (t.sourceWarehouse?.name) {
@@ -310,27 +311,47 @@ export default function TransfersPage() {
 
             {/* Live Available Stock Banner */}
             {sourceWarehouseId && productId && sourceAvailableStock !== null && (
-              <div className="rounded-xl border-2 border-[#7978E9]/40 bg-[#7DA0FA]/10 p-4 flex items-center justify-between gap-3 shadow-2xs">
-                <div className="space-y-0.5">
-                  <div className="font-black text-[#4747A1] text-sm">
-                    Source Stock Level
-                  </div>
-                  <div className="text-xs text-slate-600 font-semibold">
-                    Product: {selectedProduct?.name} [{selectedProduct?.sku}]
+              <div className="rounded-2xl border-2 border-[#7978E9]/40 bg-[#7DA0FA]/10 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-center gap-4 min-w-0 w-full sm:w-auto">
+                  <ProductImage
+                    src={selectedProduct?.imageUrl}
+                    alt={selectedProduct?.name || 'Product'}
+                    size="preview"
+                    className="border-2 border-[#7DA0FA]/50 shadow-2xs"
+                  />
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-black text-base text-[#4747A1] truncate">
+                        {selectedProduct?.name}
+                      </span>
+                      <span className="font-mono text-xs font-black text-[#4747A1] bg-white px-2.5 py-0.5 rounded border border-[#7DA0FA]">
+                        {selectedProduct?.sku}
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-600">
+                      🏷️ {selectedProduct?.category?.name || 'Inventory Item'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-black text-[#4747A1]">
-                    {sourceAvailableStock}{' '}
-                    <span className="text-xs font-bold text-slate-600">
-                      {selectedProduct?.unit || 'pcs'}
-                    </span>
-                  </span>
+
+                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-[#7DA0FA]/30">
+                  <div className="text-left sm:text-right">
+                    <div className="text-[11px] font-black text-[#4747A1] uppercase tracking-wider">
+                      Source Stock Level
+                    </div>
+                    <div className="text-2xl font-black text-[#4747A1]">
+                      {sourceAvailableStock}{' '}
+                      <span className="text-xs font-bold text-slate-600">
+                        {selectedProduct?.unit || 'pcs'}
+                      </span>
+                    </div>
+                  </div>
                   <Badge
                     tone={getStockBadgeTone(
                       sourceAvailableStock,
                       selectedProduct?.lowStockThreshold ?? 5,
                     )}
+                    className="px-3.5 py-1.5 font-black text-xs uppercase tracking-wider shadow-2xs"
                   >
                     {getTransferStockStatusText(
                       sourceAvailableStock,
@@ -424,11 +445,20 @@ export default function TransfersPage() {
                       {formatDate(t.createdAt)}
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="font-bold text-foreground text-sm">
-                        {t.product?.name || 'Product'}
-                      </div>
-                      <div className="text-xs font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded w-fit mt-0.5">
-                        {t.product?.sku}
+                      <div className="flex items-center gap-3">
+                        <ProductImage
+                          src={t.product?.imageUrl}
+                          alt={t.product?.name || 'Product'}
+                          size="table"
+                        />
+                        <div>
+                          <div className="font-bold text-foreground text-sm">
+                            {t.product?.name || 'Product'}
+                          </div>
+                          <div className="text-xs font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                            {t.product?.sku}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm font-semibold text-foreground py-3">

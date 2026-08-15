@@ -46,6 +46,7 @@ export class ProductRepository {
     categoryId: string;
     description?: string;
     unit?: string;
+    imageUrl?: string;
   }): Promise<ProductEntity> {
     const product = this.repo.create({
       sku: data.sku.toUpperCase(),
@@ -53,13 +54,16 @@ export class ProductRepository {
       categoryId: data.categoryId,
       description: data.description,
       unit: data.unit ?? 'pcs',
+      imageUrl: data.imageUrl,
     });
     return this.repo.save(product);
   }
 
   async update(
     id: string,
-    data: Partial<Pick<ProductEntity, 'name' | 'description' | 'unit' | 'categoryId'>>,
+    data: Partial<
+      Pick<ProductEntity, 'name' | 'description' | 'unit' | 'categoryId' | 'imageUrl'>
+    >,
   ): Promise<ProductEntity | null> {
     await this.repo.update(id, data);
     return this.findById(id);

@@ -39,6 +39,7 @@ export class ProductsService {
       categoryId: string;
       description?: string;
       unit?: string;
+      imageUrl?: string;
       initialStock?: { warehouseId: string; quantity: number }[];
     },
     user?: { id?: string; sub?: string; role?: string; warehouseId?: string | null },
@@ -61,6 +62,7 @@ export class ProductsService {
       categoryId: data.categoryId,
       description: data.description,
       unit: data.unit,
+      imageUrl: data.imageUrl,
     });
 
     if (data.initialStock && data.initialStock.length > 0) {
@@ -98,7 +100,9 @@ export class ProductsService {
 
   async updateProduct(
     id: string,
-    data: Partial<Pick<ProductEntity, 'name' | 'description' | 'unit' | 'categoryId'>>,
+    data: Partial<
+      Pick<ProductEntity, 'name' | 'description' | 'unit' | 'categoryId' | 'imageUrl'>
+    >,
   ): Promise<ProductWithTotalStock> {
     await this.getProductById(id);
     if (data.categoryId) {

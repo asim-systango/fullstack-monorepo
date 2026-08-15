@@ -74,6 +74,7 @@ export function Toaster() {
   const currentToasts = useSyncExternalStore(
     toastStore.subscribe,
     toastStore.getSnapshot,
+    () => [] as ToastItem[], // server snapshot — always empty
   );
 
   return (

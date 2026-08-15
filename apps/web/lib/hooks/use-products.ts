@@ -22,6 +22,7 @@ export type Product = {
   name: string;
   description?: string;
   unit: string;
+  imageUrl?: string;
   lowStockThreshold: number;
   isDeleted: boolean;
   categoryId?: string;
@@ -46,6 +47,7 @@ export type CreateProductInput = {
   name: string;
   description?: string;
   unit?: string;
+  imageUrl?: string;
   lowStockThreshold?: number;
   categoryId: string;
   initialStock?: InitialStockInput[];

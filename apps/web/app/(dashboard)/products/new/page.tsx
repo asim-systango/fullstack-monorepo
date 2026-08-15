@@ -10,6 +10,7 @@ import { useCategories } from '@/lib/hooks/use-categories';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
 import { useCreateProduct, type InitialStockInput } from '@/lib/hooks/use-products';
 import { toast } from '@/components/ui/toast';
+import { ProductImage } from '@/components/products/product-image';
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function NewProductPage() {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [unit, setUnit] = useState('pcs');
+  const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
 
   // Initial Stock State
@@ -122,6 +124,7 @@ export default function NewProductPage() {
         name: trimmedName,
         categoryId: selectedCatId,
         unit: unit.trim() || 'pcs',
+        imageUrl: imageUrl.trim() || undefined,
         description: description.trim() || undefined,
         initialStock: initialStock.length > 0 ? initialStock : undefined,
       });
@@ -268,8 +271,30 @@ export default function NewProductPage() {
               </Select>
             </Field>
 
+            {/* Product Image URL with Live Thumbnail Preview */}
+            <Field
+              label="Product Image URL"
+              htmlFor="productImageUrl"
+              hint="Direct link to hosted product picture"
+            >
+              <div className="flex items-center gap-3">
+                <TextInput
+                  id="productImageUrl"
+                  placeholder="https://example.com/photo.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="text-sm flex-1"
+                />
+                <ProductImage
+                  src={imageUrl}
+                  alt={name || 'Product Image Preview'}
+                  size="table"
+                />
+              </div>
+            </Field>
+
             {/* Description (Span 2 cols on lg) */}
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-3">
               <Field label="Description / Specification" htmlFor="productDescription">
                 <TextInput
                   id="productDescription"
