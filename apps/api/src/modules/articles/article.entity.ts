@@ -18,8 +18,9 @@ import { Revision } from './revision.entity';
 
 /**
  * CMS article aggregate. Publication is derived from `publishedRevisionId`
- * (not a boolean flag) and review submission from `submittedRevisionId`; the two
- * pointers are independent and neither implies the other. Soft-delete via `deletedAt`.
+ * (not a boolean flag), review from `submittedRevisionId`, and delayed publish
+ * from `scheduledRevisionId`. The three pointers are independent; only
+ * `publishedRevisionId` makes an article public. Soft-delete via `deletedAt`.
  *
  * `authorId` is an opaque gateway user UUID — no local User FK.
  */
@@ -31,6 +32,10 @@ import { Revision } from './revision.entity';
 @Check(
   'CHK_articles_submitted_pair',
   `(("submitted_revision_id" IS NULL AND "submitted_at" IS NULL) OR ("submitted_revision_id" IS NOT NULL AND "submitted_at" IS NOT NULL))`,
+)
+@Check(
+  'CHK_articles_scheduled_pair',
+  `(("scheduled_revision_id" IS NULL AND "scheduled_at" IS NULL) OR ("scheduled_revision_id" IS NOT NULL AND "scheduled_at" IS NOT NULL))`,
 )
 @Index('IDX_articles_author_id', ['authorId'])
 @Index('IDX_articles_published_revision_id', ['publishedRevisionId'])
@@ -45,6 +50,9 @@ import { Revision } from './revision.entity';
 @Index('IDX_articles_review_queue', ['submittedAt'], {
   where:
     '"submitted_revision_id" IS NOT NULL AND "submitted_revision_id" IS DISTINCT FROM "published_revision_id" AND "deleted_at" IS NULL',
+})
+@Index('IDX_articles_scheduled_due', ['scheduledAt'], {
+  where: '"scheduled_revision_id" IS NOT NULL AND "deleted_at" IS NULL',
 })
 export class Article {
   @PrimaryGeneratedColumn('uuid')
@@ -100,6 +108,20 @@ export class Article {
 
   @Column({ name: 'submitted_at', type: 'timestamptz', nullable: true })
   submittedAt!: Date | null;
+
+  /**
+   * Future publish of an existing revision. Does not make the article public.
+   * Cleared in the same UPDATE that sets `publishedRevisionId` / `publishedAt`.
+   */
+  @Column({ name: 'scheduled_revision_id', type: 'uuid', nullable: true })
+  scheduledRevisionId!: string | null;
+
+  @ManyToOne(() => Revision, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'scheduled_revision_id' })
+  scheduledRevision!: Revision | null;
+
+  @Column({ name: 'scheduled_at', type: 'timestamptz', nullable: true })
+  scheduledAt!: Date | null;
 
   @OneToMany(() => Revision, (revision) => revision.article)
   revisions!: Revision[];
