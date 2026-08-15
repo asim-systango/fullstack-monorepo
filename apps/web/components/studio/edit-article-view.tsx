@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Button, ConfirmDialog, Input } from '@/components/ui';
 import { ApiClientError } from '@/lib/api';
@@ -141,20 +141,21 @@ export function EditArticleView({
   const [status, setStatus] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  // TipTap only reads `blocks` on mount, so wait until the latest revision is in state.
+  const [loadedArticleId, setLoadedArticleId] = useState<string | null>(null);
 
   // Hydrate once per article so refetching after a save never discards live edits.
-  const hydratedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!article || hydratedFor.current === article.id) return;
+    if (!article || loadedArticleId === article.id) return;
 
-    hydratedFor.current = article.id;
     setTitle(article.title);
     setSlug(article.slug);
     setTagIds(article.tags.map((tag) => tag.id));
 
     const latest = getLatestRevision(article);
     setBlocks(fromArticleContent(latest?.content ?? [], latest?.media ?? []));
-  }, [article]);
+    setLoadedArticleId(article.id);
+  }, [article, loadedArticleId]);
 
   if (isLoading) {
     return (
@@ -319,10 +320,19 @@ export function EditArticleView({
         <div className="flex flex-col gap-1.5 pt-2">
           <p className="text-sm font-medium text-foreground">Story</p>
           <p className="text-xs text-muted-foreground">
-            Use the + button to add text, headings, images, video, or code.
+            Use the toolbar to format text, add lists, or insert images and video.
           </p>
           <div className="mt-2">
-            <StoryEditor blocks={blocks} onBlocksChange={setBlocks} disabled={saving} />
+            {loadedArticleId === article.id ? (
+              <StoryEditor
+                key={article.id}
+                blocks={blocks}
+                onBlocksChange={setBlocks}
+                disabled={saving}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading editor…</p>
+            )}
           </div>
         </div>
 
