@@ -16,6 +16,11 @@ import type {
 } from './dto/get-article.dto';
 import type { PublishArticleDto, PublishedArticle } from './dto/publish-article.dto';
 import type {
+  DuePublishResult,
+  SchedulePublishDto,
+  ScheduledPublish,
+} from './dto/schedule-publish.dto';
+import type {
   ListPublicArticlesQuery,
   PublicArticleDetail,
   PublicArticleListResponse,
@@ -149,23 +154,43 @@ export class ArticlesService {
     dto: PublishArticleDto,
     user: JwtUser,
   ): Promise<PublishedArticle> {
-    const authorId = await this.articlesRepository.findLiveAuthorId(articleId);
-    if (!authorId) {
-      throw new NotFoundException('Article not found');
-    }
-
-    // Four-eyes: an Editor may not make their own article public.
-    // Admins can still publish anyone's work.
-    if (user.role === Role.Editor && user.id === authorId) {
-      throw new ForbiddenException(
-        'You cannot publish an article you authored. Another editor must publish it.',
-      );
-    }
+    await this.assertCanPublish(articleId, user);
 
     return this.articlesRepository.publishRevision({
       articleId,
       revisionId: dto.revisionId,
     });
+  }
+
+  /**
+   * Stores a future publish. Does not move publishedRevisionId.
+   * A second schedule for the same article replaces the pending one.
+   */
+  async schedulePublish(
+    articleId: string,
+    dto: SchedulePublishDto,
+    user: JwtUser,
+  ): Promise<ScheduledPublish> {
+    await this.assertCanPublish(articleId, user);
+
+    const scheduledAt = new Date(dto.scheduledAt);
+    if (Number.isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('scheduledAt must be a valid date');
+    }
+    if (scheduledAt.getTime() <= Date.now()) {
+      throw new BadRequestException('scheduledAt must be in the future');
+    }
+
+    return this.articlesRepository.scheduleRevision({
+      articleId,
+      revisionId: dto.revisionId,
+      scheduledAt,
+    });
+  }
+
+  /** Runs the existing publish pointer update for every due schedule. */
+  async runDueSchedules(): Promise<DuePublishResult> {
+    return this.articlesRepository.executeDueSchedules();
   }
 
   async listArticles(
@@ -252,6 +277,23 @@ export class ArticlesService {
   /** Authors are scoped to their own articles; editors and admins are not. */
   private ownershipScope(user: JwtUser): string | undefined {
     return user.role === Role.Author ? user.id : undefined;
+  }
+
+  /**
+   * Same gate as immediate publish: the article must exist, and an Editor
+   * cannot publish or schedule their own work.
+   */
+  private async assertCanPublish(articleId: string, user: JwtUser): Promise<void> {
+    const authorId = await this.articlesRepository.findLiveAuthorId(articleId);
+    if (!authorId) {
+      throw new NotFoundException('Article not found');
+    }
+
+    if (user.role === Role.Editor && user.id === authorId) {
+      throw new ForbiddenException(
+        'You cannot publish an article you authored. Another editor must publish it.',
+      );
+    }
   }
 
   private resolveContent(dto: { body?: string; content?: unknown[] }): ContentBlock[] {
