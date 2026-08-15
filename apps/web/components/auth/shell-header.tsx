@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from './auth-provider';
+import { UserRole } from '@/lib/auth/roles';
 import { Badge, Button } from '@shared/ui';
 
 function AuthNav() {
@@ -15,8 +16,8 @@ function AuthNav() {
     const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
     return (
       <div className="flex items-center space-x-3">
-        <span className="text-xs text-zinc-300 font-medium">{userName}</span>
-        <Badge tone={user.role === 'SUPER_ADMIN' ? 'accent' : 'neutral'}>
+        <span className="text-xs text-zinc-350 font-medium">{userName}</span>
+        <Badge tone={user.role === UserRole.SUPER_ADMIN ? 'accent' : 'neutral'}>
           {user.role || 'Member'}
         </Badge>
         <Button variant="ghost" size="sm" onClick={() => void logout()}>

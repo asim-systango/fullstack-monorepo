@@ -30,30 +30,31 @@ const entitiesList = [
 
 export const typeOrmConfig: DataSourceOptions = url
   ? {
-      type: 'postgres',
-      url,
-      entities: entitiesList,
-      synchronize: false,
-      migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
-      migrationsTableName: 'migrations_api',
-      extra: {
-        max: 10,
-      },
-    }
+    type: 'postgres',
+    url,
+    entities: entitiesList,
+    synchronize: false,
+    migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
+    migrationsTableName: 'migrations_api',
+    ssl: url.includes('supabase') ? { rejectUnauthorized: false } : undefined,
+    extra: {
+      max: 10,
+    },
+  }
   : {
-      type: 'postgres',
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-      username: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      database: process.env.POSTGRES_DB || 'crm',
-      entities: entitiesList,
-      synchronize: false,
-      migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
-      migrationsTableName: 'migrations_api',
-      extra: {
-        max: 10,
-      },
-    };
+    type: 'postgres',
+    host: process.env.POSTGRES_HOST || 'localhost',
+    port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+    username: process.env.POSTGRES_USER || 'postgres',
+    password: process.env.POSTGRES_PASSWORD || 'postgres',
+    database: process.env.POSTGRES_DB || 'crm',
+    entities: entitiesList,
+    synchronize: false,
+    migrations: [__dirname + '/../database/migrations/*.{ts,js}'],
+    migrationsTableName: 'migrations_api',
+    extra: {
+      max: 10,
+    },
+  };
 
 export const AppDataSource = new DataSource(typeOrmConfig);

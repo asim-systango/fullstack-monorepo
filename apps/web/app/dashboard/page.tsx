@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@shared/ui';
 import { useAuth } from '@/components/auth';
+import { UserRole } from '@/lib/auth/roles';
 import { AppShell } from '@/components/layout/app-shell';
 import { dashboardApi, type OverallKpis } from '@/lib/api';
 import { organizationsApi, type OrganizationResult } from '@/lib/api';
@@ -26,10 +27,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { isAuthenticated, user, organization, loading } = useAuth();
 
-  const isSuperAdmin =
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'super-admin' ||
-    (!organization && user);
+  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN || (!organization && user);
 
   const [kpis, setKpis] = useState<OverallKpis | null>(null);
   const [kpisLoading, setKpisLoading] = useState(false);

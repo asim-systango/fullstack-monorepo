@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Badge, Button } from '@shared/ui';
 import { useAuth } from '@/components/auth';
+import { UserRole } from '@/lib/auth/roles';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -11,24 +12,23 @@ export function Sidebar() {
 
   if (!user) return null;
 
-  const isSuperAdmin =
-    user.role === 'SUPER_ADMIN' || user.role === 'super-admin' || !organization;
+  const isSuperAdmin = user.role === UserRole.SUPER_ADMIN || !organization;
   const userInitials =
     ((user.firstName?.[0] || '') + (user.lastName?.[0] || '')).toUpperCase() || 'U';
 
   const navItems = isSuperAdmin
     ? [
-        { label: 'Overview', icon: '📊', href: '/' },
-        { label: 'Organizations', icon: '🏢', href: '/organizations' },
-        { label: 'Global Users', icon: '👥', href: '/users' },
-        { label: 'Requests', icon: '📥', href: '/requests' },
-      ]
+      { label: 'Overview', icon: '📊', href: '/' },
+      { label: 'Organizations', icon: '🏢', href: '/organizations' },
+      { label: 'Global Users', icon: '👥', href: '/users' },
+      { label: 'Requests', icon: '📥', href: '/requests' },
+    ]
     : [
-        { label: 'Overview', icon: '📊', href: '/' },
-        { label: 'Leads & Pipeline', icon: '🎯', href: '/leads' },
-        { label: 'Contacts', icon: '👤', href: '/contacts' },
-        { label: 'Deals', icon: '💼', href: '/deals' },
-      ];
+      { label: 'Overview', icon: '📊', href: '/' },
+      { label: 'Leads & Pipeline', icon: '🎯', href: '/leads' },
+      { label: 'Contacts', icon: '👤', href: '/contacts' },
+      { label: 'Deals', icon: '💼', href: '/deals' },
+    ];
 
   return (
     <aside className="w-64 bg-zinc-900/80 border-r border-zinc-800/80 flex flex-col justify-between p-5 select-none shrink-0">
@@ -65,11 +65,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-violet-600/15 border border-violet-500/20 text-violet-300 font-semibold shadow-sm'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60 font-medium'
-                }`}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer ${isActive
+                  ? 'bg-violet-600/15 border border-violet-500/20 text-violet-300 font-semibold shadow-sm'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60 font-medium'
+                  }`}
               >
                 <span className="text-base">{item.icon}</span>
                 <span>{item.label}</span>
