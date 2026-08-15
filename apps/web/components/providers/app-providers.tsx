@@ -6,6 +6,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { useState, type ReactNode } from 'react';
 import { store } from '@/lib/store';
 import { AuthProvider } from '@/components/auth';
+import { Toaster } from '@/components/ui/toast';
 
 export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(
@@ -25,6 +26,7 @@ export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
     <ReduxProvider store={store}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ReduxProvider>

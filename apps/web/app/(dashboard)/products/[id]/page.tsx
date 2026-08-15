@@ -24,6 +24,7 @@ import {
   StatusMessage,
   EmptyState,
 } from '@shared/ui';
+import { toast } from '@/components/ui/toast';
 import { useProduct, useUpdateProduct } from '@/lib/hooks/use-products';
 import { useCategories } from '@/lib/hooks/use-categories';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
@@ -129,19 +130,22 @@ export default function ProductDetailPage({
         tone: 'success',
         text: 'Product details saved successfully!',
       });
+      toast.success('Product details saved successfully!');
       setIsEditing(false);
     } catch (err: unknown) {
       const errorObj = err as {
         response?: { data?: { message?: string } };
         message?: string;
       };
+      const errorMsg =
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
+        'Failed to update product details.';
       setFeedbackMessage({
         tone: 'error',
-        text:
-          errorObj?.response?.data?.message ||
-          errorObj?.message ||
-          'Failed to update product details.',
+        text: errorMsg,
       });
+      toast.error(errorMsg);
     }
   };
 

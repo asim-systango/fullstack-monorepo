@@ -36,13 +36,19 @@ export type Product = {
   updatedAt: string;
 };
 
+export type InitialStockInput = {
+  warehouseId: string;
+  quantity: number;
+};
+
 export type CreateProductInput = {
   sku: string;
   name: string;
   description?: string;
   unit?: string;
   lowStockThreshold?: number;
-  categoryId?: string;
+  categoryId: string;
+  initialStock?: InitialStockInput[];
 };
 
 export type UpdateProductInput = Partial<CreateProductInput>;

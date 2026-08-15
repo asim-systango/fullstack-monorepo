@@ -1,4 +1,24 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsArray,
+  ValidateNested,
+  IsNumber,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class InitialStockItemDto {
+  @IsUUID()
+  @IsNotEmpty()
+  warehouseId!: string;
+
+  @IsNumber()
+  @Min(0)
+  quantity!: number;
+}
 
 export class CreateProductDto {
   @IsString()
@@ -20,4 +40,10 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   unit?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InitialStockItemDto)
+  @IsOptional()
+  initialStock?: InitialStockItemDto[];
 }

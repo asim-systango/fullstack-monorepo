@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query } from '@nestjs/common';
-import { Roles } from '../../common/auth';
+import { Roles, CurrentUser, type JwtUser } from '../../common/auth';
 import { ProductsService } from './products.service';
 import { CreateProductDto, UpdateProductDto } from './dto';
 
@@ -46,8 +46,8 @@ export class ProductsController {
 
   @Post()
   @Roles('admin', 'staff')
-  async create(@Body() dto: CreateProductDto) {
-    const product = await this.productsService.createProduct(dto);
+  async create(@Body() dto: CreateProductDto, @CurrentUser() user?: JwtUser) {
+    const product = await this.productsService.createProduct(dto, user);
     return { data: product };
   }
 

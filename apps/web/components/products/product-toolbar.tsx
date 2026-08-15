@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { Button, TextInput, Checkbox, Badge } from '@shared/ui';
 import type { Category } from '@/lib/hooks/use-categories';
 
-type ProductToolbarProps = {
+export type ProductToolbarProps = Readonly<{
   searchQuery: string;
   onSearchChange: (query: string) => void;
   categories: Category[];
@@ -13,7 +14,7 @@ type ProductToolbarProps = {
   onSelectAllCategories: () => void;
   onClearCategories: () => void;
   onResetFilters: () => void;
-};
+}>;
 
 export function ProductToolbar({
   searchQuery,
@@ -24,7 +25,7 @@ export function ProductToolbar({
   onSelectAllCategories,
   onClearCategories,
   onResetFilters,
-}: Readonly<ProductToolbarProps>) {
+}: ProductToolbarProps) {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -42,13 +43,13 @@ export function ProductToolbar({
   const hasActiveFilters = Boolean(searchQuery.trim()) || selectedCategoryIds.length > 0;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-xs">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Search and category filters */}
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Left Side: Search and category filters */}
         <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
           <div className="w-full sm:w-72">
             <TextInput
-              placeholder="Search by product name or SKU..."
+              placeholder="🔍 Search by product name or SKU..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               aria-label="Search products"
@@ -60,7 +61,7 @@ export function ProductToolbar({
               variant="secondary"
               type="button"
               onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 font-semibold text-xs"
               aria-expanded={isCategoryOpen}
               aria-haspopup="true"
             >
@@ -89,16 +90,16 @@ export function ProductToolbar({
 
             {/* Category dropdown with check marks */}
             {isCategoryOpen && (
-              <div className="absolute left-0 top-full z-20 mt-2 w-72 rounded-lg border border-border bg-popover p-3 shadow-lg bg-white dark:bg-zinc-900">
+              <div className="absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-border bg-popover p-3 shadow-lg bg-white dark:bg-zinc-900">
                 <div className="flex items-center justify-between border-b border-border pb-2 mb-2">
-                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
                     Categories
                   </span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={onSelectAllCategories}
-                      className="text-xs text-primary hover:underline font-medium"
+                      className="text-xs text-primary hover:underline font-semibold cursor-pointer"
                     >
                       Select All
                     </button>
@@ -106,7 +107,7 @@ export function ProductToolbar({
                     <button
                       type="button"
                       onClick={onClearCategories}
-                      className="text-xs text-muted-foreground hover:underline"
+                      className="text-xs text-muted-foreground hover:underline cursor-pointer"
                     >
                       Clear
                     </button>
@@ -118,13 +119,13 @@ export function ProductToolbar({
                     No categories available
                   </p>
                 ) : (
-                  <div className="max-h-60 overflow-y-auto space-y-2 py-1">
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 py-1">
                     {categories.map((category) => {
                       const isChecked = selectedCategoryIds.includes(category.id);
                       return (
                         <div
                           key={category.id}
-                          className="flex items-center rounded-md px-2 py-1.5 hover:bg-accent transition-colors cursor-pointer"
+                          className="flex items-center rounded-lg px-2 py-1.5 hover:bg-accent/40 transition-colors cursor-pointer"
                         >
                           <Checkbox
                             id={`category-chk-${category.id}`}
@@ -148,6 +149,20 @@ export function ProductToolbar({
               Reset Filters
             </Button>
           )}
+        </div>
+
+        {/* Right Side: + Add Product Button */}
+        <div className="shrink-0">
+          <Link href="/products/new">
+            <Button
+              variant="primary"
+              type="button"
+              className="flex items-center gap-2 font-bold text-xs sm:text-sm bg-[#4747A1] hover:bg-[#3b3b88] text-white px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <span>➕</span>
+              <span>Add Product</span>
+            </Button>
+          </Link>
         </div>
       </div>
 
