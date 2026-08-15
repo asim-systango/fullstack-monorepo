@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { ArticleReader, toContentBlocks } from '@/components/article';
-import { Button, ConfirmDialog } from '@/components/ui';
+import { Button, ConfirmDialog, Input } from '@/components/ui';
 import { ApiClientError } from '@/lib/api';
 import {
   getPublishedRevisionIndex,
@@ -14,11 +14,17 @@ import {
   type StudioArticleDetail,
 } from '@/lib/api/studio';
 import type { GatewayRole } from '@/lib/auth/roles';
-import { formatLongDate, formatRelativeTime } from '@/lib/format/date';
+import {
+  formatDateTime,
+  formatLongDate,
+  formatRelativeTime,
+  toLocalOffsetIso,
+} from '@/lib/format/date';
 import { useMe } from '@/hooks/use-auth';
 import {
   useDeleteArticle,
   usePublishArticle,
+  useSchedulePublish,
   useStudioArticle,
 } from '@/hooks/use-studio';
 
@@ -34,6 +40,123 @@ type ArticleReviewViewProps = {
   /** Editors also get an edit surface; admins review and publish only. */
   editHref?: string;
 };
+
+function defaultScheduleParts(): { date: string; time: string } {
+  const next = new Date();
+  next.setDate(next.getDate() + 1);
+  next.setHours(10, 0, 0, 0);
+  const date = [
+    next.getFullYear(),
+    String(next.getMonth() + 1).padStart(2, '0'),
+    String(next.getDate()).padStart(2, '0'),
+  ].join('-');
+  return { date, time: '10:00' };
+}
+
+function parseLocalSchedule(date: string, time: string): Date | null {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hours, minutes] = time.split(':').map(Number);
+  if (![year, month, day, hours, minutes].every((part) => Number.isFinite(part))) {
+    return null;
+  }
+  const parsed = new Date(year, month - 1, day, hours, minutes, 0, 0);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function localTimeZoneLabel(): string {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const offset = new Intl.DateTimeFormat(undefined, {
+    timeZoneName: 'short',
+  })
+    .formatToParts(new Date())
+    .find((part) => part.type === 'timeZoneName')?.value;
+  return offset ?? zone ?? 'local time';
+}
+
+function SchedulePublishDialog({
+  open,
+  revisionLabel,
+  date,
+  time,
+  loading,
+  error,
+  onDateChange,
+  onTimeChange,
+  onConfirm,
+  onCancel,
+}: Readonly<{
+  open: boolean;
+  revisionLabel: string;
+  date: string;
+  time: string;
+  loading: boolean;
+  error: string | null;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}>) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (open && !dialog.open) {
+      dialog.showModal();
+    } else if (!open && dialog.open) {
+      dialog.close();
+    }
+  }, [open]);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="schedule-publish-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onCancel();
+      }}
+      className="m-auto w-full max-w-sm rounded-lg border border-border bg-background p-5 text-foreground shadow-lg backdrop:bg-black/40"
+    >
+      <h2 id="schedule-publish-title" className="font-display text-lg font-bold">
+        Publish Later
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {revisionLabel} publishes at this clock time ({localTimeZoneLabel()}).
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Input
+          id="schedule-date"
+          label="Date"
+          type="date"
+          value={date}
+          onChange={(event) => onDateChange(event.target.value)}
+        />
+        <Input
+          id="schedule-time"
+          label="Time"
+          type="time"
+          value={time}
+          onChange={(event) => onTimeChange(event.target.value)}
+        />
+      </div>
+      {error ? (
+        <p className="mt-3 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="mt-5 flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button type="button" variant="brand" loading={loading} onClick={onConfirm}>
+          Schedule
+        </Button>
+      </div>
+    </dialog>
+  );
+}
 
 function RevisionSelector({
   article,
@@ -70,6 +193,7 @@ function RevisionSelector({
  * Read a revision, then move the public pointer to it. Shared by the editor
  * queue and the admin article list so both roles publish through the same
  * confirmation flow and the same `POST /articles/:id/publish` call.
+ * Run Due Jobs is not shown in this view.
  */
 export function ArticleReviewView({
   id,
@@ -84,14 +208,19 @@ export function ArticleReviewView({
   const { data: viewer } = useMe();
   const { data: article, isLoading, isError, error } = useStudioArticle(id);
   const publishMutation = usePublishArticle();
+  const scheduleMutation = useSchedulePublish();
   const deleteMutation = useDeleteArticle();
 
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | undefined>(
     () => searchParams.get('revision') ?? undefined,
   );
+  const [scheduleDate, setScheduleDate] = useState(() => defaultScheduleParts().date);
+  const [scheduleTime, setScheduleTime] = useState('10:00');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -134,6 +263,11 @@ export function ArticleReviewView({
   const newerThanSubmitted =
     submittedIndex >= 0 && submittedIndex < article.revisions.length - 1;
   const isOwnArticle = role === 'staff' && viewer?.id === article.authorId;
+  const scheduledRevisionIndex = article.scheduledRevisionId
+    ? article.revisions.findIndex((item) => item.id === article.scheduledRevisionId)
+    : -1;
+  const scheduledRevisionLabel =
+    scheduledRevisionIndex >= 0 ? getRevisionLabel(scheduledRevisionIndex) : null;
 
   async function handlePublish() {
     if (!revision || isOwnArticle) return;
@@ -146,6 +280,37 @@ export function ArticleReviewView({
       router.push(backHref);
     } catch (err) {
       setPublishError(err instanceof ApiClientError ? err.message : 'Publish failed.');
+    }
+  }
+
+  async function handleSchedule() {
+    if (!revision || isOwnArticle) return;
+
+    const scheduled = parseLocalSchedule(scheduleDate, scheduleTime);
+    if (!scheduled) {
+      setScheduleError('Choose a valid date and time.');
+      return;
+    }
+    if (scheduled.getTime() <= Date.now()) {
+      setScheduleError('Scheduled time must be in the future.');
+      return;
+    }
+
+    setScheduleError(null);
+    try {
+      await scheduleMutation.mutateAsync({
+        articleId: id,
+        revisionId: revision.id,
+        scheduledAt: toLocalOffsetIso(scheduled),
+      });
+      setShowSchedule(false);
+      setStatus(
+        `Scheduled ${revisionLabel} for ${formatDateTime(toLocalOffsetIso(scheduled))}. The article stays private until then.`,
+      );
+    } catch (err) {
+      setScheduleError(
+        err instanceof ApiClientError ? err.message : 'Could not schedule publish.',
+      );
     }
   }
 
@@ -185,17 +350,32 @@ export function ArticleReviewView({
             </Link>
           ) : null}
           {isOwnArticle ? null : (
-            <Button
-              type="button"
-              variant="brand"
-              disabled={!revision}
-              onClick={() => {
-                setPublishError(null);
-                setShowConfirm(true);
-              }}
-            >
-              Publish
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="brand"
+                disabled={!revision}
+                onClick={() => {
+                  setShowSchedule(false);
+                  setPublishError(null);
+                  setShowConfirm(true);
+                }}
+              >
+                Publish
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!revision}
+                onClick={() => {
+                  setShowConfirm(false);
+                  setScheduleError(null);
+                  setShowSchedule(true);
+                }}
+              >
+                Publish Later
+              </Button>
+            </>
           )}
           <Button
             type="button"
@@ -243,6 +423,12 @@ export function ArticleReviewView({
             /{article.slug} · Author {article.authorId.slice(0, 8)} · Updated{' '}
             {formatRelativeTime(article.updatedAt)}
           </p>
+          {article.scheduledRevisionId && article.scheduledAt ? (
+            <p className="mt-1">
+              Scheduled {scheduledRevisionLabel ?? 'revision'} for{' '}
+              {formatDateTime(article.scheduledAt)}.
+            </p>
+          ) : null}
         </div>
 
         <RevisionSelector
@@ -300,6 +486,24 @@ export function ArticleReviewView({
         error={deleteError}
         onConfirm={handleDelete}
         onCancel={() => setShowDelete(false)}
+      />
+
+      <SchedulePublishDialog
+        open={showSchedule && !isOwnArticle}
+        revisionLabel={revisionLabel}
+        date={scheduleDate}
+        time={scheduleTime}
+        loading={scheduleMutation.isPending}
+        error={scheduleError}
+        onDateChange={setScheduleDate}
+        onTimeChange={setScheduleTime}
+        onConfirm={() => {
+          void handleSchedule();
+        }}
+        onCancel={() => {
+          setShowSchedule(false);
+          setScheduleError(null);
+        }}
       />
     </DashboardShell>
   );

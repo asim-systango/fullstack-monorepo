@@ -51,6 +51,9 @@ export type StudioArticleDetail = {
   publishedAt: string | null;
   submittedRevisionId: string | null;
   submittedAt: string | null;
+  /** Future publish pointer. Does not make the article public by itself. */
+  scheduledRevisionId: string | null;
+  scheduledAt: string | null;
   createdAt: string;
   updatedAt: string;
   tags: ArticleTag[];
@@ -92,6 +95,17 @@ export type PublishedArticle = {
   id: string;
   publishedRevisionId: string;
   publishedAt: string;
+};
+
+export type ScheduledPublish = {
+  id: string;
+  scheduledRevisionId: string;
+  scheduledAt: string;
+};
+
+export type DuePublishResult = {
+  published: PublishedArticle[];
+  skipped: number;
 };
 
 /** Body for `POST /articles/:id/revisions`. Same content rules as create. */
@@ -208,6 +222,27 @@ export async function publishArticle(
       revisionId,
     },
   );
+  return data;
+}
+
+/**
+ * Stores a future publish of the selected revision.
+ * Does not change `publishedRevisionId` until due jobs run.
+ */
+export async function schedulePublish(
+  articleId: string,
+  input: { revisionId: string; scheduledAt: string },
+): Promise<ScheduledPublish> {
+  const { data } = await apiClient.post<ScheduledPublish>(
+    `/articles/${articleId}/schedule-publish`,
+    input,
+  );
+  return data;
+}
+
+/** Publishes every pending schedule whose time has arrived. */
+export async function runDuePublishSchedules(): Promise<DuePublishResult> {
+  const { data } = await apiClient.post<DuePublishResult>('/articles/publish-due');
   return data;
 }
 
