@@ -16,4 +16,8 @@ export const API_ENDPOINTS = {
   DASHBOARD: {
     OVERALL_KPIS: '/dashboard/overall-kpis',
   },
+  USERS: {
+    GET_ALL: '/users',
+    INVITE: '/users/invite',
+  },
 } as const;
