@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableHead,
@@ -11,29 +11,50 @@ import {
   Badge,
   TextInput,
   Select,
+  Pagination,
   LoadingState,
   EmptyState,
   type BadgeTone,
 } from '@shared/ui/components';
+import { useAuth } from '@/components/auth';
 import { useMovements, type MovementType } from '@/lib/hooks/use-movements';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
 
 export function MovementTable() {
-  const { data: warehouses = [] } = useWarehouses();
-  const staffWarehouse = warehouses[0]; // Logged-in staff member's assigned facility
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
+  const { data: warehouses = [] } = useWarehouses();
+  const defaultWarehouseId =
+    user?.warehouseId || (isAdmin ? '' : warehouses[0]?.id || '');
+
+  const [selectedWarehouseId, setSelectedWarehouseId] =
+    useState<string>(defaultWarehouseId);
   const [selectedType, setSelectedType] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(5);
 
-  // Fetch movements strictly filtered to the staff member's assigned warehouse
+  useEffect(() => {
+    if (user?.warehouseId) {
+      setSelectedWarehouseId(user.warehouseId);
+    }
+  }, [user?.warehouseId]);
+
+  // Fetch movements (scoped to warehouseId if selected/staff, or all if admin with no warehouse selected)
   const {
     data: movements = [],
     isLoading,
     error,
   } = useMovements({
-    warehouseId: staffWarehouse?.id,
+    warehouseId: selectedWarehouseId || undefined,
     type: (selectedType as MovementType) || undefined,
   });
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedType, selectedWarehouseId, pageSize]);
 
   // Client-side search filtering by SKU, product name, or order reason
   const filteredMovements = useMemo(() => {
@@ -43,9 +64,23 @@ export function MovementTable() {
       const pName = m.product?.name?.toLowerCase() || '';
       const sku = m.product?.sku?.toLowerCase() || '';
       const reason = m.reason?.toLowerCase() || '';
-      return pName.includes(query) || sku.includes(query) || reason.includes(query);
+      const whName = m.warehouse?.name?.toLowerCase() || '';
+      return (
+        pName.includes(query) ||
+        sku.includes(query) ||
+        reason.includes(query) ||
+        whName.includes(query)
+      );
     });
   }, [movements, searchQuery]);
+
+  const totalPages = Math.ceil(filteredMovements.length / pageSize) || 1;
+  const validPage = Math.min(currentPage, totalPages);
+
+  const paginatedMovements = useMemo(() => {
+    const startIndex = (validPage - 1) * pageSize;
+    return filteredMovements.slice(startIndex, startIndex + pageSize);
+  }, [filteredMovements, validPage, pageSize]);
 
   const getMovementBadge = (type: MovementType, reason?: string) => {
     let tone: BadgeTone = 'neutral';
@@ -149,18 +184,19 @@ export function MovementTable() {
 
   return (
     <section className="w-full space-y-4 pt-2">
-      {/* Filter Toolbar Section (No warehouse selector for staff) */}
+      {/* Filter Toolbar Section */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          Audit Records ({filteredMovements.length} logged)
+          Audit Records ({filteredMovements.length} total logged)
         </span>
-        {(searchQuery || selectedType) && (
+        {(searchQuery || selectedType || (isAdmin && selectedWarehouseId)) && (
           <button
             type="button"
-            className="text-xs font-semibold text-accent hover:underline"
+            className="text-xs font-semibold text-accent hover:underline cursor-pointer"
             onClick={() => {
               setSearchQuery('');
               setSelectedType('');
+              if (isAdmin) setSelectedWarehouseId('');
             }}
           >
             Clear filters
@@ -168,7 +204,11 @@ export function MovementTable() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-3 ${
+          isAdmin && warehouses.length > 1 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+        }`}
+      >
         {/* Search Input */}
         <div>
           <TextInput
@@ -189,69 +229,111 @@ export function MovementTable() {
             <option value="transfer">Transfer</option>
           </Select>
         </div>
+
+        {/* Admin Facility Filter */}
+        {isAdmin && warehouses.length > 1 && (
+          <div>
+            <Select
+              value={selectedWarehouseId}
+              onChange={(e) => setSelectedWarehouseId(e.target.value)}
+            >
+              <option value="">🌐 All Facilities (Global)</option>
+              {warehouses.map((wh) => (
+                <option key={wh.id} value={wh.id}>
+                  🏬 {wh.name} ({wh.code})
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
       </div>
 
-      {/* Full-width Data Table */}
+      {/* Full-width Data Table with Always-Visible Pagination Controls */}
       {filteredMovements.length === 0 ? (
         <EmptyState
           title="No stock movements recorded"
           description="Process an outbound order fulfillment or inbound shipment using the form above."
         />
       ) : (
-        <div className="w-full overflow-x-auto border-y border-border/80 bg-background">
-          <Table>
-            <TableHead>
-              <TableRow className="border-b border-border/80 bg-muted/30">
-                <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
-                  Date & Time
-                </TableHeaderCell>
-                <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
-                  Action Type
-                </TableHeaderCell>
-                <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
-                  Product & SKU
-                </TableHeaderCell>
-                <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
-                  Qty Change
-                </TableHeaderCell>
-                <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
-                  Reason / Order Ref
-                </TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredMovements.map((m) => (
-                <TableRow
-                  key={m.id}
-                  className="border-b border-border/40 hover:bg-muted/20 transition-colors"
-                >
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium py-3">
-                    {formatDate(m.createdAt)}
-                  </TableCell>
-                  <TableCell className="py-3">
-                    {getMovementBadge(m.type, m.reason)}
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div className="font-bold text-foreground text-sm">
-                      {m.product?.name || 'Product'}
-                    </div>
-                    <div className="text-xs font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded w-fit mt-0.5">
-                      {m.product?.sku || m.productId}
-                    </div>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap py-3">
-                    {formatQuantity(m.type, m.quantity, m.reason)}{' '}
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {m.product?.unit || 'pcs'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs font-medium text-muted-foreground max-w-xs truncate py-3">
-                    {m.reason || '—'}
-                  </TableCell>
+        <div className="w-full overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHead>
+                <TableRow className="border-b border-border/80 bg-muted/30">
+                  <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
+                    Date & Time
+                  </TableHeaderCell>
+                  <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
+                    Action Type
+                  </TableHeaderCell>
+                  <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
+                    Product & SKU
+                  </TableHeaderCell>
+                  <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
+                    Facility
+                  </TableHeaderCell>
+                  <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
+                    Qty Change
+                  </TableHeaderCell>
+                  <TableHeaderCell className="font-bold text-xs uppercase tracking-wider text-muted-foreground py-3">
+                    Reason / Order Ref
+                  </TableHeaderCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {paginatedMovements.map((m) => (
+                  <TableRow
+                    key={m.id}
+                    className="border-b border-border/40 hover:bg-muted/20 transition-colors"
+                  >
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium py-3">
+                      {formatDate(m.createdAt)}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      {getMovementBadge(m.type, m.reason)}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="font-bold text-foreground text-sm">
+                        {m.product?.name || 'Product'}
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                        {m.product?.sku || m.productId}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <span className="text-xs font-semibold text-foreground">
+                        {m.warehouse?.name || 'Assigned Warehouse'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-3">
+                      {formatQuantity(m.type, m.quantity, m.reason)}{' '}
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {m.product?.unit || 'pcs'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs font-medium text-muted-foreground max-w-xs truncate py-3">
+                      {m.reason || '—'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Always Visible Pagination Bar with Rows-Per-Page Selector */}
+          <Pagination
+            currentPage={validPage}
+            totalPages={totalPages}
+            totalItems={filteredMovements.length}
+            pageSize={pageSize}
+            pageSizeOptions={[5, 10, 25, 50]}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            onPageChange={setCurrentPage}
+            alwaysVisible={true}
+          />
         </div>
       )}
     </section>
