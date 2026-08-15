@@ -122,7 +122,7 @@ function CreateArticleContent() {
         <div className="flex flex-col gap-1.5 pt-2">
           <p className="text-sm font-medium text-foreground">Story</p>
           <p className="text-xs text-muted-foreground">
-            Use the + button to add text, headings, images, video, or code.
+            Use the toolbar to format text, add lists, or insert images and video.
           </p>
           <div className="mt-2">
             <StoryEditor

@@ -1,261 +1,311 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import Placeholder from '@tiptap/extension-placeholder';
+import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { cn } from '@/components/ui';
 import { ApiClientError } from '@/lib/api';
 import { uploadMedia } from '@/lib/api/media';
 import {
-  CloseIcon,
+  BoldIcon,
+  BulletListIcon,
   CodeIcon,
-  HeadingIcon,
   ImageIcon,
-  PlusIcon,
-  TextIcon,
-  TrashIcon,
+  ItalicIcon,
+  LinkIcon,
+  OrderedListIcon,
+  QuoteIcon,
+  RedoIcon,
+  StrikeIcon,
+  UndoIcon,
   VideoIcon,
 } from './editor-icons';
-import {
-  createBlock,
-  createMediaBlock,
-  createParagraphBlock,
-  type HeadingLevel,
-  type StoryBlock,
-} from './story-blocks';
+import { blocksToTiptapDoc, isSafeUrl, tiptapDocToBlocks } from './tiptap-content';
+import { StoryImage, StoryVideo } from './tiptap-media-nodes';
+import type { StoryBlock } from './story-blocks';
+import './story-editor.css';
 
-const CAPTION_CLASS =
-  'w-full border-0 bg-transparent p-0 text-center text-sm text-muted-foreground outline-none placeholder:text-muted-foreground';
+const TOOL_BUTTON_CLASS =
+  'flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md border px-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40';
 
-const ROUND_BUTTON_CLASS =
-  'flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40';
-
-const HEADING_LEVELS: readonly HeadingLevel[] = [1, 2, 3];
-
-const INSERT_ACTIONS = [
-  { key: 'paragraph', label: 'Add text', Icon: TextIcon },
-  { key: 'heading', label: 'Add heading', Icon: HeadingIcon },
-  { key: 'image', label: 'Add image', Icon: ImageIcon },
-  { key: 'video', label: 'Add video', Icon: VideoIcon },
-  { key: 'code', label: 'Add code', Icon: CodeIcon },
-] as const;
-
-type InsertAction = (typeof INSERT_ACTIONS)[number]['key'];
-
-type AutoTextareaProps = {
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  ariaLabel: string;
-  className?: string;
-  disabled?: boolean;
-};
-
-function AutoTextarea({
-  value,
-  onValueChange,
-  placeholder,
-  ariaLabel,
-  className,
-  disabled,
-}: Readonly<AutoTextareaProps>) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    element.style.height = 'auto';
-    element.style.height = `${element.scrollHeight}px`;
-  }, [value]);
-
-  return (
-    <textarea
-      ref={ref}
-      rows={1}
-      value={value}
-      disabled={disabled}
-      placeholder={placeholder}
-      aria-label={ariaLabel}
-      onChange={(event) => onValueChange(event.target.value)}
-      className={cn(
-        'w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-foreground outline-none placeholder:text-muted-foreground',
-        className,
-      )}
-    />
+function toolClass(active: boolean): string {
+  return cn(
+    TOOL_BUTTON_CLASS,
+    active
+      ? 'border-foreground bg-surface-muted text-foreground'
+      : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground',
   );
 }
 
-type InsertMenuProps = {
-  open: boolean;
-  uploading: boolean;
-  disabled: boolean;
-  onToggle: () => void;
-  onSelect: (action: InsertAction) => void;
+type ToolbarState = {
+  bold: boolean;
+  italic: boolean;
+  strike: boolean;
+  h1: boolean;
+  h2: boolean;
+  h3: boolean;
+  bullet: boolean;
+  ordered: boolean;
+  quote: boolean;
+  code: boolean;
+  link: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
 };
 
-function InsertMenu({
-  open,
-  uploading,
+const INACTIVE_TOOLBAR: ToolbarState = {
+  bold: false,
+  italic: false,
+  strike: false,
+  h1: false,
+  h2: false,
+  h3: false,
+  bullet: false,
+  ordered: false,
+  quote: false,
+  code: false,
+  link: false,
+  canUndo: false,
+  canRedo: false,
+};
+
+function readToolbarState(editor: Editor): ToolbarState {
+  return {
+    bold: editor.isActive('bold'),
+    italic: editor.isActive('italic'),
+    strike: editor.isActive('strike'),
+    h1: editor.isActive('heading', { level: 1 }),
+    h2: editor.isActive('heading', { level: 2 }),
+    h3: editor.isActive('heading', { level: 3 }),
+    bullet: editor.isActive('bulletList'),
+    ordered: editor.isActive('orderedList'),
+    quote: editor.isActive('blockquote'),
+    code: editor.isActive('codeBlock'),
+    link: editor.isActive('link'),
+    canUndo: editor.can().undo(),
+    canRedo: editor.can().redo(),
+  };
+}
+
+function promptForLink(editor: Editor): void {
+  if (editor.isActive('link')) {
+    editor.chain().focus().unsetLink().run();
+    return;
+  }
+
+  const previous = String(editor.getAttributes('link').href ?? '');
+  const entered = window.prompt('Link URL', previous || 'https://');
+  if (entered === null) return;
+
+  const href = entered.trim();
+  if (!href) {
+    editor.chain().focus().unsetLink().run();
+    return;
+  }
+  if (!isSafeUrl(href)) return;
+
+  editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+}
+
+type EditorToolbarProps = {
+  editor: Editor | null;
+  disabled: boolean;
+  uploading: boolean;
+  onUpload: (kind: 'image' | 'video') => void;
+};
+
+function EditorToolbar({
+  editor,
   disabled,
-  onToggle,
-  onSelect,
-}: Readonly<InsertMenuProps>) {
+  uploading,
+  onUpload,
+}: Readonly<EditorToolbarProps>) {
+  const state =
+    useEditorState({
+      editor,
+      selector: (snapshot) =>
+        snapshot.editor ? readToolbarState(snapshot.editor) : INACTIVE_TOOLBAR,
+    }) ?? INACTIVE_TOOLBAR;
+
+  const idle = !editor || disabled;
+
   return (
-    <div className="flex items-center gap-1.5">
+    <div
+      role="toolbar"
+      aria-label="Text formatting"
+      className="flex flex-wrap items-center gap-1 border-b border-border pb-2"
+    >
       <button
         type="button"
-        onClick={onToggle}
-        disabled={disabled}
-        aria-expanded={open}
-        aria-label={open ? 'Close insert menu' : 'Insert block'}
-        className={ROUND_BUTTON_CLASS}
+        aria-label="Heading 1"
+        aria-pressed={state.h1}
+        disabled={idle}
+        className={toolClass(state.h1)}
+        onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
       >
-        {open ? <CloseIcon className="size-4" /> : <PlusIcon className="size-4" />}
+        H1
+      </button>
+      <button
+        type="button"
+        aria-label="Heading 2"
+        aria-pressed={state.h2}
+        disabled={idle}
+        className={toolClass(state.h2)}
+        onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+      >
+        H2
+      </button>
+      <button
+        type="button"
+        aria-label="Heading 3"
+        aria-pressed={state.h3}
+        disabled={idle}
+        className={toolClass(state.h3)}
+        onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+      >
+        H3
       </button>
 
-      {open
-        ? INSERT_ACTIONS.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              type="button"
-              title={label}
-              aria-label={label}
-              disabled={disabled || uploading}
-              onClick={() => onSelect(key)}
-              className={cn(ROUND_BUTTON_CLASS, 'border-brand/50 text-brand')}
-            >
-              <Icon className="size-4" />
-            </button>
-          ))
-        : null}
+      <button
+        type="button"
+        aria-label="Bold"
+        aria-pressed={state.bold}
+        disabled={idle}
+        className={toolClass(state.bold)}
+        onClick={() => editor?.chain().focus().toggleBold().run()}
+      >
+        <BoldIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Italic"
+        aria-pressed={state.italic}
+        disabled={idle}
+        className={toolClass(state.italic)}
+        onClick={() => editor?.chain().focus().toggleItalic().run()}
+      >
+        <ItalicIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Strikethrough"
+        aria-pressed={state.strike}
+        disabled={idle}
+        className={toolClass(state.strike)}
+        onClick={() => editor?.chain().focus().toggleStrike().run()}
+      >
+        <StrikeIcon className="size-4" />
+      </button>
 
-      {uploading ? (
-        <span className="text-xs text-muted-foreground">Uploading…</span>
-      ) : null}
+      <button
+        type="button"
+        aria-label="Bullet list"
+        aria-pressed={state.bullet}
+        disabled={idle}
+        className={toolClass(state.bullet)}
+        onClick={() => editor?.chain().focus().toggleBulletList().run()}
+      >
+        <BulletListIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Ordered list"
+        aria-pressed={state.ordered}
+        disabled={idle}
+        className={toolClass(state.ordered)}
+        onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+      >
+        <OrderedListIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Blockquote"
+        aria-pressed={state.quote}
+        disabled={idle}
+        className={toolClass(state.quote)}
+        onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+      >
+        <QuoteIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Code block"
+        aria-pressed={state.code}
+        disabled={idle}
+        className={toolClass(state.code)}
+        onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+      >
+        <CodeIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label={state.link ? 'Remove link' : 'Add link'}
+        aria-pressed={state.link}
+        disabled={idle}
+        className={toolClass(state.link)}
+        onClick={() => editor && promptForLink(editor)}
+      >
+        <LinkIcon className="size-4" />
+      </button>
+
+      <button
+        type="button"
+        aria-label="Undo"
+        disabled={idle || !state.canUndo}
+        className={toolClass(false)}
+        onClick={() => editor?.chain().focus().undo().run()}
+      >
+        <UndoIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Redo"
+        disabled={idle || !state.canRedo}
+        className={toolClass(false)}
+        onClick={() => editor?.chain().focus().redo().run()}
+      >
+        <RedoIcon className="size-4" />
+      </button>
+
+      <button
+        type="button"
+        aria-label="Add image"
+        disabled={idle || uploading}
+        className={toolClass(false)}
+        onClick={() => onUpload('image')}
+      >
+        <ImageIcon className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Add video"
+        disabled={idle || uploading}
+        className={toolClass(false)}
+        onClick={() => onUpload('video')}
+      >
+        <VideoIcon className="size-4" />
+      </button>
     </div>
   );
 }
 
-type BlockBodyProps = {
-  block: StoryBlock;
-  disabled: boolean;
-  onChange: (block: StoryBlock) => void;
-};
-
-function BlockBody({ block, disabled, onChange }: Readonly<BlockBodyProps>) {
-  if (block.type === 'paragraph') {
-    return (
-      <AutoTextarea
-        value={block.markdown}
-        disabled={disabled}
-        ariaLabel="Story text"
-        placeholder="Tell your story…"
-        className="font-serif text-xl leading-relaxed"
-        onValueChange={(markdown) => onChange({ ...block, markdown })}
-      />
-    );
-  }
-
-  if (block.type === 'heading') {
-    return (
-      <div className="space-y-2">
-        <AutoTextarea
-          value={block.text}
-          disabled={disabled}
-          ariaLabel="Heading text"
-          placeholder="Heading"
-          className="font-display text-2xl font-bold tracking-tight"
-          onValueChange={(text) => onChange({ ...block, text })}
-        />
-        <div className="flex gap-1.5">
-          {HEADING_LEVELS.map((level) => (
-            <button
-              key={level}
-              type="button"
-              disabled={disabled}
-              aria-pressed={block.level === level}
-              onClick={() => onChange({ ...block, level })}
-              className={cn(
-                'rounded-pill border px-2.5 py-0.5 text-xs transition-colors',
-                block.level === level
-                  ? 'border-foreground text-foreground'
-                  : 'border-border text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {`H${level}`}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (block.type === 'code') {
-    return (
-      <div className="rounded-lg bg-surface-muted p-4">
-        <AutoTextarea
-          value={block.code}
-          disabled={disabled}
-          ariaLabel="Code"
-          placeholder="Paste or write code…"
-          className="font-mono text-sm"
-          onValueChange={(code) => onChange({ ...block, code })}
-        />
-        <input
-          value={block.language}
-          disabled={disabled}
-          aria-label="Code language"
-          placeholder="Language (optional)"
-          onChange={(event) => onChange({ ...block, language: event.target.value })}
-          className="mt-3 w-full border-0 bg-transparent p-0 text-xs text-muted-foreground outline-none placeholder:text-muted-foreground"
-        />
-      </div>
-    );
-  }
-
-  if (block.type === 'image') {
-    return (
-      <figure className="space-y-2">
-        <Image
-          src={block.url}
-          alt={block.alt || 'Uploaded image'}
-          width={block.width}
-          height={block.height}
-          className="h-auto w-full rounded-lg"
-        />
-        <input
-          value={block.caption}
-          disabled={disabled}
-          aria-label="Image caption"
-          placeholder="Type caption for image (optional)"
-          onChange={(event) => onChange({ ...block, caption: event.target.value })}
-          className={CAPTION_CLASS}
-        />
-        <input
-          value={block.alt}
-          disabled={disabled}
-          aria-label="Image alt text"
-          placeholder="Describe the image for screen readers (alt text)"
-          onChange={(event) => onChange({ ...block, alt: event.target.value })}
-          className={CAPTION_CLASS}
-        />
-      </figure>
-    );
-  }
-
-  return (
-    <figure className="space-y-2">
-      <video src={block.url} controls className="w-full rounded-lg bg-black" />
-      <input
-        value={block.caption}
-        disabled={disabled}
-        aria-label="Video caption"
-        placeholder="Type caption for video (optional)"
-        onChange={(event) => onChange({ ...block, caption: event.target.value })}
-        className={CAPTION_CLASS}
-      />
-    </figure>
-  );
-}
+const editorExtensions = [
+  StarterKit.configure({
+    heading: { levels: [1, 2, 3] },
+    horizontalRule: false,
+    underline: false,
+    link: {
+      openOnClick: false,
+      autolink: true,
+      defaultProtocol: 'https',
+      protocols: ['http', 'https', 'mailto'],
+    },
+  }),
+  Placeholder.configure({ placeholder: 'Tell your story…' }),
+  StoryImage,
+  StoryVideo,
+];
 
 export type StoryEditorProps = {
   blocks: readonly StoryBlock[];
@@ -268,33 +318,32 @@ export function StoryEditor({
   onBlocksChange,
   disabled = false,
 }: Readonly<StoryEditorProps>) {
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const pendingIndexRef = useRef<number | null>(null);
+  const initialContent = useRef(blocksToTiptapDoc(blocks));
 
-  function insertAfter(index: number, ...added: StoryBlock[]) {
-    const next = [...blocks];
-    next.splice(index + 1, 0, ...added);
-    onBlocksChange(next);
-  }
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: editorExtensions,
+    content: initialContent.current,
+    editable: !disabled,
+    editorProps: {
+      attributes: {
+        'aria-label': 'Article content',
+      },
+    },
+    onUpdate: ({ editor: instance }) => {
+      onBlocksChange(tiptapDocToBlocks(instance.getJSON()));
+    },
+  });
 
-  function replaceBlock(index: number, block: StoryBlock) {
-    const next = [...blocks];
-    next[index] = block;
-    onBlocksChange(next);
-  }
+  useEffect(() => {
+    editor?.setEditable(!disabled);
+  }, [disabled, editor]);
 
-  function removeBlock(index: number) {
-    const next = blocks.filter((_, position) => position !== index);
-    onBlocksChange(next.length > 0 ? next : [createParagraphBlock()]);
-  }
-
-  function requestUpload(index: number, kind: 'image' | 'video') {
-    pendingIndexRef.current = index;
+  function requestUpload(kind: 'image' | 'video') {
     const input = kind === 'image' ? imageInputRef.current : videoInputRef.current;
     if (input) {
       input.value = '';
@@ -304,37 +353,47 @@ export function StoryEditor({
 
   async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    const index = pendingIndexRef.current;
-    pendingIndexRef.current = null;
-    if (!file || index === null) return;
+    if (!file || !editor) return;
 
     setUploadError(null);
-    setUploadingId(blocks[index]?.id ?? null);
+    setUploading(true);
 
     try {
       const media = await uploadMedia(file);
-      const trailing = index === blocks.length - 1 ? [createParagraphBlock()] : [];
-      insertAfter(index, createMediaBlock(media), ...trailing);
+      const mediaNode =
+        media.resourceType === 'video'
+          ? {
+              type: 'storyVideo',
+              attrs: { mediaId: media.id, url: media.url, caption: '' },
+            }
+          : {
+              type: 'storyImage',
+              attrs: {
+                mediaId: media.id,
+                url: media.url,
+                width: media.width ?? 1600,
+                height: media.height ?? 1000,
+                alt: media.altText ?? '',
+                caption: '',
+              },
+            };
+
+      editor
+        .chain()
+        .focus()
+        .insertContent([mediaNode, { type: 'paragraph' }])
+        .run();
     } catch (error) {
       setUploadError(
         error instanceof ApiClientError ? error.message : 'Could not upload that file.',
       );
     } finally {
-      setUploadingId(null);
+      setUploading(false);
     }
-  }
-
-  function handleInsert(index: number, action: InsertAction) {
-    setOpenMenuId(null);
-    if (action === 'image' || action === 'video') {
-      requestUpload(index, action);
-      return;
-    }
-    insertAfter(index, createBlock(action));
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-3">
       <input
         ref={imageInputRef}
         type="file"
@@ -350,42 +409,25 @@ export function StoryEditor({
         onChange={handleFileSelected}
       />
 
-      {blocks.map((block, index) => (
-        <div
-          key={block.id}
-          className="group relative rounded-lg border-l-2 border-transparent py-2 pr-10 pl-4 transition-colors focus-within:border-border"
-        >
-          <BlockBody
-            block={block}
-            disabled={disabled}
-            onChange={(updated) => replaceBlock(index, updated)}
-          />
+      <EditorToolbar
+        editor={editor}
+        disabled={disabled}
+        uploading={uploading}
+        onUpload={requestUpload}
+      />
 
-          <div className="mt-2">
-            <InsertMenu
-              open={openMenuId === block.id}
-              uploading={uploadingId === block.id}
-              disabled={disabled}
-              onToggle={() => setOpenMenuId(openMenuId === block.id ? null : block.id)}
-              onSelect={(action) => handleInsert(index, action)}
-            />
-          </div>
-
-          <button
-            type="button"
-            aria-label="Remove block"
-            title="Remove block"
-            disabled={disabled || blocks.length === 1}
-            onClick={() => removeBlock(index)}
-            className="absolute top-2 right-0 flex size-7 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-red-600 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-0 group-hover:opacity-100"
-          >
-            <TrashIcon className="size-4" />
-          </button>
+      {editor ? (
+        <div className="story-editor-content">
+          <EditorContent editor={editor} />
         </div>
-      ))}
+      ) : (
+        <p className="text-sm text-muted-foreground">Loading editor…</p>
+      )}
+
+      {uploading ? <p className="text-xs text-muted-foreground">Uploading…</p> : null}
 
       {uploadError ? (
-        <p className="pl-4 text-sm text-red-600" role="alert">
+        <p className="text-sm text-red-600" role="alert">
           {uploadError}
         </p>
       ) : null}
