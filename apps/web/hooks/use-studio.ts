@@ -9,6 +9,8 @@ import {
   fetchStudioArticle,
   fetchStudioArticles,
   publishArticle,
+  runDuePublishSchedules,
+  schedulePublish,
   submitArticleForReview,
   updateArticle,
   type CreateArticleInput,
@@ -116,6 +118,37 @@ export function usePublishArticle() {
   return useMutation({
     mutationFn: ({ articleId, revisionId }: { articleId: string; revisionId: string }) =>
       publishArticle(articleId, revisionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useSchedulePublish() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      articleId,
+      revisionId,
+      scheduledAt,
+    }: {
+      articleId: string;
+      revisionId: string;
+      scheduledAt: string;
+    }) => schedulePublish(articleId, { revisionId, scheduledAt }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.articles.studioById(variables.articleId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
+    },
+  });
+}
+
+export function useRunDuePublishSchedules() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: runDuePublishSchedules,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
     },

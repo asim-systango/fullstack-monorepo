@@ -164,6 +164,9 @@ export type StudioArticleDetail = {
   publishedAt: Date | null;
   submittedRevisionId: string | null;
   submittedAt: Date | null;
+  /** Future publish pointer. Does not make the article public by itself. */
+  scheduledRevisionId: string | null;
+  scheduledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   tags: Array<{ id: string; name: string }>;

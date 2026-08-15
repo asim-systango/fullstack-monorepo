@@ -115,7 +115,11 @@ export function DashboardShell({
                 <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
               ) : null}
             </div>
-            {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
+            {actions ? (
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {actions}
+              </div>
+            ) : null}
           </div>
           {children}
         </main>

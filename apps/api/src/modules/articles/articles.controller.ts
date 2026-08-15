@@ -37,6 +37,11 @@ import {
 } from './dto/get-article.dto';
 import { PublishArticleDto, type PublishedArticle } from './dto/publish-article.dto';
 import {
+  SchedulePublishDto,
+  type DuePublishResult,
+  type ScheduledPublish,
+} from './dto/schedule-publish.dto';
+import {
   ArticleSlugParam,
   ListPublicArticlesQuery,
   type PublicArticleDetail,
@@ -169,6 +174,28 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
   @ApiForbiddenResponse({ description: FORBIDDEN })
   getArticleStats(@CurrentUser() user: JwtUser): Promise<ArticleStatsResponse> {
     return this.articlesService.getArticleStats(user);
+  }
+
+  @Post('publish-due')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Roles(Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'Publish every scheduled article whose time has arrived',
+    description:
+      'Editors (`staff`) and Admins only. Authors (`user`) receive 403. ' +
+      'Finds articles with `scheduledAt <= now` and runs the same ' +
+      'pointer update as POST /articles/:id/publish for each one. ' +
+      'Future schedules are left untouched. Deleted or invalid jobs are skipped.',
+  })
+  @ApiOkResponse({
+    description:
+      'Body fields: `published` (id, publishedRevisionId, publishedAt) and `skipped`.',
+  })
+  @ApiUnauthorizedResponse({ description: UNAUTHORIZED })
+  @ApiForbiddenResponse({ description: FORBIDDEN })
+  runDueSchedules(): Promise<DuePublishResult> {
+    return this.articlesService.runDueSchedules();
   }
 
   @Get('studio')
@@ -372,5 +399,44 @@ The API validates that \`mediaId\` exists, is not soft-deleted, and matches the 
     @CurrentUser() user: JwtUser,
   ): Promise<PublishedArticle> {
     return this.articlesService.publishArticle(params.id, dto, user);
+  }
+
+  @Post(':id/schedule-publish')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Roles(Role.Editor, Role.Admin)
+  @ApiOperation({
+    summary: 'Schedule a revision to publish at a future time',
+    description:
+      'Editors (`staff`) and Admins only. Authors (`user`) receive 403. ' +
+      'Same four-eyes rule as immediate publish: an Editor cannot schedule ' +
+      'an article they authored. Writes `scheduledRevisionId` and `scheduledAt`; ' +
+      '`publishedRevisionId` is not changed until POST /articles/publish-due ' +
+      'runs the existing publish logic. `scheduledAt` must be strictly in the future. ' +
+      'A second schedule for the same article replaces the pending one.',
+  })
+  @ApiParam(ARTICLE_ID_PARAM)
+  @ApiOkResponse({
+    description: 'Body fields: `id`, `scheduledRevisionId`, `scheduledAt`.',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Invalid UUID, missing fields, invalid/empty revision content, or scheduledAt not in the future',
+  })
+  @ApiUnauthorizedResponse({ description: UNAUTHORIZED })
+  @ApiForbiddenResponse({
+    description:
+      'Author (user) cannot schedule; Editor cannot schedule an article they authored',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Article not found, soft-deleted, or revision not found for this article',
+  })
+  schedulePublish(
+    @Param() params: ArticleIdParam,
+    @Body() dto: SchedulePublishDto,
+    @CurrentUser() user: JwtUser,
+  ): Promise<ScheduledPublish> {
+    return this.articlesService.schedulePublish(params.id, dto, user);
   }
 }

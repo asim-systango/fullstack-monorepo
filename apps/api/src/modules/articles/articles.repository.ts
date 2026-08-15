@@ -5,7 +5,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, IsNull, Not, QueryFailedError, Repository } from 'typeorm';
+import {
+  DataSource,
+  In,
+  IsNull,
+  LessThanOrEqual,
+  Not,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
 import { Media } from '../media/media.entity';
 import { RevisionMedia } from '../media/revision-media.entity';
 import { ArticleTag } from '../tags/article-tag.entity';
@@ -25,6 +33,7 @@ import type {
   StudioArticleDetail,
 } from './dto/get-article.dto';
 import type { PublishedArticle } from './dto/publish-article.dto';
+import type { DuePublishResult, ScheduledPublish } from './dto/schedule-publish.dto';
 import type {
   PublicArticleDetail,
   PublicArticleListItem,
@@ -170,6 +179,12 @@ export type GetPublicArticleBySlugInput = {
 export type PublishRevisionInput = {
   articleId: string;
   revisionId: string;
+};
+
+export type ScheduleRevisionInput = {
+  articleId: string;
+  revisionId: string;
+  scheduledAt: Date;
 };
 
 @Injectable()
@@ -433,6 +448,8 @@ export class ArticlesRepository {
       publishedAt: article.publishedAt,
       submittedRevisionId: article.submittedRevisionId,
       submittedAt: article.submittedAt,
+      scheduledRevisionId: article.scheduledRevisionId,
+      scheduledAt: article.scheduledAt,
       createdAt: article.createdAt,
       updatedAt: article.updatedAt,
       tags: article.articleTags.map((at) => ({ id: at.tag.id, name: at.tag.name })),
@@ -612,6 +629,8 @@ export class ArticlesRepository {
         {
           publishedRevisionId: revision.id,
           publishedAt,
+          scheduledRevisionId: null,
+          scheduledAt: null,
           ...(clearSubmission ? { submittedRevisionId: null, submittedAt: null } : {}),
         },
       );
@@ -622,6 +641,97 @@ export class ArticlesRepository {
         publishedAt,
       };
     });
+  }
+
+  /**
+   * Stores a future publish pointer. Does not move publishedRevisionId.
+   * Overwrites any existing scheduledRevisionId / scheduledAt.
+   */
+  async scheduleRevision(input: ScheduleRevisionInput): Promise<ScheduledPublish> {
+    return this.dataSource.transaction(async (manager) => {
+      const article = await manager.findOne(Article, {
+        where: { id: input.articleId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!article) {
+        throw new NotFoundException('Article not found');
+      }
+
+      const revision = await manager.findOne(Revision, {
+        where: { id: input.revisionId, articleId: input.articleId },
+      });
+      if (!revision) {
+        throw new NotFoundException('Revision not found');
+      }
+
+      try {
+        parseContentBlocks(revision.content);
+      } catch (err) {
+        if (err instanceof BadRequestException) {
+          throw err;
+        }
+        throw new BadRequestException('Revision content is invalid');
+      }
+
+      await manager.update(
+        Article,
+        { id: article.id },
+        {
+          scheduledRevisionId: revision.id,
+          scheduledAt: input.scheduledAt,
+        },
+      );
+
+      return {
+        id: article.id,
+        scheduledRevisionId: revision.id,
+        scheduledAt: input.scheduledAt,
+      };
+    });
+  }
+
+  /**
+   * Publishes every article whose scheduled time has arrived, using the same
+   * pointer transaction as immediate publish.
+   */
+  async executeDueSchedules(): Promise<DuePublishResult> {
+    const due = await this.articleRepo.find({
+      where: {
+        deletedAt: IsNull(),
+        scheduledRevisionId: Not(IsNull()),
+        scheduledAt: LessThanOrEqual(new Date()),
+      },
+      select: { id: true, scheduledRevisionId: true },
+      order: { scheduledAt: 'ASC' },
+    });
+
+    const published: DuePublishResult['published'] = [];
+    let skipped = 0;
+
+    for (const article of due) {
+      const revisionId = article.scheduledRevisionId;
+      if (!revisionId) continue;
+
+      try {
+        const result = await this.publishRevision({
+          articleId: article.id,
+          revisionId,
+        });
+        published.push(result);
+      } catch (err) {
+        if (err instanceof NotFoundException || err instanceof BadRequestException) {
+          await this.articleRepo.update(
+            { id: article.id },
+            { scheduledRevisionId: null, scheduledAt: null },
+          );
+          skipped += 1;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    return { published, skipped };
   }
 
   /**
