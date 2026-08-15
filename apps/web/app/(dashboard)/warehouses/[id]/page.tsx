@@ -32,6 +32,7 @@ import {
   Spinner,
   StatusMessage,
 } from '@shared/ui';
+import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
 
 function getMovementTone(type: string): 'success' | 'danger' | 'neutral' {
   if (type === 'inbound') return 'success';
@@ -267,34 +268,37 @@ export default function WarehouseDetailPage({
       </div>
 
       {/* Main Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card p-6 rounded-lg border border-border shadow-xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded border border-primary/20">
-              {warehouse.code}
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {warehouse.name}
-            </h1>
-            <Badge tone="success">Operational Facility</Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            📍 Location: {warehouse.location || 'Location unassigned'} • Created:{' '}
-            {new Date(warehouse.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-
+      <DashboardPageHeader
+        badge="Operational Facility"
+        subtag={`Facility Code: ${warehouse.code}`}
+        title={warehouse.name}
+        description={`📍 Location: ${warehouse.location || 'Location unassigned'} • Facility Created: ${new Date(warehouse.createdAt).toLocaleDateString()}`}
+      >
+        <HeaderStatCard
+          label="Allocated Stock"
+          value={facilityMetrics.totalStockUnits.toLocaleString()}
+          subtext="units"
+          tone="primary"
+          icon="📦"
+        />
+        <HeaderStatCard
+          label="Tracked SKUs"
+          value={facilityMetrics.stockedSkusCount}
+          subtext="items"
+          tone="neutral"
+          icon="🏷️"
+        />
         {isAdmin && (
           <Button
             variant="secondary"
             size="sm"
             onClick={handleOpenEdit}
-            className="self-start sm:self-auto text-xs px-3"
+            className="self-start sm:self-auto text-xs px-3 font-bold border border-[#7DA0FA]/40 bg-[#7DA0FA]/10 hover:bg-[#7DA0FA]/20 text-[#4747A1] dark:text-white"
           >
             ✏️ Edit Facility
           </Button>
         )}
-      </div>
+      </DashboardPageHeader>
 
       {/* Facility Metric Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

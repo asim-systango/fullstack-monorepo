@@ -30,6 +30,7 @@ import {
   Spinner,
   StatusMessage,
 } from '@shared/ui';
+import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
 
 export default function WarehousesPage() {
   const { user } = useAuth();
@@ -147,16 +148,15 @@ export default function WarehousesPage() {
 
   if (!isAdmin) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Warehouse Locations & Facilities
-          </h1>
-          <Badge tone="danger">Admin Only</Badge>
-        </div>
+      <div className="space-y-6">
+        <DashboardPageHeader
+          badge="Admin Only"
+          title="Warehouse Locations & Facilities"
+          description="Warehouse location details and facility management are restricted strictly to Administrator users."
+        />
         <StatusMessage tone="error">
-          Access Denied. Warehouse location details and facility management are restricted
-          strictly to Administrator users.
+          Access Denied. You do not have permission to view or manage warehouse
+          facilities.
         </StatusMessage>
       </div>
     );
@@ -284,31 +284,37 @@ export default function WarehousesPage() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Warehouse Locations & Facilities
-            </h1>
-            <Badge tone="accent">Admin Management</Badge>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Overview of storage facilities, location management, stock allocation, and
-            regional hubs.
-          </p>
-        </div>
-
+      <DashboardPageHeader
+        badge="Admin Management"
+        subtag="Storage & Regional Hubs"
+        title="Warehouse Locations & Facilities"
+        description="Overview of storage facilities, location management, stock allocation, and regional hubs."
+      >
+        <HeaderStatCard
+          label="Total Facilities"
+          value={isLoading ? '...' : metrics.totalWarehouses}
+          subtext="active sites"
+          tone="primary"
+          icon="🏬"
+        />
+        <HeaderStatCard
+          label="Total Stock"
+          value={isLoading ? '...' : metrics.totalStockUnits.toLocaleString()}
+          subtext="units"
+          tone="neutral"
+          icon="📦"
+        />
         {isAdmin && (
           <Button
             variant="primary"
             onClick={handleOpenCreate}
-            className="flex items-center gap-2 self-start sm:self-auto"
+            className="flex items-center gap-2 self-start sm:self-auto font-bold bg-[#4747A1] hover:bg-[#3b3b88] text-white border border-[#7978E9] shadow-sm px-4 py-2"
           >
             <span>➕</span>
             <span>Add Warehouse</span>
           </Button>
         )}
-      </div>
+      </DashboardPageHeader>
 
       {/* Error Alert */}
       {isError && (

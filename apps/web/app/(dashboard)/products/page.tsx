@@ -8,7 +8,8 @@ import { useAuth } from '@/components/auth';
 import { ProductToolbar } from '@/components/products/product-toolbar';
 import { AdminProductTable } from '@/components/products/admin-product-table';
 import { StaffProductTable } from '@/components/products/staff-product-table';
-import { StatusMessage, Badge } from '@shared/ui';
+import { StatusMessage } from '@shared/ui';
+import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
 
 export default function ProductsPage() {
   const { user } = useAuth();
@@ -70,26 +71,31 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header Section strictly driven by user role */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Products Catalog
-            </h1>
-            <Badge tone={isAdmin ? 'accent' : 'neutral'} className="capitalize">
-              {user?.role || 'Guest'} Role
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isAdmin
-              ? 'Admin Catalog View: Showing overall product details, SKU codes, categories, and total aggregated stock.'
-              : `Staff Warehouse View: Showing stock details for ${activeWarehouse?.name || 'your assigned warehouse'}.`}
-          </p>
-        </div>
-        <div className="text-xs font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-md self-start sm:self-auto">
-          {isLoading ? 'Loading...' : `${products.length} products listed`}
-        </div>
-      </div>
+      <DashboardPageHeader
+        badge={`${user?.role || 'Guest'} Role`}
+        subtag="Central Inventory Index"
+        title="Products Catalog"
+        description={
+          isAdmin
+            ? 'Admin Catalog View: Showing overall product details, SKU codes, categories, and total aggregated stock.'
+            : `Staff Warehouse View: Showing stock details for ${activeWarehouse?.name || 'your assigned warehouse'}.`
+        }
+      >
+        <HeaderStatCard
+          label="Total Products"
+          value={isLoading ? '...' : products.length}
+          subtext="items"
+          tone="primary"
+          icon="📦"
+        />
+        <HeaderStatCard
+          label="Categories"
+          value={isLoading ? '...' : categories.length}
+          subtext="groups"
+          tone="neutral"
+          icon="🏷️"
+        />
+      </DashboardPageHeader>
 
       {/* Error Banner */}
       {isError && (

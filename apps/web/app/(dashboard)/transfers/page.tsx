@@ -20,6 +20,7 @@ import {
   EmptyState,
   type BadgeTone,
 } from '@shared/ui/components';
+import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
 import { useProducts, type Product } from '@/lib/hooks/use-products';
 import { useTransfers, useCreateTransfer } from '@/lib/hooks/use-transfers';
@@ -165,35 +166,20 @@ export default function TransfersPage() {
   return (
     <Page className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6 space-y-8">
       {/* Top Header Section */}
-      <div className="w-full border-b border-border/80 pb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <Badge tone="accent" className="font-bold text-xs px-2.5 py-0.5">
-              Multi-Facility Network
-            </Badge>
-            <span className="text-xs text-muted-foreground font-semibold">
-              Double-Entry Inventory System
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-            Inter-Warehouse Stock Transfers
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Transfer inventory between storage facilities in a single atomic transaction
-            without driving source stock negative.
-          </p>
-        </div>
-
-        <div className="rounded-lg bg-[#7DA0FA]/10 border border-[#7DA0FA]/40 px-4 py-2.5">
-          <div className="text-xs font-bold text-[#4747A1] uppercase tracking-wider">
-            Total Facilities
-          </div>
-          <div className="text-xl font-black text-[#4747A1]">
-            {warehouses.length}{' '}
-            <span className="text-xs font-semibold text-slate-600">active sites</span>
-          </div>
-        </div>
-      </div>
+      <DashboardPageHeader
+        badge="Multi-Facility Network"
+        subtag="Double-Entry Inventory System"
+        title="Inter-Warehouse Stock Transfers"
+        description="Transfer inventory between storage facilities in a single atomic transaction without driving source stock negative."
+      >
+        <HeaderStatCard
+          label="Total Facilities"
+          value={warehouses.length}
+          subtext="active sites"
+          tone="primary"
+          icon="🏬"
+        />
+      </DashboardPageHeader>
 
       {/* Transfer Form Builder (Same brand palette as /movements) */}
       <div className="w-full rounded-2xl border-2 border-[#7DA0FA]/40 bg-white text-slate-900 shadow-sm overflow-hidden">
