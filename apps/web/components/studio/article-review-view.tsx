@@ -54,8 +54,8 @@ function defaultScheduleParts(): { date: string; time: string } {
 }
 
 function parseLocalSchedule(date: string, time: string): Date | null {
-  const [year, month, day] = date.split('-').map(Number);
-  const [hours, minutes] = time.split(':').map(Number);
+  const [year, month, day] = date.split('-').map(Number) as [number, number, number];
+  const [hours, minutes] = time.split(':').map(Number) as [number, number];
   if (![year, month, day, hours, minutes].every((part) => Number.isFinite(part))) {
     return null;
   }
