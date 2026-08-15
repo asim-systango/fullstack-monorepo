@@ -16,11 +16,11 @@ import {
   TableHeaderCell,
   TableCell,
   StatusMessage,
-  LoadingState,
   EmptyState,
   type BadgeTone,
 } from '@shared/ui/components';
 import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
+import { TableSkeleton } from '@/components/layout/page-skeleton';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
 import { useProducts, type Product } from '@/lib/hooks/use-products';
 import { useTransfers, useCreateTransfer } from '@/lib/hooks/use-transfers';
@@ -376,7 +376,7 @@ export default function TransfersPage() {
           <span>Inter-Warehouse Transfer Audit History</span>
         </h2>
 
-        {isLoadingTransfers && <LoadingState label="Loading transfer logs..." />}
+        {isLoadingTransfers && <TableSkeleton rows={5} />}
         {transfersError && (
           <EmptyState
             title="Failed to load transfers"

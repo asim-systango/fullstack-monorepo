@@ -11,9 +11,9 @@ import {
   TableCell,
   Badge,
   EmptyState,
-  Spinner,
   Pagination,
 } from '@shared/ui';
+import { TableSkeleton } from '@/components/layout/page-skeleton';
 import type { Product } from '@/lib/hooks/use-products';
 
 type AdminProductTableProps = {
@@ -35,14 +35,7 @@ export function AdminProductTable({
   }, [products.length]);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-3 rounded-lg border border-border bg-card">
-        <Spinner size="lg" />
-        <p className="text-sm text-muted-foreground">
-          Loading admin global products catalog...
-        </p>
-      </div>
-    );
+    return <TableSkeleton rows={5} />;
   }
 
   if (products.length === 0) {

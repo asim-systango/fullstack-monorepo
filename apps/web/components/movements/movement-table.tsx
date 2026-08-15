@@ -12,11 +12,11 @@ import {
   TextInput,
   Select,
   Pagination,
-  LoadingState,
   EmptyState,
   type BadgeTone,
 } from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
+import { TableSkeleton } from '@/components/layout/page-skeleton';
 import { useMovements, type MovementType } from '@/lib/hooks/use-movements';
 import { useWarehouses } from '@/lib/hooks/use-warehouses';
 
@@ -170,7 +170,7 @@ export function MovementTable() {
   };
 
   if (isLoading) {
-    return <LoadingState label="Fetching movement audit trail..." />;
+    return <TableSkeleton rows={5} />;
   }
 
   if (error) {

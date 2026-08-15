@@ -12,8 +12,9 @@ import {
   useStockHealthChart,
 } from '@/lib/hooks/use-dashboard';
 import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
+import { DashboardSkeleton } from '@/components/layout/page-skeleton';
 import { RechartsPieChart } from '@/components/dashboard/recharts-pie-chart';
-import { Spinner, Button } from '@shared/ui';
+import { Button } from '@shared/ui';
 
 function getMovementBadgeStyle(type: string): string {
   if (type === 'inbound') {
@@ -104,22 +105,7 @@ export default function DashboardPage() {
     isHealthChartLoading;
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <DashboardPageHeader
-          badge="Enterprise Analytics"
-          subtag="Server-Aggregated Telemetry"
-          title="Executive Logistics Dashboard"
-          description="Connecting to high-performance analytics endpoints..."
-        />
-        <div className="py-20 flex flex-col items-center justify-center space-y-4 rounded-2xl border border-border bg-card">
-          <Spinner size="lg" />
-          <p className="text-sm font-semibold text-slate-500">
-            Querying server dashboard APIs & pie chart streams...
-          </p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const totalStockUnits = metrics?.totalStockUnits ?? 0;

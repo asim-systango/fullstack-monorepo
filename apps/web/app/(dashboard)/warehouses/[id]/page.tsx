@@ -29,10 +29,10 @@ import {
   TableHeaderCell,
   TableCell,
   EmptyState,
-  Spinner,
   StatusMessage,
 } from '@shared/ui';
 import { DashboardPageHeader, HeaderStatCard } from '@/components/layout/page-header';
+import { PageSkeleton, TableSkeleton } from '@/components/layout/page-skeleton';
 
 function getMovementTone(type: string): 'success' | 'danger' | 'neutral' {
   if (type === 'inbound') return 'success';
@@ -155,12 +155,7 @@ export default function WarehouseDetailPage({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-16 space-y-3 rounded-lg border border-border bg-card">
-        <Spinner size="lg" />
-        <p className="text-sm text-muted-foreground">Loading facility details...</p>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!isAdmin) {
@@ -199,11 +194,7 @@ export default function WarehouseDetailPage({
 
   const renderMovementsContent = () => {
     if (isMovementsLoading) {
-      return (
-        <div className="p-8 text-center">
-          <Spinner size="md" />
-        </div>
-      );
+      return <TableSkeleton rows={3} />;
     }
 
     if (movements.length === 0) {

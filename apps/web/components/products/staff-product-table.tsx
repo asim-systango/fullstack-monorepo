@@ -10,8 +10,8 @@ import {
   TableCell,
   Badge,
   EmptyState,
-  Spinner,
 } from '@shared/ui';
+import { TableSkeleton } from '@/components/layout/page-skeleton';
 import { useAuth } from '@/components/auth';
 import type { Product } from '@/lib/hooks/use-products';
 import type { Warehouse } from '@/lib/hooks/use-warehouses';
@@ -36,14 +36,7 @@ export function StaffProductTable({
     warehouses.find((w) => w.id === staffWarehouseId) || warehouses[0];
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-3 rounded-lg border border-border bg-card">
-        <Spinner size="lg" />
-        <p className="text-sm text-muted-foreground">
-          Loading staff facility stock records...
-        </p>
-      </div>
-    );
+    return <TableSkeleton rows={5} />;
   }
 
   return (
