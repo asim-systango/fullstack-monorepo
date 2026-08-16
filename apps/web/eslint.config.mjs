@@ -25,6 +25,9 @@ const config = [
         tsconfigRootDir: import.meta.dirname,
       },
     },
+  },
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
     rules: {
       '@next/next/no-img-element': 'off',
     },
