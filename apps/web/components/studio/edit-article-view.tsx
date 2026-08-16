@@ -22,7 +22,6 @@ import {
   useCreateRevision,
   useStudioArticle,
   useSubmitForReview,
-  useUpdateArticle,
 } from '@/hooks/use-studio';
 import { StoryEditor } from './story-editor';
 import { TagPicker } from './tag-picker';
@@ -130,7 +129,6 @@ export function EditArticleView({
 }: Readonly<EditArticleViewProps>) {
   const { data: article, isLoading, isError, error } = useStudioArticle(id);
   const revisionMutation = useCreateRevision(id);
-  const updateMutation = useUpdateArticle(id);
   const reviewMutation = useSubmitForReview(id);
 
   const [title, setTitle] = useState('');
@@ -181,7 +179,7 @@ export function EditArticleView({
     );
   }
 
-  const saving = revisionMutation.isPending || updateMutation.isPending;
+  const saving = revisionMutation.isPending;
   const reviewState = getReviewState(toReviewPointers(article));
   // Authors and Editors both submit; publishing is always a different Editor.
   const canRequestReview =
@@ -208,15 +206,10 @@ export function EditArticleView({
     }
 
     try {
-      if (metadataChanged) {
-        await updateMutation.mutateAsync({
-          title: title.trim(),
-          slug: slug.trim(),
-          tagIds,
-        });
-      }
-
-      const revision = await revisionMutation.mutateAsync({ content });
+      const revision = await revisionMutation.mutateAsync({
+        content,
+        ...(metadataChanged ? { title: title.trim(), slug: slug.trim(), tagIds } : {}),
+      });
       setStatus(`Saved as revision v${revision.revisionNumber}. Not published yet.`);
     } catch (err) {
       setFormError(

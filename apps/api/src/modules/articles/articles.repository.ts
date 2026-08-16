@@ -89,6 +89,10 @@ export type CreateRevisionInput = {
   coverMediaId?: string;
   /** When set, ownership is enforced before the revision is written. */
   authorId?: string;
+  /** Optional metadata applied in the same transaction as the new revision. */
+  title?: string;
+  slug?: string;
+  tagIds?: string[];
 };
 
 export type UpdateArticleInput = {
@@ -172,6 +176,8 @@ function toResolvedMedia(links: RevisionMedia[] | undefined): ArticleMedia[] {
   return [...byId.values()];
 }
 
+const ARTICLE_NOT_FOUND = 'Article not found';
+
 export type GetPublicArticleBySlugInput = {
   slug: string;
 };
@@ -212,74 +218,53 @@ export class ArticlesRepository {
     const selectedTags = await this.resolveTags(input.tagIds);
     await this.assertMediaReferencesValid(mediaRefs, coverMediaId);
 
-    let articleId: string | undefined;
-
     try {
-      // 3. Create draft article
-      const article = await this.articleRepo.save({
-        authorId: input.authorId,
-        title: input.title,
-        slug: input.slug,
-        publishedRevisionId: null,
-        publishedAt: null,
-      });
-      articleId = article.id;
+      return await this.dataSource.transaction(async (manager) => {
+        const articleRepo = manager.getRepository(Article);
+        const revisionRepo = manager.getRepository(Revision);
+        const revisionMediaRepo = manager.getRepository(RevisionMedia);
+        const articleTagRepo = manager.getRepository(ArticleTag);
 
-      // 4. Create first revision
-      const revision = await this.revisionRepo.save({
-        articleId: article.id,
-        content: input.content,
-        createdBy: input.authorId,
-        coverMediaId,
-      });
+        const article = await articleRepo.save({
+          authorId: input.authorId,
+          title: input.title,
+          slug: input.slug,
+          publishedRevisionId: null,
+          publishedAt: null,
+        });
 
-      // 5. Derived revision_media index for cover + inline image/video blocks
-      const revisionMediaRows = [
-        ...(coverMediaId
-          ? [
-              {
-                revisionId: revision.id,
-                mediaId: coverMediaId,
-                blockId: 'cover',
-                role: 'cover' as const,
-              },
-            ]
-          : []),
-        ...mediaRefs.map((ref) => ({
-          revisionId: revision.id,
-          mediaId: ref.mediaId,
-          blockId: ref.blockId,
-          role: 'inline' as const,
-        })),
-      ];
+        const revision = await revisionRepo.save({
+          articleId: article.id,
+          content: input.content,
+          createdBy: input.authorId,
+          coverMediaId,
+        });
 
-      if (revisionMediaRows.length > 0) {
-        await this.revisionMediaRepo.save(revisionMediaRows);
-      }
-
-      // 6. Attach tags
-      if (selectedTags.length > 0) {
-        await this.articleTagRepo.save(
-          selectedTags.map((tag) => ({
-            articleId: article.id,
-            tagId: tag.id,
-          })),
+        const revisionMediaRows = this.revisionMediaRows(
+          revision.id,
+          coverMediaId,
+          mediaRefs,
         );
-      }
+        if (revisionMediaRows.length > 0) {
+          await revisionMediaRepo.save(revisionMediaRows);
+        }
 
-      return {
-        article,
-        revision,
-        tags: selectedTags.map((tag) => ({ id: tag.id, name: tag.name })),
-      };
+        if (selectedTags.length > 0) {
+          await articleTagRepo.save(
+            selectedTags.map((tag) => ({
+              articleId: article.id,
+              tagId: tag.id,
+            })),
+          );
+        }
+
+        return {
+          article,
+          revision,
+          tags: selectedTags.map((tag) => ({ id: tag.id, name: tag.name })),
+        };
+      });
     } catch (err) {
-      // Undo partial inserts if a later step failed
-      if (articleId) {
-        await this.articleTagRepo.delete({ articleId });
-        await this.revisionRepo.delete({ articleId });
-        await this.articleRepo.delete(articleId);
-      }
-
       throw this.toSlugConflict(err);
     }
   }
@@ -494,7 +479,7 @@ export class ArticlesRepository {
           .where('filterArticleTag.articleId = article.id')
           .andWhere('LOWER(filterTag.name) = :tag')
           .getQuery()})`,
-        { tag: input.tag },
+        { tag: input.tag.toLowerCase() },
       );
     }
 
@@ -583,7 +568,7 @@ export class ArticlesRepository {
         lock: { mode: 'pessimistic_write' },
       });
       if (!article) {
-        throw new NotFoundException('Article not found');
+        throw new NotFoundException(ARTICLE_NOT_FOUND);
       }
 
       const revision = await manager.findOne(Revision, {
@@ -654,7 +639,7 @@ export class ArticlesRepository {
         lock: { mode: 'pessimistic_write' },
       });
       if (!article) {
-        throw new NotFoundException('Article not found');
+        throw new NotFoundException(ARTICLE_NOT_FOUND);
       }
 
       const revision = await manager.findOne(Revision, {
@@ -750,7 +735,7 @@ export class ArticlesRepository {
         lock: { mode: 'pessimistic_write' },
       });
       if (!article) {
-        throw new NotFoundException('Article not found');
+        throw new NotFoundException(ARTICLE_NOT_FOUND);
       }
 
       const revisions = await manager.find(Revision, {
@@ -798,66 +783,89 @@ export class ArticlesRepository {
    * Append a revision to an existing article.
    * Deliberately leaves `publishedRevisionId` untouched: a new revision is a draft
    * until an editor publishes it, even when the article is already public.
+   * Title, slug, and tags are optional and commit in the same transaction.
    */
   async createRevision(input: CreateRevisionInput): Promise<{
     revision: Revision;
     revisionNumber: number;
     publishedRevisionId: string | null;
   }> {
-    const article = await this.findOwnedArticle(input.articleId, input.authorId);
-
     const mediaRefs = collectMediaRefs(input.content);
     const coverMediaId = input.coverMediaId ?? null;
     await this.assertMediaReferencesValid(mediaRefs, coverMediaId);
+    const selectedTags = input.tagIds ? await this.resolveTags(input.tagIds) : null;
 
-    const revision = await this.revisionRepo.save({
-      articleId: article.id,
-      content: input.content,
-      createdBy: input.createdBy,
-      coverMediaId,
-    });
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const articleRepo = manager.getRepository(Article);
+        const revisionRepo = manager.getRepository(Revision);
+        const revisionMediaRepo = manager.getRepository(RevisionMedia);
+        const articleTagRepo = manager.getRepository(ArticleTag);
 
-    const revisionMediaRows = [
-      ...(coverMediaId
-        ? [
-            {
-              revisionId: revision.id,
-              mediaId: coverMediaId,
-              blockId: 'cover',
-              role: 'cover' as const,
-            },
-          ]
-        : []),
-      ...mediaRefs.map((ref) => ({
-        revisionId: revision.id,
-        mediaId: ref.mediaId,
-        blockId: ref.blockId,
-        role: 'inline' as const,
-      })),
-    ];
+        const article = await articleRepo.findOne({
+          where: {
+            id: input.articleId,
+            deletedAt: IsNull(),
+            ...(input.authorId ? { authorId: input.authorId } : {}),
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!article) {
+          throw new NotFoundException(ARTICLE_NOT_FOUND);
+        }
 
-    if (revisionMediaRows.length > 0) {
-      await this.revisionMediaRepo.save(revisionMediaRows);
+        const revision = await revisionRepo.save({
+          articleId: article.id,
+          content: input.content,
+          createdBy: input.createdBy,
+          coverMediaId,
+        });
+
+        const revisionMediaRows = this.revisionMediaRows(
+          revision.id,
+          coverMediaId,
+          mediaRefs,
+        );
+        if (revisionMediaRows.length > 0) {
+          await revisionMediaRepo.save(revisionMediaRows);
+        }
+
+        const changes: { title?: string; slug?: string; updatedAt: Date } = {
+          updatedAt: new Date(),
+        };
+        if (input.title !== undefined) changes.title = input.title;
+        if (input.slug !== undefined) changes.slug = input.slug;
+        await articleRepo.update({ id: article.id }, changes);
+
+        if (selectedTags) {
+          await articleTagRepo.delete({ articleId: article.id });
+          if (selectedTags.length > 0) {
+            await articleTagRepo.save(
+              selectedTags.map((tag) => ({
+                articleId: article.id,
+                tagId: tag.id,
+              })),
+            );
+          }
+        }
+
+        const revisionNumber = await revisionRepo.count({
+          where: { articleId: article.id },
+        });
+
+        return {
+          revision,
+          revisionNumber,
+          publishedRevisionId: article.publishedRevisionId,
+        };
+      });
+    } catch (err) {
+      throw this.toSlugConflict(err);
     }
-
-    // Keeps the article at the top of the updatedAt-sorted studio list.
-    await this.articleRepo.update({ id: article.id }, { updatedAt: new Date() });
-
-    const revisionNumber = await this.revisionRepo.count({
-      where: { articleId: article.id },
-    });
-
-    return {
-      revision,
-      revisionNumber,
-      publishedRevisionId: article.publishedRevisionId,
-    };
   }
 
   /** Update article metadata only. Content changes go through createRevision. */
   async updateArticle(input: UpdateArticleInput): Promise<void> {
-    const article = await this.findOwnedArticle(input.id, input.authorId);
-
     // Resolve tags before writing anything so an invalid id fails the whole patch.
     const selectedTags = input.tagIds ? await this.resolveTags(input.tagIds) : null;
 
@@ -879,21 +887,39 @@ export class ArticlesRepository {
     }
     if (input.ogImage !== undefined) changes.ogImage = input.ogImage;
 
-    // Slug is the only uniqueness risk here, so take it before touching tags.
     try {
-      await this.articleRepo.update({ id: article.id }, changes);
+      await this.dataSource.transaction(async (manager) => {
+        const articleRepo = manager.getRepository(Article);
+        const articleTagRepo = manager.getRepository(ArticleTag);
+
+        const article = await articleRepo.findOne({
+          where: {
+            id: input.id,
+            deletedAt: IsNull(),
+            ...(input.authorId ? { authorId: input.authorId } : {}),
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!article) {
+          throw new NotFoundException(ARTICLE_NOT_FOUND);
+        }
+
+        await articleRepo.update({ id: article.id }, changes);
+
+        if (selectedTags) {
+          await articleTagRepo.delete({ articleId: article.id });
+          if (selectedTags.length > 0) {
+            await articleTagRepo.save(
+              selectedTags.map((tag) => ({
+                articleId: article.id,
+                tagId: tag.id,
+              })),
+            );
+          }
+        }
+      });
     } catch (err) {
       throw this.toSlugConflict(err);
-    }
-
-    if (selectedTags) {
-      await this.articleTagRepo.delete({ articleId: article.id });
-
-      if (selectedTags.length > 0) {
-        await this.articleTagRepo.save(
-          selectedTags.map((tag) => ({ articleId: article.id, tagId: tag.id })),
-        );
-      }
     }
   }
 
@@ -915,6 +941,31 @@ export class ArticlesRepository {
     return { id: article.id, deletedAt: deleted?.deletedAt ?? new Date() };
   }
 
+  private revisionMediaRows(
+    revisionId: string,
+    coverMediaId: string | null,
+    mediaRefs: MediaRef[],
+  ) {
+    return [
+      ...(coverMediaId
+        ? [
+            {
+              revisionId,
+              mediaId: coverMediaId,
+              blockId: 'cover',
+              role: 'cover' as const,
+            },
+          ]
+        : []),
+      ...mediaRefs.map((ref) => ({
+        revisionId,
+        mediaId: ref.mediaId,
+        blockId: ref.blockId,
+        role: 'inline' as const,
+      })),
+    ];
+  }
+
   private async findOwnedArticle(id: string, authorId?: string): Promise<Article> {
     const article = await this.articleRepo.findOne({
       where: {
@@ -925,7 +976,7 @@ export class ArticlesRepository {
     });
 
     if (!article) {
-      throw new NotFoundException('Article not found');
+      throw new NotFoundException(ARTICLE_NOT_FOUND);
     }
 
     return article;

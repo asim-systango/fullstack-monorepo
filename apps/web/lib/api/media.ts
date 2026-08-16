@@ -23,6 +23,8 @@ export async function uploadMedia(file: File, altText?: string): Promise<Uploade
     form.append('altText', altText);
   }
 
-  const { data } = await apiClient.post<UploadedMedia>('/media', form);
+  const { data } = await apiClient.post<UploadedMedia>('/media', form, {
+    timeout: 120_000,
+  });
   return data;
 }

@@ -113,6 +113,10 @@ export type CreateRevisionInput = {
   body?: string;
   content?: ArticleContentBlock[];
   coverMediaId?: string;
+  /** Optional metadata applied in the same transaction as the revision. */
+  title?: string;
+  slug?: string;
+  tagIds?: string[];
 };
 
 export type CreatedRevision = {
