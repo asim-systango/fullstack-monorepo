@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { User } from '@shared/api-client';
+import { AUTH_COOKIE_NAME } from '@shared/env/constants';
 import { authApi } from '@/lib/api';
 
 type AuthContextValue = {
@@ -31,6 +32,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(me);
     } catch {
       setUser(null);
+      if (typeof window !== 'undefined') {
+        document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; path=/;`;
+      }
     } finally {
       setLoading(false);
     }
@@ -41,8 +45,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [refresh]);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignore network errors on logout
+    } finally {
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        document.cookie = `${AUTH_COOKIE_NAME}=; Max-Age=0; path=/;`;
+      }
+    }
   }, []);
 
   const value = useMemo(

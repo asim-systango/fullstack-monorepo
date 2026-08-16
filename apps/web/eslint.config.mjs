@@ -26,6 +26,12 @@ const config = [
       },
     },
   },
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      '@next/next/no-img-element': 'off',
+    },
+  },
 ];
 
 export default config;

@@ -26,6 +26,9 @@ export class User {
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role!: UserRole;
 
+  @Column({ name: 'warehouse_id', type: 'uuid', nullable: true })
+  warehouseId?: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

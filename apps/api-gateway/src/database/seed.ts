@@ -15,6 +15,11 @@ async function seed() {
     { email: 'staff@demo.local', name: 'Demo Staff', role: 'staff' },
   ];
 
+  const warehousesResult = (await dataSource.query(
+    `SELECT id FROM warehouses LIMIT 1`,
+  )) as Array<{ id: string }>;
+  const defaultWarehouseId = warehousesResult?.[0]?.id ?? null;
+
   for (const row of seeds) {
     const existing = await users.findOne({ where: { email: row.email } });
     if (!existing) {
@@ -24,8 +29,12 @@ async function seed() {
           name: row.name,
           passwordHash,
           role: row.role,
+          warehouseId: row.role === 'staff' ? defaultWarehouseId : null,
         }),
       );
+    } else if (row.role === 'staff' && !existing.warehouseId && defaultWarehouseId) {
+      existing.warehouseId = defaultWarehouseId;
+      await users.save(existing);
     }
   }
 
