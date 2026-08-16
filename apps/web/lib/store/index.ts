@@ -1,5 +1,6 @@
 import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+import { createTicketDraftReducer } from './create-ticket-draft-slice';
 
 /**
  * Ownership rule:
@@ -37,6 +38,7 @@ export const { setFilterDraft, applyFilter } = uiSlice.actions;
 export const store = configureStore({
   reducer: {
     ui: uiSlice.reducer,
+    createTicketDraft: createTicketDraftReducer,
   },
 });
 

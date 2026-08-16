@@ -4,9 +4,39 @@ import axios, {
   type CreateAxiosDefaults,
 } from 'axios';
 import { z } from 'zod';
-import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
+import {
+  apiErrorSchema,
+  userSchema,
+  ticketSchema,
+  categorySchema,
+  paginatedTicketsResponseSchema,
+  type ApiErrorBody,
+  type User,
+  type Ticket,
+  type Category,
+  type TicketPriority,
+  type TicketStatus,
+  type CreateTicketInput,
+  type PaginatedTicketsResponse,
+  type TicketQueryParams,
+} from '@shared/types';
 
-export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export {
+  apiErrorSchema,
+  userSchema,
+  ticketSchema,
+  categorySchema,
+  paginatedTicketsResponseSchema,
+  type ApiErrorBody,
+  type User,
+  type Ticket,
+  type Category,
+  type TicketPriority,
+  type TicketStatus,
+  type CreateTicketInput,
+  type PaginatedTicketsResponse,
+  type TicketQueryParams,
+};
 
 export class ApiClientError extends Error {
   readonly statusCode: number;
@@ -112,6 +142,33 @@ export function createHealthApi(client: AxiosInstance) {
       const { data } = await client.get('/health');
       const parsed = z.object({ status: z.string() }).parse(unwrapData(data));
       return { status: parsed.status };
+    },
+  };
+}
+
+export function createTicketsApi(client: AxiosInstance) {
+  return {
+    async list(params?: TicketQueryParams): Promise<PaginatedTicketsResponse> {
+      const { data } = await client.get('/tickets', { params });
+      return paginatedTicketsResponseSchema.parse(unwrapData(data));
+    },
+    async getById(id: string): Promise<Ticket> {
+      const { data } = await client.get(`/tickets/${id}`);
+      return ticketSchema.parse(unwrapData(data));
+    },
+    async create(input: CreateTicketInput): Promise<Ticket> {
+      const { data } = await client.post('/tickets', input);
+      return ticketSchema.parse(unwrapData(data));
+    },
+  };
+}
+
+export function createCategoriesApi(client: AxiosInstance) {
+  return {
+    async list(): Promise<Category[]> {
+      const { data } = await client.get('/categories');
+      const unwrapped = unwrapData<Category[]>(data);
+      return z.array(categorySchema).parse(unwrapped);
     },
   };
 }

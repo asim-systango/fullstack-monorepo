@@ -37,9 +37,29 @@ function AuthNav() {
   );
 }
 
+function MainNav() {
+  const { user } = useAuth();
+
+  return (
+    <>
+      <Link href="/">Home</Link>
+      {user && (
+        <>
+          <Link href="/tickets">My Tickets</Link>
+          {(user.role === 'staff' || user.role === 'admin') && (
+            <Link href="/agent">Agent Inbox</Link>
+          )}
+          {user.role === 'admin' && <Link href="/categories">Categories</Link>}
+        </>
+      )}
+      <Link href="/ui">UI kit</Link>
+    </>
+  );
+}
+
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Support Desk Management',
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <header className="ui-shell-header">
@@ -48,8 +68,7 @@ export function ShellHeader({
         <p className="ui-shell-subtitle">{subtitle}</p>
       </div>
       <nav className="ui-shell-nav">
-        <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        <MainNav />
         <AuthNav />
       </nav>
     </header>
