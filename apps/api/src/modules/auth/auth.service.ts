@@ -39,6 +39,8 @@ import type { PublicUser } from '../users';
 
 export { AUTH_COOKIE_NAME };
 
+const INVALID_OR_EXPIRED_VERIFICATION_CODE = 'Invalid or expired verification code';
+
 export type AuthTokensResponse = {
   user: PublicUser;
   accessToken: string;
@@ -116,7 +118,7 @@ export class AuthService {
   async verifyOtp(dto: VerifyOtpDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user || user.otpPurpose !== 'signup') {
-      throw new BadRequestException('Invalid or expired verification code');
+      throw new BadRequestException(INVALID_OR_EXPIRED_VERIFICATION_CODE);
     }
 
     await this.assertOtpValid(user, dto.otp);
@@ -350,7 +352,7 @@ export class AuthService {
   async changePassword(userId: string, dto: ChangePasswordDto, res: Response) {
     const user = await this.requireCurrentPassword(userId, dto.currentPassword);
     if (user.otpPurpose !== 'password_change') {
-      throw new BadRequestException('Invalid or expired verification code');
+      throw new BadRequestException(INVALID_OR_EXPIRED_VERIFICATION_CODE);
     }
 
     await this.assertOtpValid(user, dto.otp);
@@ -422,7 +424,7 @@ export class AuthService {
 
   private async assertOtpValid(user: User, otp: string): Promise<void> {
     if (!user.otpHash || !user.otpExpiresAt) {
-      throw new BadRequestException('Invalid or expired verification code');
+      throw new BadRequestException(INVALID_OR_EXPIRED_VERIFICATION_CODE);
     }
     if (user.otpAttempts >= OTP_MAX_ATTEMPTS) {
       throw new BadRequestException(
@@ -430,14 +432,14 @@ export class AuthService {
       );
     }
     if (user.otpExpiresAt.getTime() < Date.now()) {
-      throw new BadRequestException('Invalid or expired verification code');
+      throw new BadRequestException(INVALID_OR_EXPIRED_VERIFICATION_CODE);
     }
 
     const ok = await verifyOtpHash(otp, user.otpHash);
     if (!ok) {
       user.otpAttempts += 1;
       await this.usersService.save(user);
-      throw new BadRequestException('Invalid or expired verification code');
+      throw new BadRequestException(INVALID_OR_EXPIRED_VERIFICATION_CODE);
     }
   }
 }
