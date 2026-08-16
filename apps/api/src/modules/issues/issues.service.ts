@@ -7,6 +7,7 @@ import { Issue } from './issue.entity';
 import { Comment } from './comment.entity';
 import { ActivityLog } from './activity-log.entity';
 import { IssueLabel } from '../labels/issue-label.entity';
+import { Label } from '../labels/label.entity';
 import { assertTransition } from './status-machine';
 import { ChangeStatusDto, CreateCommentDto, CreateIssueDto, IssueFilterDto } from './dto';
 
@@ -123,6 +124,29 @@ export class IssuesService {
     await this.membership.assertMember(issue.projectId, user);
     await this.db.getRepository(Issue).update(id, { sprintId });
     return this.db.getRepository(Issue).findOneOrFail({ where: { id } });
+  }
+
+  async addLabel(id: string, labelId: string, user: JwtUser): Promise<void> {
+    const issue = await this.getIssueOr404(id);
+    await this.membership.assertMember(issue.projectId, user);
+    const label = await this.db.getRepository(Label).findOne({ where: { id: labelId } });
+    if (!label || label.projectId !== issue.projectId) {
+      throw new BadRequestException('Label does not belong to this project');
+    }
+    const existing = await this.db
+      .getRepository(IssueLabel)
+      .findOne({ where: { issueId: id, labelId } });
+    if (!existing) {
+      await this.db
+        .getRepository(IssueLabel)
+        .save(this.db.getRepository(IssueLabel).create({ issueId: id, labelId }));
+    }
+  }
+
+  async removeLabel(id: string, labelId: string, user: JwtUser): Promise<void> {
+    const issue = await this.getIssueOr404(id);
+    await this.membership.assertMember(issue.projectId, user);
+    await this.db.getRepository(IssueLabel).delete({ issueId: id, labelId });
   }
 
   async addComment(id: string, dto: CreateCommentDto, user: JwtUser): Promise<Comment> {

@@ -63,4 +63,22 @@ export class IssuesController {
   ) {
     return this.issues.addComment(id, dto, user);
   }
+
+  @Post('issues/:id/labels/:labelId')
+  addLabel(
+    @Param('id') id: string,
+    @Param('labelId') labelId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.issues.addLabel(id, labelId, user);
+  }
+
+  @Delete('issues/:id/labels/:labelId')
+  removeLabel(
+    @Param('id') id: string,
+    @Param('labelId') labelId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.issues.removeLabel(id, labelId, user);
+  }
 }

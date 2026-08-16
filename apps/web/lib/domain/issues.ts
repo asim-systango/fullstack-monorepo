@@ -71,3 +71,36 @@ export function useAddComment(issueId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['issue', issueId] }),
   });
 }
+
+export function useAssignSprint(issueId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sprintId: string | null) => {
+      const { data } = await apiClient.patch(`/issues/${issueId}/sprint`, {
+        sprintId: sprintId ?? undefined,
+      });
+      return issueSchema.parse(unwrapData(data));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['issue', issueId] }),
+  });
+}
+
+export function useAddIssueLabel(issueId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (labelId: string) => {
+      await apiClient.post(`/issues/${issueId}/labels/${labelId}`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['issue', issueId] }),
+  });
+}
+
+export function useRemoveIssueLabel(issueId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (labelId: string) => {
+      await apiClient.delete(`/issues/${issueId}/labels/${labelId}`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['issue', issueId] }),
+  });
+}

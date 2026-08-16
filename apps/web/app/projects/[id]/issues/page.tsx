@@ -1,10 +1,16 @@
 'use client';
 import { use } from 'react';
 import Link from 'next/link';
+import { useState } from 'react';
 import {
   Badge,
   Button,
+  Card,
+  CardHeader,
+  CardTitle,
   EmptyState,
+  Field,
+  Form,
   Page,
   Select,
   Spinner,
@@ -15,6 +21,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  TextInput,
 } from '@shared/ui/components';
 import { ShellHeader } from '@/components/auth';
 import {
@@ -24,8 +31,67 @@ import {
   setIssueFilter,
   setIssuePage,
 } from '@/lib/store';
-import { useIssues } from '@/lib/domain/issues';
+import { useCreateIssue, useIssues } from '@/lib/domain/issues';
+import { useProjectMembers } from '@/lib/domain/projects';
 import { useLabels } from '@/lib/domain/labels';
+
+function CreateIssueForm({ projectId }: Readonly<{ projectId: string }>) {
+  const create = useCreateIssue(projectId);
+  const members = useProjectMembers(projectId);
+  const [title, setTitle] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+
+  return (
+    <Card className="max-w-md">
+      <CardHeader>
+        <CardTitle>New issue</CardTitle>
+      </CardHeader>
+      <Form
+        pending={create.isPending}
+        onSubmit={(e) => {
+          e.preventDefault();
+          create.mutate(
+            { title, assigneeId: assigneeId || undefined },
+            {
+              onSuccess: () => {
+                setTitle('');
+                setAssigneeId('');
+              },
+            },
+          );
+        }}
+      >
+        <Field label="Title" htmlFor="i-title" required>
+          <TextInput
+            id="i-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </Field>
+        <Field label="Assignee" htmlFor="i-assignee">
+          <Select
+            id="i-assignee"
+            value={assigneeId}
+            onChange={(e) => setAssigneeId(e.target.value)}
+          >
+            <option value="">Unassigned</option>
+            {members.data?.map((m) => (
+              <option key={m.id} value={m.userId}>
+                {m.userId.slice(0, 8)} — {m.projectRole}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Button type="submit" loading={create.isPending}>
+          Create issue
+        </Button>
+        {create.isError && (
+          <StatusMessage tone="error">Create failed — check the fields.</StatusMessage>
+        )}
+      </Form>
+    </Card>
+  );
+}
 
 export default function IssuesTablePage({
   params,
@@ -44,6 +110,7 @@ export default function IssuesTablePage({
   return (
     <Page>
       <ShellHeader title="Issues" subtitle="Filter the backlog" />
+      <CreateIssueForm projectId={id} />
       <div className="flex flex-wrap gap-2">
         <Select
           value={filters.status}

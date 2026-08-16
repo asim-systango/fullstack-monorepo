@@ -38,3 +38,26 @@ export function useProjectMembers(projectId: string) {
     },
   });
 }
+
+export function useAddMember(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      userId: string;
+      projectRole: 'project_lead' | 'member';
+    }) => {
+      await apiClient.post(`/projects/${projectId}/members`, input);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['members', projectId] }),
+  });
+}
+
+export function useRemoveMember(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      await apiClient.delete(`/projects/${projectId}/members/${userId}`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['members', projectId] }),
+  });
+}
