@@ -154,7 +154,7 @@ export default function UsersPage() {
             case UserRole.SUPER_ADMIN:
                 return 'accent';
             case UserRole.ORG_ADMIN:
-                return 'warning';
+                return 'danger';
             case UserRole.SALES_LEAD:
                 return 'success';
             default:
@@ -167,9 +167,9 @@ export default function UsersPage() {
             case 'ACTIVE':
                 return 'success';
             case 'PENDING':
-                return 'warning';
+                return 'accent';
             default:
-                return 'critical';
+                return 'danger';
         }
     };
 
@@ -192,7 +192,7 @@ export default function UsersPage() {
             >
                 {notification && (
                     <Alert
-                        tone={notification.type === 'success' ? 'success' : 'critical'}
+                        tone={notification.type === 'success' ? 'success' : 'danger'}
                         className="text-xs mb-5"
                     >
                         {notification.message}
@@ -371,7 +371,7 @@ export default function UsersPage() {
                             </div>
 
                             {inviteError && (
-                                <Alert tone="critical" className="text-xs">
+                                <Alert tone="danger" className="text-xs">
                                     {inviteError}
                                 </Alert>
                             )}
