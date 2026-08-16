@@ -65,6 +65,9 @@ export class MediaService {
         format,
         url: uploaded.url,
         bytes: file.size,
+        width: uploaded.width,
+        height: uploaded.height,
+        durationSeconds: uploaded.durationSeconds,
         altText: altText?.trim() || undefined,
       });
       return this.toDto(media);

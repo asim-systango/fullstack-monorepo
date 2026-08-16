@@ -40,6 +40,23 @@ describe('ArticlesService public reads', () => {
     });
   });
 
+  it('lowercases the public tag filter so seeded display names still match', async () => {
+    repository.listPublicArticles.mockResolvedValue({ items: [], total: 0 });
+
+    await service.listPublicArticles({
+      page: 1,
+      limit: 20,
+      tag: 'Generative AI',
+    });
+
+    expect(repository.listPublicArticles).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      search: undefined,
+      tag: 'generative ai',
+    });
+  });
+
   it('returns the published revision payload, including SEO fields', async () => {
     const article: PublicArticleDetail = {
       id: 'article-1',

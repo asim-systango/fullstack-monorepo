@@ -85,6 +85,9 @@ export class ArticlesService {
       createdBy: user.id,
       coverMediaId: dto.coverMediaId,
       authorId: this.ownershipScope(user),
+      title: dto.title,
+      slug: dto.slug,
+      tagIds: dto.tagIds,
     });
 
     return {
@@ -252,7 +255,7 @@ export class ArticlesService {
       page: query.page,
       limit: query.limit,
       search: query.q,
-      tag: query.tag,
+      tag: query.tag?.toLowerCase(),
     });
 
     return {

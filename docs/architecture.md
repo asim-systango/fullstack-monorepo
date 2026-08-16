@@ -1,7 +1,5 @@
 # Architecture
 
-Fill in **Domain notes** and **Demo script** for your project before the PR.
-
 ## Request flow
 
 ```text
@@ -19,7 +17,7 @@ Browser calls same-origin `/api/*` with the httpOnly `access_token` cookie (`wit
 
 Gateway-owned paths stay on the gateway: `/auth/*`, `/admin/*`, `/health`, `/docs`. Everything else is proxied to the domain API (`:3002`). The hop copies the cookie into `Authorization: Bearer` and strips `Cookie` (`apps/api-gateway/src/common/proxy-hop.ts`).
 
-The domain API has no User table and no cookie parser. Global `JwtAuthGuard` + `RolesGuard` validate the Bearer JWT (`sub`, `email`, `role`) with the shared `JWT_SECRET`. Public blog slug pages also fetch the gateway from the Next server for RSC + metadata.
+The domain API has no User table and no cookie parser. Global `JwtAuthGuard` + `RolesGuard` validate the Bearer JWT, then reload `users.is_active` from the shared database so a deactivated account cannot keep calling `:3002`. The process binds to `LISTEN_HOST` (default `127.0.0.1`). Public blog slug pages also fetch the gateway from the Next server for RSC + metadata.
 
 ## Who owns what
 
@@ -32,7 +30,7 @@ The domain API has no User table and no cookie parser. Global `JwtAuthGuard` + `
 | Domain API     | Entities, rules, migrations | Browser cookies    |
 | Postgres       | Data + constraints          | —                  |
 
-In this CMS: TanStack Query owns auth/lists/mutations. The TipTap document and list filters live in component state and URL params (Redux Toolkit is not wired). Gateway owns `users` and editor-admin APIs. Domain API owns articles, revisions, tags, comments, media. Cloudinary stores file bytes; Postgres stores media metadata.
+In this CMS: TanStack Query owns auth/lists/mutations. The TipTap document and list filters live in component state and URL params. Redux Toolkit is not wired — that is intentional, not an unfinished store. Gateway owns `users` and editor-admin APIs. Domain API owns articles, revisions, tags, comments, media. Cloudinary stores file bytes plus width/height/duration when the upload response includes them.
 
 ## Folders
 
@@ -40,7 +38,7 @@ In this CMS: TanStack Query owns auth/lists/mutations. The TipTap document and l
 | ------------------ | ------------------------------------------------------------------------------------- |
 | `apps/web`         | Next UI (`:3000`) — `@app/web`                                                        |
 | `apps/api-gateway` | Auth + BFF (`:3001`) — `@app/api-gateway`                                             |
-| `apps/api`         | Domain Nest API (`:3002`) — `@app/api` (**your Must work**)                           |
+| `apps/api`         | Domain Nest API (`:3002`) — `@app/api`                                                |
 | `libs/ui`          | Shared UI kit + theme — prefer `@shared/ui/components` ([frontend.md](./frontend.md)) |
 | `libs/*`           | Other shared packages (`@shared/*`) — folder subpaths when folders exist              |
 | `docker/`          | Compose: Postgres only · deploy stubs: `Dockerfile.{gateway,api,web}`                 |
@@ -52,8 +50,9 @@ Present libs: `@shared/http`, `@shared/env`, `@shared/types`, `@shared/database`
 
 ## Conventions
 
-- Responses: `{ data: T }` — `@shared/http` envelope (`@shared/http/filters`, `@shared/http/interceptors`) + `@shared/api-client`
-- Errors: `{ statusCode, error, message, details? }` via shared `AllExceptionsFilter`
+- Responses: `{ data: T }` — `@shared/http` envelope (`@shared/http/filters`, `@shared/http/interceptors`). List endpoints keep pagination beside `data` (`{ data: items, page, limit, total, totalPages }`) rather than the starter `{ data: { items, total, page, limit } }` — the web client only unwraps `{ data }` when that is the sole key.
+- TanStack Query owns auth, lists, and mutations. Blog/studio filters live in URL params or component state.
+- Errors: `{ statusCode, error, message, details? }` via shared `AllExceptionsFilter`. `DELETE /comments/:id` uses the same `{ data }` envelope (`{ data: { message } }`). `DELETE /tags/:id` is 204 with no body.
 - Browser auth: httpOnly cookie from the gateway (`@Public()` for anonymous routes)
 - Domain API auth: Bearer JWT (gateway forwards the cookie as `Authorization`)
 - Shared auth: `@shared/http/auth` (`JwtAuthGuard`, `RolesGuard`, `@Public` / `@Roles`) — apps re-export via `common/auth`
@@ -74,13 +73,13 @@ CMS / blogging. Auth `User` lives on the **gateway** only. Domain rows store opa
 
 ### Roles
 
-| Domain | Gateway | Can                                                                  |
-| ------ | ------- | -------------------------------------------------------------------- |
-| Author | `user`  | Own drafts and revisions; submit for review; cannot publish          |
-| Editor | `staff` | Tags, review queue, publish **another person's** article (four-eyes) |
-| Admin  | `admin` | Moderate articles, tags, comments, editors; may publish own work     |
+| Domain | Gateway | Can                                                              |
+| ------ | ------- | ---------------------------------------------------------------- |
+| Author | `user`  | Own drafts and revisions; submit for review; cannot publish      |
+| Editor | `staff` | Tags, review queue, publish **another person's** article         |
+| Admin  | `admin` | Moderate articles, tags, comments, editors; may publish own work |
 
-Web guards (`StudioGuard`, `EditorGuard`, `AdminGuard`) are client-side. The API enforces roles. Registration always creates `user`.
+`apps/web/middleware.ts` redirects unauthenticated `/studio`, `/editor`, and `/admin` traffic to login and wrong-role traffic to that role’s dashboard, using the gateway `GET /auth/me` cookie. Client guards still render Access Denied if needed. The API enforces every mutation. Registration always creates `user`.
 
 ### ERD
 
@@ -112,7 +111,7 @@ Entities: `Article`, `Revision` (insert-only JSONB `content`, `coverMediaId`), `
 
 The three pairs are independent. Each pair is both-null or both-set (CHECK). Only the published pair makes an article public.
 
-Saving body content **inserts** a revision; `PATCH /articles/:id` updates metadata only. `POST /articles/:id/submit-review` points review at the latest revision and does not publish. `POST /articles/:id/publish` `{ revisionId }` sets the published pair in one transaction (clears schedule; clears submit when that review is done). Authors get 403. An Editor cannot publish an article they authored.
+Saving body content **inserts** a revision. Optional title, slug, and tags on `POST /articles/:id/revisions` commit in that same transaction. `PATCH /articles/:id` still updates metadata only (SEO fields). `POST /articles/:id/submit-review` points review at the latest revision and does not publish. `POST /articles/:id/publish` `{ revisionId }` sets the published pair in one transaction (clears schedule; clears submit when that review is done). Authors get 403. An Editor cannot publish an article they authored.
 
 Scheduled publish reuses that same `publishRevision` path. `ArticleScheduleTicker` is an in-process `setInterval` every 30s in the domain API process (not OS cron). Until due, the article stays private. Publish Later sends a local-offset ISO timestamp.
 
@@ -139,7 +138,7 @@ Media: browser `POST /media` → gateway proxy → `StorageService` → Cloudina
 
 Also: `/` public home; `/login` `/register`; `/write` redirects by role; `/studio/[id]/preview`; `/editor/articles/[id]` publish/schedule; `/admin/articles`, `/admin/comments`, `/admin/tags`, `/admin/editors`.
 
-Public APIs: `GET /articles/public`, `GET /articles/public/:slug`, public comments, `/health` `/ready`. Studio APIs are cookie-proxied Bearer. Tag filter on `/blog` uses `?tag=` against public articles (`GET /tags` is authenticated).
+Public APIs: `GET /articles/public`, `GET /articles/public/:slug`, public comments, `/health` `/ready`. Studio APIs are cookie-proxied Bearer. Tag filter on `/blog` uses `?tag=` against public articles (`GET /tags` is authenticated). The public tag parameter is lowercased before compare, so seeded display names such as `Generative AI` still match.
 
 ## Demo script
 

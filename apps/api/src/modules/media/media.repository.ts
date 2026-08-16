@@ -10,6 +10,9 @@ export type CreateMediaInput = {
   format: string;
   url: string;
   bytes: number;
+  width?: number | null;
+  height?: number | null;
+  durationSeconds?: number | null;
   altText?: string;
 };
 
@@ -28,9 +31,12 @@ export class MediaRepository {
       format: input.format,
       secureUrl: input.url,
       bytes: String(input.bytes),
-      width: null,
-      height: null,
-      durationSeconds: null,
+      width: input.width ?? null,
+      height: input.height ?? null,
+      durationSeconds:
+        input.durationSeconds === null || input.durationSeconds === undefined
+          ? null
+          : String(input.durationSeconds),
       defaultAltText: input.altText ?? null,
     });
   }

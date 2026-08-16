@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  Res,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -23,7 +22,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
 import { CurrentUser, Public, Roles } from '../../common/auth';
 import type { JwtUser } from '../../common/auth';
 import { Role } from '../../common/enums/role.enum';
@@ -37,6 +35,7 @@ import {
   type CommentListResponse,
   type CommentResponse,
   type CommentStatsResponse,
+  type DeleteCommentResponse,
   type ModerationCommentListResponse,
 } from './dto/get-comment.dto';
 
@@ -193,20 +192,17 @@ export class CommentsController {
   })
   @ApiParam({ name: 'id', description: SWAGGER.commentId, format: 'uuid' })
   @ApiOkResponse({
-    description: 'Comment soft-deleted (not wrapped in data envelope)',
-    schema: { example: { message: 'Comment deleted' } },
+    description: 'Comment soft-deleted. Body: `{ data: { message } }`.',
+    schema: { example: { data: { message: 'Comment deleted' } } },
   })
   @ApiUnauthorizedResponse({ description: SWAGGER.unauthorized })
   @ApiForbiddenResponse({ description: SWAGGER.forbiddenOwner })
   @ApiNotFoundResponse({ description: SWAGGER.notFound })
   @ApiBadRequestResponse({ description: SWAGGER.invalidUuid })
-  async deleteComment(
+  deleteComment(
     @Param() params: CommentIdParam,
     @CurrentUser() user: JwtUser,
-    @Res() res: Response,
-  ): Promise<void> {
-    const result = await this.commentsService.deleteComment(params.id, user);
-    // Send raw body — ResponseEnvelopeInterceptor would wrap as { data: { message } }.
-    res.status(HttpStatus.OK).json(result);
+  ): Promise<DeleteCommentResponse> {
+    return this.commentsService.deleteComment(params.id, user);
   }
 }

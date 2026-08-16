@@ -3,6 +3,9 @@ export type StorageResourceType = 'image' | 'video';
 export type UploadFileResult = {
   key: string;
   url: string;
+  width: number | null;
+  height: number | null;
+  durationSeconds: number | null;
 };
 
 export type DeleteFileOptions = {

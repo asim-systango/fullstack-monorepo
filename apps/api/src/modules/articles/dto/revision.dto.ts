@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -57,6 +58,44 @@ export class CreateRevisionDto {
   @IsOptional()
   @IsUUID('4')
   coverMediaId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Understanding React Hooks',
+    description: 'Applied in the same transaction as the new revision.',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  title?: string;
+
+  @ApiPropertyOptional({
+    example: 'understanding-react-hooks',
+    description: 'Applied in the same transaction as the new revision.',
+  })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message: 'slug must be lowercase letters, numbers, and hyphens',
+  })
+  slug?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    format: 'uuid',
+    description: 'Replaces the full tag set in the same transaction as the new revision.',
+  })
+  @Transform(({ value }) => (Array.isArray(value) ? [...new Set(value)] : value))
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  tagIds?: string[];
 }
 
 /** Response from POST /articles/:id/revisions */

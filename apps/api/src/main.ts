@@ -41,8 +41,10 @@ async function bootstrap() {
     auth: 'bearer',
   });
 
-  await app.listen(appSettings.PORT);
-  console.log(`Domain API listening on http://localhost:${appSettings.PORT}`);
+  await app.listen(appSettings.PORT, appSettings.LISTEN_HOST);
+  console.log(
+    `Domain API listening on http://${appSettings.LISTEN_HOST}:${appSettings.PORT}`,
+  );
   if (appSettings.NODE_ENV !== 'production') {
     console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
   }
