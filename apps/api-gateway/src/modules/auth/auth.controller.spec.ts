@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import type { Response } from 'express';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AuthController', () => {
   const publicUser = {
@@ -13,7 +13,6 @@ describe('AuthController', () => {
   };
 
   const authService = {
-    register: jest.fn(),
     login: jest.fn(),
     logout: jest.fn(),
   };
@@ -30,47 +29,24 @@ describe('AuthController', () => {
     controller = moduleRef.get(AuthController);
   });
 
-  it('register returns the created public user', async () => {
-    authService.register.mockResolvedValue(publicUser);
-    await expect(
-      controller.register({
-        email: 'user@example.com',
-        password: 'password123',
-        name: 'Demo',
-      }),
-    ).resolves.toEqual(publicUser);
-  });
-
-  it('register surfaces ConflictException from the service', async () => {
-    authService.register.mockRejectedValue(
-      new ConflictException('Unable to create account with those details'),
-    );
-    await expect(
-      controller.register({
-        email: 'user@example.com',
-        password: 'password123',
-        name: 'Demo',
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
-  });
-
   it('login delegates to the service with the response object', async () => {
     const res = { cookie: jest.fn() } as unknown as Response;
-    authService.login.mockResolvedValue(publicUser);
+    authService.login.mockResolvedValue({ user: publicUser });
 
     await expect(
       controller.login({ email: 'user@example.com', password: 'password123' }, res),
-    ).resolves.toEqual(publicUser);
+    ).resolves.toEqual({ user: publicUser });
+
     expect(authService.login).toHaveBeenCalledWith(
       { email: 'user@example.com', password: 'password123' },
       res,
     );
   });
 
-  it('login surfaces UnauthorizedException from the service', async () => {
+  it('login surfaces UnauthorizedException from the service errors', async () => {
     const res = { cookie: jest.fn() } as unknown as Response;
     authService.login.mockRejectedValue(
-      new UnauthorizedException('Invalid email or password'),
+      new Error('INVALID_CREDENTIALS'),
     );
 
     await expect(
@@ -79,13 +55,18 @@ describe('AuthController', () => {
   });
 
   it('me returns the current public user principal', () => {
-    expect(controller.me(publicUser)).toEqual(publicUser);
+    const authPrincipal = {
+      sub: publicUser.id,
+      email: publicUser.email,
+      role: publicUser.role,
+    };
+    expect(controller.me(authPrincipal)).toEqual(authPrincipal);
   });
 
   it('logout delegates to the service', () => {
     const res = { clearCookie: jest.fn() } as unknown as Response;
-    authService.logout.mockReturnValue({ ok: true });
-    expect(controller.logout(res)).toEqual({ ok: true });
+    authService.logout.mockReturnValue({ message: 'LOGOUT_SUCCESS' });
+    expect(controller.logout(res)).toEqual({ message: 'LOGOUT_SUCCESS' });
     expect(authService.logout).toHaveBeenCalledWith(res);
   });
 });
