@@ -20,7 +20,7 @@ export function MemberAccountMenu({
   const menuId = useId();
 
   useEffect(() => {
-    function onDocClick(event: MouseEvent) {
+    function onPointerOutside(event: Event) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setMenuOpen(false);
       }
@@ -33,11 +33,13 @@ export function MemberAccountMenu({
     }
 
     if (!menuOpen) return undefined;
-    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('mousedown', onPointerOutside);
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('focusin', onPointerOutside);
     return () => {
-      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('mousedown', onPointerOutside);
       document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('focusin', onPointerOutside);
     };
   }, [menuOpen]);
 
@@ -54,15 +56,7 @@ export function MemberAccountMenu({
   }
 
   return (
-    <div
-      className="relative z-[60]"
-      ref={rootRef}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-          setMenuOpen(false);
-        }
-      }}
-    >
+    <div className="relative z-[60]" ref={rootRef}>
       <Button
         variant="ghost"
         size="sm"

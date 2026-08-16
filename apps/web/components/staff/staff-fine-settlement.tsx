@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { OVERDUE_RETURN_SETTLEMENT_MESSAGE, type LoanWithRelations } from '@shared/types';
 import { formatMoneyInr } from '@/lib/member/format';
 
@@ -26,6 +27,7 @@ export function StaffFineSettlement({
   onChange: (value: FineSettlement) => void;
   disabled?: boolean;
 }>) {
+  const name = useId();
   const amountLabel =
     amountCents != null && amountCents > 0 ? formatMoneyInr(amountCents) : null;
 
@@ -37,38 +39,43 @@ export function StaffFineSettlement({
           ? `Overdue ${daysLate} day(s) · ${amountLabel}. Collect the fine at the desk, then mark Paid. If the member cannot pay now, mark Unpaid so the balance stays on their account.`
           : OVERDUE_RETURN_SETTLEMENT_MESSAGE}
       </p>
-      <div className="staff-choice-grid" role="radiogroup" aria-label="Fine settlement">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={value === 'paid'}
-          className={`staff-pick-row ${value === 'paid' ? 'is-selected' : ''}`}
-          disabled={disabled}
-          onClick={() => onChange('paid')}
-        >
-          <div className="min-w-0 flex-1">
-            <p className="m-0 font-medium">Paid</p>
-            <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-              Fine collected at the desk
-            </p>
-          </div>
-        </button>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={value === 'unpaid'}
-          className={`staff-pick-row ${value === 'unpaid' ? 'is-selected' : ''}`}
-          disabled={disabled}
-          onClick={() => onChange('unpaid')}
-        >
-          <div className="min-w-0 flex-1">
-            <p className="m-0 font-medium">Unpaid</p>
-            <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-              Keep the balance on the member account
-            </p>
-          </div>
-        </button>
-      </div>
+      <fieldset className="m-0 min-w-0 border-0 p-0">
+        <legend className="sr-only">Fine settlement</legend>
+        <div className="staff-choice-grid">
+          <label className={`staff-pick-row ${value === 'paid' ? 'is-selected' : ''}`}>
+            <input
+              type="radio"
+              name={name}
+              value="paid"
+              checked={value === 'paid'}
+              disabled={disabled}
+              onChange={() => onChange('paid')}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="m-0 block font-medium">Paid</span>
+              <span className="m-0 block text-sm text-[color:var(--bookly-muted)]">
+                Fine collected at the desk
+              </span>
+            </span>
+          </label>
+          <label className={`staff-pick-row ${value === 'unpaid' ? 'is-selected' : ''}`}>
+            <input
+              type="radio"
+              name={name}
+              value="unpaid"
+              checked={value === 'unpaid'}
+              disabled={disabled}
+              onChange={() => onChange('unpaid')}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="m-0 block font-medium">Unpaid</span>
+              <span className="m-0 block text-sm text-[color:var(--bookly-muted)]">
+                Keep the balance on the member account
+              </span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
     </div>
   );
 }

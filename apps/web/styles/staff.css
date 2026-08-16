@@ -397,7 +397,7 @@
 }
 
 .staff-result-list button:disabled,
-.staff-choice-grid button:disabled {
+.staff-choice-grid .staff-pick-row:has(:disabled) {
   opacity: 0.55;
   cursor: not-allowed;
   pointer-events: none;
@@ -405,7 +405,7 @@
 
 .staff-result-list a:hover,
 .staff-result-list button:hover,
-.staff-choice-grid button:hover {
+.staff-choice-grid .staff-pick-row:hover {
   border-color: color-mix(in srgb, var(--bookly-teal-muted, var(--bookly-teal)) 40%, var(--bookly-border));
   background: color-mix(in srgb, var(--bookly-teal-muted, var(--bookly-teal)) 8%, #fff);
   text-decoration: none;
