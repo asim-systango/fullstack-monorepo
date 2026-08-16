@@ -28,7 +28,7 @@ export class AuthService {
     @InjectRepository(Organization)
     private readonly orgRepository: Repository<Organization>,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(dto: LoginDto, res: Response) {
     // 1. Find user by email (with org slug filter if provided)
@@ -57,7 +57,7 @@ export class AuthService {
     }
 
     // 3. Validate user status
-    if (user.status !== UserStatus.ACTIVE) {
+    if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING) {
       throw new Error(AUTH_ERRORS.USER_INACTIVE);
     }
 
@@ -135,8 +135,12 @@ export class AuthService {
       };
     }
 
-    // 7. Update last login timestamp
-    await this.userRepository.update(user.id, { lastLoginAt: Date.now() });
+    // 7. Update last login timestamp (and status if pending)
+    const updatePayload: Partial<User> = { lastLoginAt: Date.now() };
+    if (user.status === UserStatus.PENDING) {
+      updatePayload.status = UserStatus.ACTIVE;
+    }
+    await this.userRepository.update(user.id, updatePayload);
 
     // 8. Generate JWT access token
     const jwtPayload = {

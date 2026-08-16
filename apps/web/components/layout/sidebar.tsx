@@ -16,6 +16,9 @@ export function Sidebar() {
   const userInitials =
     ((user.firstName?.[0] || '') + (user.lastName?.[0] || '')).toUpperCase() || 'U';
 
+  const isOrgAdminOrSalesLead =
+    user.role === UserRole.ORG_ADMIN || user.role === UserRole.SALES_LEAD;
+
   const navItems = isSuperAdmin
     ? [
       { label: 'Overview', icon: '📊', href: '/' },
@@ -28,6 +31,9 @@ export function Sidebar() {
       { label: 'Leads & Pipeline', icon: '🎯', href: '/leads' },
       { label: 'Contacts', icon: '👤', href: '/contacts' },
       { label: 'Deals', icon: '💼', href: '/deals' },
+      ...(isOrgAdminOrSalesLead
+        ? [{ label: 'Team Members', icon: '👥', href: '/users' }]
+        : []),
     ];
 
   return (
