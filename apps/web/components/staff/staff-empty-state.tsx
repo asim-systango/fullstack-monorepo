@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { EmptyState } from '@shared/ui/components';
 
 export function StaffEmptyState({
   title,
@@ -6,10 +7,6 @@ export function StaffEmptyState({
   action,
 }: Readonly<{ title: string; description: string; action?: ReactNode }>) {
   return (
-    <div className="staff-empty">
-      <h3>{title}</h3>
-      <p>{description}</p>
-      {action ? <div className="mt-3">{action}</div> : null}
-    </div>
+    <EmptyState className="staff-empty" title={title} description={description} action={action} />
   );
 }

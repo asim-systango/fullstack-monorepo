@@ -6,19 +6,17 @@ import type {
   CreateBookInput,
   ListBookCopiesParams,
   ListBooksParams,
-  UpdateBookCopyInput,
-  UpdateBookInput,
 } from '@shared/types';
 import { useAuth } from '@/components/auth';
 import { bookCopiesApi, booksApi } from '@/lib/api';
-import { hasRole, LIBRARIAN_ROLES, ROLES } from '@/lib/auth/roles';
+import { canManageBooks, hasRole, ROLES } from '@/lib/auth/roles';
 import { INSUFFICIENT_PERMISSIONS } from '@/lib/bookly/constants';
 import { invalidateBookQueries } from '@/lib/bookly/invalidate';
 import { queryKeys } from '@/lib/query-keys';
 
 function useIsStaffOrAdmin() {
   const { user } = useAuth();
-  return hasRole(user, LIBRARIAN_ROLES);
+  return canManageBooks(user);
 }
 
 export function useBooks(
@@ -37,6 +35,17 @@ export function useBook(id: string | undefined) {
     queryKey: queryKeys.books.detail(id ?? ''),
     queryFn: () => booksApi.getById(id!),
     enabled: Boolean(id),
+    staleTime: 30_000,
+  });
+}
+
+export function useBookActions(id: string | undefined) {
+  const { user } = useAuth();
+  const enabled = hasRole(user, [ROLES.user]) && Boolean(id);
+  return useQuery({
+    queryKey: queryKeys.books.actions(id ?? ''),
+    queryFn: () => booksApi.getMyActions(id!),
+    enabled,
   });
 }
 
@@ -70,18 +79,6 @@ export function useCreateBook() {
       return booksApi.create(input);
     },
     onSuccess: () => invalidateBookQueries(queryClient),
-  });
-}
-
-export function useUpdateBook() {
-  const queryClient = useQueryClient();
-  const enabled = useIsStaffOrAdmin();
-  return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateBookInput }) => {
-      if (!enabled) throw new Error(INSUFFICIENT_PERMISSIONS);
-      return booksApi.update(id, input);
-    },
-    onSuccess: (book) => invalidateBookQueries(queryClient, book.id),
   });
 }
 
@@ -121,18 +118,6 @@ export function useCreateBookCopy() {
   });
 }
 
-export function useUpdateBookCopy() {
-  const queryClient = useQueryClient();
-  const enabled = useIsStaffOrAdmin();
-  return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateBookCopyInput }) => {
-      if (!enabled) throw new Error(INSUFFICIENT_PERMISSIONS);
-      return bookCopiesApi.update(id, input);
-    },
-    onSuccess: (copy) => invalidateBookQueries(queryClient, copy.bookId),
-  });
-}
-
 export function useDeleteBookCopy() {
   const queryClient = useQueryClient();
   const enabled = useIsStaffOrAdmin();
@@ -143,9 +128,4 @@ export function useDeleteBookCopy() {
     },
     onSuccess: (bookId) => invalidateBookQueries(queryClient, bookId),
   });
-}
-
-export function useCanManageBooks() {
-  const { user } = useAuth();
-  return hasRole(user, [ROLES.staff, ROLES.admin]);
 }

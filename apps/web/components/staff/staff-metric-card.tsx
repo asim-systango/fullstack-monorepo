@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { MetricCard } from '@shared/ui/components';
 
 export function StaffMetricCard({
   label,
@@ -13,16 +14,13 @@ export function StaffMetricCard({
   tone?: 'default' | 'warn' | 'ok';
   href?: string;
 }>) {
-  let toneClass = '';
-  if (tone === 'warn') toneClass = 'staff-metric-warn';
-  else if (tone === 'ok') toneClass = 'staff-metric-ok';
-
   const body = (
-    <div className={`staff-card staff-metric ${toneClass}`}>
-      <p className="staff-metric-label">{label}</p>
-      <p className="staff-metric-value">{value}</p>
-      <p className="staff-metric-hint">{hint}</p>
-    </div>
+    <MetricCard
+      className={`staff-card staff-metric${tone === 'warn' ? ' staff-metric-warn' : ''}${tone === 'ok' ? ' staff-metric-ok' : ''}`}
+      label={label}
+      value={value}
+      hint={hint}
+    />
   );
 
   if (href) {

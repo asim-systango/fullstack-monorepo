@@ -1,5 +1,3 @@
-'use client';
-
 import { RequireAuth } from '@/components/dashboard';
 import type { ReactNode } from 'react';
 

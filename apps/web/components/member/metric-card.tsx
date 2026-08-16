@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import { MetricCard } from '@shared/ui/components';
 
 export function MemberMetricCard({
   label,
@@ -17,16 +18,10 @@ export function MemberMetricCard({
   return (
     <Link
       href={href}
-      className="member-card member-metric member-enter p-4"
+      className="member-card member-metric member-enter p-4 no-underline hover:no-underline"
       style={{ '--member-stagger': stagger } as CSSProperties}
     >
-      <p className="m-0 text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--bookly-muted)]">
-        {label}
-      </p>
-      <p className="mt-2 mb-0 text-2xl font-semibold tracking-tight text-[color:var(--bookly-navy)]">
-        {value}
-      </p>
-      <p className="mt-1 mb-0 text-sm text-[color:var(--bookly-muted)]">{hint}</p>
+      <MetricCard label={label} value={value} hint={hint} />
     </Link>
   );
 }

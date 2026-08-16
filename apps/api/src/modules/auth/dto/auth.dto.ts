@@ -53,6 +53,14 @@ export class UpdateMeDto {
   name?: string;
 }
 
+export class RequestChangePasswordOtpDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(128)
+  currentPassword!: string;
+}
+
 export class ChangePasswordDto {
   @ApiProperty()
   @IsString()
@@ -65,6 +73,11 @@ export class ChangePasswordDto {
   @MinLength(8)
   @MaxLength(128)
   newPassword!: string;
+
+  @ApiProperty({ minLength: 6, maxLength: 6 })
+  @IsString()
+  @Length(6, 6)
+  otp!: string;
 }
 
 export class VerifyOtpDto {

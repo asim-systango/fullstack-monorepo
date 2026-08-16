@@ -16,7 +16,7 @@ import {
 } from '@/components/auth';
 import { useVerifyOtp } from '@/lib/auth/hooks';
 import { ROUTES } from '@/lib/auth/routes';
-import { useAuthUiStore } from '@/lib/store';
+import { useAuthUi } from '@/lib/store';
 import { verifyOtpSchema } from '@/lib/validation/auth';
 
 const RESEND_INFO = 'If that email can be verified, a new code was sent.';
@@ -25,8 +25,7 @@ function VerifyOtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const verifyOtp = useVerifyOtp();
-  const pendingEmail = useAuthUiStore((s) => s.pendingEmail);
-  const setPendingEmail = useAuthUiStore((s) => s.setPendingEmail);
+  const { pendingEmail, setPendingEmail } = useAuthUi();
   const { pending, error, setError, fieldErrors, submit } = useAuthForm();
   const { resending, info, setInfo, resend, cooldownSec, canResend } = useResendOtp(
     'signup',

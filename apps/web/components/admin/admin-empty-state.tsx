@@ -1,11 +1,8 @@
+import { EmptyState } from '@shared/ui/components';
+
 export function AdminEmptyState({
   title,
   description,
 }: Readonly<{ title: string; description: string }>) {
-  return (
-    <div className="admin-empty">
-      <h3>{title}</h3>
-      <p>{description}</p>
-    </div>
-  );
+  return <EmptyState className="admin-empty" title={title} description={description} />;
 }

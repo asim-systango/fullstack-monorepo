@@ -3,15 +3,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Button,
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@shared/ui/components';
+import { Button } from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
+import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { ROUTES } from '@/lib/auth/routes';
 
 export function MemberAccountMenu({
@@ -131,37 +125,17 @@ export function MemberAccountMenu({
         </div>
       ) : null}
 
-      <Dialog
+      <ConfirmDialog
         open={confirmLogout}
         onOpenChange={setConfirmLogout}
-        showClose={false}
-      >
-        <DialogHeader>
-          <DialogTitle>Are you sure you want to log out?</DialogTitle>
-          <DialogDescription>
-            You will need to sign in again to view your loans, reservations, and fines.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setConfirmLogout(false)}
-            disabled={loggingOut}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            loading={loggingOut}
-            loadingText="Logging out…"
-            onClick={() => void onConfirmLogout()}
-          >
-            Logout
-          </Button>
-        </DialogFooter>
-      </Dialog>
+        title="Are you sure you want to log out?"
+        description="You will need to sign in again to view your loans, reservations, and fines."
+        confirmLabel="Logout"
+        pending={loggingOut}
+        pendingText="Logging out…"
+        danger
+        onConfirm={() => void onConfirmLogout()}
+      />
     </div>
   );
 }

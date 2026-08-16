@@ -1,11 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import nodemailer, { type Transporter } from 'nodemailer';
 import { loadApiEnv } from '../../common/env';
 import { ONBOARDING_EMAIL_UNAVAILABLE } from './onboarding-mail.constants';
-import {
-  buildLibraryEmail,
-  type LibraryEmailInput,
-} from './templates/library-email';
+import { buildLibraryEmail, type LibraryEmailInput } from './templates/library-email';
 import {
   buildOnboardingEmail,
   type OnboardingEmailKind,
@@ -22,7 +20,7 @@ export class MailerService {
   async sendOtpEmail(input: {
     to: string;
     otp: string;
-    purpose: 'signup' | 'password_reset';
+    purpose: 'signup' | 'password_reset' | 'password_change';
   }): Promise<void> {
     const { subject, text, html } = buildOtpEmail({
       otp: input.otp,
@@ -126,13 +124,12 @@ export class MailerService {
       subject: input.subject,
       text: input.text,
       html: input.html,
-      messageId: `<${Date.now()}.${Math.random().toString(36).slice(2)}@bookly.local>`,
+      messageId: `<${randomUUID()}@bookly.local>`,
     });
   }
 
   private fromAddress(): string {
-    const raw =
-      this.env.SMTP_FROM ?? this.env.SMTP_USER ?? 'noreply@bookly.local';
+    const raw = this.env.SMTP_FROM ?? this.env.SMTP_USER ?? 'noreply@bookly.local';
     return raw.replace(/^["']|["']$/g, '').trim();
   }
 

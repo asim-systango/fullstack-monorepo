@@ -6,7 +6,6 @@ import { Book } from '../modules/books/book.entity';
 import { BookCopy } from '../modules/books/book-copy.entity';
 import { BookCopyStatus } from '../modules/books/enums/book-copy-status.enum';
 import { CheckoutRequest } from '../modules/checkout-requests/checkout-request.entity';
-import { CheckoutRequestStatus } from '../modules/checkout-requests/enums/checkout-request-status.enum';
 import { Fine } from '../modules/fines/fine.entity';
 import { FineStatus } from '../modules/fines/enums/fine-status.enum';
 import { Loan } from '../modules/loans/loan.entity';
@@ -25,56 +24,31 @@ export const SEED_MEMBER2_USER_ID = '00000000-0000-4000-8000-0000000000b2';
 export const SEED_MEMBER3_USER_ID = '00000000-0000-4000-8000-0000000000b3';
 export const SEED_STAFF_USER_ID = '00000000-0000-4000-8000-000000000001';
 
-const LOAN_BY_COPY_ID = 'loan.book_copy_id = :copyId';
+const SEED_PASSWORD = 'password123';
+const SEED_ACQUIRED_AT = '2025-01-15';
+const FINE_CENTS_PER_DAY = 50;
+const OVERDUE_DAYS = 4;
 
 type SeedBook = {
   title: string;
   author: string;
   isbn: string;
-  description: string | null;
-  publishedYear: number | null;
-  copies: Array<{ barcode: string; status: BookCopyStatus; acquiredAt: string }>;
+  description: string;
+  publishedYear: number;
+  copies: Array<{ barcode: string; acquiredAt: string }>;
 };
 
 const SEED_BOOKS: SeedBook[] = [
   {
-    title: "Build, Don't Talk",
-    author: 'Raj Shamani',
-    isbn: '9780143465874',
+    title: 'Atomic Habits',
+    author: 'James Clear',
+    isbn: '9780735211292',
     description:
-      "Build, Don't Talk is a practical guide to personal growth, career development, and building a successful life. Raj Shamani shares lessons on taking action instead of just talking about goals, developing the right mindset, improving communication, building relationships, handling money, and creating opportunities. The book focuses on practical lessons that can be applied in everyday life, especially for young people who want to grow personally and professionally.",
-    publishedYear: 2024,
+      'Atomic Habits explains how small, consistent changes compound into remarkable results over time. James Clear lays out a practical system for building good habits and breaking bad ones through identity, environment design, and habit stacking. The book shows why systems matter more than goals, and how tiny improvements repeated daily create lasting change.',
+    publishedYear: 2018,
     copies: [
-      {
-        barcode: 'BKLY-0023',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2025-01-15',
-      },
-      {
-        barcode: 'BKLY-0024',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2025-01-15',
-      },
-    ],
-  },
-  {
-    title: 'The Alchemist',
-    author: 'Paulo Coelho',
-    isbn: '9780062315007',
-    description:
-      'The Alchemist is an inspiring story about following your dreams and discovering your true purpose in life. It follows Santiago, a young shepherd who decides to pursue a recurring dream that leads him on a journey across different places. Along the way, he learns about courage, faith, perseverance, love, and the importance of listening to your heart. The book encourages readers to believe in their dreams and have the courage to pursue what they truly want.',
-    publishedYear: 1993,
-    copies: [
-      {
-        barcode: 'BKLY-0025',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2025-01-15',
-      },
-      {
-        barcode: 'BKLY-0026',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2025-01-15',
-      },
+      { barcode: 'BKLY-0015', acquiredAt: '2024-08-01' },
+      { barcode: 'BKLY-0016', acquiredAt: '2024-08-01' },
     ],
   },
   {
@@ -82,92 +56,52 @@ const SEED_BOOKS: SeedBook[] = [
     author: 'Peter Thiel with Blake Masters',
     isbn: '9780804139298',
     description:
-      'Zero to One is a book about startups, innovation, entrepreneurship, and building the future. Peter Thiel explains how successful companies create something genuinely new instead of simply copying what already exists. The book explores ideas such as innovation, competition, monopoly, technology, business strategy, and the importance of thinking independently. It encourages entrepreneurs to focus on creating unique value and moving from zero to one by bringing something new into the world.',
+      'Zero to One is Peter Thiel’s argument for building companies that create something new rather than copying what already exists. Drawing on his work as a founder and investor, he discusses monopoly versus competition, the role of technology, and how to think from first principles. The book is a concise guide for readers who want to move from incremental improvement to genuine innovation.',
     publishedYear: 2014,
+    copies: [{ barcode: 'BKLY-0027', acquiredAt: SEED_ACQUIRED_AT }],
+  },
+  {
+    title: "Build, Don't Talk",
+    author: 'Raj Shamani',
+    isbn: '9780143465874',
+    description:
+      'Build, Don’t Talk is Raj Shamani’s practical playbook for acting on ambition instead of only discussing it. He covers mindset, communication, relationships, money, and creating opportunity, with an emphasis on skills young professionals can apply immediately. The book argues that consistent execution—not talk—is what compounds into a career and a life you control.',
+    publishedYear: 2024,
     copies: [
-      {
-        barcode: 'BKLY-0027',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2025-01-15',
-      },
-      {
-        barcode: 'BKLY-0028',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2025-01-15',
-      },
+      { barcode: 'BKLY-0023', acquiredAt: SEED_ACQUIRED_AT },
+      { barcode: 'BKLY-0024', acquiredAt: SEED_ACQUIRED_AT },
     ],
   },
   {
-    title: 'Atomic Habits',
-    author: 'James Clear',
-    isbn: '9780735211292',
+    title: 'The Alchemist',
+    author: 'Paulo Coelho',
+    isbn: '9780062315007',
     description:
-      'Atomic Habits explains how small, consistent changes can lead to remarkable results over time. James Clear presents a practical framework for building good habits, breaking bad ones, and creating an environment that supports positive behavior. The book focuses on concepts such as identity-based habits, habit stacking, making good habits easy and rewarding, and understanding the systems behind our daily actions. It shows that meaningful transformation does not require drastic changes—small improvements, repeated consistently, can create significant long-term results.',
-    publishedYear: 2018,
+      'The Alchemist follows Santiago, a young shepherd who leaves Spain in search of a treasure he has dreamed of finding near the Egyptian pyramids. Along the way he meets people who test his courage, faith, and willingness to listen to his heart. Paulo Coelho’s fable is a widely read story about purpose, perseverance, and the cost of ignoring a personal calling.',
+    publishedYear: 1993,
     copies: [
-      {
-        barcode: 'BKLY-0015',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-08-01',
-      },
-      {
-        barcode: 'BKLY-0016',
-        status: BookCopyStatus.OnLoan,
-        acquiredAt: '2024-08-01',
-      },
-    ],
-  },
-  {
-    title: 'Educated',
-    author: 'Tara Westover',
-    isbn: '9780399590504',
-    description:
-      'Educated is a memoir about growing up in a strict, isolated household and later pursuing an education that transformed the author’s life. Tara Westover describes her childhood, family dynamics, struggle for knowledge, and the difficult choice between loyalty and independence. The book explores identity, memory, family, resilience, and the power of education to open new possibilities.',
-    publishedYear: 2018,
-    copies: [
-      {
-        barcode: 'BKLY-0030',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-09-01',
-      },
-    ],
-  },
-  {
-    title: 'Clean Code',
-    author: 'Robert C. Martin',
-    isbn: '9780132350884',
-    description:
-      'Clean Code is a practical guide to writing software that is readable, maintainable, and easier to change. Robert C. Martin explains naming, functions, comments, formatting, error handling, and testing through examples. The book focuses on professional craftsmanship and the habits that keep a codebase healthy over time.',
-    publishedYear: 2008,
-    copies: [
-      {
-        barcode: 'BKLY-0031',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-09-01',
-      },
-    ],
-  },
-  {
-    title: 'The Design of Everyday Things',
-    author: 'Don Norman',
-    isbn: '9780465050659',
-    description:
-      'The Design of Everyday Things explains why some products feel obvious to use and others cause constant frustration. Don Norman introduces affordances, signifiers, feedback, and human-centered design. The book shows how good design matches how people actually think and behave.',
-    publishedYear: 2013,
-    copies: [
-      {
-        barcode: 'BKLY-0032',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-09-01',
-      },
+      { barcode: 'BKLY-0025', acquiredAt: SEED_ACQUIRED_AT },
+      { barcode: 'BKLY-0026', acquiredAt: SEED_ACQUIRED_AT },
+      { barcode: 'BKLY-0028', acquiredAt: SEED_ACQUIRED_AT },
     ],
   },
 ];
+
+const KEEP_ISBNS = new Set(SEED_BOOKS.map((row) => row.isbn));
+const KEEP_BARCODES = new Set(
+  SEED_BOOKS.flatMap((row) => row.copies.map((copy) => copy.barcode)),
+);
 
 function daysAgoIso(days: number): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().slice(0, 10);
+}
+
+function dateDaysAgo(days: number): Date {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d;
 }
 
 async function seed() {
@@ -182,49 +116,59 @@ async function seed() {
   const checkoutRequests = dataSource.getRepository(CheckoutRequest);
   const settings = dataSource.getRepository(AppSetting);
 
-  const passwordHash = await bcrypt.hash('password123', 12);
+  const passwordHash = await bcrypt.hash(SEED_PASSWORD, 12);
   const verifiedAt = new Date();
 
   const userSeeds: Array<{
     id: string;
     email: string;
+    legacyEmail: string;
     name: string;
     role: User['role'];
   }> = [
     {
       id: SEED_ADMIN_USER_ID,
-      email: 'admin@demo.local',
+      email: 'admin@demo.com',
+      legacyEmail: 'admin@demo.local',
       name: 'Demo Admin',
       role: 'admin',
     },
     {
+      id: SEED_STAFF_USER_ID,
+      email: 'staff@demo.com',
+      legacyEmail: 'staff@demo.local',
+      name: 'Demo Staff',
+      role: 'staff',
+    },
+    {
       id: SEED_MEMBER_USER_ID,
-      email: 'user@demo.local',
+      email: 'user@demo.com',
+      legacyEmail: 'user@demo.local',
       name: 'Yashi Member',
       role: 'user',
     },
     {
       id: SEED_MEMBER2_USER_ID,
-      email: 'user2@demo.local',
+      email: 'user2@demo.com',
+      legacyEmail: 'user2@demo.local',
       name: 'Aisha Reader',
       role: 'user',
     },
     {
       id: SEED_MEMBER3_USER_ID,
-      email: 'user3@demo.local',
+      email: 'user3@demo.com',
+      legacyEmail: 'user3@demo.local',
       name: 'Rohan Patron',
       role: 'user',
-    },
-    {
-      id: SEED_STAFF_USER_ID,
-      email: 'staff@demo.local',
-      name: 'Demo Staff',
-      role: 'staff',
     },
   ];
 
   for (const row of userSeeds) {
-    const existing = await users.findOne({ where: { email: row.email } });
+    const existing =
+      (await users.findOne({ where: { id: row.id } })) ??
+      (await users.findOne({ where: { email: row.email } })) ??
+      (await users.findOne({ where: { email: row.legacyEmail } }));
+
     if (!existing) {
       await users.save(
         users.create({
@@ -237,11 +181,16 @@ async function seed() {
           otpAttempts: 0,
         }),
       );
-    } else {
-      existing.name = row.name;
-      if (!existing.emailVerifiedAt) existing.emailVerifiedAt = verifiedAt;
-      await users.save(existing);
+      continue;
     }
+
+    existing.email = row.email;
+    existing.name = row.name;
+    existing.role = row.role;
+    existing.passwordHash = passwordHash;
+    existing.emailVerifiedAt = existing.emailVerifiedAt ?? verifiedAt;
+    existing.mustChangePassword = false;
+    await users.save(existing);
   }
 
   for (const [key, meta] of Object.entries(SETTING_DEFAULTS)) {
@@ -258,8 +207,11 @@ async function seed() {
     );
   }
 
-  let booksCreated = 0;
-  let copiesCreated = 0;
+  await checkoutRequests.createQueryBuilder().delete().execute();
+  await fines.createQueryBuilder().delete().execute();
+  await reservations.createQueryBuilder().delete().execute();
+  await loans.createQueryBuilder().delete().execute();
+
   const bookByIsbn = new Map<string, Book>();
 
   for (const row of SEED_BOOKS) {
@@ -279,7 +231,6 @@ async function seed() {
           createdBy: SEED_STAFF_USER_ID,
         }),
       );
-      booksCreated += 1;
     } else {
       if (book.deletedAt) {
         await books.recover(book);
@@ -299,15 +250,14 @@ async function seed() {
         withDeleted: true,
       });
       if (existing) {
-        if (existing.status !== copyRow.status && !existing.deletedAt) {
-          const hasLoan = await loans.findOne({
-            where: { bookCopyId: existing.id },
-          });
-          if (!hasLoan) {
-            existing.status = copyRow.status;
-            await copies.save(existing);
-          }
+        if (existing.deletedAt) {
+          await copies.recover(existing);
+          existing.deletedAt = null;
         }
+        existing.bookId = book.id;
+        existing.status = BookCopyStatus.Available;
+        existing.acquiredAt = copyRow.acquiredAt;
+        await copies.save(existing);
         continue;
       }
 
@@ -315,36 +265,43 @@ async function seed() {
         copies.create({
           bookId: book.id,
           barcode: copyRow.barcode,
-          status: copyRow.status,
+          status: BookCopyStatus.Available,
           acquiredAt: copyRow.acquiredAt,
         }),
       );
-      copiesCreated += 1;
     }
   }
 
-  const keepIsbns = new Set(SEED_BOOKS.map((row) => row.isbn));
-  const extras = await books.find();
-  for (const extra of extras) {
-    if (!keepIsbns.has(extra.isbn)) {
-      await books.softRemove(extra);
+  const extraBooks = await books.find({ withDeleted: true });
+  for (const extra of extraBooks) {
+    if (!KEEP_ISBNS.has(extra.isbn)) {
+      if (!extra.deletedAt) {
+        await books.softRemove(extra);
+      }
+    }
+  }
+
+  const allCopies = await copies.find({ withDeleted: true });
+  for (const copy of allCopies) {
+    if (!KEEP_BARCODES.has(copy.barcode) && !copy.deletedAt) {
+      await copies.softRemove(copy);
     }
   }
 
   for (const m of [
     {
       userId: SEED_MEMBER_USER_ID,
-      email: 'user@demo.local',
+      email: 'user@demo.com',
       fullName: 'Yashi Member',
     },
     {
       userId: SEED_MEMBER2_USER_ID,
-      email: 'user2@demo.local',
+      email: 'user2@demo.com',
       fullName: 'Aisha Reader',
     },
     {
       userId: SEED_MEMBER3_USER_ID,
-      email: 'user3@demo.local',
+      email: 'user3@demo.com',
       fullName: 'Rohan Patron',
     },
   ]) {
@@ -372,39 +329,22 @@ async function seed() {
     return copy;
   };
 
-  const ensureActiveLoan = async (input: {
+  const createActiveLoan = async (input: {
     userId: string;
     barcode: string;
     dueDate: string;
     borrowedDaysAgo: number;
   }) => {
     const copy = await copyByBarcode(input.barcode);
-    const active = await loans
-      .createQueryBuilder('loan')
-      .where(LOAN_BY_COPY_ID, { copyId: copy.id })
-      .andWhere('loan.returned_at IS NULL')
-      .getOne();
-    if (active) {
-      active.dueDate = input.dueDate;
-      active.userId = input.userId;
-      await loans.save(active);
-      copy.status = BookCopyStatus.OnLoan;
-      await copies.save(copy);
-      return active;
-    }
-
     copy.status = BookCopyStatus.OnLoan;
     await copies.save(copy);
-
-    const borrowedAt = new Date();
-    borrowedAt.setUTCDate(borrowedAt.getUTCDate() - input.borrowedDaysAgo);
 
     return loans.save(
       loans.create({
         userId: input.userId,
         bookCopyId: copy.id,
         bookId: copy.bookId,
-        borrowedAt,
+        borrowedAt: dateDaysAgo(input.borrowedDaysAgo),
         dueDate: input.dueDate,
         returnedAt: null,
         checkedOutBy: SEED_STAFF_USER_ID,
@@ -413,316 +353,134 @@ async function seed() {
     );
   };
 
-  const ensureReturnedLoan = async (input: {
+  const createReturnedLoan = async (input: {
     userId: string;
     barcode: string;
     dueDate: string;
-    returnedDaysAgo: number;
     borrowedDaysAgo: number;
+    returnedDaysAgo: number;
   }) => {
     const copy = await copyByBarcode(input.barcode);
-    const existingReturned = await loans
-      .createQueryBuilder('loan')
-      .where(LOAN_BY_COPY_ID, { copyId: copy.id })
-      .andWhere('loan.user_id = :userId', { userId: input.userId })
-      .andWhere('loan.returned_at IS NOT NULL')
-      .getOne();
-    if (existingReturned) return existingReturned;
-
-    const activeOnCopy = await loans
-      .createQueryBuilder('loan')
-      .where(LOAN_BY_COPY_ID, { copyId: copy.id })
-      .andWhere('loan.returned_at IS NULL')
-      .getOne();
-    if (activeOnCopy) return activeOnCopy;
-
-    const borrowedAt = new Date();
-    borrowedAt.setUTCDate(borrowedAt.getUTCDate() - input.borrowedDaysAgo);
-    const returnedAt = new Date();
-    returnedAt.setUTCDate(returnedAt.getUTCDate() - input.returnedDaysAgo);
+    copy.status = BookCopyStatus.Available;
+    await copies.save(copy);
 
     return loans.save(
       loans.create({
         userId: input.userId,
         bookCopyId: copy.id,
         bookId: copy.bookId,
-        borrowedAt,
+        borrowedAt: dateDaysAgo(input.borrowedDaysAgo),
         dueDate: input.dueDate,
-        returnedAt,
+        returnedAt: dateDaysAgo(input.returnedDaysAgo),
         checkedOutBy: SEED_STAFF_USER_ID,
         returnedTo: SEED_STAFF_USER_ID,
       }),
     );
   };
 
-  const ensureFine = async (input: {
-    loan: Loan;
-    daysOverdue: number;
-    amountCents: number;
-    status: FineStatus;
-    waivedReason?: string;
-  }) => {
-    const existingFine = await fines.findOne({ where: { loanId: input.loan.id } });
-    if (existingFine) {
-      existingFine.daysOverdue = input.daysOverdue;
-      existingFine.amountCents = input.amountCents;
-      existingFine.status = input.status;
-      if (input.status === FineStatus.Paid) {
-        existingFine.paidAt = existingFine.paidAt ?? new Date();
-        existingFine.markedPaidBy = SEED_STAFF_USER_ID;
-      }
-      if (input.status === FineStatus.Waived) {
-        existingFine.waivedAt = existingFine.waivedAt ?? new Date();
-        existingFine.waivedBy = SEED_STAFF_USER_ID;
-        existingFine.waivedReason = input.waivedReason ?? 'Seed waiver for UI review';
-      }
-      await fines.save(existingFine);
-      return existingFine;
-    }
-
-    return fines.save(
-      fines.create({
-        loanId: input.loan.id,
-        userId: input.loan.userId,
-        daysOverdue: input.daysOverdue,
-        amountCents: input.amountCents,
-        status: input.status,
-        paidAt: input.status === FineStatus.Paid ? new Date() : null,
-        markedPaidBy: input.status === FineStatus.Paid ? SEED_STAFF_USER_ID : null,
-        waivedAt: input.status === FineStatus.Waived ? new Date() : null,
-        waivedBy: input.status === FineStatus.Waived ? SEED_STAFF_USER_ID : null,
-        waivedReason:
-          input.status === FineStatus.Waived
-            ? (input.waivedReason ?? 'Seed waiver for UI review')
-            : null,
-      }),
-    );
-  };
-
-  const ensureReservation = async (input: {
-    userId: string;
-    bookId: string;
-    queuePosition: number;
-  }) => {
-    const existing = await reservations.findOne({
-      where: {
-        userId: input.userId,
-        bookId: input.bookId,
-        status: ReservationStatus.Active,
-      },
-    });
-    if (existing) {
-      existing.queuePosition = input.queuePosition;
-      await reservations.save(existing);
-      return existing;
-    }
-    return reservations.save(
-      reservations.create({
-        userId: input.userId,
-        bookId: input.bookId,
-        status: ReservationStatus.Active,
-        queuePosition: input.queuePosition,
-      }),
-    );
-  };
-
-  const resetMemberActivity = async (userId: string) => {
-    await checkoutRequests.delete({ userId });
-    await fines.delete({ userId });
-    await reservations.delete({ userId });
-    const memberLoans = await loans.find({ where: { userId } });
-    for (const loan of memberLoans) {
-      await loans.delete({ id: loan.id });
-    }
-  };
-
-  const ensureFulfilledRequest = async (loan: Loan) => {
-    const existing = await checkoutRequests.findOne({ where: { loanId: loan.id } });
-    if (existing) return existing;
-    return checkoutRequests.save(
-      checkoutRequests.create({
-        userId: loan.userId,
-        bookId: loan.bookId,
-        status: CheckoutRequestStatus.Fulfilled,
-        loanId: loan.id,
-        bookCopyId: loan.bookCopyId,
-        issuedBy: SEED_STAFF_USER_ID,
-        fulfilledAt: loan.borrowedAt,
-      }),
-    );
-  };
-
-  const ensurePendingRequest = async (userId: string, bookId: string) => {
-    const existing = await checkoutRequests.findOne({
-      where: { userId, bookId, status: CheckoutRequestStatus.Pending },
-    });
-    if (existing) return existing;
-    return checkoutRequests.save(
-      checkoutRequests.create({
-        userId,
-        bookId,
-        status: CheckoutRequestStatus.Pending,
-      }),
-    );
-  };
-
-  // --- Primary member (user@demo.local) — one coherent story across pages ---
-  await resetMemberActivity(SEED_MEMBER_USER_ID);
-
-  const healthyLoan = await ensureActiveLoan({
+  const overdueLoan = await createActiveLoan({
     userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0024',
-    dueDate: daysAgoIso(-10),
-    borrowedDaysAgo: 4,
-  });
-  const dueSoonLoan = await ensureActiveLoan({
-    userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0026',
-    dueDate: daysAgoIso(-2),
-    borrowedDaysAgo: 12,
-  });
-  const overdueLoan = await ensureActiveLoan({
-    userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0028',
-    dueDate: daysAgoIso(4),
+    barcode: 'BKLY-0027',
+    dueDate: daysAgoIso(OVERDUE_DAYS),
     borrowedDaysAgo: 18,
   });
 
-  await ensureFulfilledRequest(healthyLoan);
-  await ensureFulfilledRequest(dueSoonLoan);
-  await ensureFulfilledRequest(overdueLoan);
-
-  await ensureFine({
-    loan: overdueLoan,
-    daysOverdue: 4,
-    amountCents: 200,
-    status: FineStatus.Unpaid,
-  });
-
-  const returnedPaid = await ensureReturnedLoan({
-    userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0031',
-    dueDate: daysAgoIso(20),
-    borrowedDaysAgo: 40,
-    returnedDaysAgo: 12,
-  });
-  const returnedWaived = await ensureReturnedLoan({
-    userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0030',
-    dueDate: daysAgoIso(15),
-    borrowedDaysAgo: 30,
-    returnedDaysAgo: 8,
-  });
-
-  if (returnedPaid.returnedAt) {
-    await ensureFine({
-      loan: returnedPaid,
-      daysOverdue: 3,
-      amountCents: 150,
-      status: FineStatus.Paid,
-    });
-  }
-  if (returnedWaived.returnedAt) {
-    await ensureFine({
-      loan: returnedWaived,
-      daysOverdue: 2,
-      amountCents: 100,
-      status: FineStatus.Waived,
-      waivedReason: 'First-time courtesy waiver',
-    });
-  }
-
-  const design = bookByIsbn.get('9780465050659');
-  if (design) {
-    await ensurePendingRequest(SEED_MEMBER_USER_ID, design.id);
-  }
-
-  // --- Other members hold Atomic Habits so primary member can reserve ---
-  await ensureActiveLoan({
+  await createActiveLoan({
     userId: SEED_MEMBER2_USER_ID,
     barcode: 'BKLY-0015',
     dueDate: daysAgoIso(-5),
-    borrowedDaysAgo: 5,
+    borrowedDaysAgo: 9,
   });
-  await ensureActiveLoan({
+
+  await createActiveLoan({
     userId: SEED_MEMBER3_USER_ID,
     barcode: 'BKLY-0016',
     dueDate: daysAgoIso(-9),
     borrowedDaysAgo: 5,
   });
 
-  for (const barcode of [
-    'BKLY-0015',
-    'BKLY-0016',
-    'BKLY-0023',
-    'BKLY-0024',
-    'BKLY-0025',
-    'BKLY-0026',
-    'BKLY-0027',
-    'BKLY-0028',
-    'BKLY-0030',
-    'BKLY-0031',
-    'BKLY-0032',
-  ]) {
-    const copy = await copyByBarcode(barcode);
-    const active = await loans
-      .createQueryBuilder('loan')
-      .where(LOAN_BY_COPY_ID, { copyId: copy.id })
-      .andWhere('loan.returned_at IS NULL')
-      .getOne();
-    if (
-      !active &&
-      copy.status !== BookCopyStatus.Available &&
-      copy.status !== BookCopyStatus.Lost
-    ) {
-      copy.status = BookCopyStatus.Available;
-      await copies.save(copy);
-    } else if (active && copy.status !== BookCopyStatus.OnLoan) {
-      copy.status = BookCopyStatus.OnLoan;
-      await copies.save(copy);
-    }
-  }
+  await createReturnedLoan({
+    userId: SEED_MEMBER_USER_ID,
+    barcode: 'BKLY-0023',
+    dueDate: daysAgoIso(20),
+    borrowedDaysAgo: 40,
+    returnedDaysAgo: 12,
+  });
+
+  await createReturnedLoan({
+    userId: SEED_MEMBER_USER_ID,
+    barcode: 'BKLY-0025',
+    dueDate: daysAgoIso(8),
+    borrowedDaysAgo: 22,
+    returnedDaysAgo: 6,
+  });
+
+  await fines.save(
+    fines.create({
+      loanId: overdueLoan.id,
+      userId: overdueLoan.userId,
+      daysOverdue: OVERDUE_DAYS,
+      amountCents: OVERDUE_DAYS * FINE_CENTS_PER_DAY,
+      status: FineStatus.Unpaid,
+    }),
+  );
 
   const atomic = bookByIsbn.get('9780735211292');
-  if (atomic) {
-    await ensureReservation({
-      userId: SEED_MEMBER_USER_ID,
-      bookId: atomic.id,
-      queuePosition: 1,
-    });
+  const zeroToOne = bookByIsbn.get('9780804139298');
+  if (!atomic || !zeroToOne) {
+    throw new Error('Seed books missing after upsert');
   }
 
-  const allCopies = await copies.find({ withDeleted: false });
-  for (const copy of allCopies) {
+  await reservations.save(
+    reservations.create({
+      userId: SEED_MEMBER_USER_ID,
+      bookId: atomic.id,
+      status: ReservationStatus.Active,
+      queuePosition: 1,
+    }),
+  );
+  await reservations.save(
+    reservations.create({
+      userId: SEED_MEMBER2_USER_ID,
+      bookId: zeroToOne.id,
+      status: ReservationStatus.Active,
+      queuePosition: 1,
+    }),
+  );
+
+  const liveCopies = await copies.find({ withDeleted: false });
+  for (const copy of liveCopies) {
     const active = await loans
       .createQueryBuilder('loan')
-      .where(LOAN_BY_COPY_ID, { copyId: copy.id })
+      .where('loan.book_copy_id = :copyId', { copyId: copy.id })
       .andWhere('loan.returned_at IS NULL')
       .getOne();
-    if (
-      active &&
-      copy.status !== BookCopyStatus.OnLoan &&
-      copy.status !== BookCopyStatus.Lost
-    ) {
-      copy.status = BookCopyStatus.OnLoan;
-      await copies.save(copy);
-    } else if (!active && copy.status === BookCopyStatus.OnLoan) {
-      copy.status = BookCopyStatus.Available;
+    const nextStatus = active ? BookCopyStatus.OnLoan : BookCopyStatus.Available;
+    if (copy.status !== nextStatus) {
+      copy.status = nextStatus;
       await copies.save(copy);
     }
   }
 
-  console.log('Seed complete — password for all users: password123', {
-    memberLogin: 'user@demo.local',
-    users: userSeeds.map((s) => `${s.email} (${s.role})`),
-    booksCreated,
-    copiesCreated,
-    memberUiCoverage: {
-      activeLoans: 'healthy + due soon + overdue (same titles as issued requests)',
-      checkoutRequests: '1 pending + 3 issued',
-      reservations: 'Atomic Habits queue #1',
-      fines: 'overdue unpaid + Clean Code paid + Educated waived',
-      catalog: `${SEED_BOOKS.length} titles with descriptions/authors/ISBN/year`,
+  const [bookCount, copyCount, loanCount, activeLoanCount, reservationCount, fineCount] =
+    await Promise.all([
+      books.count(),
+      copies.count(),
+      loans.count(),
+      loans.createQueryBuilder('loan').where('loan.returned_at IS NULL').getCount(),
+      reservations.count(),
+      fines.count(),
+    ]);
+
+  console.log('Seed complete — password for demo users: password123', {
+    demoLogins: ['admin@demo.com', 'staff@demo.com', 'user@demo.com'],
+    counts: {
+      books: bookCount,
+      copies: copyCount,
+      loans: loanCount,
+      activeLoans: activeLoanCount,
+      reservations: reservationCount,
+      fines: fineCount,
     },
   });
 

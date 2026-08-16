@@ -3,6 +3,7 @@ import {
   bookCopySchema,
   bookDetailSchema,
   bookSchema,
+  bookViewerActionsSchema,
   createBookCopyInputSchema,
   createBookInputSchema,
   listBookCopiesParamsSchema,
@@ -13,6 +14,7 @@ import {
   type Book,
   type BookCopy,
   type BookDetail,
+  type BookViewerActions,
   type CreateBookCopyInput,
   type CreateBookInput,
   type ListBookCopiesParams,
@@ -46,6 +48,11 @@ export function createBooksApi(client: AxiosInstance) {
     async getById(id: string): Promise<BookDetail> {
       const { data } = await client.get(`/books/${id}`);
       return bookDetailSchema.parse(unwrapData(data));
+    },
+
+    async getMyActions(id: string): Promise<BookViewerActions> {
+      const { data } = await client.get(`/my/books/${id}/actions`);
+      return bookViewerActionsSchema.parse(unwrapData(data));
     },
 
     async create(input: CreateBookInput): Promise<Book> {

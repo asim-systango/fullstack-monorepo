@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { Alert, Button, Field, StatusMessage, TextInput } from '@shared/ui/components';
 import { RequireRole } from '@/components/dashboard/require-role';
 import {
+  LoanPicker,
+  MemberPicker,
   StaffEmptyState,
   StaffFineSettlement,
   StaffPageHeader,
@@ -12,7 +14,7 @@ import {
 } from '@/components/staff';
 import { useAuth } from '@/components/auth';
 import { toUserMessage } from '@/lib/auth/errors';
-import { hasRole, LIBRARIAN_ROLES, ROLES } from '@/lib/auth/roles';
+import { canReturn, LIBRARIAN_ROLES } from '@/lib/auth/roles';
 import {
   useLoanLookup,
   useLoans,
@@ -20,24 +22,13 @@ import {
   useMemberSearch,
   useReturnLoan,
 } from '@/lib/bookly';
-import { formatDueDate, formatMoneyInr, formatShortDate } from '@/lib/member/format';
+import { daysLate, formatDueDate, formatMoneyInr, formatShortDate } from '@/lib/member';
 import { useDebouncedValue, useStaffListParams } from '@/lib/staff';
 import { OVERDUE_RETURN_SETTLEMENT_MESSAGE, type LoanWithRelations, type MemberSearchHit } from '@shared/types';
 
-function calendarDaysLate(dueDate: string): number {
-  const due = new Date(`${dueDate.slice(0, 10)}T00:00:00Z`);
-  const today = new Date();
-  const todayUtc = Date.UTC(
-    today.getUTCFullYear(),
-    today.getUTCMonth(),
-    today.getUTCDate(),
-  );
-  return Math.max(0, Math.floor((todayUtc - due.getTime()) / 86_400_000));
-}
-
 function ReturnContent() {
   const { user } = useAuth();
-  const isStaff = hasRole(user, [ROLES.staff]);
+  const isStaff = canReturn(user);
   const { get } = useStaffListParams();
   const memberIdFromUrl = get('memberId');
 
@@ -93,7 +84,8 @@ function ReturnContent() {
     if (!selectedLoan) return;
     setError(null);
     setSuccess(null);
-    const due = needsReturnFineSettlement(selectedLoan, daysLate);
+    const late = daysLate(selectedLoan.dueDate);
+    const due = needsReturnFineSettlement(selectedLoan, late);
     if (due && !fineSettlement) {
       setError(OVERDUE_RETURN_SETTLEMENT_MESSAGE);
       return;
@@ -122,9 +114,9 @@ function ReturnContent() {
     }
   }
 
-  const daysLate = selectedLoan ? calendarDaysLate(selectedLoan.dueDate) : 0;
+  const daysLateCount = selectedLoan ? daysLate(selectedLoan.dueDate) : 0;
   const dueSettlement =
-    selectedLoan != null && needsReturnFineSettlement(selectedLoan, daysLate);
+    selectedLoan != null && needsReturnFineSettlement(selectedLoan, daysLateCount);
 
   return (
     <div className="staff-content">
@@ -170,90 +162,41 @@ function ReturnContent() {
             </Button>
           </div>
 
-          {selectedMemberId ? (
-            <div className="staff-selected-card">
-              <div className="min-w-0 flex-1">
-                <p className="m-0 text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--bookly-muted)]">
-                  Selected member
-                </p>
-                <p className="m-0 mt-1 font-medium text-[color:var(--bookly-navy)]">
-                  {pickedMember?.fullName ??
-                    selectedMember.data?.fullName ??
-                    (selectedMember.isPending ? 'Loading member…' : 'Selected member')}
-                </p>
-                {(pickedMember?.email ?? selectedMember.data?.email) ? (
-                  <p className="m-0 mt-1 text-sm text-[color:var(--bookly-muted)]">
-                    {pickedMember?.email ?? selectedMember.data?.email}
-                  </p>
-                ) : null}
-              </div>
-              {isStaff ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setPickedMember(null);
-                    setSelectedMemberId(null);
-                    setSelectedLoan(null);
-                    setMemberQuery('');
-                  }}
-                >
-                  Change
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <Field label="Or find member" htmlFor="return-member">
-              <TextInput
-                id="return-member"
-                value={memberQuery}
-                onChange={(e) => setMemberQuery(e.target.value)}
-                placeholder="Search name, email, or member ID…"
-                autoComplete="off"
-                disabled={!isStaff}
-              />
-            </Field>
-          )}
-
-          {members.isError ? (
-            <Alert tone="danger" title="Member search failed">
-              {toUserMessage(members.error)}
-            </Alert>
-          ) : null}
+          <MemberPicker
+            query={memberQuery}
+            onQueryChange={setMemberQuery}
+            hits={!selectedMemberId ? members.data : undefined}
+            selectedId={selectedMemberId}
+            selectedName={
+              pickedMember?.fullName ??
+              selectedMember.data?.fullName ??
+              (selectedMember.isPending ? 'Loading member…' : 'Selected member')
+            }
+            selectedEmail={pickedMember?.email ?? selectedMember.data?.email}
+            onSelect={(hit) => {
+              setPickedMember(hit);
+              setSelectedMemberId(hit.userId);
+              setSelectedLoan(null);
+              setMemberQuery('');
+              setError(null);
+              setSuccess(null);
+            }}
+            onClear={() => {
+              setPickedMember(null);
+              setSelectedMemberId(null);
+              setSelectedLoan(null);
+              setMemberQuery('');
+            }}
+            disabled={!isStaff}
+            error={members.isError ? toUserMessage(members.error) : null}
+            inputId="return-member"
+            placeholder="Search name, email, or member ID…"
+          />
 
           {selectedMember.isError && selectedMemberId ? (
             <Alert tone="danger" title="Could not load member profile">
               {toUserMessage(selectedMember.error)} Active loans can still be loaded below.
             </Alert>
-          ) : null}
-
-          {!selectedMemberId && members.data && members.data.length > 0 ? (
-            <ul className="staff-result-list">
-              {members.data.map((hit) => (
-                <li key={hit.userId}>
-                  <button
-                    type="button"
-                    className="staff-pick-row"
-                    onClick={() => {
-                      setPickedMember(hit);
-                      setSelectedMemberId(hit.userId);
-                      setSelectedLoan(null);
-                      setMemberQuery('');
-                      setError(null);
-                      setSuccess(null);
-                    }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="m-0 font-medium">{hit.fullName}</p>
-                      <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-                        {hit.email} · {hit.activeLoanCount} active loan(s)
-                      </p>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
           ) : null}
 
           {selectedMemberId ? (
@@ -263,9 +206,6 @@ function ReturnContent() {
             </p>
           ) : null}
 
-          {memberLoans.isPending && selectedMemberId ? (
-            <p className="m-0 text-sm text-[color:var(--bookly-muted)]">Loading loans…</p>
-          ) : null}
           {memberLoans.data && memberLoans.data.items.length === 0 ? (
             <StaffEmptyState
               title="No active loans"
@@ -273,24 +213,15 @@ function ReturnContent() {
             />
           ) : null}
           {memberLoans.data && memberLoans.data.items.length > 0 ? (
-            <ul className="staff-result-list">
-              {memberLoans.data.items.map((loan) => (
-                <li key={loan.id}>
-                  <button
-                    type="button"
-                    className={`staff-pick-row ${selectedLoan?.id === loan.id ? 'is-selected' : ''}`}
-                    onClick={() => setSelectedLoan(loan)}
-                  >
-                    <span className="font-medium">{loan.book.title}</span>
-                    {' · '}
-                    {loan.bookCopy.barcode}
-                    {' · Due '}
-                    {formatDueDate(loan.dueDate)}
-                    {calendarDaysLate(loan.dueDate) > 0 ? ' · Overdue' : ''}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <LoanPicker
+              loans={memberLoans.data.items}
+              selectedId={selectedLoan?.id}
+              onSelect={setSelectedLoan}
+              loading={memberLoans.isPending}
+            />
+          ) : null}
+          {memberLoans.isPending && selectedMemberId && !memberLoans.data ? (
+            <LoanPicker loans={[]} selectedId={null} onSelect={setSelectedLoan} loading />
           ) : null}
 
           {selectedLoan ? (
@@ -304,10 +235,10 @@ function ReturnContent() {
                 Issued {formatShortDate(selectedLoan.borrowedAt)} · Due{' '}
                 {formatDueDate(selectedLoan.dueDate)}
               </p>
-              {daysLate > 0 ? (
+              {daysLateCount > 0 ? (
                 <p className="m-0 mt-2">
                   <span className="staff-status-chip staff-status-overdue">
-                    Overdue · {daysLate} days
+                    Overdue · {daysLateCount} days
                   </span>
                 </p>
               ) : (
@@ -324,7 +255,7 @@ function ReturnContent() {
               {dueSettlement ? (
                 <div className="mt-3">
                   <StaffFineSettlement
-                    daysLate={daysLate}
+                    daysLate={daysLateCount}
                     amountCents={selectedLoan.fine?.amountCents ?? null}
                     value={fineSettlement}
                     onChange={setFineSettlement}

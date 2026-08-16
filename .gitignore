@@ -1,15 +1,27 @@
-node_modules
-dist
-.next
-.turbo
+# dependencies
+node_modules/
+
+# build / cache
+dist/
+.next/
+.next-build/
+.turbo/
 *.tsbuildinfo
+coverage/
+
+# env / secrets — keep *.example committed
 .env
-.env.local
+.env.*
+!.env.example
+!.env*.example
+
+# local data / logs / OS
 data/
-coverage
-.DS_Store
 *.log
+.DS_Store
 __pycache__/
 *.pyc
+
+# editor
 .vscode/*
 !.vscode/extensions.json

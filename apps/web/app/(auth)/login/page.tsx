@@ -18,7 +18,7 @@ import { isEmailUnverifiedError } from '@/lib/auth/errors';
 import { useLogin } from '@/lib/auth/hooks';
 import { ROUTES } from '@/lib/auth/routes';
 import { getSafeNextPath } from '@/lib/auth/safe-next';
-import { useAuthUiStore } from '@/lib/store';
+import { useAuthUi } from '@/lib/store';
 import { loginSchema } from '@/lib/validation/auth';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -28,9 +28,9 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { setSessionUser } = useAuth();
   const login = useLogin();
-  const setPendingEmail = useAuthUiStore((s) => s.setPendingEmail);
+  const { setPendingEmail } = useAuthUi();
   const { pending, error, setError, fieldErrors, submit } = useAuthForm();
-  const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
+  const [email, setEmail] = useState(isProd ? '' : 'user@demo.com');
   const [password, setPassword] = useState(isProd ? '' : 'password123');
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {

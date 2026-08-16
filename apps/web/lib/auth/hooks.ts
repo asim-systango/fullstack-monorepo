@@ -88,9 +88,15 @@ export function useResetPassword() {
   });
 }
 
+export function useChangePasswordOtp() {
+  return useMutation({
+    mutationFn: (input: { currentPassword: string }) => authApi.changePasswordOtp(input),
+  });
+}
+
 export function useChangePassword() {
   return useMutation({
-    mutationFn: (input: { currentPassword: string; newPassword: string }) =>
+    mutationFn: (input: { currentPassword: string; newPassword: string; otp: string }) =>
       authApi.changePassword(input),
   });
 }

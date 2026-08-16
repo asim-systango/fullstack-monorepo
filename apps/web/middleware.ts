@@ -29,8 +29,6 @@ export const config = {
     '/reset-password',
     '/dashboard',
     '/dashboard/:path*',
-    '/books',
-    '/books/:path*',
     '/my/loans',
     '/my/loans/:path*',
     '/my/reservations',

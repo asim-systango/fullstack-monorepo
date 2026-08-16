@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { Book } from '../books/book.entity';
 import { BookCopy } from '../books/book-copy.entity';
 import { BookCopyStatus } from '../books/enums/book-copy-status.enum';
@@ -67,26 +67,15 @@ export class DashboardService {
     await this.finesService.accrueOverdueFines(userId);
     const today = new Date().toISOString().slice(0, 10);
     const [activeLoans, reservations, outstandingRaw, maxActiveLoans] = await Promise.all([
-      this.loans
-        .createQueryBuilder('loan')
-        .withDeleted()
-        .leftJoinAndSelect('loan.book', 'book')
-        .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
-        .leftJoinAndSelect('loan.fine', 'fine')
-        .where('loan.user_id = :userId', { userId })
-        .andWhere('loan.returned_at IS NULL')
-        .orderBy('loan.due_date', 'ASC')
-        .take(20)
-        .getMany(),
-      this.reservations
-        .createQueryBuilder('r')
-        .withDeleted()
-        .leftJoinAndSelect('r.book', 'book')
-        .where('r.user_id = :userId', { userId })
-        .andWhere('r.status = :status', { status: ReservationStatus.Active })
-        .orderBy('r.created_at', 'ASC')
-        .take(20)
-        .getMany(),
+      this.loans.find({
+        where: { userId, returnedAt: IsNull() },
+        relations: { bookCopy: true, fine: true },
+        order: { dueDate: 'ASC' },
+      }),
+      this.reservations.find({
+        where: { userId, status: ReservationStatus.Active },
+        order: { createdAt: 'ASC' },
+      }),
       this.fines
         .createQueryBuilder('fine')
         .select('COALESCE(SUM(fine.amount_cents), 0)', 'total')
@@ -96,12 +85,28 @@ export class DashboardService {
       this.settings.getMaxActiveLoans(),
     ]);
 
+    const bookIds = [
+      ...new Set([
+        ...activeLoans.map((loan) => loan.bookId),
+        ...reservations.map((reservation) => reservation.bookId),
+      ]),
+    ];
+    const books =
+      bookIds.length > 0
+        ? await this.books.find({ where: { id: In(bookIds) }, withDeleted: true })
+        : [];
+    const bookById = new Map(books.map((book) => [book.id, book]));
+
     return {
-      activeLoans: activeLoans.map((loan) => ({
+      activeLoans: activeLoans.slice(0, 20).map((loan) => ({
         ...loan,
+        book: bookById.get(loan.bookId) ?? loan.book,
         overdue: loan.dueDate < today,
       })),
-      reservations,
+      reservations: reservations.slice(0, 20).map((reservation) => ({
+        ...reservation,
+        book: bookById.get(reservation.bookId) ?? reservation.book,
+      })),
       outstandingFineTotalCents: Number(outstandingRaw?.total ?? 0),
       maxActiveLoans,
     };

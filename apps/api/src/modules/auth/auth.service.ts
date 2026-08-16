@@ -20,6 +20,7 @@ import {
   LoginDto,
   RefreshTokenDto,
   RegisterDto,
+  RequestChangePasswordOtpDto,
   ResendOtpDto,
   ResetPasswordDto,
   UpdateMeDto,
@@ -347,16 +348,44 @@ export class AuthService {
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto, res: Response) {
+    const user = await this.requireCurrentPassword(userId, dto.currentPassword);
+    if (user.otpPurpose !== 'password_change') {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    await this.assertOtpValid(user, dto.otp);
+
+    user.passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    user.mustChangePassword = false;
+    clearOtpFields(user);
+    await this.usersService.save(user);
+    await this.refreshTokens.revokeAllForUser(userId);
+    return this.logout(res);
+  }
+
+  async requestChangePasswordOtp(userId: string, dto: RequestChangePasswordOtpDto) {
+    const user = await this.requireCurrentPassword(userId, dto.currentPassword);
+    if (isOtpCooldownActive(user) && user.otpPurpose === 'password_change') {
+      throw new BadRequestException('Please wait before requesting another code');
+    }
+
+    const { user: withOtp, otp } = await applyIssuedOtp(user, 'password_change');
+    await this.usersService.save(withOtp);
+    await this.mailer.sendOtpEmail({
+      to: withOtp.email,
+      otp,
+      purpose: 'password_change',
+    });
+    return { ok: true };
+  }
+
+  private async requireCurrentPassword(userId: string, currentPassword: string) {
     const user = await this.usersService.findById(userId);
     if (!user) throw new UnauthorizedException();
 
-    const ok = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Current password is incorrect');
-
-    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
-    await this.usersService.updatePasswordHash(userId, passwordHash, false);
-    await this.refreshTokens.revokeAllForUser(userId);
-    return this.logout(res);
+    return user;
   }
 
   /**

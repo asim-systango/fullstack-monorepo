@@ -11,6 +11,17 @@ export const userSchema = z.object({
 
 export type User = z.infer<typeof userSchema>;
 
+export const createUserInputSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email(),
+});
+export type CreateUserInput = z.infer<typeof createUserInputSchema>;
+
+export const updateRoleInputSchema = z.object({
+  role: z.enum(['admin', 'staff', 'user']),
+});
+export type UpdateRoleInput = z.infer<typeof updateRoleInputSchema>;
+
 export const authTokensSchema = z.object({
   user: userSchema,
   accessToken: z.string().min(1),

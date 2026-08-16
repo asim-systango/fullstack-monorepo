@@ -67,7 +67,6 @@ export const GUEST_AUTH_PATHS = [
 
 export const PROTECTED_PATHS = [
   ROUTES.dashboard,
-  ROUTES.books,
   ROUTES.myLoans,
   ROUTES.myReservations,
   ROUTES.myCheckoutRequests,
@@ -87,4 +86,9 @@ export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
+}
+
+/** Guest-browsable member catalog (not `/librarian/books`). */
+export function isPublicCatalogPath(pathname: string): boolean {
+  return pathname === ROUTES.books || pathname.startsWith(`${ROUTES.books}/`);
 }

@@ -238,7 +238,8 @@
   border-color: color-mix(in srgb, var(--staff-ok) 28%, transparent);
 }
 
-.staff-metric-label {
+.staff-metric-label,
+.staff-metric .ui-metric-label {
   margin: 0;
   font-size: 0.65rem;
   font-weight: 600;
@@ -247,7 +248,8 @@
   color: var(--bookly-muted);
 }
 
-.staff-metric-value {
+.staff-metric-value,
+.staff-metric .ui-metric-value {
   margin: 0;
   font-size: 1.75rem;
   font-weight: 600;
@@ -256,7 +258,8 @@
   line-height: 1.1;
 }
 
-.staff-metric-hint {
+.staff-metric-hint,
+.staff-metric .ui-metric-hint {
   margin: 0;
   font-size: 0.8rem;
   color: var(--bookly-muted);
@@ -456,6 +459,8 @@
 .staff-empty {
   padding: 1.25rem 1rem;
   text-align: center;
+  border: 0;
+  background: transparent;
 }
 
 .staff-empty h3 {

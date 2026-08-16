@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, In, QueryFailedError, Repository } from 'typeorm';
 import { Book } from '../books/book.entity';
 import { BookCopy } from '../books/book-copy.entity';
 import { BookCopyStatus } from '../books/enums/book-copy-status.enum';
@@ -30,10 +30,6 @@ export class ReservationsService {
     private readonly reservations: Repository<Reservation>,
     @InjectRepository(Book)
     private readonly books: Repository<Book>,
-    @InjectRepository(BookCopy)
-    private readonly copies: Repository<BookCopy>,
-    @InjectRepository(Loan)
-    private readonly loans: Repository<Loan>,
     private readonly members: MembersService,
     private readonly dataSource: DataSource,
   ) {}
@@ -46,10 +42,7 @@ export class ReservationsService {
   }> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const qb = this.reservations
-      .createQueryBuilder('r')
-      .withDeleted()
-      .leftJoinAndSelect('r.book', 'book');
+    const qb = this.reservations.createQueryBuilder('r');
 
     if (query.userId) {
       qb.andWhere('r.user_id = :userId', { userId: query.userId });
@@ -61,11 +54,34 @@ export class ReservationsService {
       qb.andWhere('r.status = :status', { status: query.status });
     }
 
-    qb.orderBy('r.createdAt', 'ASC')
+    const total = await qb.clone().getCount();
+    const idRows = await qb
+      .select('r.id', 'id')
+      .orderBy('r.created_at', 'ASC')
       .skip((page - 1) * limit)
-      .take(limit);
+      .take(limit)
+      .getRawMany<{ id: string }>();
+    const ids = idRows.map((row) => row.id);
+    if (ids.length === 0) {
+      return { items: [], total, page, limit };
+    }
 
-    const [items, total] = await qb.getManyAndCount();
+    const loaded = await this.reservations.find({ where: { id: In(ids) } });
+    const byId = new Map(loaded.map((row) => [row.id, row]));
+    const rows = ids
+      .map((id) => byId.get(id))
+      .filter((row): row is Reservation => Boolean(row));
+    const bookIds = [...new Set(rows.map((row) => row.bookId))];
+    const books = await this.books.find({
+      where: { id: In(bookIds) },
+      withDeleted: true,
+    });
+    const bookById = new Map(books.map((book) => [book.id, book]));
+    const items = rows.map((row) => {
+      const book = bookById.get(row.bookId);
+      if (book) row.book = book;
+      return row;
+    });
     return { items, total, page, limit };
   }
 
@@ -88,54 +104,76 @@ export class ReservationsService {
   async create(userId: string, dto: CreateReservationDto): Promise<Reservation> {
     await this.members.requireActiveMember(userId);
 
-    const book = await this.books.findOne({ where: { id: dto.bookId } });
-    if (!book) {
-      throw new NotFoundException('Book not found');
-    }
-
-    const availableCount = await this.copies.count({
-      where: {
-        bookId: dto.bookId,
-        status: BookCopyStatus.Available,
-        deletedAt: IsNull(),
-      },
-    });
-    if (availableCount > 0) {
-      throw new BadRequestException('Copies are available — reservation is not needed');
-    }
-
-    const activeLoan = await this.loans.findOne({
-      where: {
-        userId,
-        bookId: dto.bookId,
-        returnedAt: IsNull(),
-      },
-    });
-    if (activeLoan) {
-      throw new BadRequestException('You already have this title on active loan');
-    }
-
-    const position =
-      (await this.reservations.count({
-        where: { bookId: dto.bookId, status: ReservationStatus.Active },
-      })) + 1;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      return await this.reservations.save(
-        this.reservations.create({
+      const book = await queryRunner.manager
+        .getRepository(Book)
+        .createQueryBuilder('book')
+        .setLock('pessimistic_write')
+        .where('book.id = :id', { id: dto.bookId })
+        .getOne();
+      if (!book || book.deletedAt) {
+        throw new NotFoundException('Book not found');
+      }
+
+      const copies = await queryRunner.manager
+        .getRepository(BookCopy)
+        .createQueryBuilder('copy')
+        .setLock('pessimistic_write')
+        .where('copy.book_id = :bookId', { bookId: dto.bookId })
+        .andWhere('copy.deleted_at IS NULL')
+        .getMany();
+      if (copies.some((copy) => copy.status === BookCopyStatus.Available)) {
+        throw new BadRequestException('Copies are available — reservation is not needed');
+      }
+
+      const activeLoan = await queryRunner.manager
+        .getRepository(Loan)
+        .createQueryBuilder('loan')
+        .setLock('pessimistic_write')
+        .where('loan.user_id = :userId', { userId })
+        .andWhere('loan.book_id = :bookId', { bookId: dto.bookId })
+        .andWhere('loan.returned_at IS NULL')
+        .getOne();
+      if (activeLoan) {
+        throw new BadRequestException('You already have this title on active loan');
+      }
+
+      const activeReservations = await queryRunner.manager
+        .getRepository(Reservation)
+        .createQueryBuilder('r')
+        .setLock('pessimistic_write')
+        .where('r.book_id = :bookId', { bookId: dto.bookId })
+        .andWhere('r.status = :status', { status: ReservationStatus.Active })
+        .orderBy('r.created_at', 'ASC')
+        .getMany();
+
+      const saved = await queryRunner.manager.save(
+        queryRunner.manager.create(Reservation, {
           userId,
           bookId: dto.bookId,
           status: ReservationStatus.Active,
-          queuePosition: position,
+          queuePosition: activeReservations.length + 1,
         }),
       );
+
+      await queryRunner.commitTransaction();
+      return saved;
     } catch (err) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       if (isUniqueViolation(err)) {
         throw new ConflictException(
           'You already have an active reservation for this title',
         );
       }
       throw err;
+    } finally {
+      await queryRunner.release();
     }
   }
 

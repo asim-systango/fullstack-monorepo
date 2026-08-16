@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Alert, Button, Field, Skeleton, StatusMessage, TextInput } from '@shared/ui/components';
+import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { RequireRole } from '@/components/dashboard/require-role';
 import { StaffEmptyState, StaffPageHeader } from '@/components/staff';
 import { toUserMessage } from '@/lib/auth/errors';
@@ -28,6 +29,8 @@ function BookDetailContent() {
   const [barcode, setBarcode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState(false);
+  const [deleteCopyId, setDeleteCopyId] = useState<string | null>(null);
 
   const activeCopies = copies.data?.filter((copy) => !copy.deletedAt) ?? [];
 
@@ -48,6 +51,17 @@ function BookDetailContent() {
     try {
       await deleteBook.mutateAsync(id);
       router.push(ROUTES.librarianBooks);
+    } catch (err) {
+      setError(toUserMessage(err));
+    }
+  }
+
+  async function onDeleteCopy(copyId: string, bookId: string) {
+    setError(null);
+    try {
+      await deleteCopy.mutateAsync({ id: copyId, bookId });
+      setMessage('Copy removed.');
+      setDeleteCopyId(null);
     } catch (err) {
       setError(toUserMessage(err));
     }
@@ -84,7 +98,7 @@ function BookDetailContent() {
             size="sm"
             variant="danger"
             loading={deleteBook.isPending}
-            onClick={() => void onDeleteBook()}
+            onClick={() => setConfirmDeleteTitle(true)}
           >
             Delete title
           </Button>
@@ -160,13 +174,7 @@ function BookDetailContent() {
                     size="sm"
                     variant="danger"
                     loading={deleteCopy.isPending}
-                    onClick={() => {
-                      setError(null);
-                      void deleteCopy
-                        .mutateAsync({ id: copy.id, bookId: copy.bookId })
-                        .then(() => setMessage('Copy removed.'))
-                        .catch((err) => setError(toUserMessage(err)));
-                    }}
+                    onClick={() => setDeleteCopyId(copy.id)}
                   >
                     Delete
                   </Button>
@@ -176,6 +184,33 @@ function BookDetailContent() {
           ) : null}
         </div>
       </section>
+      <ConfirmDialog
+        open={confirmDeleteTitle}
+        onOpenChange={setConfirmDeleteTitle}
+        title="Delete this title?"
+        description="The book will be hidden from the public catalog. This cannot be undone from this screen."
+        confirmLabel="Delete title"
+        pending={deleteBook.isPending}
+        pendingText="Deleting…"
+        danger
+        onConfirm={() => void onDeleteBook()}
+      />
+      <ConfirmDialog
+        open={Boolean(deleteCopyId)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteCopyId(null);
+        }}
+        title="Delete this copy?"
+        description="The barcode will be removed if it is not currently on loan."
+        confirmLabel="Delete copy"
+        pending={deleteCopy.isPending}
+        pendingText="Deleting…"
+        danger
+        onConfirm={() => {
+          const copy = activeCopies.find((item) => item.id === deleteCopyId);
+          if (copy) void onDeleteCopy(copy.id, copy.bookId);
+        }}
+      />
     </div>
   );
 }

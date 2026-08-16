@@ -1,11 +1,13 @@
 export { BookCover } from './book-cover';
 export { BookCard } from './book-card';
+export { BookHeader } from './book-header';
+export { BookAvailability } from './book-availability';
+export { BookDetailCta } from './book-detail-cta';
 export { LoanCard } from './loan-card';
 export { ReservationCard } from './reservation-card';
 export { CheckoutRequestCard } from './checkout-request-card';
 export { FineRow } from './fine-row';
 export { MemberMetricCard } from './metric-card';
-export { QuickActions } from './quick-actions';
 export {
   MemberSection,
   MemberLoadingGrid,

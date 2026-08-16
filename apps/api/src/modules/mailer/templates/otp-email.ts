@@ -1,23 +1,48 @@
 import { escapeHtml, wrapBooklyEmail } from './layout';
 
-export type OtpEmailPurpose = 'signup' | 'password_reset';
+export type OtpEmailPurpose = 'signup' | 'password_reset' | 'password_change';
+
+function copyFor(purpose: OtpEmailPurpose): {
+  subject: string;
+  headline: string;
+  intro: string;
+  text: (otp: string) => string;
+} {
+  if (purpose === 'signup') {
+    return {
+      subject: 'BOOKLY — verify your email',
+      headline: 'Verify your email',
+      intro: 'Use this code to finish creating your BOOKLY account.',
+      text: (otp) => `Your BOOKLY verification code is ${otp}. It expires in 10 minutes.`,
+    };
+  }
+  if (purpose === 'password_change') {
+    return {
+      subject: 'BOOKLY — confirm password change',
+      headline: 'Confirm password change',
+      intro: 'Use this code to confirm changing your BOOKLY password.',
+      text: (otp) =>
+        `Your BOOKLY password change code is ${otp}. It expires in 10 minutes.`,
+    };
+  }
+  return {
+    subject: 'BOOKLY — password reset code',
+    headline: 'Reset your password',
+    intro: 'Use this code to reset your BOOKLY password.',
+    text: (otp) => `Your BOOKLY password reset code is ${otp}. It expires in 10 minutes.`,
+  };
+}
 
 export function buildOtpEmail(input: { otp: string; purpose: OtpEmailPurpose }): {
   subject: string;
   text: string;
   html: string;
 } {
-  const isSignup = input.purpose === 'signup';
-  const subject = isSignup
-    ? 'BOOKLY — verify your email'
-    : 'BOOKLY — password reset code';
-  const headline = isSignup ? 'Verify your email' : 'Reset your password';
-  const intro = isSignup
-    ? 'Use this code to finish creating your BOOKLY account.'
-    : 'Use this code to reset your BOOKLY password.';
-  const text = isSignup
-    ? `Your BOOKLY verification code is ${input.otp}. It expires in 10 minutes.`
-    : `Your BOOKLY password reset code is ${input.otp}. It expires in 10 minutes.`;
+  const copy = copyFor(input.purpose);
+  const subject = copy.subject;
+  const headline = copy.headline;
+  const intro = copy.intro;
+  const text = copy.text(input.otp);
 
   const digits = input.otp
     .split('')

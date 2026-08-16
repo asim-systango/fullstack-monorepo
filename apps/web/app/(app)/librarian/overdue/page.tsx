@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import type { OverdueNoticeBulkResult } from '@shared/types';
 import { Alert, Button, Field, TextInput } from '@shared/ui/components';
+import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { RequireRole } from '@/components/dashboard/require-role';
 import {
   StaffListStatus,
@@ -35,17 +36,15 @@ function OverdueContent() {
   const sendAll = useSendOverdueNotices();
   const [bulkSummary, setBulkSummary] = useState<OverdueNoticeBulkResult | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  const [confirmEmailAll, setConfirmEmailAll] = useState(false);
 
   async function onEmailAll() {
-    const confirmed = window.confirm(
-      'This will email all currently overdue members. Members who were emailed within the last 24 hours will be skipped.',
-    );
-    if (!confirmed) return;
     setBulkSummary(null);
     setBulkError(null);
     try {
       const result = await sendAll.mutateAsync();
       setBulkSummary(result);
+      setConfirmEmailAll(false);
     } catch (err) {
       setBulkError(toUserMessage(err));
     }
@@ -63,7 +62,7 @@ function OverdueContent() {
               size="sm"
               variant="secondary"
               loading={sendAll.isPending}
-              onClick={() => void onEmailAll()}
+              onClick={() => setConfirmEmailAll(true)}
             >
               Email all overdue
             </Button>
@@ -152,6 +151,16 @@ function OverdueContent() {
           </StaffListStatus>
         </div>
       </section>
+      <ConfirmDialog
+        open={confirmEmailAll}
+        onOpenChange={setConfirmEmailAll}
+        title="Email all overdue members?"
+        description="This will email all currently overdue members. Members who were emailed within the last 24 hours will be skipped."
+        confirmLabel="Send emails"
+        pending={sendAll.isPending}
+        pendingText="Sending…"
+        onConfirm={() => void onEmailAll()}
+      />
     </div>
   );
 }

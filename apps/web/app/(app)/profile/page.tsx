@@ -2,17 +2,12 @@
 
 import { useEffect, useState, type CSSProperties, type SyntheticEvent } from 'react';
 import Link from 'next/link';
-import { z } from 'zod';
 import { Button, Field, Form, StatusMessage, TextInput } from '@shared/ui/components';
 import { useAuth, useAuthForm } from '@/components/auth';
 import { MemberContent, MemberPageHeader, RequireMember } from '@/components/member';
 import { useUpdateMe } from '@/lib/auth/hooks';
 import { ROUTES } from '@/lib/auth/routes';
-
-const profileSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(120),
-  email: z.string().trim().email('Enter a valid email'),
-});
+import { profileSchema } from '@/lib/validation/auth';
 
 function ProfileContent() {
   const { user } = useAuth();

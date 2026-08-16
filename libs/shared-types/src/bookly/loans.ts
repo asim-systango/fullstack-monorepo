@@ -4,7 +4,7 @@ import { fineStatusSchema, loanFilterStatusSchema } from './enums';
 import { paginatedSchema, paginationParamsSchema } from './pagination';
 
 export const MEMBER_BORROW_LIMIT_MESSAGE =
-  'Borrowing limit reached. A member can have a maximum of 2 books at a time.';
+  'Borrowing limit reached. Return a book before checking out another.';
 
 export const OVERDUE_NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 

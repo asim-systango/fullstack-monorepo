@@ -4,20 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateReservationInput, ListReservationsParams } from '@shared/types';
 import { useAuth } from '@/components/auth';
 import { reservationsApi } from '@/lib/api';
-import { hasRole, LIBRARIAN_ROLES, ROLES } from '@/lib/auth/roles';
+import { hasRole, ROLES } from '@/lib/auth/roles';
 import { INSUFFICIENT_PERMISSIONS } from '@/lib/bookly/constants';
 import { invalidateReservationQueries } from '@/lib/bookly/invalidate';
 import { queryKeys } from '@/lib/query-keys';
-
-export function useReservations(params?: ListReservationsParams) {
-  const { user } = useAuth();
-  const enabled = hasRole(user, LIBRARIAN_ROLES);
-  return useQuery({
-    queryKey: queryKeys.reservations.list(params),
-    queryFn: () => reservationsApi.list(params),
-    enabled,
-  });
-}
 
 export function useMyReservations(params?: ListReservationsParams) {
   const { user } = useAuth();
@@ -25,16 +15,6 @@ export function useMyReservations(params?: ListReservationsParams) {
   return useQuery({
     queryKey: queryKeys.reservations.mine(params),
     queryFn: () => reservationsApi.listMine(params),
-    enabled,
-  });
-}
-
-export function useBookReservations(bookId: string | undefined) {
-  const { user } = useAuth();
-  const enabled = hasRole(user, [ROLES.staff]) && Boolean(bookId);
-  return useQuery({
-    queryKey: queryKeys.reservations.byBook(bookId ?? ''),
-    queryFn: () => reservationsApi.listByBook(bookId!),
     enabled,
   });
 }

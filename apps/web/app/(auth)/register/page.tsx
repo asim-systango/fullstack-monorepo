@@ -13,13 +13,13 @@ import {
 } from '@/components/auth';
 import { useRegister } from '@/lib/auth/hooks';
 import { ROUTES } from '@/lib/auth/routes';
-import { useAuthUiStore } from '@/lib/store';
+import { useAuthUi } from '@/lib/store';
 import { PASSWORD_HINT, registerSchema } from '@/lib/validation/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
   const register = useRegister();
-  const setPendingEmail = useAuthUiStore((s) => s.setPendingEmail);
+  const { setPendingEmail } = useAuthUi();
   const { pending, error, fieldErrors, submit } = useAuthForm();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

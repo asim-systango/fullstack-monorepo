@@ -31,10 +31,11 @@ export function createLoansApi(client: AxiosInstance) {
       return paginatedLoansSchema.parse(unwrapData(data));
     },
 
-    async listOverdue(params?: ListLoansParams): Promise<PaginatedOverdueLoans> {
+    async listOverdue(params?: ListLoansParams, signal?: AbortSignal): Promise<PaginatedOverdueLoans> {
       const parsed = listLoansParamsSchema.partial().parse(params ?? {});
       const { data } = await client.get('/loans/overdue', {
         params: buildQueryParams(parsed),
+        signal,
       });
       return paginatedOverdueLoansSchema.parse(unwrapData(data));
     },

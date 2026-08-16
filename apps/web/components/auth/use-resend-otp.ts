@@ -53,7 +53,7 @@ export function useResendOtp(
       startCooldown(OTP_RESEND_COOLDOWN_SEC);
     }
     return clearTimer;
-  }, []);
+  }, [startOnMount, startCooldown, clearTimer]);
 
   const resend = useCallback(
     async (email: string, setError: (message: string | null) => void) => {

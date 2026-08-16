@@ -48,9 +48,13 @@ export function createAuthApi(client: AxiosInstance) {
       const { data } = await client.patch('/auth/me', input);
       return userSchema.parse(unwrapData(data));
     },
+    async changePasswordOtp(input: { currentPassword: string }): Promise<void> {
+      await client.post('/auth/change-password/otp', input);
+    },
     async changePassword(input: {
       currentPassword: string;
       newPassword: string;
+      otp: string;
     }): Promise<void> {
       await client.post('/auth/change-password', input);
     },

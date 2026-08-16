@@ -241,7 +241,8 @@
   border-color: color-mix(in srgb, var(--bookly-navy) 14%, transparent);
 }
 
-.admin-metric-label {
+.admin-metric-label,
+.admin-metric .ui-metric-label {
   margin: 0;
   font-size: 0.65rem;
   font-weight: 600;
@@ -250,7 +251,8 @@
   color: var(--bookly-muted);
 }
 
-.admin-metric-value {
+.admin-metric-value,
+.admin-metric .ui-metric-value {
   margin: 0;
   font-size: 1.75rem;
   font-weight: 600;
@@ -260,7 +262,8 @@
   overflow-wrap: anywhere;
 }
 
-.admin-metric-hint {
+.admin-metric-hint,
+.admin-metric .ui-metric-hint {
   margin: 0;
   font-size: 0.8rem;
   color: var(--bookly-muted);
@@ -454,6 +457,8 @@
 .admin-empty {
   padding: 1.25rem 1rem;
   text-align: center;
+  border: 0;
+  background: transparent;
 }
 
 .admin-empty h3 {

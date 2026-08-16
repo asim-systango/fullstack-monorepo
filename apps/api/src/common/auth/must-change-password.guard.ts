@@ -10,6 +10,7 @@ import { UsersService } from '../../modules/users/users.service';
 
 const ALLOWED_WHILE_MUST_CHANGE: ReadonlyArray<{ method: string; path: string }> = [
   { method: 'POST', path: '/auth/change-password' },
+  { method: 'POST', path: '/auth/change-password/otp' },
   { method: 'GET', path: '/auth/me' },
   { method: 'POST', path: '/auth/logout' },
   { method: 'POST', path: '/auth/refresh' },
@@ -20,7 +21,9 @@ export class MustChangePasswordGuard implements CanActivate {
   constructor(private readonly usersService: UsersService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request & { user?: { id?: string } }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: { id?: string } }>();
     const userId = request.user?.id;
     if (!userId) return true;
 
@@ -29,7 +32,9 @@ export class MustChangePasswordGuard implements CanActivate {
     const path =
       rawPath.length > 1 && rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
     if (
-      ALLOWED_WHILE_MUST_CHANGE.some((rule) => rule.method === method && rule.path === path)
+      ALLOWED_WHILE_MUST_CHANGE.some(
+        (rule) => rule.method === method && rule.path === path,
+      )
     ) {
       return true;
     }

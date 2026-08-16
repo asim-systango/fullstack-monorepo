@@ -5,7 +5,6 @@ import {
   createBookCopiesApi,
   createDashboardApi,
   createFinesApi,
-  createHealthApi,
   createLoansApi,
   createMembersApi,
   createReservationsApi,
@@ -44,4 +43,3 @@ export const membersApi = createMembersApi(apiClient);
 export const settingsApi = createSettingsApi(apiClient);
 export const dashboardApi = createDashboardApi(apiClient);
 export const usersApi = createUsersApi(apiClient);
-export const healthApi = createHealthApi(apiClient);

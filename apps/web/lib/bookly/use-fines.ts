@@ -19,16 +19,6 @@ export function useFines(params?: ListFinesParams) {
   });
 }
 
-export function useFine(id: string | undefined) {
-  const { user } = useAuth();
-  const enabled = hasRole(user, LIBRARIAN_ROLES) && Boolean(id);
-  return useQuery({
-    queryKey: queryKeys.fines.detail(id ?? ''),
-    queryFn: () => finesApi.getById(id!),
-    enabled,
-  });
-}
-
 export function useMyFines(params?: ListFinesParams) {
   const { user } = useAuth();
   const enabled = hasRole(user, [ROLES.user]);

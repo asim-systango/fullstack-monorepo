@@ -23,19 +23,19 @@ async function seed() {
   }> = [
     {
       id: SEED_ADMIN_USER_ID,
-      email: 'admin@demo.local',
+      email: 'admin@demo.com',
       name: 'Demo Admin',
       role: 'admin',
     },
     {
       id: SEED_MEMBER_USER_ID,
-      email: 'user@demo.local',
+      email: 'user@demo.com',
       name: 'Demo User',
       role: 'user',
     },
     {
       id: SEED_STAFF_USER_ID,
-      email: 'staff@demo.local',
+      email: 'staff@demo.com',
       name: 'Demo Staff',
       role: 'staff',
     },

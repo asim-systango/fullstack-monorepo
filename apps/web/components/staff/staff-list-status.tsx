@@ -71,5 +71,5 @@ export function StaffListStatus({
     );
   }
 
-  return children;
+  return <>{children}</>;
 }

@@ -270,7 +270,7 @@ export class CheckoutRequestsService {
     }
 
     const issued = await this.loans.findOne(loanId);
-    void this.loans.notifyCheckout(issued);
+    this.loans.notifyCheckout(issued);
     return this.findOne(id);
   }
 

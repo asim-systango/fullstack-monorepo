@@ -2,12 +2,18 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { MEMBER_BORROW_LIMIT_MESSAGE, type MemberSearchHit } from '@shared/types';
-import { Alert, Button, Field, StatusMessage, TextInput } from '@shared/ui/components';
+import { Alert, Field, StatusMessage, TextInput } from '@shared/ui/components';
 import { RequireRole } from '@/components/dashboard/require-role';
-import { StaffPageHeader } from '@/components/staff';
+import {
+  CheckoutActions,
+  CheckoutSummary,
+  CopyPicker,
+  MemberPicker,
+  StaffPageHeader,
+} from '@/components/staff';
 import { useAuth } from '@/components/auth';
 import { toUserMessage } from '@/lib/auth/errors';
-import { hasRole, LIBRARIAN_ROLES, ROLES } from '@/lib/auth/roles';
+import { canCheckout, LIBRARIAN_ROLES } from '@/lib/auth/roles';
 import {
   useBookCopies,
   useBooks,
@@ -17,11 +23,11 @@ import {
   useMemberSearch,
 } from '@/lib/bookly';
 import { useDebouncedValue, useStaffListParams } from '@/lib/staff';
-import { useLibraryStore } from '@/lib/store';
+import { useCheckoutSelection } from '@/lib/store';
 
 function CheckoutContent() {
   const { user } = useAuth();
-  const isStaff = hasRole(user, [ROLES.staff]);
+  const isStaff = canCheckout(user);
   const { get } = useStaffListParams();
   const memberIdFromUrl = get('memberId');
 
@@ -33,13 +39,15 @@ function CheckoutContent() {
   const debouncedMemberQ = useDebouncedValue(memberQuery.trim(), 250);
   const debouncedBookQ = useDebouncedValue(bookQuery.trim(), 250);
 
-  const selectedMemberId = useLibraryStore((s) => s.selectedMemberId);
-  const selectedBookId = useLibraryStore((s) => s.selectedBookId);
-  const selectedCopyId = useLibraryStore((s) => s.selectedCopyId);
-  const setSelectedMemberId = useLibraryStore((s) => s.setSelectedMemberId);
-  const setSelectedBookId = useLibraryStore((s) => s.setSelectedBookId);
-  const setSelectedCopyId = useLibraryStore((s) => s.setSelectedCopyId);
-  const resetCheckoutWorkflow = useLibraryStore((s) => s.resetCheckoutWorkflow);
+  const {
+    selectedMemberId,
+    selectedBookId,
+    selectedCopyId,
+    setSelectedMemberId,
+    setSelectedBookId,
+    setSelectedCopyId,
+    resetCheckoutWorkflow,
+  } = useCheckoutSelection();
 
   useEffect(() => {
     if (memberIdFromUrl) setSelectedMemberId(memberIdFromUrl);
@@ -57,11 +65,17 @@ function CheckoutContent() {
 
   const availableCopies =
     copies.data?.filter((copy) => copy.status === 'available' && !copy.deletedAt) ?? [];
-  const otherCopies =
-    copies.data?.filter((copy) => copy.status !== 'available' && !copy.deletedAt) ?? [];
   const atLimit = (loanSummary.data?.remaining ?? 1) <= 0;
   const selectedName =
     pickedMember?.fullName ?? selectedMember.data?.fullName ?? null;
+  const selectedDisplayName =
+    selectedName ?? (selectedMember.isPending ? 'Loading member…' : 'Selected member');
+  let loanMeta: string | null = null;
+  if (loanSummary.isPending) {
+    loanMeta = 'Checking borrow slots…';
+  } else if (loanSummary.data) {
+    loanMeta = `Active loans: ${loanSummary.data.activeLoanCount} / ${loanSummary.data.maxActiveLoans} · Status: ${loanSummary.data.status}`;
+  }
   const selectedEmail = pickedMember?.email ?? selectedMember.data?.email ?? null;
 
   function selectMember(hit: MemberSearchHit) {
@@ -121,63 +135,21 @@ function CheckoutContent() {
 
       <section className="staff-card staff-card-operational">
         <div className="staff-panel-body staff-form-stack">
-          {selectedMemberId ? (
-            <div className="staff-selected-card">
-              <div className="min-w-0 flex-1">
-                <p className="m-0 text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--bookly-muted)]">
-                  Selected member
-                </p>
-                <p className="m-0 mt-1 font-medium text-[color:var(--bookly-navy)]">
-                  {selectedName ??
-                    (selectedMember.isPending ? 'Loading member…' : 'Selected member')}
-                </p>
-                {selectedEmail ? (
-                  <p className="m-0 mt-1 text-sm text-[color:var(--bookly-muted)]">
-                    {selectedEmail}
-                  </p>
-                ) : null}
-                {loanSummary.isPending ? (
-                  <p className="m-0 mt-2 text-sm text-[color:var(--bookly-muted)]">
-                    Checking borrow slots…
-                  </p>
-                ) : null}
-                {loanSummary.data ? (
-                  <p className="m-0 mt-2 text-sm text-[color:var(--bookly-muted)]">
-                    Active loans: {loanSummary.data.activeLoanCount} /{' '}
-                    {loanSummary.data.maxActiveLoans}
-                    {' · '}Status: {loanSummary.data.status}
-                  </p>
-                ) : null}
-                {atLimit ? (
-                  <p className="m-0 mt-2 text-sm text-[color:var(--staff-warn)]">
-                    {MEMBER_BORROW_LIMIT_MESSAGE}
-                  </p>
-                ) : null}
-              </div>
-              {isStaff ? (
-                <Button type="button" size="sm" variant="secondary" onClick={clearMember}>
-                  Change
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <Field label="Member" htmlFor="checkout-member">
-              <TextInput
-                id="checkout-member"
-                value={memberQuery}
-                onChange={(e) => setMemberQuery(e.target.value)}
-                placeholder="Search name, email, or member ID…"
-                autoComplete="off"
-                disabled={!isStaff}
-              />
-            </Field>
-          )}
-
-          {members.isError ? (
-            <Alert tone="danger" title="Member search failed">
-              {toUserMessage(members.error)}
-            </Alert>
-          ) : null}
+          <MemberPicker
+            query={memberQuery}
+            onQueryChange={setMemberQuery}
+            hits={!selectedMemberId ? members.data : undefined}
+            selectedId={selectedMemberId}
+            selectedName={selectedDisplayName}
+            selectedEmail={selectedEmail}
+            selectedMeta={loanMeta}
+            warning={atLimit ? MEMBER_BORROW_LIMIT_MESSAGE : null}
+            onSelect={selectMember}
+            onClear={clearMember}
+            disabled={!isStaff}
+            error={members.isError ? toUserMessage(members.error) : null}
+            inputId="checkout-member"
+          />
 
           {selectedMember.isError && selectedMemberId ? (
             <Alert tone="danger" title="Could not load member profile">
@@ -190,28 +162,6 @@ function CheckoutContent() {
             <Alert tone="danger" title="Could not load borrow slots">
               {toUserMessage(loanSummary.error)}
             </Alert>
-          ) : null}
-
-          {!selectedMemberId && members.data && members.data.length > 0 ? (
-            <ul className="staff-result-list">
-              {members.data.map((hit) => (
-                <li key={hit.userId}>
-                  <button
-                    type="button"
-                    className="staff-pick-row"
-                    aria-pressed={selectedMemberId === hit.userId}
-                    onClick={() => selectMember(hit)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="m-0 font-medium">{hit.fullName}</p>
-                      <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-                        {hit.email} · {hit.activeLoanCount} active loan(s)
-                      </p>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
           ) : null}
 
           {!selectedMemberId && debouncedMemberQ && members.data?.length === 0 && !members.isPending ? (
@@ -261,55 +211,25 @@ function CheckoutContent() {
           ) : null}
 
           {selectedBookId ? (
-            <div>
-              <p className="mb-2 m-0 text-sm font-medium">Available copies</p>
-              {copies.isPending ? (
-                <p className="m-0 text-sm text-[color:var(--bookly-muted)]">Loading copies…</p>
-              ) : null}
-              {availableCopies.length === 0 && !copies.isPending ? (
-                <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-                  No available copies for this title.
-                </p>
-              ) : (
-                <ul className="staff-result-list">
-                  {availableCopies.map((copy) => (
-                    <li key={copy.id}>
-                      <button
-                        type="button"
-                        className={`staff-pick-row ${selectedCopyId === copy.id ? 'is-selected' : ''}`}
-                        aria-pressed={selectedCopyId === copy.id}
-                        onClick={() => setSelectedCopyId(copy.id)}
-                      >
-                        <span className="font-mono text-sm">
-                          {copy.barcode} · {copy.status}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {otherCopies.length > 0 ? (
-                <ul className="staff-result-list mt-2">
-                  {otherCopies.map((copy) => (
-                    <li
-                      key={copy.id}
-                      className="rounded-md border border-[color:var(--bookly-border)] px-3 py-2 font-mono text-sm text-[color:var(--bookly-muted)]"
-                    >
-                      {copy.barcode} · {copy.status}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
+            <CopyPicker
+              copies={copies.data ?? []}
+              selectedId={selectedCopyId}
+              onSelect={setSelectedCopyId}
+              loading={copies.isPending}
+            />
           ) : null}
 
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
           {success ? <StatusMessage tone="success">{success}</StatusMessage> : null}
 
-          <Button
-            type="button"
-            loading={checkout.isPending}
-            loadingText="Checking out…"
+          <CheckoutSummary
+            memberName={selectedName}
+            copyCount={availableCopies.length}
+            atLimit={atLimit}
+          />
+
+          <CheckoutActions
+            pending={checkout.isPending}
             disabled={
               !isStaff ||
               !selectedMemberId ||
@@ -317,10 +237,8 @@ function CheckoutContent() {
               checkout.isPending ||
               atLimit
             }
-            onClick={() => void onConfirm()}
-          >
-            Confirm checkout
-          </Button>
+            onConfirm={() => void onConfirm()}
+          />
         </div>
       </section>
     </div>

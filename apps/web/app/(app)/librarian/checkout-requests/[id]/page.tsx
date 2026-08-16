@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -37,10 +37,14 @@ function IssueCheckoutRequestContent() {
   const issue = useIssueCheckoutRequest();
   const reject = useRejectCheckoutRequest();
 
-  const availableCopies =
-    copies.data?.filter((copy) => copy.status === 'available' && !copy.deletedAt) ?? [];
-  const issuedCopies =
-    copies.data?.filter((copy) => copy.status !== 'available' && !copy.deletedAt) ?? [];
+  const availableCopies = useMemo(
+    () => copies.data?.filter((copy) => copy.status === 'available' && !copy.deletedAt) ?? [],
+    [copies.data],
+  );
+  const issuedCopies = useMemo(
+    () => copies.data?.filter((copy) => copy.status !== 'available' && !copy.deletedAt) ?? [],
+    [copies.data],
+  );
 
   const [copyId, setCopyId] = useState('');
   const [dueDate, setDueDate] = useState('');

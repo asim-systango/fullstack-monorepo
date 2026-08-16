@@ -77,3 +77,32 @@ export const updateBookCopyInputSchema = z.object({
   status: z.enum(['available', 'lost']).optional(),
 });
 export type UpdateBookCopyInput = z.infer<typeof updateBookCopyInputSchema>;
+
+export const bookViewerActionsSchema = z.object({
+  available: z.boolean(),
+  availableCopies: z.number().int().nonnegative(),
+  totalCopies: z.number().int().nonnegative(),
+  maxActiveLoans: z.number().int().positive(),
+  activeLoanCount: z.number().int().nonnegative(),
+  atBorrowLimit: z.boolean(),
+  ownLoan: z
+    .object({
+      id: z.string().uuid(),
+      dueDate: z.string(),
+    })
+    .nullable(),
+  ownReservation: z
+    .object({
+      id: z.string().uuid(),
+      queuePosition: z.number().int().nullable(),
+    })
+    .nullable(),
+  pendingRequest: z
+    .object({
+      id: z.string().uuid(),
+    })
+    .nullable(),
+  canRequestCheckout: z.boolean(),
+  canReserve: z.boolean(),
+});
+export type BookViewerActions = z.infer<typeof bookViewerActionsSchema>;

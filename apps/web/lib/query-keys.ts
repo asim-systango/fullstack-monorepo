@@ -23,6 +23,7 @@ export const queryKeys = {
       [...queryKeys.books.all, 'deleted', params ?? {}] as const,
     details: () => [...queryKeys.books.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.books.details(), id] as const,
+    actions: (id: string) => [...queryKeys.books.all, 'actions', id] as const,
   },
   bookCopies: {
     all: ['bookCopies'] as const,

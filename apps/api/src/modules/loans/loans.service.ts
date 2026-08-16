@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, IsNull, QueryFailedError, Repository } from 'typeorm';
-import { addDaysIso, calendarDaysOverdue, todayIsoDate } from '../../common/iso-date';
+import { addDaysIso, calendarDaysOverdue, todayIsoDate, toIsoDay } from '../../common/iso-date';
 import { Book } from '../books/book.entity';
 import { BookCopy } from '../books/book-copy.entity';
 import { BookCopyStatus } from '../books/enums/book-copy-status.enum';
@@ -34,10 +34,19 @@ import type { LookupLoanQueryDto } from './dto/lookup-loan-query.dto';
 import type { ReturnLoanDto } from './dto/return-loan.dto';
 import { Loan } from './loan.entity';
 
+const LOAN_BOOK_COPY_JOIN = 'loan.bookCopy';
+const LOAN_BY_USER_ID = 'loan.user_id = :userId';
+const LOAN_IS_OPEN = 'loan.returned_at IS NULL';
+
+function uniqueConstraint(err: unknown): string | undefined {
+  if (!(err instanceof QueryFailedError)) return undefined;
+  const driverError = err.driverError as { code?: string; constraint?: string } | undefined;
+  if (driverError?.code !== '23505') return undefined;
+  return driverError.constraint;
+}
+
 function isUniqueViolation(err: unknown): boolean {
-  if (!(err instanceof QueryFailedError)) return false;
-  const driverError = err.driverError as { code?: string } | undefined;
-  return driverError?.code === '23505';
+  return Boolean(uniqueConstraint(err));
 }
 
 type OverdueNoticeOutcome = {
@@ -85,13 +94,11 @@ export class LoansService {
     const limit = query.limit ?? 20;
     const qb = this.loans
       .createQueryBuilder('loan')
-      .withDeleted()
-      .leftJoinAndSelect('loan.book', 'book')
-      .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
-      .leftJoinAndSelect('loan.fine', 'fine');
+      .leftJoin('loan.book', 'book')
+      .leftJoin(LOAN_BOOK_COPY_JOIN, 'bookCopy');
 
     if (query.userId) {
-      qb.andWhere('loan.user_id = :userId', { userId: query.userId });
+      qb.andWhere(LOAN_BY_USER_ID, { userId: query.userId });
     }
     if (query.bookId) {
       qb.andWhere('loan.book_id = :bookId', { bookId: query.bookId });
@@ -99,12 +106,26 @@ export class LoansService {
     this.applyStatusFilter(qb, query.status);
     this.applyLoanSearch(qb, query.q);
 
-    qb.orderBy('loan.borrowedAt', 'DESC')
+    const total = await qb.clone().getCount();
+    const idRows = await qb
+      .select('loan.id', 'id')
+      .orderBy('loan.borrowed_at', 'DESC')
       .skip((page - 1) * limit)
-      .take(limit);
+      .take(limit)
+      .getRawMany<{ id: string }>();
+    const ids = idRows.map((row) => row.id);
+    if (ids.length === 0) {
+      return { items: [], total, page, limit };
+    }
 
-    const [rows, total] = await qb.getManyAndCount();
-    const items = await this.withMembers(rows);
+    const loaded = await this.loans.find({
+      where: { id: In(ids) },
+      relations: { bookCopy: true, fine: true },
+    });
+    const byId = new Map(loaded.map((row) => [row.id, row]));
+    const rows = ids.map((id) => byId.get(id)).filter((row): row is Loan => Boolean(row));
+    const withBooks = await this.attachBooks(rows);
+    const items = await this.withMembers(withBooks);
     return { items, total, page, limit };
   }
 
@@ -155,13 +176,6 @@ export class LoansService {
       throw new ConflictException('Copy is already on loan or unavailable');
     }
 
-    const alreadyHasTitle = await manager.findOne(Loan, {
-      where: { userId: dto.userId, bookId: copy.bookId, returnedAt: IsNull() },
-    });
-    if (alreadyHasTitle) {
-      throw new BadRequestException('Member already has this book on loan.');
-    }
-
     const book = await manager.findOne(Book, {
       where: { id: copy.bookId },
     });
@@ -180,9 +194,12 @@ export class LoansService {
       .getRepository(Loan)
       .createQueryBuilder('loan')
       .setLock('pessimistic_write')
-      .where('loan.user_id = :userId', { userId: dto.userId })
-      .andWhere('loan.returned_at IS NULL')
+      .where(LOAN_BY_USER_ID, { userId: dto.userId })
+      .andWhere(LOAN_IS_OPEN)
       .getMany();
+    if (openLoans.some((loan) => loan.bookId === copy.bookId)) {
+      throw new BadRequestException('Member already has this book on loan.');
+    }
     if (openLoans.length >= opts.maxLoans) {
       throw new BadRequestException(MEMBER_BORROW_LIMIT_MESSAGE);
     }
@@ -201,7 +218,11 @@ export class LoansService {
     try {
       saved = await manager.save(loan);
     } catch (err) {
-      if (isUniqueViolation(err)) {
+      const constraint = uniqueConstraint(err);
+      if (constraint === 'uq_loan_active_user_title') {
+        throw new ConflictException('Member already has this book on loan.');
+      }
+      if (constraint) {
         throw new ConflictException('Copy is already on loan');
       }
       throw err;
@@ -213,18 +234,15 @@ export class LoansService {
   }
 
   async findOne(id: string): Promise<Loan> {
-    const loan = await this.loans
-      .createQueryBuilder('loan')
-      .withDeleted()
-      .leftJoinAndSelect('loan.book', 'book')
-      .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
-      .leftJoinAndSelect('loan.fine', 'fine')
-      .where('loan.id = :id', { id })
-      .getOne();
+    const loan = await this.loans.findOne({
+      where: { id },
+      relations: { bookCopy: true, fine: true },
+    });
     if (!loan) {
       throw new NotFoundException('Loan not found');
     }
-    const [withMember] = await this.withMembers([loan]);
+    const [withBook] = await this.attachBooks([loan]);
+    const [withMember] = await this.withMembers([withBook]);
     return withMember!;
   }
 
@@ -247,18 +265,37 @@ export class LoansService {
 
     const qb = this.loans
       .createQueryBuilder('loan')
-      .withDeleted()
-      .leftJoinAndSelect('loan.book', 'book')
-      .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
-      .leftJoinAndSelect('loan.fine', 'fine')
-      .where('loan.returned_at IS NULL')
-      .andWhere('loan.due_date < :today', { today })
+      .leftJoin('loan.book', 'book')
+      .leftJoin(LOAN_BOOK_COPY_JOIN, 'bookCopy')
+      .where(LOAN_IS_OPEN)
+      .andWhere('loan.due_date < :today', { today });
+
+    if (query.userId) {
+      qb.andWhere(LOAN_BY_USER_ID, { userId: query.userId });
+    }
+    this.applyLoanSearch(qb, query.q);
+
+    const total = await qb.clone().getCount();
+    const idRows = await qb
+      .select('loan.id', 'id')
       .orderBy('loan.due_date', 'ASC')
       .skip((page - 1) * limit)
-      .take(limit);
+      .take(limit)
+      .getRawMany<{ id: string }>();
+    const ids = idRows.map((row) => row.id);
+    if (ids.length === 0) {
+      return { items: [], total, page, limit };
+    }
 
-    const [rows, total] = await qb.getManyAndCount();
-    const items = rows.map((loan) => {
+    const loaded = await this.loans.find({
+      where: { id: In(ids) },
+      relations: { bookCopy: true, fine: true },
+    });
+    const byId = new Map(loaded.map((row) => [row.id, row]));
+    const rows = ids.map((id) => byId.get(id)).filter((row): row is Loan => Boolean(row));
+    const withBook = await this.attachBooks(rows);
+    const withMember = await this.withMembers(withBook);
+    const items = withMember.map((loan) => {
       const daysLate = calendarDaysOverdue(loan.dueDate, new Date());
       return Object.assign(loan, {
         daysLate,
@@ -575,16 +612,14 @@ export class LoansService {
   async sendOverdueNotices(): Promise<OverdueNoticeBulkResult> {
     await this.finesService.accrueOverdueFines();
     const today = todayIsoDate();
-    const overdue = await this.loans
-      .createQueryBuilder('loan')
-      .withDeleted()
-      .leftJoinAndSelect('loan.book', 'book')
-      .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
-      .leftJoinAndSelect('loan.fine', 'fine')
-      .where('loan.returned_at IS NULL')
-      .andWhere('loan.due_date < :today', { today })
-      .orderBy('loan.due_date', 'ASC')
-      .getMany();
+    const overdueRows = await this.loans.find({
+      where: { returnedAt: IsNull() },
+      relations: { bookCopy: true, fine: true },
+      order: { dueDate: 'ASC' },
+    });
+    const overdue = (await this.attachBooks(overdueRows)).filter(
+      (loan) => loan.dueDate < today,
+    );
 
     const summary: OverdueNoticeBulkResult = { sent: 0, skipped: 0, failed: 0 };
     for (const loan of overdue) {
@@ -650,14 +685,28 @@ export class LoansService {
   }
 
   private async loadLoanForNotice(id: string): Promise<Loan | null> {
-    return this.loans
-      .createQueryBuilder('loan')
-      .withDeleted()
-      .leftJoinAndSelect('loan.book', 'book')
-      .leftJoinAndSelect('loan.bookCopy', 'bookCopy')
-      .leftJoinAndSelect('loan.fine', 'fine')
-      .where('loan.id = :id', { id })
-      .getOne();
+    const loan = await this.loans.findOne({
+      where: { id },
+      relations: { bookCopy: true, fine: true },
+    });
+    if (!loan) return null;
+    const [withBook] = await this.attachBooks([loan]);
+    return withBook ?? null;
+  }
+
+  private async attachBooks<T extends Loan>(rows: T[]): Promise<T[]> {
+    if (rows.length === 0) return rows;
+    const bookIds = [...new Set(rows.map((row) => row.bookId))];
+    const books = await this.books.find({
+      where: { id: In(bookIds) },
+      withDeleted: true,
+    });
+    const byId = new Map(books.map((book) => [book.id, book]));
+    return rows.map((row) => {
+      const book = byId.get(row.bookId);
+      if (book) row.book = book;
+      return row;
+    });
   }
 
   private applyLoanSearch(
@@ -666,9 +715,12 @@ export class LoansService {
   ): void {
     const term = q?.trim();
     if (!term) return;
-    qb.leftJoin(MemberProfile, 'memberSearch', 'memberSearch.user_id = loan.user_id');
     qb.andWhere(
-      '(memberSearch.full_name ILIKE :q OR memberSearch.email ILIKE :q OR book.title ILIKE :q OR bookCopy.barcode ILIKE :q)',
+      `(book.title ILIKE :q OR bookCopy.barcode ILIKE :q OR EXISTS (
+        SELECT 1 FROM member_profile mp
+        WHERE mp.user_id = loan.user_id
+          AND (mp.full_name ILIKE :q OR mp.email ILIKE :q)
+      ))`,
       { q: `%${term}%` },
     );
   }
@@ -696,11 +748,11 @@ export class LoansService {
     if (!status) return;
     const today = todayIsoDate();
     if (status === 'active') {
-      qb.andWhere('loan.returned_at IS NULL');
+      qb.andWhere(LOAN_IS_OPEN);
     } else if (status === 'returned') {
       qb.andWhere('loan.returned_at IS NOT NULL');
     } else if (status === 'overdue') {
-      qb.andWhere('loan.returned_at IS NULL').andWhere('loan.due_date < :today', {
+      qb.andWhere(LOAN_IS_OPEN).andWhere('loan.due_date < :today', {
         today,
       });
     }
@@ -715,11 +767,5 @@ function isWithinOverdueCooldown(notifiedAt: Date | string | null | undefined): 
 }
 
 function toDueDateIso(dueDate: string | Date): string {
-  if (dueDate instanceof Date) {
-    return dueDate.toISOString().slice(0, 10);
-  }
-  const raw = String(dueDate);
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  const parsed = new Date(raw);
-  return Number.isNaN(parsed.getTime()) ? raw.slice(0, 10) : parsed.toISOString().slice(0, 10);
+  return toIsoDay(dueDate);
 }

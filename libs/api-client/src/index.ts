@@ -18,6 +18,7 @@ export {
 export type {
   Book,
   BookDetail,
+  BookViewerActions,
   BookCopy,
   BookCopyStatus,
   CreateBookInput,

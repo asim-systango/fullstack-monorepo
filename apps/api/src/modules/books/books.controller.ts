@@ -35,6 +35,7 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { ListBooksQueryDto } from './dto/list-books-query.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BooksService } from './books.service';
+import { BookActionsService } from './book-actions.service';
 
 @ApiTags('books')
 @Controller('books')
@@ -140,5 +141,30 @@ export class BooksController {
   @ApiForbiddenResponse()
   restore(@Param('id', ParseUUIDPipe) id: string) {
     return this.booksService.restore(id);
+  }
+}
+
+@ApiTags('books')
+@ApiBearerAuth()
+@Controller('my/books')
+export class MyBookActionsController {
+  constructor(private readonly bookActions: BookActionsService) {}
+
+  @Roles('user')
+  @Get(':id/actions')
+  @ApiOperation({
+    summary: 'Authenticated member actions for a catalog title',
+    description:
+      'Additive to public GET /books/:id. Returns borrow-limit, own loan/reservation/request, and CTA flags.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiOkResponse()
+  @ApiNotFoundResponse()
+  @ApiUnauthorizedResponse()
+  getMine(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.bookActions.getMine(user.id, id);
   }
 }

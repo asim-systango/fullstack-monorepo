@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { In, QueryFailedError, Repository } from 'typeorm';
 import { calendarDaysOverdue, todayIsoDate } from '../../common/iso-date';
 import { Loan } from '../loans/loan.entity';
 import { SettingsService } from '../settings/settings.service';
@@ -93,11 +93,7 @@ export class FinesService {
 
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const qb = this.fines
-      .createQueryBuilder('fine')
-      .withDeleted()
-      .leftJoinAndSelect('fine.loan', 'loan')
-      .leftJoinAndSelect('loan.book', 'book');
+    const qb = this.fines.createQueryBuilder('fine');
 
     if (query.userId) {
       qb.andWhere('fine.user_id = :userId', { userId: query.userId });
@@ -106,11 +102,26 @@ export class FinesService {
       qb.andWhere('fine.status = :status', { status: query.status });
     }
 
-    qb.orderBy('fine.createdAt', 'DESC')
+    const total = await qb.clone().getCount();
+    const idRows = await qb
+      .select('fine.id', 'id')
+      .orderBy('fine.created_at', 'DESC')
       .skip((page - 1) * limit)
-      .take(limit);
+      .take(limit)
+      .getRawMany<{ id: string }>();
+    const ids = idRows.map((row) => row.id);
+    if (ids.length === 0) {
+      return { items: [], total, page, limit };
+    }
 
-    const [items, total] = await qb.getManyAndCount();
+    const loaded = await this.fines.find({
+      where: { id: In(ids) },
+      relations: { loan: { book: true } },
+    });
+    const byId = new Map(loaded.map((row) => [row.id, row]));
+    const items = ids
+      .map((id) => byId.get(id))
+      .filter((row): row is Fine => Boolean(row));
     items.sort((a, b) => {
       const rank = (status: FineStatus) => {
         if (status === FineStatus.Unpaid) return 0;

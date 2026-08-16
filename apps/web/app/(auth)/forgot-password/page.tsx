@@ -7,13 +7,13 @@ import { Button, Field, Form, StatusMessage, TextInput } from '@shared/ui/compon
 import { AuthCard, AuthFormFooter, AuthLayout, useAuthForm } from '@/components/auth';
 import { useForgotPassword } from '@/lib/auth/hooks';
 import { ROUTES } from '@/lib/auth/routes';
-import { useAuthUiStore } from '@/lib/store';
+import { useAuthUi } from '@/lib/store';
 import { forgotPasswordSchema } from '@/lib/validation/auth';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const forgotPassword = useForgotPassword();
-  const setPendingEmail = useAuthUiStore((s) => s.setPendingEmail);
+  const { setPendingEmail } = useAuthUi();
   const { pending, error, fieldErrors, submit } = useAuthForm();
   const [email, setEmail] = useState('');
 

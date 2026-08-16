@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import { Alert, Skeleton } from '@shared/ui/components';
+import { Alert, EmptyState, Skeleton } from '@shared/ui/components';
 import { toUserMessage } from '@/lib/auth/errors';
 
 export function MemberSection({
@@ -82,16 +82,17 @@ export function MemberEmpty({
   actionLabel?: string;
 }>) {
   return (
-    <div className="member-card p-6">
-      <h3 className="m-0 text-base font-semibold text-[color:var(--bookly-navy)]">{title}</h3>
-      <p className="mt-2 mb-0 max-w-md text-sm text-[color:var(--bookly-muted)]">{description}</p>
-      {href && actionLabel ? (
-        <div className="mt-4">
+    <EmptyState
+      className="member-card p-6 text-left"
+      title={title}
+      description={description}
+      action={
+        href && actionLabel ? (
           <Link href={href} className="ui-button ui-button-md ui-button-primary no-underline">
             {actionLabel}
           </Link>
-        </div>
-      ) : null}
-    </div>
+        ) : undefined
+      }
+    />
   );
 }

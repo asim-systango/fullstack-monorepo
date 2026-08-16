@@ -68,14 +68,34 @@ export const changePasswordSchema = z
   })
   .superRefine(confirmMatches('newPassword', 'confirmPassword'));
 
+export const changePasswordOtpSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required').max(128),
+    newPassword: passwordField,
+    confirmPassword: z.string().min(1, 'Confirm your password'),
+    otp: otpField,
+  })
+  .superRefine(confirmMatches('newPassword', 'confirmPassword'));
+
 export const verifyOtpSchema = z.object({
   email: emailField,
   otp: otpField,
 });
 
+export const profileSchema = z.object({
+  name: nameField,
+  email: emailField,
+});
+
 export const createMemberSchema = z.object({
   name: nameField,
   email: emailField,
+});
+
+export const createUserSchema = createMemberSchema;
+
+export const updateRoleSchema = z.object({
+  role: z.enum(['admin', 'staff', 'user']),
 });
 
 export type LoginRequest = z.infer<typeof loginSchema>;
@@ -85,9 +105,13 @@ export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export type ResetPasswordRequest = Omit<ResetPasswordFormValues, 'confirmPassword'>;
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordOtpFormValues = z.infer<typeof changePasswordOtpSchema>;
 export type ChangePasswordRequest = Omit<ChangePasswordFormValues, 'confirmPassword'>;
 export type VerifyOtpRequest = z.infer<typeof verifyOtpSchema>;
 export type CreateMemberRequest = z.infer<typeof createMemberSchema>;
+export type ProfileFormValues = z.infer<typeof profileSchema>;
+export type CreateUserRequest = z.infer<typeof createUserSchema>;
+export type UpdateRoleRequest = z.infer<typeof updateRoleSchema>;
 
 export function fieldErrorsFromZod(error: z.ZodError): Record<string, string> {
   const fieldErrors: Record<string, string> = {};

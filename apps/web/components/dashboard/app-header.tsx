@@ -5,16 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Button,
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
 import { MemberAccountMenu } from '@/components/member/account-menu';
 import { hasRole, ROLES } from '@/lib/auth/roles';
 import { ROUTES } from '@/lib/auth/routes';
+import { ConfirmDialog } from './confirm-dialog';
 import { pageTitleForPath } from './nav-items';
 
 function HeaderMenuButton({
@@ -35,46 +31,6 @@ function HeaderMenuButton({
     >
       Menu
     </Button>
-  );
-}
-
-function LogoutConfirmDialog({
-  open,
-  loggingOut,
-  onOpenChange,
-  onConfirm,
-}: Readonly<{
-  open: boolean;
-  loggingOut: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-}>) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange} showClose={false}>
-      <DialogHeader>
-        <DialogTitle>Are you sure you want to log out?</DialogTitle>
-        <DialogDescription>You will need to sign in again to continue.</DialogDescription>
-      </DialogHeader>
-      <DialogFooter>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => onOpenChange(false)}
-          disabled={loggingOut}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="danger"
-          loading={loggingOut}
-          loadingText="Logging out…"
-          onClick={onConfirm}
-        >
-          Logout
-        </Button>
-      </DialogFooter>
-    </Dialog>
   );
 }
 
@@ -125,10 +81,15 @@ export function AppHeader({
 
   const title = pageTitleForPath(pathname);
   const logoutDialog = (
-    <LogoutConfirmDialog
+    <ConfirmDialog
       open={confirmLogout}
-      loggingOut={loggingOut}
       onOpenChange={setConfirmLogout}
+      title="Are you sure you want to log out?"
+      description="You will need to sign in again to continue."
+      confirmLabel="Logout"
+      pending={loggingOut}
+      pendingText="Logging out…"
+      danger
       onConfirm={() => void onConfirmLogout()}
     />
   );

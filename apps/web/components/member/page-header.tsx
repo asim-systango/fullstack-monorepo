@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PageHeader } from '@shared/ui/components';
 
 export function MemberContent({
   children,
@@ -21,12 +22,11 @@ export function MemberPageHeader({
   action?: ReactNode;
 }>) {
   return (
-    <header className="member-page-header member-enter">
-      <div>
-        <h1 className="member-page-title">{title}</h1>
-        {description ? <p className="member-page-desc">{description}</p> : null}
-      </div>
-      {action}
-    </header>
+    <PageHeader
+      className="member-page-header member-enter"
+      title={title}
+      description={description}
+      actions={action}
+    />
   );
 }

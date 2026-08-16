@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type CSSProperties, type SyntheticEvent } from 'react';
+import { Suspense, useEffect, type CSSProperties, type SyntheticEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Checkbox, Field, TextInput } from '@shared/ui/components';
 import {
   BookCard,
@@ -9,29 +10,32 @@ import {
   MemberError,
   MemberLoadingGrid,
   MemberPageHeader,
-  RequireMember,
 } from '@/components/member';
-import { useBooks } from '@/lib/bookly';
+import {
+  catalogSearchQueryString,
+  parseCatalogSearchParams,
+  useBooks,
+  normalizeIsbn,
+} from '@/lib/bookly';
+import { useCatalogFilterDraft } from '@/lib/store';
 
 const PAGE_SIZE = 12;
 
-function normalizeIsbn(value: string): string {
-  return value.trim().replace(/[-\s]/g, '');
-}
-
 function BrowseBooksContent() {
-  const [titleQ, setTitleQ] = useState('');
-  const [author, setAuthor] = useState('');
-  const [isbn, setIsbn] = useState('');
-  const [availableOnly, setAvailableOnly] = useState(false);
-  const [page, setPage] = useState(1);
-  const [applied, setApplied] = useState({
-    q: '',
-    author: '',
-    isbn: '',
-    availableOnly: false,
-    page: 1,
-  });
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const applied = parseCatalogSearchParams(searchParams);
+  const { draft, setDraft, resetDraft } = useCatalogFilterDraft();
+
+  useEffect(() => {
+    setDraft({
+      q: applied.q,
+      author: applied.author,
+      isbn: applied.isbn,
+      availableOnly: applied.availableOnly,
+    });
+  }, [applied.q, applied.author, applied.isbn, applied.availableOnly, setDraft]);
 
   const books = useBooks({
     page: applied.page,
@@ -45,44 +49,44 @@ function BrowseBooksContent() {
 
   const total = books.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const searching = Boolean(applied.q || applied.author || applied.isbn || applied.availableOnly);
+  const searching = Boolean(
+    applied.q || applied.author || applied.isbn || applied.availableOnly,
+  );
+
+  function commit(next: typeof applied) {
+    const qs = catalogSearchQueryString(next);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   function applyFilters(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPage(1);
-    setApplied({
-      q: titleQ.trim(),
-      author: author.trim(),
-      isbn: normalizeIsbn(isbn),
-      availableOnly,
+    commit({
+      q: draft.q.trim(),
+      author: draft.author.trim(),
+      isbn: normalizeIsbn(draft.isbn),
+      availableOnly: draft.availableOnly,
       page: 1,
     });
   }
 
   function clearFilters() {
-    setTitleQ('');
-    setAuthor('');
-    setIsbn('');
-    setAvailableOnly(false);
-    setPage(1);
-    setApplied({ q: '', author: '', isbn: '', availableOnly: false, page: 1 });
+    resetDraft();
+    router.replace(pathname, { scroll: false });
   }
 
   function onAvailableOnlyChange(checked: boolean) {
-    setAvailableOnly(checked);
-    setPage(1);
-    setApplied({
-      q: titleQ.trim(),
-      author: author.trim(),
-      isbn: normalizeIsbn(isbn),
+    setDraft({ availableOnly: checked });
+    commit({
+      q: draft.q.trim(),
+      author: draft.author.trim(),
+      isbn: normalizeIsbn(draft.isbn),
       availableOnly: checked,
       page: 1,
     });
   }
 
   function goToPage(next: number) {
-    setPage(next);
-    setApplied((prev) => ({ ...prev, page: next }));
+    commit({ ...applied, page: next });
   }
 
   return (
@@ -101,24 +105,24 @@ function BrowseBooksContent() {
           <Field label="Title" htmlFor="book-q" className="mb-0">
             <TextInput
               id="book-q"
-              value={titleQ}
-              onChange={(e) => setTitleQ(e.target.value)}
+              value={draft.q}
+              onChange={(e) => setDraft({ q: e.target.value })}
               placeholder="Search title"
             />
           </Field>
           <Field label="Author" htmlFor="book-author" className="mb-0">
             <TextInput
               id="book-author"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
+              value={draft.author}
+              onChange={(e) => setDraft({ author: e.target.value })}
               placeholder="Author name"
             />
           </Field>
           <Field label="ISBN" htmlFor="book-isbn" className="mb-0">
             <TextInput
               id="book-isbn"
-              value={isbn}
-              onChange={(e) => setIsbn(e.target.value)}
+              value={draft.isbn}
+              onChange={(e) => setDraft({ isbn: e.target.value })}
               placeholder="ISBN"
             />
           </Field>
@@ -127,7 +131,7 @@ function BrowseBooksContent() {
           <Checkbox
             id="available-only"
             className="mb-0"
-            checked={availableOnly}
+            checked={draft.availableOnly}
             onChange={(e) => onAvailableOnlyChange(e.target.checked)}
             label="Available only"
           />
@@ -180,20 +184,20 @@ function BrowseBooksContent() {
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={page <= 1}
-                onClick={() => goToPage(page - 1)}
+                disabled={applied.page <= 1}
+                onClick={() => goToPage(applied.page - 1)}
               >
                 Previous
               </Button>
               <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-                Page {page} of {totalPages}
+                Page {applied.page} of {totalPages}
               </p>
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={page >= totalPages}
-                onClick={() => goToPage(page + 1)}
+                disabled={applied.page >= totalPages}
+                onClick={() => goToPage(applied.page + 1)}
               >
                 Next
               </Button>
@@ -207,8 +211,14 @@ function BrowseBooksContent() {
 
 export default function BrowseBooksPage() {
   return (
-    <RequireMember>
+    <Suspense
+      fallback={
+        <MemberContent>
+          <MemberPageHeader title="Browse Books" />
+        </MemberContent>
+      }
+    >
       <BrowseBooksContent />
-    </RequireMember>
+    </Suspense>
   );
 }

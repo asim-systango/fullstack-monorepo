@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, type ReactNode } from 'react';
 import { AuthPageFallback, RequireGuest } from '@/components/auth';
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { MEMBER_BORROW_LIMIT_MESSAGE } from '@shared/types';
 import { useAuth } from '@/components/auth';
 import { ROUTES } from '@/lib/auth/routes';
-import { useMemberDashboard, useMyLoans, useMyFines, useMyReservations } from '@/lib/bookly';
+import { useMemberDashboard } from '@/lib/bookly';
 import { countDueSoon, formatMoneyInr, memberGreeting } from '@/lib/member';
 import { LoanCard } from './loan-card';
 import { MemberMetricCard } from './metric-card';
@@ -20,23 +20,12 @@ import { MemberContent } from './page-header';
 export function MemberOverview() {
   const { user } = useAuth();
   const memberDash = useMemberDashboard();
-  const myLoans = useMyLoans({ limit: 50, status: 'active' });
-  const myReservations = useMyReservations({ limit: 5, status: 'active' });
-  const myFines = useMyFines({ limit: 50, status: 'unpaid' });
-
-  const loading =
-    memberDash.isPending ||
-    myLoans.isPending ||
-    myReservations.isPending ||
-    myFines.isPending;
-
-  const activeLoans = myLoans.data?.items ?? memberDash.data?.activeLoans ?? [];
-  const reservations = myReservations.data?.items ?? memberDash.data?.reservations ?? [];
-  const unpaidFines = myFines.data?.items ?? [];
-  const outstandingCents =
-    memberDash.data?.outstandingFineTotalCents ??
-    unpaidFines.reduce((sum, fine) => sum + fine.amountCents, 0);
-  const maxActiveLoans = memberDash.data?.maxActiveLoans ?? 2;
+  const loading = memberDash.isPending;
+  const data = memberDash.data;
+  const activeLoans = useMemo(() => data?.activeLoans ?? [], [data?.activeLoans]);
+  const reservations = data?.reservations ?? [];
+  const outstandingCents = data?.outstandingFineTotalCents ?? 0;
+  const maxActiveLoans = data?.maxActiveLoans;
   const dueSoonCount = countDueSoon(activeLoans);
   const previewLoans = useMemo(
     () =>
@@ -48,8 +37,9 @@ export function MemberOverview() {
   const topQueue = reservations.find((r) => r.queuePosition != null)?.queuePosition;
 
   let loansHint = 'All looking healthy';
-  if (activeLoans.length >= maxActiveLoans) loansHint = MEMBER_BORROW_LIMIT_MESSAGE;
-  else if (dueSoonCount > 0) loansHint = `${dueSoonCount} due within 3 days`;
+  if (maxActiveLoans != null && activeLoans.length >= maxActiveLoans) {
+    loansHint = MEMBER_BORROW_LIMIT_MESSAGE;
+  } else if (dueSoonCount > 0) loansHint = `${dueSoonCount} due within 3 days`;
   else if (activeLoans.length === 0) loansHint = 'Nothing checked out';
 
   let reservationsHint = 'Waiting for a copy';
@@ -75,7 +65,11 @@ export function MemberOverview() {
 
       {loading ? <MemberLoadingGrid /> : null}
 
-      {!loading ? (
+      {memberDash.isError ? (
+        <MemberError title="Could not load dashboard" error={memberDash.error} />
+      ) : null}
+
+      {!loading && data && maxActiveLoans != null ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MemberMetricCard
             label="Active loans"
@@ -120,10 +114,10 @@ export function MemberOverview() {
           </Link>
         }
       >
-        {myLoans.isError ? (
-          <MemberError title="Could not load loans" error={myLoans.error} />
+        {memberDash.isError ? (
+          <MemberError title="Could not load loans" error={memberDash.error} />
         ) : null}
-        {!loading && !myLoans.isError && activeLoans.length === 0 ? (
+        {!loading && !memberDash.isError && activeLoans.length === 0 ? (
           <MemberEmpty
             title="No active loans"
             description="You don't currently have any books checked out."

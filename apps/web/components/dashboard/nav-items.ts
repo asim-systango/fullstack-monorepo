@@ -13,12 +13,6 @@ export type NavSection = {
   items: readonly NavItem[];
 };
 
-export const DASHBOARD_NAV: readonly NavItem[] = [
-  { href: ROUTES.dashboard, label: 'Dashboard' },
-  { href: ROUTES.librarian, label: 'Librarian', roles: ['staff', 'admin'] },
-  { href: ROUTES.admin, label: 'Admin', roles: ['admin'] },
-] as const;
-
 const STAFF_CATALOG_ITEMS: readonly NavItem[] = [
   { href: ROUTES.librarianBooks, label: 'Books' },
   { href: ROUTES.librarianBooksNew, label: 'Add Book' },
@@ -106,12 +100,6 @@ export const MEMBER_NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
 ] as const;
-
-export function navItemsForRole(role: UserRole | undefined): NavItem[] {
-  return DASHBOARD_NAV.filter(
-    (item) => !item.roles || (role && item.roles.includes(role)),
-  );
-}
 
 export function memberNavSections(): readonly NavSection[] {
   return MEMBER_NAV_SECTIONS;

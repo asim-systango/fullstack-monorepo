@@ -23,6 +23,10 @@ import type { Fine } from '../fines/fine.entity';
   unique: true,
   where: '"returned_at" IS NULL',
 })
+@Index('uq_loan_active_user_title', ['userId', 'bookId'], {
+  unique: true,
+  where: '"returned_at" IS NULL',
+})
 @Index('idx_loan_active_user_due', ['userId', 'dueDate'], {
   where: '"returned_at" IS NULL',
 })

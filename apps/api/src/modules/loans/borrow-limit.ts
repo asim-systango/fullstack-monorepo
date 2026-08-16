@@ -1,5 +1,5 @@
 export const MEMBER_BORROW_LIMIT_MESSAGE =
-  'Borrowing limit reached. A member can have a maximum of 2 books at a time.';
+  'Borrowing limit reached. Return a book before checking out another.';
 
 export const OVERDUE_RETURN_SETTLEMENT_MESSAGE =
   'This book is overdue. Select Paid or Unpaid for the fine before confirming return.';
