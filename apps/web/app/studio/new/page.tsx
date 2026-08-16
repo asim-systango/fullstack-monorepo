@@ -27,6 +27,20 @@ function slugify(value: string): string {
     .replace(/-$/, '');
 }
 
+function messageFromUnknown(err: unknown, fallback: string): string {
+  if (err instanceof ApiClientError && err.message.trim()) return err.message;
+  if (err instanceof Error && err.message.trim()) return err.message;
+  return fallback;
+}
+
+function isTitleTaken(err: unknown): boolean {
+  if (!(err instanceof ApiClientError)) return false;
+  return err.statusCode === 409 || /already exists/i.test(err.message);
+}
+
+const TITLE_TAKEN =
+  'An article with this title already exists. Change the title and try again.';
+
 function CreateArticleContent() {
   const router = useRouter();
   const { data: user } = useMe();
@@ -38,27 +52,34 @@ function CreateArticleContent() {
   const [blocks, setBlocks] = useState<StoryBlock[]>(() => [createParagraphBlock()]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
 
   async function handleSubmit(event: { preventDefault(): void }) {
     event.preventDefault();
     setError(null);
+    setTitleError(null);
 
     const content = toArticleContent(blocks);
     if (content.length === 0) {
-      setError('Add some content before saving this revision.');
+      setError('Add some content before saving this draft.');
       return;
     }
 
     try {
       await createMutation.mutateAsync({
         title: title.trim(),
-        slug: slug.trim() || slugify(title),
+        slug: slugify(title),
         content,
         ...(tagIds.length > 0 ? { tagIds } : {}),
       });
       router.push('/studio');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not create article.');
+      if (isTitleTaken(err)) {
+        setTitleError(TITLE_TAKEN);
+        setError(TITLE_TAKEN);
+        return;
+      }
+      setError(messageFromUnknown(err, 'Could not create article.'));
     }
   }
 
@@ -93,23 +114,35 @@ function CreateArticleContent() {
         onSubmit={handleSubmit}
         className="max-w-2xl space-y-4"
       >
+        {error ? (
+          <p
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+
         <Input
           label="Title"
           name="title"
           required
+          error={titleError ?? undefined}
           value={title}
           onChange={(e) => {
-            setTitle(e.target.value);
-            if (!slug) setSlug(slugify(e.target.value));
+            const nextTitle = e.target.value;
+            setTitle(nextTitle);
+            if (titleError) setTitleError(null);
+            setSlug(slugify(nextTitle));
           }}
         />
         <Input
           label="Slug"
           name="slug"
           required
-          hint="Lowercase letters, numbers, and hyphens"
+          readOnly
+          hint="Generated from the title."
           value={slug}
-          onChange={(e) => setSlug(e.target.value)}
         />
 
         <TagPicker
@@ -132,12 +165,6 @@ function CreateArticleContent() {
             />
           </div>
         </div>
-
-        {error ? (
-          <p className="text-sm text-red-600" role="alert">
-            {error}
-          </p>
-        ) : null}
       </form>
     </DashboardShell>
   );

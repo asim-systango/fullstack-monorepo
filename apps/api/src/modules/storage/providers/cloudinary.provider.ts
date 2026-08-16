@@ -37,7 +37,12 @@ export class CloudinaryProvider implements IStorageProvider {
     const key = prefix ? `${prefix}/${randomUUID()}` : randomUUID();
 
     try {
-      const uploaded = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      const uploaded = await new Promise<{
+        secure_url: string;
+        width?: number;
+        height?: number;
+        duration?: number;
+      }>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
             public_id: key,
@@ -56,7 +61,12 @@ export class CloudinaryProvider implements IStorageProvider {
       });
 
       this.logger.log(`Uploaded key=${key}`);
-      return { key, url: uploaded.secure_url };
+      return {
+        key,
+        url: uploaded.secure_url,
+        ...toStoredDimensions(uploaded.width, uploaded.height),
+        durationSeconds: toStoredDuration(uploaded.duration),
+      };
     } catch (error) {
       throw this.toGatewayError(error, 'upload');
     }
@@ -82,6 +92,26 @@ export class CloudinaryProvider implements IStorageProvider {
       details: { reason: message },
     });
   }
+}
+
+/** CHK_media_dimensions requires both null or both > 0. */
+function toStoredDimensions(
+  width: number | undefined,
+  height: number | undefined,
+): { width: number | null; height: number | null } {
+  if (
+    typeof width === 'number' &&
+    width > 0 &&
+    typeof height === 'number' &&
+    height > 0
+  ) {
+    return { width, height };
+  }
+  return { width: null, height: null };
+}
+
+function toStoredDuration(duration: number | undefined): number | null {
+  return typeof duration === 'number' && duration >= 0 ? duration : null;
 }
 
 function extractCloudinaryMessage(error: unknown): string {
