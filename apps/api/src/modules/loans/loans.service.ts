@@ -242,8 +242,14 @@ export class LoansService {
       throw new NotFoundException('Loan not found');
     }
     const [withBook] = await this.attachBooks([loan]);
+    if (!withBook) {
+      throw new NotFoundException('Loan not found');
+    }
     const [withMember] = await this.withMembers([withBook]);
-    return withMember!;
+    if (!withMember) {
+      throw new NotFoundException('Loan not found');
+    }
+    return withMember;
   }
 
   async listOverdue(query: ListLoansQueryDto): Promise<{
