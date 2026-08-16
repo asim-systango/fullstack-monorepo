@@ -11,24 +11,31 @@ import { ResumeMeta } from '../modules/resume-meta/resume-meta.entity';
 
 type SeedUser = { id: string; email: string };
 
+/**
+ * Domain seed targets (must stay in sync with the project brief):
+ *   Company      2  — one per gateway staff demo user (lookup by email)
+ *   Job          5  — 4 open, 1 closed; ≥2 distinct locations
+ *   Application  4  — ≥3 statuses; same candidate on two different jobs
+ *   Bookmark      2  — candidate bookmarks on two different jobs
+ *   ResumeMeta  ≥1  — ≥1 Application.resumeUrl matches ResumeMeta.url
+ *   Total       ≥12
+ */
 async function seed() {
   await dataSource.initialize();
 
   // Same Postgres DB as the gateway — resolve cross-service userIds by email.
   const gatewayUsers = (await dataSource.query(
     `SELECT id, email FROM users WHERE email = ANY($1)`,
-    [
-      [
-        'staff@demo.local',
-        'staff2@demo.local',
-        'user@demo.local',
-        'user2@demo.local',
-      ],
-    ],
+    [['staff@demo.local', 'staff2@demo.local', 'user@demo.local', 'user2@demo.local']],
   )) as SeedUser[];
 
   const byEmail = Object.fromEntries(gatewayUsers.map((u) => [u.email, u.id]));
-  const required = ['staff@demo.local', 'staff2@demo.local', 'user@demo.local', 'user2@demo.local'];
+  const required = [
+    'staff@demo.local',
+    'staff2@demo.local',
+    'user@demo.local',
+    'user2@demo.local',
+  ];
   for (const email of required) {
     if (!byEmail[email]) {
       throw new Error(`Missing gateway user ${email} — run pnpm seed first`);
@@ -41,7 +48,9 @@ async function seed() {
   const bookmarks = dataSource.getRepository(Bookmark);
   const resumes = dataSource.getRepository(ResumeMeta);
 
-  let companyA = await companies.findOne({ where: { userId: byEmail['staff@demo.local'] } });
+  let companyA = await companies.findOne({
+    where: { userId: byEmail['staff@demo.local'] },
+  });
   if (!companyA) {
     companyA = await companies.save(
       companies.create({
@@ -53,7 +62,9 @@ async function seed() {
     );
   }
 
-  let companyB = await companies.findOne({ where: { userId: byEmail['staff2@demo.local'] } });
+  let companyB = await companies.findOne({
+    where: { userId: byEmail['staff2@demo.local'] },
+  });
   if (!companyB) {
     companyB = await companies.save(
       companies.create({
@@ -111,7 +122,9 @@ async function seed() {
 
   const savedJobs: Job[] = [];
   for (const spec of jobSpecs) {
-    let job = await jobs.findOne({ where: { companyId: spec.companyId, title: spec.title } });
+    let job = await jobs.findOne({
+      where: { companyId: spec.companyId, title: spec.title },
+    });
     if (!job) {
       job = await jobs.save(jobs.create(spec));
     }
@@ -138,6 +151,9 @@ async function seed() {
     );
   }
 
+  // Four applications across ≥3 statuses. candidateA applies to two DIFFERENT jobs
+  // (duplicate-candidate pair — not the same job twice). jobBackend gets 2+ apps for inbox demo.
+  // resumeUrl on candidateA's apps snapshots ResumeMeta.url.
   const applicationSpecs: Array<{
     jobId: string;
     candidateUserId: string;
@@ -189,11 +205,57 @@ async function seed() {
     }
   }
 
+  // Count from the DB so the log reflects actual rows, not the intended specs.
+  const companyCount = await companies.count();
+  const jobCount = await jobs.count();
+  const openJobCount = await jobs.count({ where: { status: JobStatus.OPEN } });
+  const closedJobCount = await jobs.count({ where: { status: JobStatus.CLOSED } });
+  const applicationCount = await applications.count();
+  const bookmarkCount = await bookmarks.count();
+  const resumeCount = await resumes.count();
+  const total = companyCount + jobCount + applicationCount + bookmarkCount + resumeCount;
+
+  const locations = [...new Set((await jobs.find()).map((j) => j.location))];
+  const statuses = [...new Set((await applications.find()).map((a) => a.status))];
+  const snapshotMatches = await applications.count({ where: { resumeUrl: resume.url } });
+  const appsOnBackend = await applications.count({ where: { jobId: jobBackend.id } });
+
+  if (companyCount < 2) throw new Error(`Expected ≥2 companies, got ${companyCount}`);
+  if (jobCount < 5) throw new Error(`Expected ≥5 jobs, got ${jobCount}`);
+  if (openJobCount < 4 || closedJobCount < 1) {
+    throw new Error(
+      `Expected ≥4 open + ≥1 closed jobs, got open=${openJobCount} closed=${closedJobCount}`,
+    );
+  }
+  if (locations.length < 2)
+    throw new Error(`Expected ≥2 locations, got ${locations.join(',')}`);
+  if (applicationCount < 4)
+    throw new Error(`Expected ≥4 applications, got ${applicationCount}`);
+  if (statuses.length < 3)
+    throw new Error(`Expected ≥3 application statuses, got ${statuses.join(',')}`);
+  if (appsOnBackend < 2)
+    throw new Error(`Expected ≥2 apps on inbox job, got ${appsOnBackend}`);
+  if (bookmarkCount < 2) throw new Error(`Expected ≥2 bookmarks, got ${bookmarkCount}`);
+  if (resumeCount < 1) throw new Error(`Expected ≥1 ResumeMeta, got ${resumeCount}`);
+  if (snapshotMatches < 1) {
+    throw new Error('Expected ≥1 Application.resumeUrl matching ResumeMeta.url');
+  }
+  if (total < 12) throw new Error(`Expected ≥12 domain rows, got ${total}`);
+
   console.log('Domain seed complete', {
-    companies: [companyA.name, companyB.name],
-    jobs: savedJobs.length,
-    applications: applicationSpecs.length,
-    bookmarks: 2,
+    companies: companyCount,
+    jobs: jobCount,
+    jobsOpen: openJobCount,
+    jobsClosed: closedJobCount,
+    locations,
+    applications: applicationCount,
+    applicationStatuses: statuses,
+    appsOnInboxJob: appsOnBackend,
+    bookmarks: bookmarkCount,
+    resumeMetas: resumeCount,
+    snapshotResumeUrlMatches: snapshotMatches,
+    totalDomainRows: total,
+    companyNames: [companyA.name, companyB.name],
   });
 
   await dataSource.destroy();
