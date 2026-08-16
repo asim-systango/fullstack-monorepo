@@ -6,7 +6,6 @@ import { PageShell } from '@/components/layout/page-shell';
 import { Alert, Button, Card, CardBody, Field, Input } from '@/components/ui';
 import { createStaff, type CreateStaffResult } from '@/lib/api/admin-api';
 import { getErrorMessage } from '@/lib/api/errors';
-import { FEATURES } from '@/lib/auth/session';
 
 export default function AdminNewStaffPage() {
   const [email, setEmail] = useState('');
@@ -42,14 +41,6 @@ export default function AdminNewStaffPage() {
       title="Create staff account"
       description="POST /admin/staff — email + name only. One-time tempPassword is shown once."
     >
-      {!FEATURES.adminStaffCreate ? (
-        <Alert tone="warning" title="Backend endpoint pending" className="mb-4">
-          POST /admin/staff is not in AdminController yet. Enable with
-          NEXT_PUBLIC_ENABLE_ADMIN_STAFF_CREATE=true when it ships. The form is ready to
-          call the contract below.
-        </Alert>
-      ) : null}
-
       <Card className="max-w-md">
         <CardBody>
           <form className="flex flex-col gap-4" onSubmit={onSubmit}>

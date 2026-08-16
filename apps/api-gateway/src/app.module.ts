@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
+import { AdminModule } from './modules/admin';
 import { HealthModule } from './modules/health';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -28,6 +29,7 @@ const db = databaseConfig();
     }),
     HealthModule,
     AuthModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

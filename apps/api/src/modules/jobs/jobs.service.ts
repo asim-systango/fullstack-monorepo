@@ -57,7 +57,8 @@ export class JobsService {
 
   async findOnePublic(id: string) {
     const job = await this.jobsRepo.findOne({ where: { id }, relations: ['company'] });
-    if (!job) throw new NotFoundException('Job not found');
+    // Match findAllPublic: suspended company jobs are hidden from public/candidate reads.
+    if (!job || job.company.suspended) throw new NotFoundException('Job not found');
     return job;
   }
 
@@ -126,7 +127,10 @@ export class JobsService {
   }
 
   async forceClose(id: string) {
-    await this.findOnePublic(id);
+    // Do not use findOnePublic — admin force-close / company suspend must still
+    // reach jobs whose company is already marked suspended.
+    const job = await this.jobsRepo.findOne({ where: { id } });
+    if (!job) throw new NotFoundException('Job not found');
     return this.runCloseTransaction(id);
   }
 }

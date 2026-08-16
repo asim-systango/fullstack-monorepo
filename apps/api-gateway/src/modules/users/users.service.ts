@@ -19,14 +19,33 @@ export class UsersService {
     return this.userRepo.findOne({ where: { id } });
   }
 
-  async create(input: { email: string; passwordHash: string; name: string }) {
+  async create(input: {
+    email: string;
+    passwordHash: string;
+    name: string;
+    role?: UserRole;
+    mustChangePassword?: boolean;
+  }) {
     const user = this.userRepo.create({
       email: input.email.toLocaleLowerCase(),
       password_hash: input.passwordHash,
       name: input.name,
-      role: UserRole.USER,
+      role: input.role ?? UserRole.USER,
+      mustChangePassword: input.mustChangePassword ?? false,
     });
     return this.userRepo.save(user);
+  }
+
+  async updatePassword(
+    userId: string,
+    passwordHash: string,
+    mustChangePassword: boolean,
+  ) {
+    await this.userRepo.update(userId, {
+      password_hash: passwordHash,
+      mustChangePassword,
+    });
+    return this.findById(userId);
   }
 
   toPublic(user: User) {
@@ -35,6 +54,7 @@ export class UsersService {
       email: user.email,
       name: user.name,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 }

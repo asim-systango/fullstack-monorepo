@@ -22,5 +22,6 @@ const env = loadGatewayEnv();
   ],
   controllers: [AuthController],
   providers: [AuthService, UsersService, JwtStrategy, RolesGuard],
+  exports: [AuthService, UsersService, JwtModule],
 })
 export class AuthModule {}

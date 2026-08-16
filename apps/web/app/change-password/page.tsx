@@ -7,7 +7,7 @@ import { PageShell } from '@/components/layout/page-shell';
 import { Alert, Button, Card, CardBody, Field, Input } from '@/components/ui';
 import { changePassword } from '@/lib/api/auth-api';
 import { getErrorMessage } from '@/lib/api/errors';
-import { FEATURES, homePathForRole, requiresPasswordChange } from '@/lib/auth/session';
+import { homePathForRole, requiresPasswordChange } from '@/lib/auth/session';
 import { useAuthStore } from '@/lib/store';
 
 export default function ChangePasswordPage() {
@@ -42,18 +42,11 @@ export default function ChangePasswordPage() {
   return (
     <PageShell
       title="Change password"
-      description="Required when your account is flagged mustChangePassword / requires_password_change."
+      description="Required when your account is flagged mustChangePassword."
     >
       <Card className="max-w-md">
         <CardBody>
-          {!FEATURES.changePassword ? (
-            <Alert tone="warning" title="Backend endpoint pending">
-              POST /auth/change-password is not in the gateway yet. Enable with
-              NEXT_PUBLIC_ENABLE_CHANGE_PASSWORD=true once it ships. The form below is
-              ready.
-            </Alert>
-          ) : null}
-          <form className="mt-4 flex flex-col gap-4" onSubmit={onSubmit}>
+          <form className="flex flex-col gap-4" onSubmit={onSubmit}>
             {formError ? (
               <Alert tone="danger" title="Update failed">
                 {formError}

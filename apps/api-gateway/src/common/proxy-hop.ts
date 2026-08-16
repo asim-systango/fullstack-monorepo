@@ -7,6 +7,9 @@ export function isGatewayOwnedPath(path: string): boolean {
     path === '/health' ||
     path.startsWith('/health/') ||
     path.startsWith('/auth') ||
+    // Staff provisioning uses gateway User table — keep other /admin/* on apps/api.
+    path === '/admin/staff' ||
+    path.startsWith('/admin/staff/') ||
     path.startsWith('/docs') ||
     path.startsWith('/swagger')
   );

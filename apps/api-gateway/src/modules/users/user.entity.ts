@@ -28,6 +28,9 @@ export class User {
   })
   role!: UserRole;
 
+  @Column({ name: 'must_change_password', default: false })
+  mustChangePassword!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

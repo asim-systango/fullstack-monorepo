@@ -4,6 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDTO } from './dto/register.dto';
 import { LoginDTO } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CurrentUser, Public } from '../../common/auth';
 import { User, UserRole, UsersService } from '../users';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -34,6 +35,14 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: User) {
     return this.userService.toPublic(user);
+  }
+
+  // Deliberately NOT @Public — any authenticated role may change their password.
+  @Post('change-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Change password and clear mustChangePassword' })
+  changePassword(@CurrentUser() user: User, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.id, dto);
   }
 
   // Public so clients can clear the cookie even with an expired/missing session.
