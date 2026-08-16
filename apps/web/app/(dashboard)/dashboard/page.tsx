@@ -166,7 +166,7 @@ export default function DashboardPage() {
       {/* ======================================================== */}
       {/* FACILITY FILTER & SCOPE CONTROL HEADER */}
       {/* ======================================================== */}
-      {warehouses.length > 0 && (
+      {isAdmin && warehouses.length > 0 && (
         <section
           aria-label="Facility Data Scope Controller"
           className="relative rounded-2xl border-2 border-[#7DA0FA]/40 bg-gradient-to-r from-[#4747A1]/8 via-[#7978E9]/5 to-[#7DA0FA]/10 dark:from-slate-900 dark:via-[#4747A1]/20 dark:to-slate-900 p-6 shadow-sm overflow-hidden"
