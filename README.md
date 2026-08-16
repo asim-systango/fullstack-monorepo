@@ -1,27 +1,36 @@
-# App starter
+# Project Management (Jira-style)
 
-Shared Nest + Next monorepo starter. You build your assigned domain here — not in a separate repo.
+A lightweight Jira-style app: **projects** with membership, **issues** with a status
+workflow, **comments**, **labels**, **filters**, **sprints**, and an **activity log**.
+Only project members may mutate issues, and every status change is recorded in the same
+transaction as the update.
 
-Package scopes are **project-agnostic** (reuse this starter without renaming packages):
+Built on a Nest + Next monorepo. Backend domain code lives in `apps/api` (NestJS +
+TypeORM + Postgres); the UI in `apps/web` (Next App Router + TanStack Query + RTK).
+Auth is reused from `apps/api-gateway` — no users/passwords are recreated in the domain
+API; it stores `userId` UUID FKs only.
 
-| Scope       | What                                                                                        |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| `@app/*`    | Apps: `@app/web`, `@app/api-gateway`, `@app/api`                                            |
-| `@shared/*` | Libs: `@shared/env`, `@shared/http`, `@shared/ui`, `@shared/api-client`, `@shared/types`, … |
+- **Architecture, ERD, invariants, demo script:** [docs/architecture.md](docs/architecture.md)
+- **Backend study guide (module-by-module):** [docs/backend-walkthrough.md](docs/backend-walkthrough.md)
 
 ```text
 Browser → web :3000  (/api/*)
               ↓ rewrite
          gateway :3001  (login / cookies)
+              ↓ Bearer JWT
+         api :3002  (domain modules)
               ↓
-         api :3002  (your domain code)
-              ↓
-         Postgres :5434
+         Postgres :5432
 ```
 
-## Start here
+## Quick start
 
-Run all commands from the **repo root** (this folder). Install once — do **not** run `pnpm install` / `npm i` inside `apps/web`, `apps/api`, or `apps/api-gateway`.
+Needs **Node ≥ 20**, **pnpm 10.18.1**, and a **Postgres** instance running on
+`localhost:5432` with a `project_management_db` database (match `DATABASE_URL` in your
+`.env` files).
+
+Run all commands from the **repo root**. Install once — do **not** run `pnpm install`
+inside any `apps/*` folder.
 
 ```bash
 pnpm install
@@ -30,65 +39,98 @@ cp apps/api-gateway/.env.example apps/api-gateway/.env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.local.example apps/web/.env.local
 
-pnpm docker:db
-pnpm migration:run
-pnpm seed
-pnpm dev
-pnpm doctor
+pnpm migration:run         # gateway: users table
+pnpm migration:run:api     # domain: projects, issues, labels, sprints…
+
+pnpm seed                  # gateway: demo users (see accounts below)
+pnpm --filter @app/api seed  # domain: 2 projects, 6 issues, labels, comments, 1 sprint
+
+pnpm dev                   # web + gateway + api
+pnpm doctor                # verify every hop is healthy
 ```
 
-Then open **http://localhost:3000**.
+Then open **http://localhost:3000** — you'll be redirected to `/projects` once logged in.
 
-Needs **Node ≥ 20**, **pnpm 10.18.1**, and **Docker**.
+> Re-running the domain seed appends duplicate projects (by design — no unique on name).
+> For a clean slate: drop and recreate the database, then re-run both `migration:run*` and both seeds.
 
-| Check        | Command / URL                                                                               |
-| ------------ | ------------------------------------------------------------------------------------------- |
-| Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready`  |
-| Demo users   | Run `pnpm seed` — one account per gateway role (`admin`, `staff`, `user`) for local testing |
+## Login accounts
 
-## Where you write code
+Created by `pnpm seed`. Password for all: **`password123`**.
+
+| Email              | Role                     | In the app                                                                                                                                |
+| ------------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `staff@demo.local` | staff → **project_lead** | Creates projects; manages members, labels, sprints; deletes issues. Lead on both seed projects.                                           |
+| `user@demo.local`  | user → **member**        | Works issues, comments, changes status. Member of **BlueLightCard only** — hitting Modulo LABS demonstrates the 403 membership invariant. |
+| `admin@demo.local` | admin                    | Read-all override across every project.                                                                                                   |
+
+Seed projects: **BlueLightCard** (`BLC`) and **Modulo LABS** (`MOD`).
+
+## Key routes (web)
+
+| Route                  | What                                                                  |
+| ---------------------- | --------------------------------------------------------------------- |
+| `/projects`            | Projects you belong to; staff/admin see a create form                 |
+| `/projects/:id`        | Project overview + members + links to board/issues                    |
+| `/projects/:id/board`  | Kanban board — columns by status, move buttons per allowed transition |
+| `/projects/:id/issues` | Filterable + paginated issues table (status, label — RTK-driven)      |
+| `/issues/:id`          | Issue detail — description, labels, activity timeline, comments       |
+| `/dashboard`           | Your open (non-done) issues across all your projects                  |
+
+API endpoint tables live in the
+[design spec](docs/superpowers/specs/2026-08-15-project-management-design.md#endpoints).
+
+## API docs (Swagger)
+
+Available in local/dev once the apps are running:
+
+| Service    | Swagger UI                 | OpenAPI JSON                    | Auth       |
+| ---------- | -------------------------- | ------------------------------- | ---------- |
+| Gateway    | http://localhost:3001/docs | http://localhost:3001/docs/json | Cookie JWT |
+| Domain API | http://localhost:3002/docs | http://localhost:3002/docs/json | Bearer JWT |
+
+## Where the domain code lives
 
 | You build…                                   | Put it in…                                                                                            |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Domain API (entities, services, controllers) | `apps/api/src/modules/`                                                                               |
+| Domain API (entities, services, controllers) | `apps/api/src/modules/` (`projects`, `issues`, `labels`, `sprints`)                                   |
 | UI pages and app components                  | `apps/web/app/` and `apps/web/components/`                                                            |
 | Shared UI kit (prefer these)                 | `@shared/ui/components` — `@shared/ui/theme.css` · gallery `/ui` · [frontend guide](docs/frontend.md) |
 | Auth / cookie login                          | Already in `apps/api-gateway/` — usually leave it                                                     |
 
-Branch: **`<your-name>/<project-slug>`** (example: `ada/job-portal`). See [submission](docs/submission.md).
+Package scopes are project-agnostic: `@app/*` for apps, `@shared/*` for libs.
 
 ## Commands
 
-**All three apps together**
+**Run apps**
 
 ```bash
-pnpm dev          # web + gateway + api
-pnpm doctor       # env, Postgres, ports, per-hop health (api /ready → gateway /health → gateway /ready proxy → Next /api/ready)
-```
-
-**One app at a time** (order: api → gateway → web)
-
-```bash
-pnpm dev:api
+pnpm dev          # web + gateway + api together
+pnpm dev:api      # one at a time (order: api → gateway → web)
 pnpm dev:gateway
 pnpm dev:web
+pnpm doctor       # env, Postgres, ports, per-hop health
 ```
 
-| Script                             | Purpose                                                         |
-| ---------------------------------- | --------------------------------------------------------------- |
-| `pnpm docker:db` / `docker:down`   | Start / stop Postgres                                           |
-| `docker/Dockerfile.*`              | Optional deploy stubs (gateway, api, web) — not used by Compose |
-| `pnpm migration:run`               | Users table (gateway)                                           |
-| `pnpm migration:run:api`           | Your domain migrations                                          |
-| `pnpm migration:generate`          | Generate a domain migration                                     |
-| `pnpm migration:revert` / `:api`   | Revert latest gateway / domain migration                        |
-| `pnpm seed`                        | Seed demo users                                                 |
-| `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
-| `pnpm test:coverage`               | Jest + coverage thresholds (CI gate)                            |
-| `pnpm test:gateway` / `test:api`   | Per-app Jest                                                    |
-| `pnpm build` / `start`             | Production build / run                                          |
+**Database**
 
-Also: `dev:backend`, `build:*`, `start:*`, `typecheck:*` per app.
+| Script                           | Purpose                                  |
+| -------------------------------- | ---------------------------------------- |
+| `pnpm migration:run` / `:api`    | Run gateway / domain migrations          |
+| `pnpm migration:generate`        | Generate a domain migration              |
+| `pnpm migration:revert` / `:api` | Revert latest gateway / domain migration |
+| `pnpm seed`                      | Seed demo users (gateway)                |
+| `pnpm --filter @app/api seed`    | Seed domain data (projects, issues, …)   |
+
+**Checks**
+
+| Script                                               | Purpose                             |
+| ---------------------------------------------------- | ----------------------------------- |
+| `pnpm typecheck` / `typecheck:api` / `typecheck:web` | Type checks                         |
+| `pnpm test` / `test:api` / `test:gateway`            | Jest                                |
+| `pnpm test:coverage`                                 | Coverage thresholds (CI gate)       |
+| `pnpm lint` / `lint:all`                             | ESLint (+ Sonar rules) / lint + CSS |
+| `pnpm build` / `start`                               | Production build / run              |
 
 ## Ports
 
@@ -97,72 +139,4 @@ Also: `dev:backend`, `build:*`, `start:*`, `typecheck:*` per app.
 | 3000 | Web (browser only talks here) |
 | 3001 | API gateway                   |
 | 3002 | Domain API                    |
-| 5434 | Postgres                      |
-
-OpenAPI (non-production): gateway `http://localhost:3001/docs` · domain API `http://localhost:3002/docs`.
-
-If a port is taken, change that app’s `PORT` and keep these in sync: `API_UPSTREAM_URL` (gateway → api), `API_GATEWAY_URL` (web → gateway). Then run `pnpm doctor`.
-
-`JWT_SECRET` must be the same in `apps/api-gateway/.env` and `apps/api/.env`.
-
-## Projects (17)
-
-Pick **one** project brief and read it **fully before coding**. Recommended order within the brief:
-
-1. **Problem** → **Application flow** → **Roles in detail**
-2. **Backend & Frontend expectations** (modules, key endpoints, enums, constraints, screens)
-3. **User journeys** ← manual test script while building
-4. **Edge cases / FAQ** + **DoD / Demo script**
-
-Each brief includes:
-
-- **Problem** — real-world context, actors, pain points, and scope
-- **Application flow** — step-by-step end-to-end behaviour
-- **Roles in detail** — what admin / staff / user can and cannot do in your domain
-- **User journeys** — detailed manual test script (6+ steps per scenario)
-- **What is expected** — Must / Should / Stretch explained in plain language
-- **Frontend expectations** — domain screens, UI layout, states, and behaviour
-- **Backend expectations** — domain modules, endpoints, database constraints, enums, state machines, and service-layer rules
-- **Edge cases and FAQ** — failures, decisions, and pre-answered questions ([shared FAQ](docs/projects/README.md#faq--read-before-you-ask))
-- **Suggested demo script** — starting point for your PR
-
-Shared setup, role mapping, FE/BE standards, and grading: [docs/projects/README.md](docs/projects/README.md).
-
-| Slug                    | What you build                                         | Brief                                             |
-| ----------------------- | ------------------------------------------------------ | ------------------------------------------------- |
-| `job-portal`            | Companies post jobs; candidates apply and track status | [docs](docs/projects/01-job-portal.md)            |
-| `ecommerce-marketplace` | Sellers list products; buyers cart, checkout, review   | [docs](docs/projects/02-ecommerce-marketplace.md) |
-| `project-management`    | Boards, issues, sprints, labels, comments              | [docs](docs/projects/03-project-management.md)    |
-| `lms`                   | Courses, lessons, quizzes, enrollment, grading         | [docs](docs/projects/04-lms.md)                   |
-| `hospital-appointments` | Doctor slots, schedules, prescriptions                 | [docs](docs/projects/05-hospital-appointments.md) |
-| `expense-split`         | Shared expenses, balances, settlements                 | [docs](docs/projects/06-expense-split.md)         |
-| `hotel-booking`         | Rooms by date, bookings, reviews                       | [docs](docs/projects/07-hotel-booking.md)         |
-| `food-delivery`         | Menus, cart, order status through delivery             | [docs](docs/projects/08-food-delivery.md)         |
-| `cms-blogging`          | Drafts, tags, comments, publish workflow               | [docs](docs/projects/09-cms-blogging.md)          |
-| `inventory-warehouse`   | Stock, warehouses, transfers, POs                      | [docs](docs/projects/10-inventory-warehouse.md)   |
-| `crm`                   | Leads, customers, deals, notes, tasks                  | [docs](docs/projects/11-crm.md)                   |
-| `support-desk`          | Tickets, agents, SLAs, attachments                     | [docs](docs/projects/12-support-desk.md)          |
-| `property-rental`       | Listings, bookings, leases, messaging                  | [docs](docs/projects/13-property-rental.md)       |
-| `event-management`      | Events, RSVPs, waitlists, check-in                     | [docs](docs/projects/14-event-management.md)      |
-| `fitness-tracker`       | Workouts, PRs, plans, goals                            | [docs](docs/projects/15-fitness-tracker.md)       |
-| `finance-tracker`       | Accounts, budgets, transactions, goals                 | [docs](docs/projects/16-finance-tracker.md)       |
-| `library-management`    | Titles, copies, borrow/reserve, fines                  | [docs](docs/projects/17-library-management.md)    |
-
-## More docs
-
-- [Stack rules](docs/stack.md)
-- [Frontend / UI kit](docs/frontend.md)
-- [Architecture](docs/architecture.md)
-- [Grading](docs/grading.md)
-- [Submission](docs/submission.md)
-- [Optional extra service](docs/adding-a-service.md) (Stretch)
-- [Contributing](CONTRIBUTING.md)
-
-## Quality bar
-
-- Cookie JWT only (no `localStorage` tokens) — browser uses `/api` on `:3000`
-- TypeORM migrations only (`synchronize: false`)
-- TanStack Query for server data; RTK for drafts/filters only
-- Soft-delete on the primary listable resource — see [grading](docs/grading.md)
-- Prefer `@shared/ui/components` + theme tokens over one-off styles — see [frontend](docs/frontend.md)
-- Do not submit the auth-only shell; add your domain on top
+| 5432 | Postgres                      |
