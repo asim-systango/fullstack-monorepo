@@ -71,6 +71,7 @@ describe('UsersService', () => {
       email: user.email,
       name: user.name,
       role: user.role,
+      warehouseId: null,
     });
   });
 });
