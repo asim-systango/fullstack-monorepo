@@ -3,11 +3,23 @@ import {
   BadRequestException,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 
 describe('AllExceptionsFilter.catch', () => {
   const filter = new AllExceptionsFilter();
+  let loggerErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    loggerErrorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    loggerErrorSpy.mockRestore();
+  });
 
   function hostWithResponse() {
     const json = jest.fn();
@@ -19,6 +31,17 @@ describe('AllExceptionsFilter.catch', () => {
       }),
     } as unknown as ArgumentsHost;
     return { host, status, json };
+  }
+
+  function withNodeEnv(value: string, run: () => void) {
+    const previous = process.env.NODE_ENV;
+    Object.assign(process.env, { NODE_ENV: value });
+
+    try {
+      run();
+    } finally {
+      Object.assign(process.env, { NODE_ENV: previous });
+    }
   }
 
   it('serializes HttpException responses', () => {
@@ -67,37 +90,29 @@ describe('AllExceptionsFilter.catch', () => {
   });
 
   it('hides unexpected Error messages in production', () => {
-    const prev = process.env.NODE_ENV;
-    Object.assign(process.env, { NODE_ENV: 'production' });
-    const { host, status, json } = hostWithResponse();
+    withNodeEnv('production', () => {
+      const { host, status, json } = hostWithResponse();
 
-    try {
-      filter.catch(new Error('secret stack detail'), host);
+      expect(() => filter.catch(new Error('secret stack detail'), host)).not.toThrow();
       expect(status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Unexpected error',
         }),
       );
-    } finally {
-      Object.assign(process.env, { NODE_ENV: prev });
-    }
+    });
   });
 
   it('exposes Error messages outside production', () => {
-    const prev = process.env.NODE_ENV;
-    Object.assign(process.env, { NODE_ENV: 'test' });
-    const { host, json } = hostWithResponse();
+    withNodeEnv('test', () => {
+      const { host, json } = hostWithResponse();
 
-    try {
-      filter.catch(new Error('visible detail'), host);
+      expect(() => filter.catch(new Error('visible detail'), host)).not.toThrow();
       expect(json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'visible detail',
         }),
       );
-    } finally {
-      Object.assign(process.env, { NODE_ENV: prev });
-    }
+    });
   });
 });

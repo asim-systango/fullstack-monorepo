@@ -7,20 +7,24 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint --max-warnings=0 .",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/web/lib"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.6.1",
-    "@shared/api-client": "workspace:*",
-    "@shared/env": "workspace:*",
-    "@shared/ui": "workspace:*",
+    "@shared/types": "workspace:*",
     "@tanstack/react-query": "^5.69.0",
     "@tanstack/react-query-devtools": "^5.69.0",
+    "@tiptap/core": "^3.30.1",
+    "@tiptap/extension-link": "^3.30.1",
+    "@tiptap/extension-placeholder": "^3.30.1",
+    "@tiptap/pm": "^3.30.1",
+    "@tiptap/react": "^3.30.1",
+    "@tiptap/starter-kit": "^3.30.1",
+    "axios": "^1.8.4",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-redux": "^9.2.0"
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

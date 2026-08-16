@@ -1,59 +1,114 @@
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { DataSource } from 'typeorm';
 import { JwtStrategy } from './jwt.strategy';
 
+const USER_ID = '11111111-1111-1111-1111-111111111111';
+
 describe('JwtStrategy (api)', () => {
-  const originalEnv = { ...process.env };
   let strategy: JwtStrategy;
+  const query = jest.fn();
 
-  beforeAll(() => {
-    Object.assign(process.env, {
-      NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/app',
-      JWT_SECRET: 'test-jwt-secret-16',
-      JWT_EXPIRES_IN: '1h',
-      PORT: '3002',
-    });
-    strategy = new JwtStrategy();
+  beforeEach(async () => {
+    query.mockReset();
+    const module = await Test.createTestingModule({
+      providers: [
+        JwtStrategy,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) =>
+              key === 'JWT_SECRET' ? 'test-jwt-secret-16' : undefined,
+          },
+        },
+        {
+          provide: DataSource,
+          useValue: { query },
+        },
+      ],
+    }).compile();
+
+    strategy = module.get(JwtStrategy);
   });
 
-  afterAll(() => {
-    for (const key of Object.keys(process.env)) {
-      if (!(key in originalEnv)) delete process.env[key];
-    }
-    Object.assign(process.env, originalEnv);
-  });
-
-  it('maps valid Bearer claims to JwtUser', () => {
-    expect(
-      strategy.validate({
-        sub: '11111111-1111-1111-1111-111111111111',
+  it('maps an active user row to JwtUser', async () => {
+    query.mockResolvedValue([
+      {
+        id: USER_ID,
         email: 'user@example.com',
         role: 'user',
+        is_active: true,
+      },
+    ]);
+
+    await expect(
+      strategy.validate({
+        sub: USER_ID,
+        email: 'stale@example.com',
+        role: 'user',
       }),
-    ).toEqual({
-      id: '11111111-1111-1111-1111-111111111111',
+    ).resolves.toEqual({
+      id: USER_ID,
       email: 'user@example.com',
       role: 'user',
     });
+    expect(query).toHaveBeenCalledWith(
+      'SELECT id, email, role, is_active FROM users WHERE id = $1',
+      [USER_ID],
+    );
   });
 
-  it('rejects invalid role claims', () => {
-    expect(() =>
+  it('rejects invalid role claims without querying users', async () => {
+    await expect(
       strategy.validate({
-        sub: '11111111-1111-1111-1111-111111111111',
+        sub: USER_ID,
         email: 'user@example.com',
         role: 'superadmin',
       }),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(query).not.toHaveBeenCalled();
   });
 
-  it('rejects missing subject', () => {
-    expect(() =>
+  it('rejects missing subject without querying users', async () => {
+    await expect(
       strategy.validate({
         sub: '',
         email: 'user@example.com',
         role: 'user',
       }),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('throws UnauthorizedException when the subject is deactivated', async () => {
+    query.mockResolvedValue([
+      {
+        id: USER_ID,
+        email: 'user@example.com',
+        role: 'user',
+        is_active: false,
+      },
+    ]);
+
+    await expect(
+      strategy.validate({
+        sub: USER_ID,
+        email: 'user@example.com',
+        role: 'user',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('throws UnauthorizedException when the subject is missing', async () => {
+    query.mockResolvedValue([]);
+
+    await expect(
+      strategy.validate({
+        sub: USER_ID,
+        email: 'user@example.com',
+        role: 'user',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

@@ -1,25 +1,32 @@
 import type { Metadata } from 'next';
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { Inter, Playfair_Display, Source_Serif_4 } from 'next/font/google';
 import { AppProviders } from '@/components/providers';
 import '../styles/globals.css';
 
-const ibmPlexSans = IBM_Plex_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-ibm-plex-sans',
+  variable: '--font-inter',
   display: 'swap',
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-ibm-plex-mono',
+  variable: '--font-playfair',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  variable: '--font-source-serif',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  title: 'Wordnest — Where good ideas find you',
+  description:
+    'Read trending stories, join the conversation, and discover what writers published today.',
 };
 
 export default function RootLayout({
@@ -28,8 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
-      suppressHydrationWarning
+      className={`${inter.variable} ${playfair.variable} ${sourceSerif.variable}`}
     >
       <body>
         <AppProviders>{children}</AppProviders>

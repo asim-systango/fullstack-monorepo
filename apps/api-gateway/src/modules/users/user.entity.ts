@@ -26,6 +26,10 @@ export class User {
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role!: UserRole;
 
+  /** Deactivated accounts keep their content and attribution but cannot sign in. */
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

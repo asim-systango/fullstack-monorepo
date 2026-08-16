@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
+import { ArticlesModule } from './modules/articles';
 import { AuthModule } from './modules/auth';
+import { CommentsModule } from './modules/comments';
 import { HealthModule } from './modules/health';
+import { MediaModule } from './modules/media';
+import { TagsModule } from './modules/tags';
 
 const db = databaseConfig();
 
@@ -15,11 +20,16 @@ const db = databaseConfig();
  */
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       ...db,
     }),
     AuthModule,
     HealthModule,
+    ArticlesModule,
+    TagsModule,
+    CommentsModule,
+    MediaModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

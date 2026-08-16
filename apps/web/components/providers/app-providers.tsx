@@ -1,32 +1,20 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Provider as ReduxProvider } from 'react-redux';
 import { useState, type ReactNode } from 'react';
-import { store } from '@/lib/store';
-import { AuthProvider } from '@/components/auth';
+import { AuthModalProvider } from '@/components/auth/auth-modal-context';
+import { createQueryClient } from '@/lib/query';
 
 export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 30_000,
-            retry: 1,
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-  );
+  const [queryClient] = useState(() => createQueryClient());
 
   return (
-    <ReduxProvider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthModalProvider>
+        {children}
         <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ReduxProvider>
+      </AuthModalProvider>
+    </QueryClientProvider>
   );
 }

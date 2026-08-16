@@ -22,12 +22,7 @@ export class ResponseEnvelopeInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((body) => {
         if (body instanceof StreamableFile) return body;
-        if (
-          body !== null &&
-          typeof body === 'object' &&
-          'data' in body &&
-          Object.keys(body).length === 1
-        ) {
+        if (body !== null && typeof body === 'object' && 'data' in body) {
           return body;
         }
         return { data: body } satisfies ResponseEnvelope<unknown>;

@@ -10,6 +10,7 @@ export function isGatewayOwnedPath(path: string): boolean {
     path === '/health' ||
     path.startsWith('/health/') ||
     path.startsWith('/auth') ||
+    path.startsWith('/admin') ||
     path.startsWith('/docs') ||
     path.startsWith('/swagger')
   );

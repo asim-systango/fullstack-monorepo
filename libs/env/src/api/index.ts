@@ -5,8 +5,14 @@ import { nodeEnv } from '../node-env';
 export const apiEnvSchema = z.object({
   NODE_ENV: nodeEnv,
   PORT: z.coerce.number().default(3002),
+  /** Loopback by default so deactivated JWTs cannot hit the domain API from the LAN. */
+  LISTEN_HOST: z.string().min(1).default('127.0.0.1'),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(16),
+  /** Cloudinary — never expose API secret to the frontend. */
+  CLOUDINARY_CLOUD_NAME: z.string().min(1),
+  CLOUDINARY_API_KEY: z.string().min(1),
+  CLOUDINARY_API_SECRET: z.string().min(1),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

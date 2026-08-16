@@ -25,7 +25,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://res.cloudinary.com",
   "font-src 'self' data:",
   "connect-src 'self'",
   "base-uri 'self'",
@@ -52,7 +52,16 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@shared/ui', '@shared/api-client', '@shared/types'],
+  transpilePackages: [],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
@@ -61,6 +70,15 @@ const nextConfig: NextConfig = {
       {
         source: '/api/:path*',
         destination: `${gatewayOrigin}/:path*`,
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/stories/:slug',
+        destination: '/blog/:slug',
+        permanent: true,
       },
     ];
   },
