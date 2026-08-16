@@ -6,10 +6,8 @@ export type RouteAccess =
   | { type: 'roles'; roles: readonly AppRole[] };
 
 export type AppRouteConfig = {
-  /** Path pattern; `:param` segments supported */
   path: string;
   access: RouteAccess;
-  /** Optional label for nav / docs */
   label?: string;
 };
 
@@ -24,36 +22,75 @@ export const appRoutes: readonly AppRouteConfig[] = [
   { path: '/login', access: { type: 'public' }, label: 'Login' },
   { path: '/register', access: { type: 'public' }, label: 'Register' },
   { path: '/unauthorized', access: { type: 'public' }, label: 'Unauthorized' },
+  {
+    path: '/change-password',
+    access: { type: 'authenticated' },
+    label: 'Change password',
+  },
 
   {
-    path: '/applications',
+    path: '/my/applications',
     access: { type: 'roles', roles: ['user'] },
     label: 'My applications',
   },
-  { path: '/bookmarks', access: { type: 'roles', roles: ['user'] }, label: 'Bookmarks' },
   {
-    path: '/applications/summary',
+    path: '/my/applications/summary',
     access: { type: 'roles', roles: ['user'] },
     label: 'Applications summary',
   },
+  {
+    path: '/my/resumes',
+    access: { type: 'roles', roles: ['user'] },
+    label: 'My resumes',
+  },
+  { path: '/bookmarks', access: { type: 'roles', roles: ['user'] }, label: 'Bookmarks' },
 
+  {
+    path: '/company/setup',
+    access: { type: 'roles', roles: ['staff'] },
+    label: 'Company setup',
+  },
   {
     path: '/company/jobs',
     access: { type: 'roles', roles: ['staff'] },
     label: 'Company jobs',
   },
   {
-    path: '/dashboard',
+    path: '/company/jobs/new',
     access: { type: 'roles', roles: ['staff'] },
-    label: 'Staff dashboard',
+    label: 'New job',
+  },
+  {
+    path: '/company/jobs/:id/edit',
+    access: { type: 'roles', roles: ['staff'] },
+    label: 'Edit job',
   },
   {
     path: '/company/applications',
     access: { type: 'roles', roles: ['staff'] },
     label: 'Company applications',
   },
+  {
+    path: '/company/applications/:id',
+    access: { type: 'roles', roles: ['staff'] },
+    label: 'Application detail',
+  },
+  {
+    path: '/dashboard',
+    access: { type: 'roles', roles: ['staff'] },
+    label: 'Staff dashboard',
+  },
 
-  { path: '/admin', access: { type: 'roles', roles: ['admin'] }, label: 'Admin' },
+  {
+    path: '/admin/companies',
+    access: { type: 'roles', roles: ['admin'] },
+    label: 'Admin companies',
+  },
+  {
+    path: '/admin/staff/new',
+    access: { type: 'roles', roles: ['admin'] },
+    label: 'Create staff',
+  },
 ] as const;
 
 export function routesForRole(role: AppRole | null | undefined): AppRouteConfig[] {
@@ -64,19 +101,12 @@ export function canRoleAccess(
   access: RouteAccess,
   role: AppRole | null | undefined,
 ): boolean {
-  if (access.type === 'public') {
-    return true;
-  }
-  if (!role) {
-    return false;
-  }
-  if (access.type === 'authenticated') {
-    return true;
-  }
+  if (access.type === 'public') return true;
+  if (!role) return false;
+  if (access.type === 'authenticated') return true;
   return access.roles.includes(role);
 }
 
-/** Convert `/jobs/:id` → regex that matches `/jobs/abc` */
 export function pathToRegex(path: string): RegExp {
   const escaped = path
     .split('/')

@@ -21,6 +21,9 @@ export class JobsService {
   constructor(
     @InjectRepository(Job)
     private readonly jobsRepo: Repository<Job>,
+    // forwardRef: Companies needs JobsService (close jobs on suspend), Jobs needs
+    // CompaniesService (owner lookup) — genuine circular dependency.
+    @Inject(forwardRef(() => CompaniesService))
     private readonly companiesService: CompaniesService,
     // forwardRef: Applications needs JobsService (check open status), Jobs needs
     // ApplicationsService (bulk-reject on close) — genuine circular dependency.

@@ -1,13 +1,13 @@
 import { create } from 'zustand';
-import type { User } from '@shared/types';
-import { apiClient } from '@/lib/api/client';
+import { fetchMe, logout as logoutRequest } from '@/lib/api/auth-api';
+import type { MeUser } from '@/lib/auth/session';
 
 type AuthState = {
-  user: User | null;
+  user: MeUser | null;
   status: 'idle' | 'loading' | 'authenticated' | 'anonymous';
-  setUser: (user: User | null) => void;
+  setUser: (user: MeUser | null) => void;
   clearUser: () => void;
-  hydrateFromMe: () => Promise<User | null>;
+  hydrateFromMe: () => Promise<MeUser | null>;
   logout: () => Promise<void>;
 };
 
@@ -29,11 +29,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async hydrateFromMe() {
     set({ status: 'loading' });
     try {
-      const { data } = await apiClient.get<User>('/auth/me', {
-        skipAuthRedirect: true,
-      });
-      get().setUser(data);
-      return data;
+      const user = await fetchMe();
+      get().setUser(user);
+      return user;
     } catch {
       get().clearUser();
       return null;
@@ -42,9 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async logout() {
     try {
-      await apiClient.post('/auth/logout', undefined, {
-        skipAuthRedirect: true,
-      });
+      await logoutRequest();
     } finally {
       get().clearUser();
     }

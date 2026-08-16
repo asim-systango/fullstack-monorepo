@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { AppHeader } from '@/components/layout/app-header';
 import { AppProviders } from '@/components/providers';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'Job Portal',
-  description: 'LinkedIn-inspired job portal',
+  description: 'Find jobs, hire talent, manage applications',
 };
 
 export default function RootLayout({
@@ -13,7 +14,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <AppHeader />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

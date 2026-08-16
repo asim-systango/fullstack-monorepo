@@ -1,20 +1,20 @@
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/page-shell';
+import { Button, Card, CardBody } from '@/components/ui';
 
 export default function UnauthorizedPage() {
   return (
     <PageShell
       title="Access denied"
-      description="Your account does not have permission for that page."
+      description="You do not have permission for that page. Middleware normally redirects wrong roles to their home."
     >
-      <div className="rounded-md bg-surface p-6 shadow-card">
-        <Link
-          className="text-sm font-medium text-brand hover:text-brand-hover"
-          href="/jobs"
-        >
-          Back to jobs
-        </Link>
-      </div>
+      <Card>
+        <CardBody>
+          <Link href="/jobs">
+            <Button variant="secondary">Back to jobs</Button>
+          </Link>
+        </CardBody>
+      </Card>
     </PageShell>
   );
 }

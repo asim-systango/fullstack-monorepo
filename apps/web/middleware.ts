@@ -1,10 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-  AUTH_COOKIE_NAME,
-  AUTH_LOGIN_PATH,
-  AUTH_UNAUTHORIZED_PATH,
-} from '@/lib/auth/constants';
+import { AUTH_COOKIE_NAME, AUTH_LOGIN_PATH } from '@/lib/auth/constants';
 import { decodeAccessToken } from '@/lib/auth/jwt';
+import { homePathForRole } from '@/lib/auth/session';
 import { evaluateRouteAccess } from '@/lib/routes/access';
 
 export function middleware(request: NextRequest) {
@@ -35,10 +32,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const forbiddenUrl = request.nextUrl.clone();
-  forbiddenUrl.pathname = AUTH_UNAUTHORIZED_PATH;
-  forbiddenUrl.search = '';
-  return NextResponse.redirect(forbiddenUrl);
+  // Wrong role → that role's home (not a blank page).
+  const homeUrl = request.nextUrl.clone();
+  homeUrl.pathname = role ? homePathForRole(role) : '/jobs';
+  homeUrl.search = '';
+  return NextResponse.redirect(homeUrl);
 }
 
 export const config = {

@@ -9,7 +9,7 @@ import { JobsService } from './jobs.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Job]),
-    CompaniesModule,
+    forwardRef(() => CompaniesModule),
     forwardRef(() => ApplicationsModule),
   ],
   controllers: [JobsController],
