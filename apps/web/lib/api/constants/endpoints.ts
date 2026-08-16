@@ -20,4 +20,9 @@ export const API_ENDPOINTS = {
     GET_ALL: '/users',
     INVITE: '/users/invite',
   },
+  CONTACTS: {
+    GET_ALL: '/contacts',
+    CREATE: '/contacts',
+    UPDATE: (id: string) => `/contacts/${id}`,
+  },
 } as const;
