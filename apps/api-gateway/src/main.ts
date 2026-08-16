@@ -5,7 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import type { Request } from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { AppModule } from './app.module';
 import { appConfig } from './config';
 import {
@@ -49,8 +49,9 @@ async function bootstrap() {
       proxyTimeout: 10_000,
       pathFilter: (pathname) => !isGatewayOwnedPath(pathname),
       on: {
-        proxyReq: (proxyReq, req) => {
+        proxyReq: (proxyReq, req, res) => {
           applyAuthCookieToProxyRequest(proxyReq, req as Request);
+          fixRequestBody(proxyReq, req);
         },
         error: (_err, _req, res) => {
           sendProxyError(res);

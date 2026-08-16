@@ -3,10 +3,12 @@ import { LeadRepository } from '../../database/repositories/lead.repository';
 import { ContactRepository } from '../../database/repositories/contact.repository';
 import { UserRepository } from '../../database/repositories/user.repository';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { GetLeadsDto } from './dto/get-leads.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { UpdateLeadStageDto } from './dto/update-lead-stage.dto';
 import { Lead, LeadSource, LeadStage } from '../../database/entities/lead.entity';
 import { User } from '../../database/entities/user.entity';
+import { RoleName } from '../../database/entities/role.entity';
 import { LEADS_ERRORS } from './constants/leads.constants';
 
 @Injectable()
@@ -15,12 +17,38 @@ export class LeadsService {
     private readonly leadRepository: LeadRepository,
     private readonly contactRepository: ContactRepository,
     private readonly userRepository: UserRepository,
-  ) {}
+  ) { }
 
-  async createLead(createLeadDto: CreateLeadDto, currentUser: User): Promise<Lead> {
+  async getLeads(currentUser: User, userRole: string, query: GetLeadsDto) {
     const orgId = currentUser.organizationId;
     if (!orgId) {
       throw new Error(LEADS_ERRORS.USER_NO_ORG);
+    }
+
+    const options = {
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      stage: query.stage,
+      source: query.source,
+      ownerId: userRole === 'SALES_REP' ? currentUser.id : query.ownerId,
+    };
+
+    return this.leadRepository.findLeads(orgId, options);
+  }
+
+  async createLead(
+    createLeadDto: CreateLeadDto,
+    currentUser: User,
+    userRole: string,
+  ): Promise<Lead> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(LEADS_ERRORS.USER_NO_ORG);
+    }
+
+    if (userRole === RoleName.SALES_REP) {
+      throw new Error(LEADS_ERRORS.UNAUTHORIZED_ACCESS);
     }
 
     const contact = await this.contactRepository.findById(createLeadDto.contactId);
@@ -60,6 +88,7 @@ export class LeadsService {
     id: string,
     updateLeadDto: UpdateLeadDto,
     currentUser: User,
+    userRole: string,
   ): Promise<Lead> {
     const orgId = currentUser.organizationId;
     if (!orgId) {
@@ -69,6 +98,11 @@ export class LeadsService {
     const lead = await this.leadRepository.findById(id);
     if (!lead || lead.organizationId !== orgId) {
       throw new Error(LEADS_ERRORS.LEAD_NOT_FOUND);
+    }
+
+    // Role check: Only ORG_ADMIN, SUPER_ADMIN, or SALES_LEAD can update lead details
+    if (userRole === RoleName.SALES_REP) {
+      throw new Error(LEADS_ERRORS.UNAUTHORIZED_ACCESS);
     }
 
     if (updateLeadDto.contactId && updateLeadDto.contactId !== lead.contactId) {
@@ -88,14 +122,14 @@ export class LeadsService {
     }
 
     await this.leadRepository.updateLead(id, { ...updateLeadDto, assignedBy });
-    return (await this.leadRepository.findById(id))!;
+    return (await this.leadRepository.findDetailsById(id))!;
   }
 
   async updateLeadStage(
     id: string,
     updateLeadStageDto: UpdateLeadStageDto,
     currentUser: User,
-    userRole: string, // the role name
+    userRole: string,
   ): Promise<Lead> {
     const orgId = currentUser.organizationId;
     if (!orgId) {
@@ -107,12 +141,22 @@ export class LeadsService {
       throw new Error(LEADS_ERRORS.LEAD_NOT_FOUND);
     }
 
-    if (userRole === 'SALES_REP' && lead.ownerId !== currentUser.id) {
+    // Role check: SALES_REP can only update stage for leads they own
+    if (userRole === RoleName.SALES_REP && lead.ownerId !== currentUser.id) {
       throw new Error(LEADS_ERRORS.UNAUTHORIZED_ACCESS);
     }
 
+    // Stage check: Once a lead is CONVERTED or LOST, it cannot be reverted to earlier stages
+    if (
+      (lead.stage === LeadStage.CONVERTED || lead.stage === LeadStage.LOST) &&
+      updateLeadStageDto.stage !== LeadStage.CONVERTED &&
+      updateLeadStageDto.stage !== LeadStage.LOST
+    ) {
+      throw new Error(LEADS_ERRORS.INVALID_STAGE_TRANSITION);
+    }
+
     await this.leadRepository.updateLead(id, { stage: updateLeadStageDto.stage });
-    return (await this.leadRepository.findById(id))!;
+    return (await this.leadRepository.findDetailsById(id))!;
   }
 
   async getLeadDetails(id: string, currentUser: User, userRole: string): Promise<Lead> {
@@ -126,7 +170,8 @@ export class LeadsService {
       throw new Error(LEADS_ERRORS.LEAD_NOT_FOUND);
     }
 
-    if (userRole === 'SALES_REP' && lead.ownerId !== currentUser.id) {
+    // Role check: SALES_REP can only view details for leads they own
+    if (userRole === RoleName.SALES_REP && lead.ownerId !== currentUser.id) {
       throw new Error(LEADS_ERRORS.UNAUTHORIZED_ACCESS);
     }
 

@@ -5,16 +5,19 @@ import {
   Get,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
   NotFoundException,
   InternalServerErrorException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { LeadsService } from './leads.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { GetLeadsDto } from './dto/get-leads.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { UpdateLeadStageDto } from './dto/update-lead-stage.dto';
 import { User } from '../../database/entities/user.entity';
@@ -32,14 +35,46 @@ import { LEADS_ERRORS, LEADS_MESSAGES } from './constants/leads.constants';
 @Controller('api/v1/leads')
 @UseGuards(JwtAuthGuard, RoutePermissionGuard)
 export class LeadsController {
-  constructor(private readonly leadsService: LeadsService) {}
+  constructor(private readonly leadsService: LeadsService) { }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  async getLeads(@Query() query: GetLeadsDto, @CurrentUser() user: User) {
+    try {
+      const result = await this.leadsService.getLeads(
+        user,
+        user.role?.name || '',
+        query,
+      );
+
+      return {
+        message: LEADS_MESSAGES.LEAD_RETRIEVED,
+        ...result,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      // eslint-disable-next-line sonarjs/no-small-switch
+      switch (message) {
+        case LEADS_ERRORS.USER_NO_ORG:
+          throw new ForbiddenException(message);
+        default:
+          console.error('Error in getLeads:', error);
+          throw new InternalServerErrorException(LEADS_ERRORS.UNEXPECTED_ERROR);
+      }
+    }
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @SwaggerCreateLead()
   async createLead(@Body() createLeadDto: CreateLeadDto, @CurrentUser() user: User) {
     try {
-      const lead = await this.leadsService.createLead(createLeadDto, user);
+      const lead = await this.leadsService.createLead(
+        createLeadDto,
+        user,
+        user.role?.name || '',
+      );
 
       return {
         message: LEADS_MESSAGES.LEAD_CREATED,
@@ -71,7 +106,12 @@ export class LeadsController {
     @CurrentUser() user: User,
   ) {
     try {
-      const lead = await this.leadsService.updateLead(id, updateLeadDto, user);
+      const lead = await this.leadsService.updateLead(
+        id,
+        updateLeadDto,
+        user,
+        user.role?.name || '',
+      );
 
       return {
         message: LEADS_MESSAGES.LEAD_UPDATED,
@@ -82,6 +122,7 @@ export class LeadsController {
 
       switch (message) {
         case LEADS_ERRORS.USER_NO_ORG:
+        case LEADS_ERRORS.UNAUTHORIZED_ACCESS:
           throw new ForbiddenException(message);
         case LEADS_ERRORS.LEAD_NOT_FOUND:
         case LEADS_ERRORS.CONTACT_NOT_FOUND:
@@ -118,6 +159,8 @@ export class LeadsController {
       const message = error instanceof Error ? error.message : String(error);
 
       switch (message) {
+        case LEADS_ERRORS.INVALID_STAGE_TRANSITION:
+          throw new BadRequestException(message);
         case LEADS_ERRORS.USER_NO_ORG:
         case LEADS_ERRORS.UNAUTHORIZED_ACCESS:
           throw new ForbiddenException(message);

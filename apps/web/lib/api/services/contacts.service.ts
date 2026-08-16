@@ -1,4 +1,3 @@
-import { unwrapData } from '@shared/api-client';
 import { apiClient } from '../config/axios-client';
 import { API_ENDPOINTS } from '../constants/endpoints';
 import type {
@@ -10,13 +9,20 @@ import type {
     UpdateContactResponse,
 } from '../types/contacts.types';
 
+function extractData<T>(payload: unknown): T {
+    if (payload !== null && typeof payload === 'object' && 'data' in payload) {
+        return (payload as { data: T }).data;
+    }
+    return payload as T;
+}
+
 export class ContactsService {
     async getContacts(params?: GetContactsParams): Promise<GetContactsResponse> {
         const response = await apiClient.get<GetContactsResponse>(
             API_ENDPOINTS.CONTACTS.GET_ALL,
             { params },
         );
-        return unwrapData<GetContactsResponse>(response.data);
+        return extractData<GetContactsResponse>(response.data);
     }
 
     async createContact(payload: CreateContactPayload): Promise<CreateContactResponse> {
@@ -24,7 +30,7 @@ export class ContactsService {
             API_ENDPOINTS.CONTACTS.CREATE,
             payload,
         );
-        return unwrapData<CreateContactResponse>(response.data);
+        return extractData<CreateContactResponse>(response.data);
     }
 
     async updateContact(id: string, payload: UpdateContactPayload): Promise<UpdateContactResponse> {
@@ -32,7 +38,7 @@ export class ContactsService {
             API_ENDPOINTS.CONTACTS.UPDATE(id),
             payload,
         );
-        return unwrapData<UpdateContactResponse>(response.data);
+        return extractData<UpdateContactResponse>(response.data);
     }
 }
 

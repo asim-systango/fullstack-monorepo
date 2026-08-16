@@ -25,4 +25,16 @@ export const API_ENDPOINTS = {
     CREATE: '/contacts',
     UPDATE: (id: string) => `/contacts/${id}`,
   },
+  LEADS: {
+    GET_ALL: '/leads',
+    CREATE: '/leads',
+    UPDATE: (id: string) => `/leads/${id}`,
+    UPDATE_STAGE: (id: string) => `/leads/${id}/stage`,
+    GET_DETAILS: (id: string) => `/leads/${id}`,
+  },
+  ACTIVITIES: {
+    GET_ALL: '/activities',
+    CREATE: '/activities',
+    UPDATE: (id: string) => `/activities/${id}`,
+  },
 } as const;
