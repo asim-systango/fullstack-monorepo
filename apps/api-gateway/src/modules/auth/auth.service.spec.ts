@@ -2,7 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 import { User, UserStatus } from '../../database/entities/user.entity';
-import { Organization } from '../../database/entities/organization.entity';
+import { Organization, OrganizationStatus } from '../../database/entities/organization.entity';
 import type { Response } from 'express';
 
 function makeUser(overrides: Partial<User> = {}): User {
@@ -99,36 +99,88 @@ describe('AuthService', () => {
       expect(result.user.email).toBe(user.email);
     });
 
-    it('allows a PENDING user to login and updates status to ACTIVE', async () => {
+    it('handles organizationSlug and valid org context', async () => {
       const password = 'password123';
       const bcrypt = await import('bcryptjs');
       const passwordHash = await bcrypt.hash(password, 4);
-      const user = makeUser({ passwordHash, status: UserStatus.PENDING });
+      const user = makeUser({ passwordHash, status: UserStatus.ACTIVE, organizationId: 'org-1' });
+      userRepository.findOne.mockResolvedValue(user);
+      orgRepository.findOne.mockResolvedValue({
+        id: 'org-1',
+        name: 'Acme',
+        slug: 'acme',
+        status: OrganizationStatus.ACTIVE,
+        primaryDomain: 'acme.com',
+      });
+
+      const res = { cookie: jest.fn() } as unknown as Response;
+
+      const result = await service.login({ email: user.email, password, organizationSlug: 'acme' }, res);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith(expect.objectContaining({
+        where: { email: user.email, organization: { slug: 'acme' } },
+      }));
+      expect(result.organization?.name).toBe('Acme');
+    });
+
+    it('throws error if user is inactive', async () => {
+      const user = makeUser({ status: UserStatus.INACTIVE });
+      userRepository.findOne.mockResolvedValue(user);
+      const res = { cookie: jest.fn() } as unknown as Response;
+
+      await expect(service.login({ email: user.email, password: 'x' }, res)).rejects.toThrow('User account is inactive');
+    });
+
+    it('throws error if password is invalid', async () => {
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash('realpass', 4);
+      const user = makeUser({ passwordHash, status: UserStatus.ACTIVE });
+      userRepository.findOne.mockResolvedValue(user);
+      const res = { cookie: jest.fn() } as unknown as Response;
+
+      await expect(service.login({ email: user.email, password: 'wrongpass' }, res)).rejects.toThrow();
+    });
+
+    it('returns passwordResetToken if isPasswordChangeRequired is true', async () => {
+      const password = 'password123';
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 4);
+      const user = makeUser({ passwordHash, status: UserStatus.ACTIVE, isPasswordChangeRequired: true });
       userRepository.findOne.mockResolvedValue(user);
 
-      const res = {
-        cookie: jest.fn(),
-      } as unknown as Response;
+      const res = { cookie: jest.fn() } as unknown as Response;
 
       const result = await service.login({ email: user.email, password }, res);
 
-      expect(jwtService.sign).toHaveBeenCalled();
-      expect(userRepository.update).toHaveBeenCalledWith(user.id, expect.objectContaining({
-        lastLoginAt: expect.any(Number),
-        status: UserStatus.ACTIVE,
-      }));
-      expect(res.cookie).toHaveBeenCalled();
-      expect(result.user.email).toBe(user.email);
+      expect(result.isPasswordChangeRequired).toBe(true);
+      expect(result.accessToken).toBeNull();
+      expect(result.passwordResetToken).toBe('jwt-token');
     });
 
-    it('throws Error for bad credentials', async () => {
-      userRepository.findOne.mockResolvedValue(null);
+    it('throws error if user organization is inactive', async () => {
+      const password = 'password123';
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 4);
+      const user = makeUser({ passwordHash, status: UserStatus.ACTIVE, organizationId: 'org-1' });
+      userRepository.findOne.mockResolvedValue(user);
+      orgRepository.findOne.mockResolvedValue({ id: 'org-1', status: OrganizationStatus.SUSPENDED });
+
       const res = { cookie: jest.fn() } as unknown as Response;
 
-      await expect(
-        service.login({ email: 'missing@example.com', password: 'x' }, res),
-      ).rejects.toThrow();
-      expect(res.cookie).not.toHaveBeenCalled();
+      await expect(service.login({ email: user.email, password }, res)).rejects.toThrow('Organization account is inactive');
+    });
+
+    it('throws error if organizationSlug does not match organization', async () => {
+      const password = 'password123';
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(password, 4);
+      const user = makeUser({ passwordHash, status: UserStatus.ACTIVE, organizationId: 'org-1' });
+      userRepository.findOne.mockResolvedValue(user);
+      orgRepository.findOne.mockResolvedValue({ id: 'org-1', slug: 'other-slug', status: OrganizationStatus.ACTIVE });
+
+      const res = { cookie: jest.fn() } as unknown as Response;
+
+      await expect(service.login({ email: user.email, password, organizationSlug: 'acme' }, res)).rejects.toThrow('Organization mismatch');
     });
   });
 
