@@ -361,11 +361,8 @@ export default function UsersPage() {
                 {/* Modal: Invite Team Member */}
                 {isInviteOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role */}
                         <div
                             className="bg-zinc-900 border border-zinc-850 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5"
-                            role="dialog"
-                            aria-modal="true"
                         >
                             <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
                                 <div>
