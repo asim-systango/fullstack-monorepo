@@ -30,6 +30,7 @@ export type StockMovement = {
     sku: string;
     name: string;
     unit: string;
+    imageUrl?: string;
   };
   user?: {
     id: string;
