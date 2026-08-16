@@ -16,7 +16,7 @@ export function RoleGuard({
     children,
     allowedRoles,
     fallbackUrl = '/dashboard',
-}: RoleGuardProps) {
+}: Readonly<RoleGuardProps>) {
     const { user, isAuthenticated, loading } = useAuth();
 
     if (loading) {
@@ -42,7 +42,7 @@ export function RoleGuard({
                         <div className="text-3xl">🔒</div>
                         <CardTitle className="text-lg font-bold text-white">Access Denied</CardTitle>
                         <CardDescription className="text-xs text-zinc-400">
-                            You don't have permission to access this page.
+                            You don&apos;t have permission to access this page.
                         </CardDescription>
                     </CardHeader>
                     <CardBody className="p-0 space-y-4">

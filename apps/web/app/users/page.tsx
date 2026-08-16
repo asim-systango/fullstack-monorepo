@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type SyntheticEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Alert,
@@ -8,9 +8,6 @@ import {
     Button,
     Card,
     CardBody,
-    CardDescription,
-    CardHeader,
-    CardTitle,
     Table,
     TableBody,
     TableCell,
@@ -27,7 +24,7 @@ import { usersApi, type UserResult } from '@/lib/api';
 
 export default function UsersPage() {
     const router = useRouter();
-    const { isAuthenticated, user, organization, loading: authLoading } = useAuth();
+    const { isAuthenticated, user, loading: authLoading } = useAuth();
 
     // Search & Filter State
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +94,7 @@ export default function UsersPage() {
         }
     }, [isAuthenticated, fetchUsers]);
 
-    const handleInviteSubmit = async (e: React.FormEvent) => {
+    const handleInviteSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!inviteFirstName || !inviteLastName || !inviteEmail || !inviteRole) {
             setInviteError('Please fill out all fields.');
@@ -128,8 +125,9 @@ export default function UsersPage() {
 
             // Refresh list
             void fetchUsers();
-        } catch (error: any) {
-            setInviteError(error?.response?.data?.message || error?.message || 'Failed to invite user.');
+        } catch (error: unknown) {
+            const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+            setInviteError(apiError?.response?.data?.message || apiError?.message || 'Failed to invite user.');
         } finally {
             setInviteSubmitting(false);
         }
@@ -140,9 +138,7 @@ export default function UsersPage() {
 
     // Set default invite role when modal opens
     const openInviteModal = () => {
-        if (user?.role === UserRole.SALES_LEAD) {
-            setInviteRole(UserRole.SALES_REP);
-        } else if (user?.role === UserRole.ORG_ADMIN) {
+        if (user?.role === UserRole.SALES_LEAD || user?.role === UserRole.ORG_ADMIN) {
             setInviteRole(UserRole.SALES_REP);
         }
         setInviteError(null);
@@ -178,6 +174,68 @@ export default function UsersPage() {
             + Invite Team Member
         </Button>
     ) : undefined;
+
+    const renderTableBody = () => {
+        if (loading) {
+            return (
+                <TableRow>
+                    <TableCell
+                        colSpan={user?.role === UserRole.SUPER_ADMIN ? 7 : 6}
+                        className="text-center py-8 text-zinc-500 text-xs"
+                    >
+                        Loading users list...
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
+        if (usersList.length === 0) {
+            return (
+                <TableRow>
+                    <TableCell
+                        colSpan={user?.role === UserRole.SUPER_ADMIN ? 7 : 6}
+                        className="text-center py-8 text-zinc-500 text-xs"
+                    >
+                        No users found.
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
+        return (
+            <>
+                {usersList.map((usr) => (
+                    <TableRow key={usr.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/20 transition-all">
+                        <TableCell className="py-3.5 px-5 text-white font-medium text-xs">
+                            {usr.firstName} {usr.lastName}
+                        </TableCell>
+                        <TableCell className="py-3.5 px-5 text-zinc-300 text-xs">{usr.email}</TableCell>
+                        <TableCell className="py-3.5 px-5 text-xs">
+                            <Badge tone={getRoleBadgeTone(usr.roleName)}>
+                                {usr.roleName || 'Member'}
+                            </Badge>
+                        </TableCell>
+                        {user?.role === UserRole.SUPER_ADMIN && (
+                            <TableCell className="py-3.5 px-5 text-zinc-300 text-xs">
+                                {usr.organizationName || <span className="text-zinc-500 italic">None (Platform Hub)</span>}
+                            </TableCell>
+                        )}
+                        <TableCell className="py-3.5 px-5 text-xs">
+                            <Badge tone={getStatusBadgeTone(usr.status)}>
+                                {usr.status}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="py-3.5 px-5 text-zinc-450 text-xs">
+                            {usr.lastLoginAt ? new Date(usr.lastLoginAt).toLocaleString() : <span className="text-zinc-650">Never</span>}
+                        </TableCell>
+                        <TableCell className="py-3.5 px-5 text-zinc-450 text-xs">
+                            {new Date(usr.createdAt).toLocaleDateString()}
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </>
+        );
+    };
 
     return (
         <RoleGuard allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SALES_LEAD]}>
@@ -264,55 +322,7 @@ export default function UsersPage() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {loading ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={user?.role === UserRole.SUPER_ADMIN ? 7 : 6}
-                                                className="text-center py-8 text-zinc-500 text-xs"
-                                            >
-                                                Loading users list...
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : usersList.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={user?.role === UserRole.SUPER_ADMIN ? 7 : 6}
-                                                className="text-center py-8 text-zinc-500 text-xs"
-                                            >
-                                                No users found.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        usersList.map((usr) => (
-                                            <TableRow key={usr.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/20 transition-all">
-                                                <TableCell className="py-3.5 px-5 text-white font-medium text-xs">
-                                                    {usr.firstName} {usr.lastName}
-                                                </TableCell>
-                                                <TableCell className="py-3.5 px-5 text-zinc-300 text-xs">{usr.email}</TableCell>
-                                                <TableCell className="py-3.5 px-5 text-xs">
-                                                    <Badge tone={getRoleBadgeTone(usr.roleName)}>
-                                                        {usr.roleName || 'Member'}
-                                                    </Badge>
-                                                </TableCell>
-                                                {user?.role === UserRole.SUPER_ADMIN && (
-                                                    <TableCell className="py-3.5 px-5 text-zinc-300 text-xs">
-                                                        {usr.organizationName || <span className="text-zinc-500 italic">None (Platform Hub)</span>}
-                                                    </TableCell>
-                                                )}
-                                                <TableCell className="py-3.5 px-5 text-xs">
-                                                    <Badge tone={getStatusBadgeTone(usr.status)}>
-                                                        {usr.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="py-3.5 px-5 text-zinc-450 text-xs">
-                                                    {usr.lastLoginAt ? new Date(usr.lastLoginAt).toLocaleString() : <span className="text-zinc-600">Never</span>}
-                                                </TableCell>
-                                                <TableCell className="py-3.5 px-5 text-zinc-450 text-xs">
-                                                    {new Date(usr.createdAt).toLocaleDateString()}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
+                                    {renderTableBody()}
                                 </TableBody>
                             </Table>
                         </div>
