@@ -112,19 +112,19 @@ export default function ChangePasswordPage() {
   if (cooldownSec > 0) resendLabel = `Resend in ${cooldownSec}s`;
   else if (requestOtp.isPending && step === 'otp') resendLabel = 'Sending…';
 
+  let description =
+    'Choose a new password. We will email a verification code, then you will log in again.';
+  if (step === 'otp') {
+    description =
+      'Enter the 6-digit code we sent to your email, then you will be asked to log in again.';
+  } else if (forced) {
+    description = 'Set a new password. We will email a verification code before it is saved.';
+  }
+
   return (
     <div className="member-content">
       <div className="max-w-md">
-        <PageHeader
-          title="Change password"
-          description={
-            step === 'otp'
-              ? 'Enter the 6-digit code we sent to your email, then you will be asked to log in again.'
-              : forced
-                ? 'Set a new password. We will email a verification code before it is saved.'
-                : 'Choose a new password. We will email a verification code, then you will log in again.'
-          }
-        />
+        <PageHeader title="Change password" description={description} />
         <Form pending={busy} onSubmit={onSubmit}>
           <Field
             label="Current password"
