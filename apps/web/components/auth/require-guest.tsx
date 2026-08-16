@@ -17,13 +17,17 @@ export function RequireGuest({
 }: Readonly<{ children: ReactNode }>): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
+      if (user?.mustChangePassword) {
+        router.replace(ROUTES.changePassword);
+        return;
+      }
       router.replace(getSafeNextPath(searchParams.get('next'), ROUTES.dashboard));
     }
-  }, [isAuthenticated, isLoading, router, searchParams]);
+  }, [isAuthenticated, isLoading, user, router, searchParams]);
 
   if (isLoading) {
     return (

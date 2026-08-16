@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { z } from 'zod';
 import { Button, Field, Form, StatusMessage, TextInput } from '@shared/ui/components';
 import { useAuth, useAuthForm } from '@/components/auth';
-import { RequireMember } from '@/components/member';
+import { MemberContent, MemberPageHeader, RequireMember } from '@/components/member';
 import { useUpdateMe } from '@/lib/auth/hooks';
 import { ROUTES } from '@/lib/auth/routes';
 
@@ -47,22 +47,45 @@ function ProfileContent() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
-      <header className="member-enter">
-        <h1 className="m-0 text-2xl font-semibold tracking-tight text-[color:var(--bookly-navy)]">
-          Profile
-        </h1>
-        <p className="mt-2 mb-0 text-[color:var(--bookly-muted)]">
-          Update the name and email on your Bookly account.
+    <MemberContent className="space-y-6">
+      <MemberPageHeader
+        title="Profile"
+        description="Your Bookly account details. Name and email can be updated below."
+      />
+
+      <section className="member-card member-enter p-5">
+        <p className="m-0 text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--bookly-muted)]">
+          Account
         </p>
-      </header>
+        <dl className="mt-3 mb-0 grid gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm text-[color:var(--bookly-muted)]">Name</dt>
+            <dd className="m-0 font-medium text-[color:var(--bookly-navy)]">
+              {user?.name ?? '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-[color:var(--bookly-muted)]">Email</dt>
+            <dd className="m-0 font-medium text-[color:var(--bookly-navy)]">
+              {user?.email ?? '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-[color:var(--bookly-muted)]">Role</dt>
+            <dd className="m-0 font-medium text-[color:var(--bookly-navy)]">Member</dd>
+          </div>
+        </dl>
+      </section>
 
       <Form
         pending={pending}
         onSubmit={onSubmit}
-        className="member-card member-enter space-y-4 p-5"
+        className="member-card member-enter max-w-xl p-5"
         style={{ '--member-stagger': 1 } as CSSProperties}
       >
+        <h2 className="m-0 text-lg font-semibold text-[color:var(--bookly-navy)]">
+          Edit details
+        </h2>
         <Field
           label="Name"
           htmlFor="profile-name"
@@ -105,14 +128,11 @@ function ProfileContent() {
 
       <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
         Need a new password?{' '}
-        <Link
-          href={ROUTES.changePassword}
-          className="font-medium text-[color:var(--bookly-navy)]"
-        >
+        <Link href={ROUTES.changePassword} className="member-inline-link">
           Change password
         </Link>
       </p>
-    </div>
+    </MemberContent>
   );
 }
 

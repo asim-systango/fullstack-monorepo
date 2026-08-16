@@ -1,5 +1,6 @@
 import type { Book } from '@shared/types';
 import { BookCover } from '@/components/member';
+import { CopyBarcodes } from './copy-barcodes';
 
 export function StaffBookCard({ book }: Readonly<{ book: Book }>) {
   return (
@@ -12,8 +13,9 @@ export function StaffBookCard({ book }: Readonly<{ book: Book }>) {
         <p className="m-0 truncate text-sm text-[color:var(--bookly-muted)]">
           {book.author}
         </p>
+        <CopyBarcodes bookId={book.id} />
         <p className="m-0 mt-1 font-mono text-xs text-[color:var(--bookly-muted)]">
-          {book.isbn}
+          ISBN {book.isbn}
           {book.publishedYear ? ` · ${book.publishedYear}` : ''}
         </p>
       </div>

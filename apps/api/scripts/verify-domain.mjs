@@ -67,7 +67,7 @@ async function main() {
   check('GET settings', r.status === 200 && r.body?.data?.length >= 3);
 
   r = await api('GET', '/settings/max_active_loans', admin);
-  check('GET setting key', r.status === 200 && r.body?.data?.value === '5');
+  check('GET setting key', r.status === 200 && r.body?.data?.value === '2');
 
   r = await api('GET', '/dashboard/member', user);
   check('dashboard member', r.status === 200);
@@ -76,7 +76,7 @@ async function main() {
   check('dashboard librarian', r.status === 200 && r.body?.data?.totalBooks >= 4);
 
   r = await api('GET', '/dashboard/admin', admin);
-  check('dashboard admin', r.status === 200 && r.body?.data?.maxActiveLoans === 5);
+  check('dashboard admin', r.status === 200 && r.body?.data?.maxActiveLoans === 2);
 
   r = await api('GET', '/my/loans?status=active', user);
   check('my loans', r.status === 200);
@@ -303,7 +303,12 @@ async function main() {
     bookCopyId: limitSecond?.id || limitFirst?.id,
   });
   check('loan limit 400', limitHit.status === 400, `status=${limitHit.status}`);
-  await api('PATCH', '/settings/max_active_loans', admin, { value: '5' });
+  check(
+    'loan limit message',
+    JSON.stringify(limitHit.body ?? {}).includes('Borrowing limit reached'),
+    `body=${JSON.stringify(limitHit.body)}`,
+  );
+  await api('PATCH', '/settings/max_active_loans', admin, { value: '2' });
 
   const resLoan = await api('POST', '/reservations', user2, { bookId: ddd.id });
   check('reserve while holding 400', resLoan.status === 400, `status=${resLoan.status}`);

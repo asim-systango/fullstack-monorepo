@@ -5,6 +5,8 @@ import dataSource from './data-source';
 import { Book } from '../modules/books/book.entity';
 import { BookCopy } from '../modules/books/book-copy.entity';
 import { BookCopyStatus } from '../modules/books/enums/book-copy-status.enum';
+import { CheckoutRequest } from '../modules/checkout-requests/checkout-request.entity';
+import { CheckoutRequestStatus } from '../modules/checkout-requests/enums/checkout-request-status.enum';
 import { Fine } from '../modules/fines/fine.entity';
 import { FineStatus } from '../modules/fines/enums/fine-status.enum';
 import { Loan } from '../modules/loans/loan.entity';
@@ -36,118 +38,62 @@ type SeedBook = {
 
 const SEED_BOOKS: SeedBook[] = [
   {
-    title: 'The Pragmatic Programmer',
-    author: 'Andrew Hunt & David Thomas',
-    isbn: '9780135957059',
+    title: "Build, Don't Talk",
+    author: 'Raj Shamani',
+    isbn: '9780143465874',
     description:
-      'Your journey to mastery — timeless tips for writing flexible, maintainable software with craft and care.',
-    publishedYear: 2019,
+      "Build, Don't Talk is a practical guide to personal growth, career development, and building a successful life. Raj Shamani shares lessons on taking action instead of just talking about goals, developing the right mindset, improving communication, building relationships, handling money, and creating opportunities. The book focuses on practical lessons that can be applied in everyday life, especially for young people who want to grow personally and professionally.",
+    publishedYear: 2024,
     copies: [
       {
-        barcode: 'BKLY-0001',
+        barcode: 'BKLY-0023',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-01-10',
-      },
-      { barcode: 'BKLY-0002', status: BookCopyStatus.OnLoan, acquiredAt: '2024-01-10' },
-    ],
-  },
-  {
-    title: 'Clean Code',
-    author: 'Robert C. Martin',
-    isbn: '9780132350884',
-    description:
-      'A handbook of agile software craftsmanship — naming, functions, classes, and the discipline of clean design.',
-    publishedYear: 2008,
-    copies: [
-      {
-        barcode: 'BKLY-0003',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-02-01',
+        acquiredAt: '2025-01-15',
       },
       {
-        barcode: 'BKLY-0004',
+        barcode: 'BKLY-0024',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-02-01',
+        acquiredAt: '2025-01-15',
       },
     ],
   },
   {
-    title: 'Designing Data-Intensive Applications',
-    author: 'Martin Kleppmann',
-    isbn: '9781449373320',
+    title: 'The Alchemist',
+    author: 'Paulo Coelho',
+    isbn: '9780062315007',
     description:
-      'The big ideas behind reliable, scalable, and maintainable data systems — storage, encoding, and distributed truth.',
-    publishedYear: 2017,
+      'The Alchemist is an inspiring story about following your dreams and discovering your true purpose in life. It follows Santiago, a young shepherd who decides to pursue a recurring dream that leads him on a journey across different places. Along the way, he learns about courage, faith, perseverance, love, and the importance of listening to your heart. The book encourages readers to believe in their dreams and have the courage to pursue what they truly want.',
+    publishedYear: 1993,
     copies: [
       {
-        barcode: 'BKLY-0005',
+        barcode: 'BKLY-0025',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-03-15',
+        acquiredAt: '2025-01-15',
       },
-      { barcode: 'BKLY-0006', status: BookCopyStatus.Lost, acquiredAt: '2024-03-15' },
-    ],
-  },
-  {
-    title: 'Domain-Driven Design',
-    author: 'Eric Evans',
-    isbn: '9780321125217',
-    description:
-      'Tackling complexity in the heart of software with ubiquitous language, bounded contexts, and rich domain models.',
-    publishedYear: 2003,
-    copies: [
-      { barcode: 'BKLY-0007', status: BookCopyStatus.OnLoan, acquiredAt: '2024-04-20' },
-      { barcode: 'BKLY-0008', status: BookCopyStatus.OnLoan, acquiredAt: '2024-04-20' },
-    ],
-  },
-  {
-    title: 'Refactoring',
-    author: 'Martin Fowler',
-    isbn: '9780134757599',
-    description:
-      'Improving the design of existing code with a catalog of refactorings and a disciplined, test-backed approach.',
-    publishedYear: 2018,
-    copies: [
-      { barcode: 'BKLY-0009', status: BookCopyStatus.OnLoan, acquiredAt: '2024-05-01' },
       {
-        barcode: 'BKLY-0010',
+        barcode: 'BKLY-0026',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-05-01',
+        acquiredAt: '2025-01-15',
       },
     ],
   },
   {
-    title: 'Staff Engineer',
-    author: 'Will Larson',
-    isbn: '9781736417904',
+    title: 'Zero to One',
+    author: 'Peter Thiel with Blake Masters',
+    isbn: '9780804139298',
     description:
-      'Leadership beyond the management track — scope, influence, and how senior ICs create leverage.',
-    publishedYear: 2021,
-    copies: [
-      { barcode: 'BKLY-0011', status: BookCopyStatus.OnLoan, acquiredAt: '2024-06-12' },
-      {
-        barcode: 'BKLY-0012',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-06-12',
-      },
-    ],
-  },
-  {
-    title: 'The Design of Everyday Things',
-    author: 'Don Norman',
-    isbn: '9780465050659',
-    description:
-      'How good design makes products understandable — affordances, feedback, and human-centered thinking.',
-    publishedYear: 2013,
+      'Zero to One is a book about startups, innovation, entrepreneurship, and building the future. Peter Thiel explains how successful companies create something genuinely new instead of simply copying what already exists. The book explores ideas such as innovation, competition, monopoly, technology, business strategy, and the importance of thinking independently. It encourages entrepreneurs to focus on creating unique value and moving from zero to one by bringing something new into the world.',
+    publishedYear: 2014,
     copies: [
       {
-        barcode: 'BKLY-0013',
+        barcode: 'BKLY-0027',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-07-08',
+        acquiredAt: '2025-01-15',
       },
       {
-        barcode: 'BKLY-0014',
+        barcode: 'BKLY-0028',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-07-08',
+        acquiredAt: '2025-01-15',
       },
     ],
   },
@@ -156,7 +102,7 @@ const SEED_BOOKS: SeedBook[] = [
     author: 'James Clear',
     isbn: '9780735211292',
     description:
-      'Tiny changes, remarkable results — building systems of habit that compound over time.',
+      'Atomic Habits explains how small, consistent changes can lead to remarkable results over time. James Clear presents a practical framework for building good habits, breaking bad ones, and creating an environment that supports positive behavior. The book focuses on concepts such as identity-based habits, habit stacking, making good habits easy and rewarding, and understanding the systems behind our daily actions. It shows that meaningful transformation does not require drastic changes—small improvements, repeated consistently, can create significant long-term results.',
     publishedYear: 2018,
     copies: [
       {
@@ -164,52 +110,10 @@ const SEED_BOOKS: SeedBook[] = [
         status: BookCopyStatus.Available,
         acquiredAt: '2024-08-01',
       },
-      { barcode: 'BKLY-0016', status: BookCopyStatus.OnLoan, acquiredAt: '2024-08-01' },
-    ],
-  },
-  {
-    title: 'Thinking in Systems',
-    author: 'Donella H. Meadows',
-    isbn: '9781603580557',
-    description: null,
-    publishedYear: 2008,
-    copies: [
       {
-        barcode: 'BKLY-0017',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-09-01',
-      },
-    ],
-  },
-  {
-    title: 'The Midnight Library',
-    author: 'Matt Haig',
-    isbn: '9780525559474',
-    description:
-      'Between life and death there is a library — and within it, infinite lives Nora Seed could have lived.',
-    publishedYear: 2020,
-    copies: [
-      { barcode: 'BKLY-0018', status: BookCopyStatus.OnLoan, acquiredAt: '2024-10-01' },
-      { barcode: 'BKLY-0019', status: BookCopyStatus.OnLoan, acquiredAt: '2024-10-01' },
-    ],
-  },
-  {
-    title: 'Project Hail Mary',
-    author: 'Andy Weir',
-    isbn: '9780593135204',
-    description:
-      'A lone astronaut. An impossible mission. Science, friendship, and one last chance to save Earth.',
-    publishedYear: 2021,
-    copies: [
-      {
-        barcode: 'BKLY-0020',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-11-01',
-      },
-      {
-        barcode: 'BKLY-0021',
-        status: BookCopyStatus.Available,
-        acquiredAt: '2024-11-01',
+        barcode: 'BKLY-0016',
+        status: BookCopyStatus.OnLoan,
+        acquiredAt: '2024-08-01',
       },
     ],
   },
@@ -218,13 +122,43 @@ const SEED_BOOKS: SeedBook[] = [
     author: 'Tara Westover',
     isbn: '9780399590504',
     description:
-      'A memoir of leaving a survivalist upbringing and discovering education as a path to selfhood.',
+      'Educated is a memoir about growing up in a strict, isolated household and later pursuing an education that transformed the author’s life. Tara Westover describes her childhood, family dynamics, struggle for knowledge, and the difficult choice between loyalty and independence. The book explores identity, memory, family, resilience, and the power of education to open new possibilities.',
     publishedYear: 2018,
     copies: [
       {
-        barcode: 'BKLY-0022',
+        barcode: 'BKLY-0030',
         status: BookCopyStatus.Available,
-        acquiredAt: '2024-12-01',
+        acquiredAt: '2024-09-01',
+      },
+    ],
+  },
+  {
+    title: 'Clean Code',
+    author: 'Robert C. Martin',
+    isbn: '9780132350884',
+    description:
+      'Clean Code is a practical guide to writing software that is readable, maintainable, and easier to change. Robert C. Martin explains naming, functions, comments, formatting, error handling, and testing through examples. The book focuses on professional craftsmanship and the habits that keep a codebase healthy over time.',
+    publishedYear: 2008,
+    copies: [
+      {
+        barcode: 'BKLY-0031',
+        status: BookCopyStatus.Available,
+        acquiredAt: '2024-09-01',
+      },
+    ],
+  },
+  {
+    title: 'The Design of Everyday Things',
+    author: 'Don Norman',
+    isbn: '9780465050659',
+    description:
+      'The Design of Everyday Things explains why some products feel obvious to use and others cause constant frustration. Don Norman introduces affordances, signifiers, feedback, and human-centered design. The book shows how good design matches how people actually think and behave.',
+    publishedYear: 2013,
+    copies: [
+      {
+        barcode: 'BKLY-0032',
+        status: BookCopyStatus.Available,
+        acquiredAt: '2024-09-01',
       },
     ],
   },
@@ -245,6 +179,7 @@ async function seed() {
   const loans = dataSource.getRepository(Loan);
   const reservations = dataSource.getRepository(Reservation);
   const fines = dataSource.getRepository(Fine);
+  const checkoutRequests = dataSource.getRepository(CheckoutRequest);
   const settings = dataSource.getRepository(AppSetting);
 
   const passwordHash = await bcrypt.hash('password123', 12);
@@ -330,6 +265,7 @@ async function seed() {
   for (const row of SEED_BOOKS) {
     let book = await books.findOne({
       where: { isbn: row.isbn },
+      withDeleted: true,
     });
 
     if (!book) {
@@ -345,6 +281,10 @@ async function seed() {
       );
       booksCreated += 1;
     } else {
+      if (book.deletedAt) {
+        await books.recover(book);
+        book.deletedAt = null;
+      }
       book.title = row.title;
       book.author = row.author;
       book.description = row.description;
@@ -380,6 +320,14 @@ async function seed() {
         }),
       );
       copiesCreated += 1;
+    }
+  }
+
+  const keepIsbns = new Set(SEED_BOOKS.map((row) => row.isbn));
+  const extras = await books.find();
+  for (const extra of extras) {
+    if (!keepIsbns.has(extra.isbn)) {
+      await books.softRemove(extra);
     }
   }
 
@@ -578,65 +526,99 @@ async function seed() {
     );
   };
 
-  // --- Primary member (user@demo.local) — full UI coverage ---
-  // Healthy loan
-  await ensureActiveLoan({
+  const resetMemberActivity = async (userId: string) => {
+    await checkoutRequests.delete({ userId });
+    await fines.delete({ userId });
+    await reservations.delete({ userId });
+    const memberLoans = await loans.find({ where: { userId } });
+    for (const loan of memberLoans) {
+      await loans.delete({ id: loan.id });
+    }
+  };
+
+  const ensureFulfilledRequest = async (loan: Loan) => {
+    const existing = await checkoutRequests.findOne({ where: { loanId: loan.id } });
+    if (existing) return existing;
+    return checkoutRequests.save(
+      checkoutRequests.create({
+        userId: loan.userId,
+        bookId: loan.bookId,
+        status: CheckoutRequestStatus.Fulfilled,
+        loanId: loan.id,
+        bookCopyId: loan.bookCopyId,
+        issuedBy: SEED_STAFF_USER_ID,
+        fulfilledAt: loan.borrowedAt,
+      }),
+    );
+  };
+
+  const ensurePendingRequest = async (userId: string, bookId: string) => {
+    const existing = await checkoutRequests.findOne({
+      where: { userId, bookId, status: CheckoutRequestStatus.Pending },
+    });
+    if (existing) return existing;
+    return checkoutRequests.save(
+      checkoutRequests.create({
+        userId,
+        bookId,
+        status: CheckoutRequestStatus.Pending,
+      }),
+    );
+  };
+
+  // --- Primary member (user@demo.local) — one coherent story across pages ---
+  await resetMemberActivity(SEED_MEMBER_USER_ID);
+
+  const healthyLoan = await ensureActiveLoan({
     userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0002',
+    barcode: 'BKLY-0024',
     dueDate: daysAgoIso(-10),
     borrowedDaysAgo: 4,
   });
-  // Due soon
-  await ensureActiveLoan({
+  const dueSoonLoan = await ensureActiveLoan({
     userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0009',
+    barcode: 'BKLY-0026',
     dueDate: daysAgoIso(-2),
     borrowedDaysAgo: 12,
   });
-  // Overdue active
-  await ensureActiveLoan({
+  const overdueLoan = await ensureActiveLoan({
     userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0011',
+    barcode: 'BKLY-0028',
     dueDate: daysAgoIso(4),
     borrowedDaysAgo: 18,
   });
 
-  // Returned loans for history + fines
-  const returnedUnpaid = await ensureReturnedLoan({
-    userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0003',
-    dueDate: daysAgoIso(10),
-    borrowedDaysAgo: 25,
-    returnedDaysAgo: 5,
+  await ensureFulfilledRequest(healthyLoan);
+  await ensureFulfilledRequest(dueSoonLoan);
+  await ensureFulfilledRequest(overdueLoan);
+
+  await ensureFine({
+    loan: overdueLoan,
+    daysOverdue: 4,
+    amountCents: 200,
+    status: FineStatus.Unpaid,
   });
+
   const returnedPaid = await ensureReturnedLoan({
     userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0014',
+    barcode: 'BKLY-0031',
     dueDate: daysAgoIso(20),
     borrowedDaysAgo: 40,
     returnedDaysAgo: 12,
   });
   const returnedWaived = await ensureReturnedLoan({
     userId: SEED_MEMBER_USER_ID,
-    barcode: 'BKLY-0022',
+    barcode: 'BKLY-0030',
     dueDate: daysAgoIso(15),
     borrowedDaysAgo: 30,
     returnedDaysAgo: 8,
   });
 
-  if (returnedUnpaid.returnedAt) {
-    await ensureFine({
-      loan: returnedUnpaid,
-      daysOverdue: 5,
-      amountCents: 2500,
-      status: FineStatus.Unpaid,
-    });
-  }
   if (returnedPaid.returnedAt) {
     await ensureFine({
       loan: returnedPaid,
       daysOverdue: 3,
-      amountCents: 1500,
+      amountCents: 150,
       status: FineStatus.Paid,
     });
   }
@@ -644,36 +626,23 @@ async function seed() {
     await ensureFine({
       loan: returnedWaived,
       daysOverdue: 2,
-      amountCents: 1000,
+      amountCents: 100,
       status: FineStatus.Waived,
       waivedReason: 'First-time courtesy waiver',
     });
   }
 
-  // --- Other members hold DDD + Midnight Library so primary member can reserve ---
+  const design = bookByIsbn.get('9780465050659');
+  if (design) {
+    await ensurePendingRequest(SEED_MEMBER_USER_ID, design.id);
+  }
+
+  // --- Other members hold Atomic Habits so primary member can reserve ---
   await ensureActiveLoan({
     userId: SEED_MEMBER2_USER_ID,
-    barcode: 'BKLY-0007',
-    dueDate: daysAgoIso(3),
-    borrowedDaysAgo: 20,
-  });
-  await ensureActiveLoan({
-    userId: SEED_MEMBER2_USER_ID,
-    barcode: 'BKLY-0008',
+    barcode: 'BKLY-0015',
     dueDate: daysAgoIso(-5),
     borrowedDaysAgo: 5,
-  });
-  await ensureActiveLoan({
-    userId: SEED_MEMBER3_USER_ID,
-    barcode: 'BKLY-0018',
-    dueDate: daysAgoIso(-6),
-    borrowedDaysAgo: 8,
-  });
-  await ensureActiveLoan({
-    userId: SEED_MEMBER2_USER_ID,
-    barcode: 'BKLY-0019',
-    dueDate: daysAgoIso(-1),
-    borrowedDaysAgo: 13,
   });
   await ensureActiveLoan({
     userId: SEED_MEMBER3_USER_ID,
@@ -682,28 +651,18 @@ async function seed() {
     borrowedDaysAgo: 5,
   });
 
-  await ensureReturnedLoan({
-    userId: SEED_MEMBER2_USER_ID,
-    barcode: 'BKLY-0004',
-    dueDate: daysAgoIso(2),
-    borrowedDaysAgo: 16,
-    returnedDaysAgo: 1,
-  });
-
   for (const barcode of [
-    'BKLY-0003',
-    'BKLY-0004',
-    'BKLY-0013',
     'BKLY-0015',
-    'BKLY-0010',
-    'BKLY-0012',
-    'BKLY-0014',
-    'BKLY-0017',
-    'BKLY-0020',
-    'BKLY-0021',
-    'BKLY-0022',
-    'BKLY-0001',
-    'BKLY-0005',
+    'BKLY-0016',
+    'BKLY-0023',
+    'BKLY-0024',
+    'BKLY-0025',
+    'BKLY-0026',
+    'BKLY-0027',
+    'BKLY-0028',
+    'BKLY-0030',
+    'BKLY-0031',
+    'BKLY-0032',
   ]) {
     const copy = await copyByBarcode(barcode);
     const active = await loans
@@ -724,29 +683,11 @@ async function seed() {
     }
   }
 
-  const ddd = bookByIsbn.get('9780321125217');
-  const midnight = bookByIsbn.get('9780525559474');
-  if (ddd) {
+  const atomic = bookByIsbn.get('9780735211292');
+  if (atomic) {
     await ensureReservation({
       userId: SEED_MEMBER_USER_ID,
-      bookId: ddd.id,
-      queuePosition: 1,
-    });
-    await ensureReservation({
-      userId: SEED_MEMBER3_USER_ID,
-      bookId: ddd.id,
-      queuePosition: 2,
-    });
-  }
-  if (midnight) {
-    await ensureReservation({
-      userId: SEED_MEMBER_USER_ID,
-      bookId: midnight.id,
-      queuePosition: 2,
-    });
-    await ensureReservation({
-      userId: SEED_MEMBER3_USER_ID,
-      bookId: midnight.id,
+      bookId: atomic.id,
       queuePosition: 1,
     });
   }
@@ -777,9 +718,10 @@ async function seed() {
     booksCreated,
     copiesCreated,
     memberUiCoverage: {
-      activeLoans: 'healthy + due soon + overdue',
-      reservations: 'queue #1 and #2',
-      fines: 'unpaid + paid + waived',
+      activeLoans: 'healthy + due soon + overdue (same titles as issued requests)',
+      checkoutRequests: '1 pending + 3 issued',
+      reservations: 'Atomic Habits queue #1',
+      fines: 'overdue unpaid + Clean Code paid + Educated waived',
       catalog: `${SEED_BOOKS.length} titles with descriptions/authors/ISBN/year`,
     },
   });

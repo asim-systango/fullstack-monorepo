@@ -3,6 +3,7 @@ export * from './pagination';
 export * from './books';
 export * from './loans';
 export * from './reservations';
+export * from './checkout-requests';
 export * from './fines';
 export * from './members';
 export * from './settings';

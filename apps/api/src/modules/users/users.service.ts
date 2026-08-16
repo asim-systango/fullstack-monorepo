@@ -26,6 +26,7 @@ export class UsersService {
     name: string;
     role?: UserRole;
     emailVerifiedAt?: Date | null;
+    mustChangePassword?: boolean;
   }) {
     const user = this.users.create({
       email: input.email.toLowerCase(),
@@ -33,6 +34,7 @@ export class UsersService {
       name: input.name,
       role: input.role ?? 'user',
       emailVerifiedAt: input.emailVerifiedAt ?? null,
+      mustChangePassword: input.mustChangePassword ?? false,
       otpAttempts: 0,
     });
     return this.users.save(user);
@@ -57,10 +59,17 @@ export class UsersService {
     return this.users.save(user);
   }
 
-  async updatePasswordHash(id: string, passwordHash: string): Promise<User> {
+  async updatePasswordHash(
+    id: string,
+    passwordHash: string,
+    mustChangePassword?: boolean,
+  ): Promise<User> {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException('User not found');
     user.passwordHash = passwordHash;
+    if (mustChangePassword !== undefined) {
+      user.mustChangePassword = mustChangePassword;
+    }
     return this.users.save(user);
   }
 
@@ -72,6 +81,15 @@ export class UsersService {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException('User not found');
     user.role = role;
+    return this.users.save(user);
+  }
+
+  async promoteToStaff(id: string, passwordHash: string): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException('User not found');
+    user.role = 'staff';
+    user.passwordHash = passwordHash;
+    user.mustChangePassword = true;
     return this.users.save(user);
   }
 
@@ -101,6 +119,7 @@ export class UsersService {
       name: user.name,
       role: user.role,
       emailVerified: user.emailVerifiedAt != null,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 }

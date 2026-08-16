@@ -30,9 +30,9 @@ import { MembersService } from './members.service';
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
-  @Roles('admin')
+  @Roles('staff', 'admin')
   @Get()
-  @ApiOperation({ summary: 'List members (admin)' })
+  @ApiOperation({ summary: 'List members (staff, admin)' })
   @ApiOkResponse({ description: 'Paginated members with active-loan counts' })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
@@ -40,9 +40,9 @@ export class MembersController {
     return this.membersService.list(query);
   }
 
-  @Roles('staff')
+  @Roles('staff', 'admin')
   @Get('search')
-  @ApiOperation({ summary: 'Desk member search (staff)' })
+  @ApiOperation({ summary: 'Desk member search (staff, admin)' })
   @ApiOkResponse({ description: 'Name, id, active-loan count' })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()

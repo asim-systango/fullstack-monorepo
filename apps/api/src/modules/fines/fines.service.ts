@@ -1,17 +1,87 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
+import { calendarDaysOverdue, todayIsoDate } from '../../common/iso-date';
+import { Loan } from '../loans/loan.entity';
+import { SettingsService } from '../settings/settings.service';
 import type { ListFinesQueryDto } from './dto/list-fines-query.dto';
 import type { WaiveFineDto } from './dto/waive-fine.dto';
 import { FineStatus } from './enums/fine-status.enum';
 import { Fine } from './fine.entity';
+
+function isUniqueViolation(err: unknown): boolean {
+  if (!(err instanceof QueryFailedError)) return false;
+  const driverError = err.driverError as { code?: string } | undefined;
+  return driverError?.code === '23505';
+}
 
 @Injectable()
 export class FinesService {
   constructor(
     @InjectRepository(Fine)
     private readonly fines: Repository<Fine>,
+    @InjectRepository(Loan)
+    private readonly loans: Repository<Loan>,
+    private readonly settings: SettingsService,
   ) {}
+
+  /**
+   * Create or refresh unpaid fines for still-open overdue loans so
+   * outstanding totals match what members see on My Loans.
+   */
+  async accrueOverdueFines(userId?: string): Promise<void> {
+    const fineCentsPerDay = await this.settings.getFineCentsPerDay();
+    if (fineCentsPerDay <= 0) return;
+
+    const today = todayIsoDate();
+    const qb = this.loans
+      .createQueryBuilder('loan')
+      .leftJoinAndSelect('loan.fine', 'fine')
+      .where('loan.returned_at IS NULL')
+      .andWhere('loan.due_date < :today', { today });
+
+    if (userId) {
+      qb.andWhere('loan.user_id = :userId', { userId });
+    }
+
+    const overdueLoans = await qb.getMany();
+    const now = new Date();
+
+    for (const loan of overdueLoans) {
+      const daysOverdue = calendarDaysOverdue(loan.dueDate, now);
+      if (daysOverdue <= 0) continue;
+
+      const amountCents = daysOverdue * fineCentsPerDay;
+      const existing = loan.fine;
+
+      if (!existing) {
+        const fine = this.fines.create({
+          loanId: loan.id,
+          userId: loan.userId,
+          daysOverdue,
+          amountCents,
+          status: FineStatus.Unpaid,
+          paidAt: null,
+          markedPaidBy: null,
+        });
+        try {
+          await this.fines.save(fine);
+        } catch (err) {
+          if (!isUniqueViolation(err)) throw err;
+        }
+        continue;
+      }
+
+      if (existing.status !== FineStatus.Unpaid) continue;
+      if (existing.daysOverdue === daysOverdue && existing.amountCents === amountCents) {
+        continue;
+      }
+
+      existing.daysOverdue = daysOverdue;
+      existing.amountCents = amountCents;
+      await this.fines.save(existing);
+    }
+  }
 
   async list(query: ListFinesQueryDto): Promise<{
     items: Fine[];
@@ -19,10 +89,13 @@ export class FinesService {
     page: number;
     limit: number;
   }> {
+    await this.accrueOverdueFines(query.userId);
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const qb = this.fines
       .createQueryBuilder('fine')
+      .withDeleted()
       .leftJoinAndSelect('fine.loan', 'loan')
       .leftJoinAndSelect('loan.book', 'book');
 
@@ -38,6 +111,16 @@ export class FinesService {
       .take(limit);
 
     const [items, total] = await qb.getManyAndCount();
+    items.sort((a, b) => {
+      const rank = (status: FineStatus) => {
+        if (status === FineStatus.Unpaid) return 0;
+        if (status === FineStatus.Paid) return 1;
+        return 2;
+      };
+      const byStatus = rank(a.status) - rank(b.status);
+      if (byStatus !== 0) return byStatus;
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
     return { items, total, page, limit };
   }
 

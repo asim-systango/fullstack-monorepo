@@ -302,6 +302,21 @@
   gap: 1.2rem;
 }
 
+.auth-form-body .ui-form {
+  gap: 1.2rem;
+}
+
+.auth-form-body .ui-field {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.auth-form-body .ui-input,
+.auth-form-body .ui-select,
+.auth-form-body .ui-textarea {
+  width: 100%;
+}
+
 .auth-form-body .ui-field-label {
   font-weight: 500;
   color: color-mix(in srgb, var(--bookly-navy) 88%, var(--bookly-muted));

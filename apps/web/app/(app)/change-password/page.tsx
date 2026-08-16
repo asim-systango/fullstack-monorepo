@@ -1,23 +1,26 @@
 'use client';
 
 import { useState, type SyntheticEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button, Field, Form, PageHeader, StatusMessage } from '@shared/ui/components';
-import { PasswordField, useAuthForm } from '@/components/auth';
+import { PasswordField, useAuth, useAuthForm } from '@/components/auth';
 import { useChangePassword } from '@/lib/auth/hooks';
+import { ROUTES } from '@/lib/auth/routes';
 import { changePasswordSchema, PASSWORD_HINT } from '@/lib/validation/auth';
 
 export default function ChangePasswordPage() {
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const forced = Boolean(user?.mustChangePassword);
   const changePassword = useChangePassword();
   const { pending, error, fieldErrors, submit } = useAuthForm();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [success, setSuccess] = useState<string | null>(null);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSuccess(null);
-    const ok = await submit({
+    await submit({
       schema: changePasswordSchema,
       values: { currentPassword, newPassword, confirmPassword },
       onValid: async (values) => {
@@ -25,20 +28,27 @@ export default function ChangePasswordPage() {
           currentPassword: values.currentPassword,
           newPassword: values.newPassword,
         });
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setSuccess('Password updated.');
+        try {
+          await logout();
+        } catch {
+          /* session already cleared by the API */
+        }
+        router.replace(ROUTES.login);
+        router.refresh();
       },
     });
-    if (!ok) setSuccess(null);
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <PageHeader
+    <div className="member-content">
+      <div className="max-w-md">
+        <PageHeader
         title="Change password"
-        description="Choose a new password. You will stay signed in."
+        description={
+          forced
+            ? 'Set a new password, then sign in again with it to use BOOKLY.'
+            : 'Choose a new password. You will be signed out and asked to log in again.'
+        }
       />
       <Form pending={pending} onSubmit={onSubmit}>
         <Field
@@ -90,11 +100,11 @@ export default function ChangePasswordPage() {
           />
         </Field>
         {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-        {success ? <StatusMessage tone="success">{success}</StatusMessage> : null}
         <Button type="submit" loading={pending} loadingText="Saving…">
           Update password
         </Button>
       </Form>
+      </div>
     </div>
   );
 }

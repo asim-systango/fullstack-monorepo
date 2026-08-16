@@ -9,7 +9,9 @@ import {
   createLoansApi,
   createMembersApi,
   createReservationsApi,
+  createCheckoutRequestsApi,
   createSettingsApi,
+  createUsersApi,
 } from '@shared/api-client';
 import { resolveApiBaseUrl } from './api-base-url';
 import { GUEST_AUTH_PATHS, ROUTES } from './auth/routes';
@@ -36,8 +38,10 @@ export const booksApi = createBooksApi(apiClient);
 export const bookCopiesApi = createBookCopiesApi(apiClient);
 export const loansApi = createLoansApi(apiClient);
 export const reservationsApi = createReservationsApi(apiClient);
+export const checkoutRequestsApi = createCheckoutRequestsApi(apiClient);
 export const finesApi = createFinesApi(apiClient);
 export const membersApi = createMembersApi(apiClient);
 export const settingsApi = createSettingsApi(apiClient);
 export const dashboardApi = createDashboardApi(apiClient);
+export const usersApi = createUsersApi(apiClient);
 export const healthApi = createHealthApi(apiClient);

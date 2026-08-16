@@ -21,10 +21,14 @@ function useIsStaffOrAdmin() {
   return hasRole(user, LIBRARIAN_ROLES);
 }
 
-export function useBooks(params?: ListBooksParams) {
+export function useBooks(
+  params?: ListBooksParams,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.books.list(params),
-    queryFn: () => booksApi.list(params),
+    queryFn: ({ signal }) => booksApi.list(params, signal),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -36,8 +40,11 @@ export function useBook(id: string | undefined) {
   });
 }
 
-export function useDeletedBooks(params?: ListBooksParams) {
-  const enabled = useIsStaffOrAdmin();
+export function useDeletedBooks(
+  params?: ListBooksParams,
+  options?: { enabled?: boolean },
+) {
+  const enabled = useIsStaffOrAdmin() && (options?.enabled ?? true);
   return useQuery({
     queryKey: queryKeys.books.deleted(params),
     queryFn: () => booksApi.listDeleted(params),

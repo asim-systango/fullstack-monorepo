@@ -73,6 +73,11 @@ export const verifyOtpSchema = z.object({
   otp: otpField,
 });
 
+export const createMemberSchema = z.object({
+  name: nameField,
+  email: emailField,
+});
+
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type RegisterRequest = Omit<RegisterFormValues, 'confirmPassword'>;
@@ -82,6 +87,7 @@ export type ResetPasswordRequest = Omit<ResetPasswordFormValues, 'confirmPasswor
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 export type ChangePasswordRequest = Omit<ChangePasswordFormValues, 'confirmPassword'>;
 export type VerifyOtpRequest = z.infer<typeof verifyOtpSchema>;
+export type CreateMemberRequest = z.infer<typeof createMemberSchema>;
 
 export function fieldErrorsFromZod(error: z.ZodError): Record<string, string> {
   const fieldErrors: Record<string, string> = {};

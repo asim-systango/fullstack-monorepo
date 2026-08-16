@@ -30,6 +30,17 @@ export function formatShortDate(value: string): string {
   }).format(date);
 }
 
+export function formatDateTime(value: string): string {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 export function bookInitials(title: string): string {
   const parts = title.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return 'Bk';

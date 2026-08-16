@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import type { Book } from '@shared/types';
 import { Button } from '@shared/ui/components';
+import { bookDetailPath } from '@/lib/auth/routes';
 import { formatShortDate } from '@/lib/member';
 import { BookCover } from './book-cover';
 import { StatusChip } from './status-chip';
@@ -10,8 +12,15 @@ type ReservationLike = {
   status: string;
   queuePosition: number | null;
   createdAt: string;
-  book: Pick<Book, 'title' | 'author'>;
+  book: Pick<Book, 'title' | 'author'> & { isbn?: string };
 };
+
+function statusLabel(status: string): string {
+  if (status === 'active') return 'Active';
+  if (status === 'fulfilled') return 'Fulfilled';
+  if (status === 'cancelled') return 'Cancelled';
+  return status;
+}
 
 export function ReservationCard({
   reservation,
@@ -31,11 +40,11 @@ export function ReservationCard({
   else if (ahead > 1) queueHint = `${ahead} readers ahead of you`;
 
   return (
-    <article className="member-card flex items-start gap-3 p-4">
+    <article className="member-card member-reservation-card">
       <BookCover title={reservation.book.title} size="sm" />
-      <div className="min-w-0 flex-1 overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
+      <div className="member-reservation-body">
+        <div className="member-list-card-top">
+          <div className="member-list-card-copy">
             <h3 className="m-0 truncate text-sm font-semibold text-[color:var(--bookly-navy)]">
               {reservation.book.title}
             </h3>
@@ -43,22 +52,27 @@ export function ReservationCard({
               {reservation.book.author}
             </p>
           </div>
-          <StatusChip tone="neutral">{reservation.status}</StatusChip>
+          <StatusChip tone={reservation.status === 'active' ? 'available' : 'neutral'}>
+            {statusLabel(reservation.status)}
+          </StatusChip>
         </div>
 
         {position != null ? (
-          <div className="mt-3">
-            <p className="member-queue m-0 text-lg">#{position} in queue</p>
-            <p className="m-0 text-sm text-[color:var(--bookly-muted)]">{queueHint}</p>
+          <div className="member-reservation-queue">
+            <p className="member-queue">#{position} in queue</p>
+            <p className="member-queue-hint">{queueHint}</p>
           </div>
         ) : null}
 
-        <p className="mt-2 mb-0 text-sm text-[color:var(--bookly-muted)]">
+        <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
           Reserved {formatShortDate(reservation.createdAt)}
         </p>
 
-        {canCancel ? (
-          <div className="mt-3">
+        <div className="member-list-card-actions">
+          <Link href={bookDetailPath(reservation.bookId)} className="member-inline-link">
+            View details →
+          </Link>
+          {canCancel ? (
             <Button
               type="button"
               variant="secondary"
@@ -68,8 +82,8 @@ export function ReservationCard({
             >
               {cancelPending ? 'Cancelling…' : 'Cancel reservation'}
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </article>
   );

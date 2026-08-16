@@ -14,10 +14,15 @@ import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { Roles } from '../../common/auth';
-import { CreateUserDto, UpdateRoleDto } from '../auth/dto/auth.dto';
+import { MailerService } from '../mailer';
+import { ONBOARDING_EMAIL_UNAVAILABLE } from '../mailer/onboarding-mail.constants';
 import { MembersService } from '../members/members.service';
+import { MemberStatus } from '../members/enums/member-status.enum';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { generateTemporaryPassword } from './temporary-password';
 import { UsersService } from './users.service';
-import type { UserRole } from './user.entity';
+import { User, type UserRole } from './user.entity';
 
 function isUniqueViolation(err: unknown): boolean {
   if (!(err instanceof QueryFailedError)) return false;
@@ -33,13 +38,14 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly membersService: MembersService,
+    private readonly mailer: MailerService,
   ) {}
 
   @Post()
   @ApiOperation({
-    summary: 'Admin creates a user',
+    summary: 'Admin creates a member',
     description:
-      'Only route that accepts role. role=user also provisions member_profile.',
+      'Creates role=user with an active member_profile, emails a temporary password, and requires a password change on first login. Never returns the password.',
   })
   async create(@Body() dto: CreateUserDto) {
     const existing = await this.usersService.findByEmail(dto.email);
@@ -47,16 +53,17 @@ export class UsersController {
       throw new ConflictException('Unable to create account with those details');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const temporaryPassword = generateTemporaryPassword();
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
     let user;
     try {
       user = await this.usersService.create({
         email: dto.email,
         passwordHash,
         name: dto.name,
-        role: dto.role,
-        // Admin-created accounts are trusted — skip OTP.
+        role: 'user',
         emailVerifiedAt: new Date(),
+        mustChangePassword: true,
       });
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -65,19 +72,30 @@ export class UsersController {
       throw err;
     }
 
-    if (dto.role === 'user') {
-      try {
-        await this.membersService.provision({
-          userId: user.id,
-          email: user.email,
-          fullName: user.name,
-        });
-      } catch {
-        await this.usersService.rollbackCreatedUser(user.id);
-        throw new ServiceUnavailableException(
-          'Registration is temporarily unavailable. Please try again.',
-        );
-      }
+    try {
+      await this.membersService.provision({
+        userId: user.id,
+        email: user.email,
+        fullName: user.name,
+      });
+    } catch {
+      await this.usersService.rollbackCreatedUser(user.id);
+      throw new ServiceUnavailableException(
+        'Registration is temporarily unavailable. Please try again.',
+      );
+    }
+
+    try {
+      await this.mailer.sendOnboardingEmail({
+        to: user.email,
+        kind: 'welcome_member',
+        temporaryPassword,
+      });
+    } catch (err) {
+      await this.membersService.deleteByUserId(user.id);
+      await this.usersService.rollbackCreatedUser(user.id);
+      if (err instanceof ServiceUnavailableException) throw err;
+      throw new ServiceUnavailableException(ONBOARDING_EMAIL_UNAVAILABLE);
     }
 
     return this.usersService.toPublic(user);
@@ -99,9 +117,13 @@ export class UsersController {
     }
 
     const previousRole = user.role;
+
+    if (dto.role === 'staff' && previousRole === 'user') {
+      return this.promoteMemberToStaff(id, user);
+    }
+
     const updated = await this.usersService.updateRole(id, dto.role as UserRole);
 
-    // Newly demoted/promoted to user needs a library profile.
     if (dto.role === 'user' && previousRole !== 'user') {
       try {
         await this.membersService.provision({
@@ -117,6 +139,29 @@ export class UsersController {
       }
     }
 
+    return this.usersService.toPublic(updated);
+  }
+
+  private async promoteMemberToStaff(id: string, user: User) {
+    const profile = await this.membersService.findByUserId(id);
+    if (profile?.status === MemberStatus.Suspended) {
+      throw new BadRequestException('Reinstate this member before promoting to staff');
+    }
+
+    const temporaryPassword = generateTemporaryPassword();
+    try {
+      await this.mailer.sendOnboardingEmail({
+        to: user.email,
+        kind: 'staff_upgrade',
+        temporaryPassword,
+      });
+    } catch (err) {
+      if (err instanceof ServiceUnavailableException) throw err;
+      throw new ServiceUnavailableException(ONBOARDING_EMAIL_UNAVAILABLE);
+    }
+
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+    const updated = await this.usersService.promoteToStaff(id, passwordHash);
     return this.usersService.toPublic(updated);
   }
 }

@@ -9,22 +9,24 @@ import { INSUFFICIENT_PERMISSIONS } from '@/lib/bookly/constants';
 import { invalidateMemberQueries } from '@/lib/bookly/invalidate';
 import { queryKeys } from '@/lib/query-keys';
 
-export function useMembers(params?: ListMembersParams) {
+export function useMembers(params?: ListMembersParams, options?: { enabled?: boolean }) {
   const { user } = useAuth();
-  const enabled = hasRole(user, [ROLES.admin]);
+  const enabled =
+    (options?.enabled ?? true) && hasRole(user, LIBRARIAN_ROLES);
   return useQuery({
     queryKey: queryKeys.members.list(params),
-    queryFn: () => membersApi.list(params),
+    queryFn: ({ signal }) => membersApi.list(params, signal),
     enabled,
   });
 }
 
 export function useMemberSearch(q: string) {
   const { user } = useAuth();
-  const enabled = hasRole(user, [ROLES.staff]) && q.trim().length > 0;
+  const term = q.trim();
+  const enabled = hasRole(user, LIBRARIAN_ROLES) && term.length > 0;
   return useQuery({
-    queryKey: queryKeys.members.search(q.trim()),
-    queryFn: () => membersApi.search({ q: q.trim() }),
+    queryKey: queryKeys.members.search(term),
+    queryFn: ({ signal }) => membersApi.search({ q: term }, signal),
     enabled,
   });
 }

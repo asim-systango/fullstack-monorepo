@@ -54,7 +54,7 @@ export class ListBooksQueryDto {
   author?: string;
 
   @ApiPropertyOptional({
-    description: 'Exact ISBN match',
+    description: 'ISBN (case-insensitive partial match; hyphens ignored)',
     example: '9780132350884',
   })
   @IsOptional()

@@ -67,6 +67,12 @@ export class Loan {
   @Column({ name: 'returned_to', type: 'uuid', nullable: true })
   returnedTo!: string | null;
 
+  @Column({ name: 'reminder_sent_at', type: 'timestamptz', nullable: true })
+  reminderSentAt!: Date | null;
+
+  @Column({ name: 'overdue_notified_at', type: 'timestamptz', nullable: true })
+  overdueNotifiedAt!: Date | null;
+
   @OneToOne('Fine', 'loan')
   fine?: Fine | null;
 

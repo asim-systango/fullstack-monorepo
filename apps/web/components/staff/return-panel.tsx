@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { OVERDUE_RETURN_SETTLEMENT_MESSAGE } from '@shared/types';
 import { Alert, Button, Field, StatusMessage, TextInput } from '@shared/ui/components';
+import {
+  StaffFineSettlement,
+  needsReturnFineSettlement,
+  type FineSettlement,
+} from './staff-fine-settlement';
 import { toUserMessage } from '@/lib/auth/errors';
 import { useLoanLookup, useReturnLoan } from '@/lib/bookly';
 import { formatDueDate, formatMoneyInr, formatShortDate } from '@/lib/member/format';
@@ -20,15 +26,23 @@ function calendarDaysLate(dueDate: string): number {
 export function ReturnPanel() {
   const [barcode, setBarcode] = useState('');
   const [lookupBarcode, setLookupBarcode] = useState<string | undefined>();
+  const [fineSettlement, setFineSettlement] = useState<FineSettlement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const lookup = useLoanLookup(lookupBarcode ? { barcode: lookupBarcode } : undefined);
   const returnLoan = useReturnLoan();
+  const loan = lookup.data;
+  const daysLate = loan ? calendarDaysLate(loan.dueDate) : 0;
+  const dueSettlement = loan != null && needsReturnFineSettlement(loan, daysLate);
 
   useEffect(() => {
     if (lookup.isError) setError(toUserMessage(lookup.error));
   }, [lookup.isError, lookup.error]);
+
+  useEffect(() => {
+    setFineSettlement(null);
+  }, [loan?.id]);
 
   function onLookup() {
     setError(null);
@@ -42,26 +56,35 @@ export function ReturnPanel() {
   }
 
   async function onConfirm() {
-    if (!lookup.data) return;
+    if (!loan) return;
     setError(null);
     setSuccess(null);
+    if (dueSettlement && !fineSettlement) {
+      setError(OVERDUE_RETURN_SETTLEMENT_MESSAGE);
+      return;
+    }
     try {
-      const loan = await returnLoan.mutateAsync(lookup.data.id);
-      const fine = loan.fine;
-      setSuccess(
-        fine
-          ? `Return recorded. Fine ${formatMoneyInr(fine.amountCents)} (${fine.status}).`
-          : 'Return recorded successfully.',
-      );
+      const returned = await returnLoan.mutateAsync({
+        id: loan.id,
+        input: dueSettlement && fineSettlement ? { fineSettlement } : undefined,
+      });
+      const fine = returned.fine;
+      if (fine?.status === 'paid') {
+        setSuccess(`Return recorded. Fine collected: ${formatMoneyInr(fine.amountCents)}.`);
+      } else if (fine?.status === 'unpaid') {
+        setSuccess(
+          `Return recorded. Unpaid fine ${formatMoneyInr(fine.amountCents)} remains on the member account.`,
+        );
+      } else {
+        setSuccess('Return recorded successfully.');
+      }
       setBarcode('');
       setLookupBarcode(undefined);
+      setFineSettlement(null);
     } catch (err) {
       setError(toUserMessage(err));
     }
   }
-
-  const loan = lookup.data;
-  const daysLate = loan ? calendarDaysLate(loan.dueDate) : 0;
 
   return (
     <section id="return" className="staff-card staff-card-operational scroll-mt-24">
@@ -120,6 +143,16 @@ export function ReturnPanel() {
                 Fine on file: {formatMoneyInr(loan.fine.amountCents)} ({loan.fine.status})
               </p>
             ) : null}
+            {dueSettlement ? (
+              <div className="mt-3">
+                <StaffFineSettlement
+                  daysLate={daysLate}
+                  amountCents={loan.fine?.amountCents ?? null}
+                  value={fineSettlement}
+                  onChange={setFineSettlement}
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -136,7 +169,7 @@ export function ReturnPanel() {
           type="button"
           loading={returnLoan.isPending}
           loadingText="Returning…"
-          disabled={!loan || returnLoan.isPending}
+          disabled={!loan || returnLoan.isPending || (dueSettlement && !fineSettlement)}
           onClick={() => void onConfirm()}
         >
           Confirm return

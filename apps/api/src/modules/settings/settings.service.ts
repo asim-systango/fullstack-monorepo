@@ -53,7 +53,7 @@ export class SettingsService {
   }
 
   getMaxActiveLoans(): Promise<number> {
-    return this.getInteger(SettingKeys.MaxActiveLoans, 5);
+    return this.getInteger(SettingKeys.MaxActiveLoans, 2);
   }
 
   getFineCentsPerDay(): Promise<number> {

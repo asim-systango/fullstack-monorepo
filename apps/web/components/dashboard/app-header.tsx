@@ -3,16 +3,86 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Button } from '@shared/ui/components';
+import {
+  Button,
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
+import { MemberAccountMenu } from '@/components/member/account-menu';
 import { hasRole, ROLES } from '@/lib/auth/roles';
 import { ROUTES } from '@/lib/auth/routes';
 import { pageTitleForPath } from './nav-items';
 
+function HeaderMenuButton({
+  hidden,
+  menuOpen,
+  onMenuClick,
+}: Readonly<{ hidden: boolean; menuOpen: boolean; onMenuClick: () => void }>) {
+  if (hidden) return null;
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="md:hidden"
+      onClick={onMenuClick}
+      aria-expanded={menuOpen}
+      aria-controls="app-sidebar"
+      aria-label="Open menu"
+    >
+      Menu
+    </Button>
+  );
+}
+
+function LogoutConfirmDialog({
+  open,
+  loggingOut,
+  onOpenChange,
+  onConfirm,
+}: Readonly<{
+  open: boolean;
+  loggingOut: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}>) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange} showClose={false}>
+      <DialogHeader>
+        <DialogTitle>Are you sure you want to log out?</DialogTitle>
+        <DialogDescription>You will need to sign in again to continue.</DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => onOpenChange(false)}
+          disabled={loggingOut}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="danger"
+          loading={loggingOut}
+          loadingText="Logging out…"
+          onClick={onConfirm}
+        >
+          Logout
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+}
+
 export function AppHeader({
   menuOpen,
   onMenuClick,
-}: Readonly<{ menuOpen: boolean; onMenuClick: () => void }>) {
+  hideNav = false,
+}: Readonly<{ menuOpen: boolean; onMenuClick: () => void; hideNav?: boolean }>) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -20,6 +90,8 @@ export function AppHeader({
   const isStaff = hasRole(user, [ROLES.staff]);
   const isAdmin = hasRole(user, [ROLES.admin]);
   const [menuOpenLocal, setMenuOpenLocal] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,30 +106,38 @@ export function AppHeader({
     }
   }, [menuOpenLocal]);
 
-  async function onLogout() {
+  function requestLogout() {
     setMenuOpenLocal(false);
-    await logout();
-    router.replace(ROUTES.login);
-    router.refresh();
+    setConfirmLogout(true);
+  }
+
+  async function onConfirmLogout() {
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.replace(ROUTES.login);
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+      setConfirmLogout(false);
+    }
   }
 
   const title = pageTitleForPath(pathname);
+  const logoutDialog = (
+    <LogoutConfirmDialog
+      open={confirmLogout}
+      loggingOut={loggingOut}
+      onOpenChange={setConfirmLogout}
+      onConfirm={() => void onConfirmLogout()}
+    />
+  );
 
   if (isStaff) {
     return (
       <header className="staff-header flex min-h-[4.5rem] items-center justify-between gap-3 border-b px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={onMenuClick}
-            aria-expanded={menuOpen}
-            aria-controls="app-sidebar"
-            aria-label="Open menu"
-          >
-            Menu
-          </Button>
+          <HeaderMenuButton hidden={hideNav} menuOpen={menuOpen} onMenuClick={onMenuClick} />
           <p className="m-0 text-sm font-semibold tracking-tight text-[color:var(--bookly-navy)]">
             {title}
           </p>
@@ -87,12 +167,13 @@ export function AppHeader({
               >
                 Change password
               </Link>
-              <button type="button" role="menuitem" onClick={() => void onLogout()}>
+              <button type="button" role="menuitem" onClick={requestLogout}>
                 Log out
               </button>
             </div>
           ) : null}
         </div>
+        {logoutDialog}
       </header>
     );
   }
@@ -101,17 +182,7 @@ export function AppHeader({
     return (
       <header className="admin-header flex min-h-[4.5rem] items-center justify-between gap-3 border-b px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={onMenuClick}
-            aria-expanded={menuOpen}
-            aria-controls="app-sidebar"
-            aria-label="Open menu"
-          >
-            Menu
-          </Button>
+          <HeaderMenuButton hidden={hideNav} menuOpen={menuOpen} onMenuClick={onMenuClick} />
           <p className="m-0 text-sm font-semibold tracking-tight text-[color:var(--bookly-navy)]">
             {title}
           </p>
@@ -141,12 +212,13 @@ export function AppHeader({
               >
                 Change password
               </Link>
-              <button type="button" role="menuitem" onClick={() => void onLogout()}>
+              <button type="button" role="menuitem" onClick={requestLogout}>
                 Log out
               </button>
             </div>
           ) : null}
         </div>
+        {logoutDialog}
       </header>
     );
   }
@@ -155,17 +227,7 @@ export function AppHeader({
     return (
       <header className="flex min-h-[4.5rem] items-center justify-between gap-3 border-b border-border bg-background px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={onMenuClick}
-            aria-expanded={menuOpen}
-            aria-controls="app-sidebar"
-            aria-label="Open menu"
-          >
-            Menu
-          </Button>
+          <HeaderMenuButton hidden={hideNav} menuOpen={menuOpen} onMenuClick={onMenuClick} />
           <p className="m-0 text-sm font-medium">{title}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -174,65 +236,22 @@ export function AppHeader({
               {user.name} · {user.role}
             </span>
           ) : null}
-          <Button variant="ghost" size="sm" onClick={() => void onLogout()}>
+          <Button variant="ghost" size="sm" onClick={requestLogout}>
             Log out
           </Button>
         </div>
+        {logoutDialog}
       </header>
     );
   }
 
   return (
-    <header className="member-header flex min-h-[4.5rem] items-center justify-between gap-3 border-b px-4 md:px-6">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="md:hidden"
-          onClick={onMenuClick}
-          aria-expanded={menuOpen}
-          aria-controls="app-sidebar"
-          aria-label="Open menu"
-        >
-          Menu
-        </Button>
-        <p className="m-0 text-sm font-semibold tracking-tight text-[color:var(--bookly-navy)]">
-          {title}
-        </p>
+    <header className="member-header flex min-h-[4.5rem] items-center justify-between gap-3 border-b px-4 md:px-8">
+      <div className="flex min-w-0 items-center gap-3">
+        <HeaderMenuButton hidden={hideNav} menuOpen={menuOpen} onMenuClick={onMenuClick} />
+        <p className="member-header-title truncate">{title}</p>
       </div>
-
-      <div className="relative" ref={menuRef}>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-expanded={menuOpenLocal}
-          aria-haspopup="menu"
-          onClick={() => setMenuOpenLocal((open) => !open)}
-        >
-          {user?.name ?? 'Account'}
-        </Button>
-        {menuOpenLocal ? (
-          <div className="member-user-menu" role="menu" aria-label="Account menu">
-            <Link
-              href={ROUTES.profile}
-              role="menuitem"
-              onClick={() => setMenuOpenLocal(false)}
-            >
-              Profile
-            </Link>
-            <Link
-              href={ROUTES.changePassword}
-              role="menuitem"
-              onClick={() => setMenuOpenLocal(false)}
-            >
-              Change password
-            </Link>
-            <button type="button" role="menuitem" onClick={() => void onLogout()}>
-              Log out
-            </button>
-          </div>
-        ) : null}
-      </div>
+      <MemberAccountMenu hideProfile={hideNav} />
     </header>
   );
 }

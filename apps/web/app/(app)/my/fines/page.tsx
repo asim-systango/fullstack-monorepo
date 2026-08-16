@@ -3,9 +3,11 @@
 import type { CSSProperties } from 'react';
 import {
   FineRow,
+  MemberContent,
   MemberEmpty,
   MemberError,
-  MemberLoadingGrid,
+  MemberLoadingList,
+  MemberPageHeader,
   RequireMember,
 } from '@/components/member';
 import { useMyFines } from '@/lib/bookly';
@@ -20,20 +22,14 @@ function MyFinesContent() {
   else if (unpaid.length > 1) unpaidSummary = `${unpaid.length} unpaid fines`;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <header className="member-enter">
-        <h1 className="m-0 text-2xl font-semibold tracking-tight text-[color:var(--bookly-navy)]">
-          My Fines
-        </h1>
-        <p className="mt-2 mb-0 text-[color:var(--bookly-muted)]">
-          Review outstanding balances and history. Payment is handled at the library desk.
-        </p>
-      </header>
+    <MemberContent className="space-y-6">
+      <MemberPageHeader
+        title="My Fines"
+        description="Outstanding fines include overdue books you still have out. Payment is handled at the library desk."
+      />
 
-      {fines.isPending ? <MemberLoadingGrid count={3} /> : null}
-      {fines.isError ? (
-        <MemberError title="Could not load fines" error={fines.error} />
-      ) : null}
+      {fines.isPending ? <MemberLoadingList count={3} /> : null}
+      {fines.isError ? <MemberError title="Could not load fines" error={fines.error} /> : null}
 
       {!fines.isPending && !fines.isError ? (
         <div
@@ -53,7 +49,10 @@ function MyFinesContent() {
       ) : null}
 
       {!fines.isPending && !fines.isError && (fines.data?.items.length ?? 0) === 0 ? (
-        <MemberEmpty title="You're all clear." description="No fines on your account." />
+        <MemberEmpty
+          title="You're all clear"
+          description="You currently have no outstanding fines."
+        />
       ) : null}
 
       {fines.data && fines.data.items.length > 0 ? (
@@ -61,12 +60,14 @@ function MyFinesContent() {
           <h2 className="m-0 text-lg font-semibold text-[color:var(--bookly-navy)]">
             Fine history
           </h2>
-          {fines.data.items.map((fine) => (
-            <FineRow key={fine.id} fine={fine} />
-          ))}
+          <div className="member-fine-stack">
+            {fines.data.items.map((fine) => (
+              <FineRow key={fine.id} fine={fine} />
+            ))}
+          </div>
         </section>
       ) : null}
-    </div>
+    </MemberContent>
   );
 }
 

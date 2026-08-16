@@ -126,32 +126,3 @@ export class LogoutDto {
   @MinLength(20)
   refreshToken?: string;
 }
-
-export class CreateUserDto {
-  @ApiProperty()
-  @IsEmail()
-  email!: string;
-
-  @ApiProperty({ minLength: 8 })
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
-  password!: string;
-
-  @ApiProperty({ maxLength: 120 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(120)
-  name!: string;
-
-  /** Only admin create accepts role — never on self-signup. */
-  @ApiProperty({ enum: ['admin', 'staff', 'user'] })
-  @IsIn(['admin', 'staff', 'user'])
-  role!: 'admin' | 'staff' | 'user';
-}
-
-export class UpdateRoleDto {
-  @ApiProperty({ enum: ['admin', 'staff', 'user'] })
-  @IsIn(['admin', 'staff', 'user'])
-  role!: 'admin' | 'staff' | 'user';
-}

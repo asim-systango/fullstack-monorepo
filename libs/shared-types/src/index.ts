@@ -6,6 +6,7 @@ export const userSchema = z.object({
   name: z.string(),
   role: z.enum(['admin', 'user', 'staff']),
   emailVerified: z.boolean().optional(),
+  mustChangePassword: z.boolean().optional(),
 });
 
 export type User = z.infer<typeof userSchema>;

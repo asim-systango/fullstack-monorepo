@@ -6,10 +6,31 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth';
 import { hasRole, ROLES } from '@/lib/auth/roles';
 import { ROUTES } from '@/lib/auth/routes';
-import { adminNavSections, memberNavSections, staffNavSections } from './nav-items';
+import {
+  adminNavSections,
+  memberNavSections,
+  staffNavSections,
+  type NavSection,
+} from './nav-items';
 
-function isActivePath(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function hrefsFromSections(sections: readonly NavSection[]): string[] {
+  return sections.flatMap((section) => section.items.map((item) => item.href));
+}
+
+function isActivePath(
+  pathname: string,
+  href: string,
+  navHrefs: readonly string[],
+): boolean {
+  const matches = pathname === href || pathname.startsWith(`${href}/`);
+  if (!matches) return false;
+
+  return !navHrefs.some(
+    (other) =>
+      other.length > href.length &&
+      other.startsWith(`${href}/`) &&
+      (pathname === other || pathname.startsWith(`${other}/`)),
+  );
 }
 
 export function Sidebar({
@@ -21,6 +42,13 @@ export function Sidebar({
   const isMember = hasRole(user, [ROLES.user]);
   const isStaff = hasRole(user, [ROLES.staff]);
   const isAdmin = hasRole(user, [ROLES.admin]);
+
+  const memberSections = memberNavSections();
+  const staffSections = staffNavSections();
+  const adminSections = adminNavSections();
+  const memberHrefs = hrefsFromSections(memberSections);
+  const staffHrefs = hrefsFromSections(staffSections);
+  const adminHrefs = hrefsFromSections(adminSections);
 
   let asideClass = 'border-border bg-card';
   if (isMember) asideClass = 'member-sidebar border-[color:var(--bookly-border)]';
@@ -91,14 +119,14 @@ export function Sidebar({
             className="flex flex-1 flex-col gap-4 overflow-y-auto p-3"
             aria-label="Member"
           >
-            {memberNavSections().map((section) => (
+            {memberSections.map((section) => (
               <div key={section.id}>
                 {section.label ? (
                   <p className="member-nav-section">{section.label}</p>
                 ) : null}
                 <div className="flex flex-col gap-0.5">
                   {section.items.map((item) => {
-                    const active = isActivePath(pathname, item.href);
+                    const active = isActivePath(pathname, item.href, memberHrefs);
                     return (
                       <Link
                         key={item.href}
@@ -123,14 +151,14 @@ export function Sidebar({
               className="flex flex-1 flex-col gap-4 overflow-y-auto p-3"
               aria-label="Staff"
             >
-              {staffNavSections().map((section) => (
+              {staffSections.map((section) => (
                 <div key={section.id}>
                   {section.label ? (
                     <p className="staff-nav-section">{section.label}</p>
                   ) : null}
                   <div className="flex flex-col gap-0.5">
                     {section.items.map((item) => {
-                      const active = isActivePath(pathname, item.href);
+                      const active = isActivePath(pathname, item.href, staffHrefs);
                       return (
                         <Link
                           key={item.href}
@@ -157,15 +185,15 @@ export function Sidebar({
               className="flex flex-1 flex-col gap-4 overflow-y-auto p-3"
               aria-label="Admin"
             >
-              {adminNavSections().map((section) => (
+              {adminSections.map((section) => (
                 <div key={section.id}>
                   {section.label ? (
                     <p className="admin-nav-section">{section.label}</p>
                   ) : null}
                   <div className="flex flex-col gap-0.5">
                     {section.items.map((item) => {
-                      const active = isActivePath(pathname, item.href);
-                      const secondary = item.href === ROUTES.librarian;
+                      const active = isActivePath(pathname, item.href, adminHrefs);
+                      const secondary = item.href === ROUTES.admin;
                       return (
                         <Link
                           key={item.href}

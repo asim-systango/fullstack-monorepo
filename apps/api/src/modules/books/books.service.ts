@@ -15,6 +15,10 @@ type PaginatedBooks = {
   limit: number;
 };
 
+function normalizeIsbn(value: string): string {
+  return value.trim().replace(/[-\s]/g, '');
+}
+
 type BookDetail = Book & {
   totalCopies: number;
   availableCopies: number;
@@ -48,7 +52,7 @@ export class BooksService {
     qb.skip((page - 1) * limit).take(limit);
 
     const [items, total] = await qb.getManyAndCount();
-    return { items, total, page, limit };
+    return { items: await this.withCopyCounts(items), total, page, limit };
   }
 
   async listDeleted(query: ListBooksQueryDto): Promise<PaginatedBooks> {
@@ -61,7 +65,7 @@ export class BooksService {
 
     if (query.q?.trim()) {
       const q = `%${query.q.trim()}%`;
-      qb.andWhere('(book.title ILIKE :q OR book.isbn ILIKE :q)', { q });
+      qb.andWhere('(book.title ILIKE :q OR book.author ILIKE :q OR book.isbn ILIKE :q)', { q });
     }
     if (query.author?.trim()) {
       qb.andWhere('book.author ILIKE :author', {
@@ -69,7 +73,10 @@ export class BooksService {
       });
     }
     if (query.isbn?.trim()) {
-      qb.andWhere('book.isbn = :isbn', { isbn: query.isbn.trim() });
+      qb.andWhere(
+        "REPLACE(REPLACE(book.isbn, '-', ''), ' ', '') ILIKE :isbn",
+        { isbn: `%${normalizeIsbn(query.isbn)}%` },
+      );
     }
 
     this.applySort(qb, query.sort);
@@ -169,7 +176,7 @@ export class BooksService {
   ): void {
     if (query.q?.trim()) {
       const q = `%${query.q.trim()}%`;
-      qb.andWhere('(book.title ILIKE :q OR book.isbn ILIKE :q)', { q });
+      qb.andWhere('(book.title ILIKE :q OR book.author ILIKE :q OR book.isbn ILIKE :q)', { q });
     }
     if (query.author?.trim()) {
       qb.andWhere('book.author ILIKE :author', {
@@ -177,7 +184,10 @@ export class BooksService {
       });
     }
     if (query.isbn?.trim()) {
-      qb.andWhere('book.isbn = :isbn', { isbn: query.isbn.trim() });
+      qb.andWhere(
+        "REPLACE(REPLACE(book.isbn, '-', ''), ' ', '') ILIKE :isbn",
+        { isbn: `%${normalizeIsbn(query.isbn)}%` },
+      );
     }
     if (query.availableOnly) {
       qb.andWhere(
@@ -201,5 +211,44 @@ export class BooksService {
     const field = descending ? raw.slice(1) : raw;
     const column = SORT_COLUMN[field] ?? 'book.title';
     qb.orderBy(column, descending ? 'DESC' : 'ASC');
+  }
+
+  private async withCopyCounts(books: Book[]): Promise<Book[]> {
+    if (books.length === 0) return books;
+
+    const ids = books.map((book) => book.id);
+    const rows = await this.copies
+      .createQueryBuilder('copy')
+      .select('copy.book_id', 'bookId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN copy.status = :available THEN 1 ELSE 0 END)`,
+        'available',
+      )
+      .where('copy.bookId IN (:...ids)', { ids })
+      .andWhere('copy.deleted_at IS NULL')
+      .setParameter('available', BookCopyStatus.Available)
+      .groupBy('copy.book_id')
+      .getRawMany<{ bookId?: string; book_id?: string; total: string; available: string }>();
+
+    const counts = new Map(
+      rows.map((row) => {
+        const bookId = row.bookId ?? row.book_id ?? '';
+        return [
+          bookId,
+          {
+            totalCopies: Number(row.total ?? 0),
+            availableCopies: Number(row.available ?? 0),
+          },
+        ] as const;
+      }),
+    );
+
+    return books.map((book) =>
+      Object.assign(book, {
+        totalCopies: counts.get(book.id)?.totalCopies ?? 0,
+        availableCopies: counts.get(book.id)?.availableCopies ?? 0,
+      }),
+    );
   }
 }

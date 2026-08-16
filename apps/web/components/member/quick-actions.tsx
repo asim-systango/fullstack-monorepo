@@ -4,6 +4,7 @@ import { ROUTES } from '@/lib/auth/routes';
 const ACTIONS = [
   { href: ROUTES.books, label: 'Browse Books' },
   { href: ROUTES.myLoans, label: 'My Loans' },
+  { href: ROUTES.myCheckoutRequests, label: 'Checkout Requests' },
   { href: ROUTES.myReservations, label: 'My Reservations' },
   { href: ROUTES.myFines, label: 'My Fines' },
 ] as const;
@@ -11,7 +12,7 @@ const ACTIONS = [
 export function QuickActions() {
   return (
     <nav aria-label="Quick actions" className="member-card p-2">
-      <ul className="m-0 grid list-none gap-1 p-0 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="m-0 grid list-none gap-1 p-0 sm:grid-cols-2 lg:grid-cols-3">
         {ACTIONS.map((action) => (
           <li key={action.href}>
             <Link

@@ -48,6 +48,7 @@ export class ReservationsService {
     const limit = query.limit ?? 20;
     const qb = this.reservations
       .createQueryBuilder('r')
+      .withDeleted()
       .leftJoinAndSelect('r.book', 'book');
 
     if (query.userId) {

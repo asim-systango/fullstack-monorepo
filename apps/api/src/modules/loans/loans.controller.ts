@@ -23,6 +23,7 @@ import { CurrentUser, Roles, type JwtUser } from '../../common/auth';
 import { CheckoutLoanDto } from './dto/checkout-loan.dto';
 import { ListLoansQueryDto } from './dto/list-loans-query.dto';
 import { LookupLoanQueryDto } from './dto/lookup-loan-query.dto';
+import { ReturnLoanDto } from './dto/return-loan.dto';
 import { LoansService } from './loans.service';
 
 @ApiTags('loans')
@@ -83,6 +84,28 @@ export class LoansController {
     return this.loansService.checkout(dto, user.id);
   }
 
+  @Roles('staff', 'admin')
+  @Post('overdue-notices')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send overdue follow-up emails to all overdue loans' })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  sendOverdueNotices() {
+    return this.loansService.sendOverdueNotices();
+  }
+
+  @Roles('staff', 'admin')
+  @Post(':id/overdue-notice')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send an overdue follow-up email for one loan' })
+  @ApiOkResponse()
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  sendOverdueNotice(@Param('id', ParseUUIDPipe) id: string) {
+    return this.loansService.sendOverdueNotice(id);
+  }
+
   @Roles('staff')
   @Post(':id/return')
   @HttpCode(HttpStatus.OK)
@@ -90,8 +113,12 @@ export class LoansController {
   @ApiOkResponse()
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
-  returnLoan(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
-    return this.loansService.returnLoan(id, user.id);
+  returnLoan(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReturnLoanDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.loansService.returnLoan(id, user.id, dto ?? {});
   }
 }
 

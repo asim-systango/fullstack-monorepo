@@ -26,9 +26,12 @@ import { buildQueryParams } from '../query-params';
 
 export function createBooksApi(client: AxiosInstance) {
   return {
-    async list(params?: ListBooksParams): Promise<PaginatedBooks> {
+    async list(params?: ListBooksParams, signal?: AbortSignal): Promise<PaginatedBooks> {
       const parsed = listBooksParamsSchema.partial().parse(params ?? {});
-      const { data } = await client.get('/books', { params: buildQueryParams(parsed) });
+      const { data } = await client.get('/books', {
+        params: buildQueryParams(parsed),
+        signal,
+      });
       return paginatedBooksSchema.parse(unwrapData(data));
     },
 

@@ -33,6 +33,7 @@ export function invalidateAfterCheckout(
   opts: { bookId: string },
 ) {
   invalidateLoanQueries(queryClient, { bookId: opts.bookId });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.checkoutRequests.all });
   void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.member });
   void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.librarian });
 }
@@ -45,6 +46,26 @@ export function invalidateAfterReturn(
   void queryClient.invalidateQueries({ queryKey: queryKeys.reservations.all });
   void queryClient.invalidateQueries({ queryKey: queryKeys.fines.all });
   void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+}
+
+export function invalidateCheckoutRequestQueries(
+  queryClient: QueryClient,
+  opts?: { bookId?: string; requestId?: string },
+) {
+  void queryClient.invalidateQueries({ queryKey: queryKeys.checkoutRequests.all });
+  if (opts?.requestId) {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.checkoutRequests.detail(opts.requestId),
+    });
+  }
+  if (opts?.bookId) {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.books.detail(opts.bookId) });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.bookCopies.list(opts.bookId),
+    });
+  }
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.member });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.librarian });
 }
 
 export function invalidateReservationQueries(

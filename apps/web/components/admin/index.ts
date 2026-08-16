@@ -3,6 +3,7 @@ export { AdminWorkspace } from './admin-workspace';
 export { AdminPageHeader } from './admin-page-header';
 export { AdminMetricCard } from './admin-metric-card';
 export { AdminQuickActions } from './admin-quick-actions';
+export { AdminCreateMemberForm } from './admin-create-member-form';
 export { AdminMembersPanel } from './admin-members-panel';
 export { AdminMemberRow } from './admin-member-row';
 export { AdminSettingsPanel } from './admin-settings-panel';

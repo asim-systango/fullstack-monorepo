@@ -1,7 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CheckoutLoanInput, ListLoansParams, LookupLoanParams } from '@shared/types';
+import type {
+  CheckoutLoanInput,
+  ListLoansParams,
+  LookupLoanParams,
+  ReturnLoanInput,
+} from '@shared/types';
 import { useAuth } from '@/components/auth';
 import { loansApi } from '@/lib/api';
 import { hasRole, LIBRARIAN_ROLES, ROLES } from '@/lib/auth/roles';
@@ -10,12 +15,12 @@ import { invalidateAfterCheckout, invalidateAfterReturn } from '@/lib/bookly/inv
 import { queryKeys } from '@/lib/query-keys';
 import { useLibraryStore } from '@/lib/store';
 
-export function useLoans(params?: ListLoansParams) {
+export function useLoans(params?: ListLoansParams, options?: { enabled?: boolean }) {
   const { user } = useAuth();
-  const enabled = hasRole(user, LIBRARIAN_ROLES);
+  const enabled = (options?.enabled ?? true) && hasRole(user, LIBRARIAN_ROLES);
   return useQuery({
     queryKey: queryKeys.loans.list(params),
-    queryFn: () => loansApi.list(params),
+    queryFn: ({ signal }) => loansApi.list(params, signal),
     enabled,
   });
 }
@@ -47,10 +52,10 @@ export function useOverdueLoans(params?: ListLoansParams) {
   const enabled = hasRole(user, LIBRARIAN_ROLES);
   return useQuery({
     queryKey: queryKeys.loans.overdue(params),
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       // Prefer /loans?status=overdue — /loans/overdue currently 500s on the API
       // (databaseName TypeORM bug). Keep the same OverdueLoan shape for the UI.
-      const page = await loansApi.list({ ...params, status: 'overdue' });
+      const page = await loansApi.list({ ...params, status: 'overdue' }, signal);
       return {
         ...page,
         items: page.items.map((loan) => ({
@@ -111,12 +116,44 @@ export function useReturnLoan() {
   const canReturn = hasRole(user, [ROLES.staff]);
 
   return useMutation({
-    mutationFn: (id: string) => {
+    mutationFn: ({ id, input }: { id: string; input?: ReturnLoanInput }) => {
       if (!canReturn) throw new Error(INSUFFICIENT_PERMISSIONS);
-      return loansApi.returnLoan(id);
+      return loansApi.returnLoan(id, input);
     },
     onSuccess: (loan) => {
       invalidateAfterReturn(queryClient, { bookId: loan.bookId, loanId: loan.id });
+    },
+  });
+}
+
+export function useSendOverdueNotice() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canSend = hasRole(user, LIBRARIAN_ROLES);
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!canSend) throw new Error(INSUFFICIENT_PERMISSIONS);
+      return loansApi.sendOverdueNotice(id);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.loans.all });
+    },
+  });
+}
+
+export function useSendOverdueNotices() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canSend = hasRole(user, LIBRARIAN_ROLES);
+
+  return useMutation({
+    mutationFn: () => {
+      if (!canSend) throw new Error(INSUFFICIENT_PERMISSIONS);
+      return loansApi.sendOverdueNotices();
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.loans.all });
     },
   });
 }

@@ -14,18 +14,46 @@ import {
   TextArea,
 } from '@shared/ui/components';
 import { toUserMessage } from '@/lib/auth/errors';
-import { useReinstateMember, useSuspendMember } from '@/lib/bookly';
+import { ROLES } from '@/lib/auth/roles';
+import { useReinstateMember, useSuspendMember, useUpdateUserRole } from '@/lib/bookly';
+
+function MemberRowChips({ member }: Readonly<{ member: MemberListItem }>) {
+  const isSuspended = member.status === 'suspended';
+  return (
+    <p className="m-0 mt-1.5 flex flex-wrap items-center gap-2 text-sm text-[color:var(--bookly-muted)]">
+      <span
+        className={`admin-status-chip ${
+          isSuspended ? 'admin-status-suspended' : 'admin-status-active'
+        }`}
+      >
+        {isSuspended ? 'Suspended' : 'Active'}
+      </span>
+      {member.role !== ROLES.user ? (
+        <span className="admin-status-chip admin-status-active">
+          {member.role === ROLES.staff ? 'Staff' : 'Admin'}
+        </span>
+      ) : null}
+      <span>
+        {member.activeLoanCount} active loan{member.activeLoanCount === 1 ? '' : 's'}
+      </span>
+    </p>
+  );
+}
 
 export function AdminMemberRow({ member }: Readonly<{ member: MemberListItem }>) {
   const suspend = useSuspendMember();
   const reinstate = useReinstateMember();
+  const promote = useUpdateUserRole();
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [reinstateOpen, setReinstateOpen] = useState(false);
+  const [promoteOpen, setPromoteOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [promoteSuccess, setPromoteSuccess] = useState<string | null>(null);
 
   const isSuspended = member.status === 'suspended';
-  const pending = suspend.isPending || reinstate.isPending;
+  const canPromote = member.role === ROLES.user && !isSuspended;
+  const pending = suspend.isPending || reinstate.isPending || promote.isPending;
 
   async function onSuspend() {
     setError(null);
@@ -53,6 +81,19 @@ export function AdminMemberRow({ member }: Readonly<{ member: MemberListItem }>)
     }
   }
 
+  async function onPromote() {
+    setError(null);
+    try {
+      await promote.mutateAsync({ id: member.userId, role: 'staff' });
+      setPromoteOpen(false);
+      setPromoteSuccess(
+        'Promoted to staff. A temporary password was emailed — they must change it after login.',
+      );
+    } catch (err) {
+      setError(toUserMessage(err));
+    }
+  }
+
   return (
     <li className="admin-row">
       <div className="min-w-0 flex-1">
@@ -62,20 +103,25 @@ export function AdminMemberRow({ member }: Readonly<{ member: MemberListItem }>)
         <p className="m-0 truncate text-sm text-[color:var(--bookly-muted)]">
           {member.email}
         </p>
-        <p className="m-0 mt-1.5 flex flex-wrap items-center gap-2 text-sm text-[color:var(--bookly-muted)]">
-          <span
-            className={`admin-status-chip ${
-              isSuspended ? 'admin-status-suspended' : 'admin-status-active'
-            }`}
-          >
-            {isSuspended ? 'Suspended' : 'Active'}
-          </span>
-          <span>
-            {member.activeLoanCount} active loan{member.activeLoanCount === 1 ? '' : 's'}
-          </span>
-        </p>
+        <MemberRowChips member={member} />
+        {promoteSuccess ? (
+          <p className="m-0 mt-2 text-sm text-[color:var(--bookly-navy)]">{promoteSuccess}</p>
+        ) : null}
       </div>
-      <div className="shrink-0">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+        {canPromote ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={pending}
+            onClick={() => {
+              setError(null);
+              setPromoteOpen(true);
+            }}
+          >
+            Promote to Staff
+          </Button>
+        ) : null}
         {isSuspended ? (
           <Button
             variant="secondary"
@@ -103,6 +149,48 @@ export function AdminMemberRow({ member }: Readonly<{ member: MemberListItem }>)
           </Button>
         )}
       </div>
+
+      <Dialog
+        open={promoteOpen}
+        onOpenChange={(open) => {
+          setPromoteOpen(open);
+          if (!open) setError(null);
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle>Promote to staff?</DialogTitle>
+          <DialogDescription>
+            {member.fullName} will become Librarian/Staff. Their member profile stays
+            unchanged. BOOKLY will email a temporary password that they must change after
+            logging in.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody>
+          {error ? (
+            <Alert tone="danger" title="Could not promote member">
+              {error}
+            </Alert>
+          ) : null}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={promote.isPending}
+            onClick={() => setPromoteOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={promote.isPending}
+            onClick={() => void onPromote()}
+          >
+            {promote.isPending ? 'Promoting…' : 'Promote to Staff'}
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       <Dialog
         open={suspendOpen}

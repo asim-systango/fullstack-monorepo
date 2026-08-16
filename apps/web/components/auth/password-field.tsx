@@ -34,7 +34,7 @@ export function PasswordField({
   const toggleLabel = visible ? 'Hide password' : 'Show password';
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <TextInput
         id={id}
         name={name}

@@ -12,7 +12,7 @@ export const SETTING_DEFAULTS: Record<
   { value: string; description: string }
 > = {
   [SettingKeys.MaxActiveLoans]: {
-    value: '5',
+    value: '2',
     description: 'Maximum active loans per member',
   },
   [SettingKeys.FineCentsPerDay]: {

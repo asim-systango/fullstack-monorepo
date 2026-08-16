@@ -50,6 +50,10 @@ export class User {
   @Column({ name: 'otp_purpose', type: 'varchar', length: 32, nullable: true })
   otpPurpose!: OtpPurpose | null;
 
+  /** True for admin-created / promoted accounts until they set their own password. */
+  @Column({ name: 'must_change_password', type: 'boolean', default: false })
+  mustChangePassword!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

@@ -13,6 +13,8 @@ export const bookSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
+  totalCopies: z.number().int().nonnegative().optional(),
+  availableCopies: z.number().int().nonnegative().optional(),
 });
 export type Book = z.infer<typeof bookSchema>;
 

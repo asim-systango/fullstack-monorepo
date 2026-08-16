@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Book } from '@shared/types';
 import { bookDetailPath } from '@/lib/auth/routes';
-import { formatDueDate, getLoanDueStatus } from '@/lib/member';
+import { formatDueDate, formatMoneyInr, getLoanDueStatus } from '@/lib/member';
 import { BookCover } from './book-cover';
 import { StatusChip } from './status-chip';
 
@@ -11,7 +11,7 @@ type LoanLike = {
   dueDate: string;
   overdue?: boolean;
   returnedAt?: string | null;
-  book: Pick<Book, 'title' | 'author'>;
+  book: Pick<Book, 'title' | 'author'> & { isbn?: string };
   fine?: { amountCents: number; status: string } | null;
 };
 
@@ -23,13 +23,16 @@ export function LoanCard({
   const status = returned
     ? { tone: 'neutral' as const, label: 'Returned' }
     : getLoanDueStatus(loan.dueDate, loan.overdue);
+  const dateLabel = returned
+    ? `Returned ${formatDueDate(loan.returnedAt!)}`
+    : `Due ${formatDueDate(loan.dueDate)}`;
 
   return (
-    <article className="member-card flex items-start gap-3 p-4">
+    <article className="member-card member-list-card">
       <BookCover title={loan.book.title} size="sm" />
-      <div className="min-w-0 flex-1 overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
+      <div className="member-list-card-body">
+        <div className="member-list-card-top">
+          <div className="member-list-card-copy">
             <h3 className="m-0 truncate text-sm font-semibold text-[color:var(--bookly-navy)]">
               {loan.book.title}
             </h3>
@@ -39,20 +42,15 @@ export function LoanCard({
           </div>
           <StatusChip tone={status.tone}>{status.label}</StatusChip>
         </div>
-        <p className="mt-2 mb-0 text-sm text-[color:var(--bookly-muted)]">
-          Due {formatDueDate(loan.dueDate)}
-        </p>
+        <p className="m-0 text-sm text-[color:var(--bookly-muted)]">{dateLabel}</p>
         {loan.fine && loan.fine.status === 'unpaid' ? (
-          <p className="mt-1 mb-0 text-sm text-[color:#991b1b]">
-            Fine on this loan — view My Fines for details
+          <p className="m-0 text-sm text-[color:#991b1b]">
+            Fine {formatMoneyInr(loan.fine.amountCents)} — see My Fines
           </p>
         ) : null}
         {showDetailsLink ? (
-          <div className="mt-3">
-            <Link
-              href={bookDetailPath(loan.bookId)}
-              className="text-sm font-medium text-[color:var(--bookly-navy)] no-underline hover:underline"
-            >
+          <div className="member-list-card-actions">
+            <Link href={bookDetailPath(loan.bookId)} className="member-inline-link">
               View details →
             </Link>
           </div>

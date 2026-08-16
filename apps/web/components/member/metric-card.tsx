@@ -1,18 +1,22 @@
+import Link from 'next/link';
 import type { CSSProperties } from 'react';
 
 export function MemberMetricCard({
   label,
   value,
   hint,
+  href,
   stagger = 0,
 }: Readonly<{
   label: string;
   value: string;
   hint: string;
+  href: string;
   stagger?: number;
 }>) {
   return (
-    <article
+    <Link
+      href={href}
       className="member-card member-metric member-enter p-4"
       style={{ '--member-stagger': stagger } as CSSProperties}
     >
@@ -23,6 +27,6 @@ export function MemberMetricCard({
         {value}
       </p>
       <p className="mt-1 mb-0 text-sm text-[color:var(--bookly-muted)]">{hint}</p>
-    </article>
+    </Link>
   );
 }

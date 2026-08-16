@@ -1,23 +1,24 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Alert, Skeleton } from '@shared/ui/components';
+import { Alert, Skeleton, TextInput } from '@shared/ui/components';
 import { AdminDashboard } from '@/components/admin';
 import { MemberOverview } from '@/components/member';
 import {
-  StaffBookCard,
   StaffEmptyState,
-  StaffLoanRow,
   StaffMetricCard,
   StaffPageHeader,
-  StaffQuickActions,
 } from '@/components/staff';
 import { useAuth } from '@/components/auth';
 import { toUserMessage } from '@/lib/auth/errors';
 import { hasRole, ROLES } from '@/lib/auth/roles';
-import { ROUTES } from '@/lib/auth/routes';
-import { useBooks, useLibrarianDashboard, useLoans } from '@/lib/bookly';
+import { ROUTES, librarianMemberPath } from '@/lib/auth/routes';
+import { useLibrarianDashboard, useMemberSearch, useMembers } from '@/lib/bookly';
 import { memberGreeting } from '@/lib/member/greeting';
+import { useDebouncedValue } from '@/lib/staff';
+
+const RECENT_MEMBER_LIMIT = 3;
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -43,8 +44,15 @@ export default function DashboardPage() {
 function StaffDashboard() {
   const { user } = useAuth();
   const librarianDash = useLibrarianDashboard();
-  const deskLoans = useLoans({ limit: 6, status: 'active' });
-  const books = useBooks({ limit: 6, sort: 'title' });
+  const [memberQuery, setMemberQuery] = useState('');
+  const debouncedMemberQ = useDebouncedValue(memberQuery.trim(), 250);
+  const searching = debouncedMemberQ.length > 0;
+
+  const recentMembers = useMembers(
+    { limit: RECENT_MEMBER_LIMIT, sort: '-createdAt' },
+    { enabled: !searching },
+  );
+  const memberHits = useMemberSearch(debouncedMemberQ);
 
   const loading = librarianDash.isPending;
 
@@ -52,7 +60,7 @@ function StaffDashboard() {
     <div className="staff-content">
       <StaffPageHeader
         title={memberGreeting(user?.name)}
-        description="Here's today's library operations at a glance."
+        description="Today's library operations at a glance."
       />
 
       {loading ? (
@@ -73,114 +81,148 @@ function StaffDashboard() {
       {!loading && librarianDash.data ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StaffMetricCard
-            label="Books"
-            value={librarianDash.data.totalBooks}
-            hint="Titles in catalog"
+            label="Books / copies"
+            value={`${librarianDash.data.totalBooks} / ${librarianDash.data.totalCopies}`}
+            hint={`${librarianDash.data.availableCopies} available to issue`}
+            href={ROUTES.librarianBooks}
           />
           <StaffMetricCard
-            label="Copies"
-            value={librarianDash.data.totalCopies}
-            hint="Physical copies"
-          />
-          <StaffMetricCard
-            label="Active loans"
+            label="Active Loans"
             value={librarianDash.data.activeLoans}
-            hint="Currently checked out"
+            hint="Currently issued books"
           />
           <StaffMetricCard
-            label="Overdue"
+            label="Overdues"
             value={librarianDash.data.overdueLoans}
             hint={
               librarianDash.data.overdueLoans > 0
-                ? 'Needs attention'
+                ? 'Needs follow-up'
                 : 'Everything is on schedule'
             }
             tone={librarianDash.data.overdueLoans > 0 ? 'warn' : 'ok'}
-            href={
-              librarianDash.data.overdueLoans > 0
-                ? `${ROUTES.librarian}#overdue`
-                : undefined
-            }
+            href={ROUTES.librarianOverdue}
+          />
+          <StaffMetricCard
+            label="Total Members"
+            value={librarianDash.data.memberCount}
+            hint="Registered members"
+            href={ROUTES.librarianMembers}
           />
         </div>
       ) : null}
 
-      <div className="mt-6">
-        <StaffQuickActions
-          actions={[
-            { href: ROUTES.librarian, label: 'Open Librarian Desk', primary: true },
-            { href: `${ROUTES.librarian}#member-lookup`, label: 'Find Member' },
-            { href: `${ROUTES.librarian}#overdue`, label: 'View Overdue' },
-            { href: ROUTES.books, label: 'Browse Catalog' },
-          ]}
-        />
-      </div>
+      <section className="staff-card mt-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 p-4 pb-2">
+          <div>
+            <h2 className="staff-section-title">Find Members</h2>
+            <p className="staff-section-desc">
+              Search by name, email, or member ID. Recently registered members appear
+              when the search is empty.
+            </p>
+          </div>
+          <Link
+            href={ROUTES.librarianMembers}
+            className="ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline"
+          >
+            View all members
+          </Link>
+        </div>
+        <div className="staff-panel-body staff-form-stack">
+          <TextInput
+            value={memberQuery}
+            onChange={(e) => setMemberQuery(e.target.value)}
+            placeholder="Search name, email, or member ID…"
+            autoComplete="off"
+            aria-label="Search members"
+          />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <section className="staff-card staff-card-primary">
-          <div className="p-4 pb-2">
-            <h2 className="staff-section-title">Active loans</h2>
-            <p className="staff-section-desc">Books currently checked out to members.</p>
-          </div>
-          <div className="px-4 pb-4">
-            {deskLoans.isError ? (
-              <Alert tone="danger" title="Could not load loans">
-                {toUserMessage(deskLoans.error)}
-              </Alert>
-            ) : null}
-            {deskLoans.isPending ? <Skeleton size="lg" /> : null}
-            {deskLoans.data && deskLoans.data.items.length === 0 ? (
-              <StaffEmptyState
-                title="No active loans"
-                description="All physical copies are currently back on the shelf."
-              />
-            ) : null}
-            {deskLoans.data && deskLoans.data.items.length > 0 ? (
-              <ul className="m-0 list-none p-0">
-                {deskLoans.data.items.map((loan) => (
-                  <StaffLoanRow key={loan.id} loan={loan} />
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="staff-card">
-          <div className="p-4 pb-2">
-            <h2 className="staff-section-title">Catalog snapshot</h2>
-            <p className="staff-section-desc">Recent titles in the collection.</p>
-          </div>
-          <div className="px-4 pb-4">
-            {books.isError ? (
-              <Alert tone="danger" title="Could not load books">
-                {toUserMessage(books.error)}
-              </Alert>
-            ) : null}
-            {books.isPending ? <Skeleton size="lg" /> : null}
-            {books.data && books.data.items.length === 0 ? (
-              <StaffEmptyState
-                title="No catalog items"
-                description="Add your first book from the Librarian Desk."
-                action={
-                  <Link
-                    href={`${ROUTES.librarian}#catalog`}
-                    className="ui-button ui-button-sm ui-button-secondary no-underline"
-                  >
-                    Manage catalog
-                  </Link>
-                }
-              />
-            ) : null}
-            {books.data && books.data.items.length > 0 ? (
-              <ul className="m-0 grid list-none gap-2 p-0">
-                {books.data.items.map((book) => (
-                  <StaffBookCard key={book.id} book={book} />
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </section>
-      </div>
+          {searching ? (
+            <DashboardMemberResults
+              isPending={memberHits.isPending}
+              isError={memberHits.isError}
+              error={memberHits.error}
+              items={
+                memberHits.data?.map((hit) => ({
+                  userId: hit.userId,
+                  fullName: hit.fullName,
+                  email: hit.email,
+                  activeLoanCount: hit.activeLoanCount,
+                })) ?? []
+              }
+              emptyTitle="No members match that search."
+              emptyDescription="Try a different name, email, or member ID."
+            />
+          ) : (
+            <DashboardMemberResults
+              isPending={recentMembers.isPending}
+              isError={recentMembers.isError}
+              error={recentMembers.error}
+              items={
+                recentMembers.data?.items.map((row) => ({
+                  userId: row.userId,
+                  fullName: row.fullName,
+                  email: row.email,
+                  activeLoanCount: row.activeLoanCount,
+                })) ?? []
+              }
+              emptyTitle="No members registered yet."
+              emptyDescription="New members will appear here after they join."
+            />
+          )}
+        </div>
+      </section>
     </div>
+  );
+}
+
+function DashboardMemberResults({
+  isPending,
+  isError,
+  error,
+  items,
+  emptyTitle,
+  emptyDescription,
+}: Readonly<{
+  isPending: boolean;
+  isError: boolean;
+  error: unknown;
+  items: Array<{
+    userId: string;
+    fullName: string;
+    email: string;
+    activeLoanCount: number;
+  }>;
+  emptyTitle: string;
+  emptyDescription: string;
+}>) {
+  if (isPending) return <Skeleton size="lg" />;
+  if (isError) {
+    return (
+      <Alert tone="danger" title="Could not load members">
+        {toUserMessage(error)}
+      </Alert>
+    );
+  }
+  if (items.length === 0) {
+    return <StaffEmptyState title={emptyTitle} description={emptyDescription} />;
+  }
+  return (
+    <ul className="staff-result-list">
+      {items.map((row) => (
+        <li key={row.userId}>
+          <Link
+            href={librarianMemberPath(row.userId)}
+            className="staff-pick-row"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="m-0 font-medium text-[color:var(--bookly-navy)]">{row.fullName}</p>
+              <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
+                {row.email} · {row.activeLoanCount} active loan(s)
+              </p>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

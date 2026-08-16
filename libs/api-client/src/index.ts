@@ -38,6 +38,12 @@ export type {
   CreateReservationInput,
   ListReservationsParams,
   ReservationStatus,
+  CheckoutRequest,
+  CheckoutRequestStatus,
+  CreateCheckoutRequestInput,
+  IssueCheckoutRequestInput,
+  ListCheckoutRequestsParams,
+  RejectCheckoutRequestInput,
   Fine,
   FineWithLoan,
   ListFinesParams,
@@ -71,10 +77,12 @@ export {
   createBookCopiesApi,
   createLoansApi,
   createReservationsApi,
+  createCheckoutRequestsApi,
   createFinesApi,
   createMembersApi,
   createSettingsApi,
   createDashboardApi,
+  createUsersApi,
 } from './bookly';
 
 export class ApiClientError extends Error {

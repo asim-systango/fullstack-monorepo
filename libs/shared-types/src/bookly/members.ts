@@ -18,8 +18,19 @@ export const memberProfileSchema = z.object({
 });
 export type MemberProfile = z.infer<typeof memberProfileSchema>;
 
+export const memberListSortSchema = z.enum([
+  'fullName',
+  '-fullName',
+  'createdAt',
+  '-createdAt',
+]);
+export type MemberListSort = z.infer<typeof memberListSortSchema>;
+
 export const memberListItemSchema = memberProfileSchema.extend({
   activeLoanCount: z.number().int().nonnegative(),
+  outstandingBalanceCents: z.number().int(),
+  maxActiveLoans: z.number().int().positive(),
+  role: z.enum(['admin', 'user', 'staff']),
 });
 export type MemberListItem = z.infer<typeof memberListItemSchema>;
 
@@ -41,8 +52,8 @@ export const memberLoanSummarySchema = z.object({
 export type MemberLoanSummary = z.infer<typeof memberLoanSummarySchema>;
 
 export const memberDetailLoanSchema = loanBaseSchema.extend({
-  book: bookSchema,
-  bookCopy: bookCopySchema,
+  book: bookSchema.nullish(),
+  bookCopy: bookCopySchema.nullish(),
 });
 
 export const memberDetailSchema = memberProfileSchema.extend({
@@ -58,6 +69,8 @@ export type PaginatedMembers = z.infer<typeof paginatedMembersSchema>;
 export const listMembersParamsSchema = paginationParamsSchema.extend({
   q: z.string().max(200).optional(),
   status: memberStatusSchema.optional(),
+  role: z.enum(['admin', 'user', 'staff']).optional(),
+  sort: memberListSortSchema.optional(),
 });
 export type ListMembersParams = z.infer<typeof listMembersParamsSchema>;
 

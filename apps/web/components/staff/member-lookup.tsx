@@ -57,12 +57,13 @@ export function MemberLookup() {
               <li key={hit.userId}>
                 <button
                   type="button"
-                  className={`staff-member-row w-full border-0 bg-transparent text-left ${
-                    selectedMemberId === hit.userId
-                      ? 'rounded-md bg-[color-mix(in_srgb,var(--bookly-teal-muted,#00a88e)_10%,#fff)]'
-                      : ''
+                  className={`staff-pick-row ${
+                    selectedMemberId === hit.userId ? 'is-selected' : ''
                   }`}
-                  onClick={() => setSelectedMemberId(hit.userId)}
+                  onClick={() => {
+                    setSelectedMemberId(hit.userId);
+                    setQuery('');
+                  }}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="m-0 font-medium">{hit.fullName}</p>
@@ -105,9 +106,11 @@ export function MemberLookup() {
                     key={loan.id}
                     className="border-t border-[color:var(--bookly-border)] pt-2"
                   >
-                    <p className="m-0 font-medium">{loan.book.title}</p>
+                    <p className="m-0 font-medium">
+                      {loan.book?.title ?? 'Unavailable title'}
+                    </p>
                     <p className="m-0 text-xs text-[color:var(--bookly-muted)]">
-                      Due {loan.dueDate.slice(0, 10)} · {loan.bookCopy.barcode}
+                      Due {loan.dueDate.slice(0, 10)} · {loan.bookCopy?.barcode ?? '—'}
                       {loan.returnedAt ? ' · Returned' : ' · Active'}
                     </p>
                   </li>

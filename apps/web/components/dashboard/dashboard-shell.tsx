@@ -9,6 +9,7 @@ import { Sidebar } from './sidebar';
 export function DashboardShell({ children }: Readonly<{ children: ReactNode }>) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
+  const mustChangePassword = Boolean(user?.mustChangePassword);
   const isMember = hasRole(user, [ROLES.user]);
   const isStaff = hasRole(user, [ROLES.staff]);
   const isAdmin = hasRole(user, [ROLES.admin]);
@@ -20,11 +21,21 @@ export function DashboardShell({ children }: Readonly<{ children: ReactNode }>) 
 
   return (
     <div className={`flex min-h-dvh ${shellClass}`}>
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <div className="hidden w-60 shrink-0 md:block" aria-hidden="true" />
+      {mustChangePassword ? null : (
+        <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+      )}
+      {mustChangePassword ? null : (
+        <div className="hidden w-60 shrink-0 md:block" aria-hidden="true" />
+      )}
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader menuOpen={menuOpen} onMenuClick={() => setMenuOpen(true)} />
-        <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
+        <AppHeader
+          menuOpen={menuOpen}
+          onMenuClick={() => setMenuOpen(true)}
+          hideNav={mustChangePassword}
+        />
+        <main className={`flex-1 px-4 py-6 md:px-8 ${isMember ? 'member-main' : ''}`}>
+          {children}
+        </main>
       </div>
     </div>
   );

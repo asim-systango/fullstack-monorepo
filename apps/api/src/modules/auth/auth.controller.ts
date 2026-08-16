@@ -148,8 +148,15 @@ export class AuthController {
   @ApiCookieAuth('access_token')
   @Post('change-password')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Change password (requires current password)' })
-  changePassword(@CurrentUser() user: PublicUser, @Body() dto: ChangePasswordDto) {
-    return this.authService.changePassword(user.id, dto);
+  @ApiOperation({
+    summary: 'Change password (requires current password)',
+    description: 'Updates the password, revokes sessions, and clears the auth cookie. Client should redirect to login.',
+  })
+  changePassword(
+    @CurrentUser() user: PublicUser,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.changePassword(user.id, dto, res);
   }
 }

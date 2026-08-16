@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -8,7 +9,17 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import type { UserRole } from '../../users/user.entity';
 import { MemberStatus } from '../enums/member-status.enum';
+
+export const MEMBER_LIST_ROLES = ['admin', 'user', 'staff'] as const;
+
+export const MEMBER_LIST_SORT_FIELDS = [
+  'fullName',
+  '-fullName',
+  'createdAt',
+  '-createdAt',
+] as const;
 
 export class ListMembersQueryDto {
   @IsOptional()
@@ -19,6 +30,14 @@ export class ListMembersQueryDto {
   @IsOptional()
   @IsEnum(MemberStatus)
   status?: MemberStatus;
+
+  @IsOptional()
+  @IsIn(MEMBER_LIST_ROLES)
+  role?: UserRole;
+
+  @IsOptional()
+  @IsIn(MEMBER_LIST_SORT_FIELDS)
+  sort?: (typeof MEMBER_LIST_SORT_FIELDS)[number];
 
   @IsOptional()
   @Type(() => Number)

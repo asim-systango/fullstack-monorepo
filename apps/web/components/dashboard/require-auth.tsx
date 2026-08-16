@@ -16,8 +16,17 @@ export function RequireAuth({ children }: Readonly<{ children: ReactNode }>) {
     if (!isLoading && !isAuthenticated) {
       const params = new URLSearchParams({ next: pathname || ROUTES.dashboard });
       router.replace(`${ROUTES.login}?${params.toString()}`);
+      return;
     }
-  }, [isAuthenticated, isLoading, pathname, router]);
+    if (
+      !isLoading &&
+      isAuthenticated &&
+      user?.mustChangePassword &&
+      pathname !== ROUTES.changePassword
+    ) {
+      router.replace(ROUTES.changePassword);
+    }
+  }, [isAuthenticated, isLoading, pathname, router, user]);
 
   if (isLoading) {
     return (
@@ -28,6 +37,14 @@ export function RequireAuth({ children }: Readonly<{ children: ReactNode }>) {
   }
 
   if (!user) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center">
+        <LoadingState variant="block" label="Redirecting…" />
+      </div>
+    );
+  }
+
+  if (user.mustChangePassword && pathname !== ROUTES.changePassword) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <LoadingState variant="block" label="Redirecting…" />

@@ -50,6 +50,8 @@ export function CheckoutPanel() {
 
   const availableCopies =
     copies.data?.filter((copy) => copy.status === 'available' && !copy.deletedAt) ?? [];
+  const otherCopies =
+    copies.data?.filter((copy) => copy.status !== 'available' && !copy.deletedAt) ?? [];
 
   async function onConfirm() {
     setError(null);
@@ -101,10 +103,8 @@ export function CheckoutPanel() {
               <li key={hit.userId}>
                 <button
                   type="button"
-                  className={`staff-member-row w-full border-0 bg-transparent text-left ${
-                    selectedMemberId === hit.userId
-                      ? 'rounded-md bg-[color-mix(in_srgb,var(--bookly-teal-muted,#00a88e)_10%,#fff)]'
-                      : ''
+                  className={`staff-pick-row ${
+                    selectedMemberId === hit.userId ? 'is-selected' : ''
                   }`}
                   onClick={() => setSelectedMemberId(hit.userId)}
                 >
@@ -154,11 +154,7 @@ export function CheckoutPanel() {
               <li key={book.id}>
                 <button
                   type="button"
-                  className={`staff-book-row w-full border-0 bg-transparent text-left ${
-                    selectedBookId === book.id
-                      ? 'rounded-md bg-[color-mix(in_srgb,var(--bookly-teal-muted,#00a88e)_10%,#fff)]'
-                      : ''
-                  }`}
+                  className={`staff-pick-row ${selectedBookId === book.id ? 'is-selected' : ''}`}
                   onClick={() => {
                     setSelectedBookId(book.id);
                     setSelectedCopyId(null);
@@ -207,6 +203,18 @@ export function CheckoutPanel() {
                 ))}
               </ul>
             )}
+            {otherCopies.length > 0 ? (
+              <ul className="staff-result-list mt-2">
+                {otherCopies.map((copy) => (
+                  <li
+                    key={copy.id}
+                    className="mb-1 rounded-md border border-[color:var(--bookly-border)] px-3 py-2 font-mono text-sm text-[color:var(--bookly-muted)]"
+                  >
+                    {copy.barcode} · {copy.status}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         ) : null}
 

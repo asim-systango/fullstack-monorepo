@@ -257,6 +257,7 @@
   letter-spacing: -0.03em;
   color: var(--bookly-navy);
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .admin-metric-hint {
@@ -307,6 +308,44 @@
   text-decoration: none;
 }
 
+.admin-hub-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+}
+
+@media (width >= 640px) {
+  .admin-hub-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width >= 1024px) {
+  .admin-hub-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.admin-hub-card {
+  display: block;
+  padding: 1.1rem 1.15rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border-strong);
+  border-radius: 0.85rem;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--bookly-navy) 4%, transparent);
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.admin-hub-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--admin-accent) 30%, var(--admin-border));
+  text-decoration: none;
+}
+
 .admin-section-nav {
   display: flex;
   flex-wrap: wrap;
@@ -342,6 +381,19 @@
 
 .admin-panel-body {
   padding: 0 1.15rem 1.15rem;
+}
+
+.admin-panel-body .ui-field {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.admin-panel-body .ui-input,
+.admin-panel-body .ui-select,
+.admin-panel-body .ui-textarea {
+  width: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
 }
 
 .admin-row {
@@ -456,11 +508,13 @@
 
   .admin-nav-link,
   .admin-metric,
+  .admin-hub-card,
   .admin-section-nav a {
     transition: none;
   }
 
-  .admin-metric:hover {
+  .admin-metric:hover,
+  .admin-hub-card:hover {
     transform: none;
   }
 }

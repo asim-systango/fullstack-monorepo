@@ -1,5 +1,5 @@
 export { useUiStore } from './ui-store';
-export { useLibraryStore, type DeskPanel } from './library-store';
+export { useLibraryStore } from './library-store';
 export { useAuthUiStore } from './auth-ui-store';
 
 import { useAuthUiStore } from './auth-ui-store';

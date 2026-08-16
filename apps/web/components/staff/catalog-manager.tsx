@@ -14,6 +14,7 @@ import {
   useRestoreBook,
 } from '@/lib/bookly';
 import { StaffEmptyState } from './staff-empty-state';
+import { CopyBarcodes } from './copy-barcodes';
 
 type CatalogTab = 'books' | 'copies' | 'deleted';
 
@@ -91,7 +92,7 @@ export function CatalogManager() {
               key={id}
               type="button"
               role="tab"
-              className="staff-tab"
+              className={`staff-tab ${tab === id ? 'is-selected' : ''}`}
               aria-selected={tab === id}
               onClick={() => setTab(id)}
             >
@@ -160,8 +161,9 @@ export function CatalogManager() {
                     <div className="min-w-0">
                       <p className="m-0 font-medium">{book.title}</p>
                       <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
-                        {book.author} · {book.isbn}
+                        {book.author}
                       </p>
+                      <CopyBarcodes bookId={book.id} />
                     </div>
                     <div className="flex gap-2">
                       <Button

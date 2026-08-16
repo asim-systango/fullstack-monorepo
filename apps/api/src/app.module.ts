@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { JwtAuthGuard, RolesGuard } from './common/auth';
+import { JwtAuthGuard, MustChangePasswordGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { BooksModule } from './modules/books';
 import { DashboardModule } from './modules/dashboard';
 import { FinesModule } from './modules/fines';
 import { HealthModule } from './modules/health';
+import { CheckoutRequestsModule } from './modules/checkout-requests';
 import { LoansModule } from './modules/loans';
 import { MembersModule } from './modules/members';
 import { ReservationsModule } from './modules/reservations';
@@ -23,6 +25,7 @@ const db = databaseConfig();
  */
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -40,6 +43,7 @@ const db = databaseConfig();
     BooksModule,
     DashboardModule,
     LoansModule,
+    CheckoutRequestsModule,
     ReservationsModule,
     FinesModule,
     SettingsModule,
@@ -47,6 +51,7 @@ const db = databaseConfig();
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: MustChangePasswordGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })

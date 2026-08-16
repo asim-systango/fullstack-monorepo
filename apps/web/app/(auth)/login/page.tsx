@@ -41,7 +41,11 @@ function LoginForm() {
       onValid: async (values) => {
         const tokens = await login.mutateAsync(values);
         setSessionUser(tokens.user);
-        router.push(getSafeNextPath(searchParams.get('next')));
+        if (tokens.user.mustChangePassword) {
+          router.push(ROUTES.changePassword);
+        } else {
+          router.push(getSafeNextPath(searchParams.get('next')));
+        }
         router.refresh();
       },
       onError: (err) => {

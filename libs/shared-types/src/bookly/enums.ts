@@ -6,6 +6,14 @@ export type BookCopyStatus = z.infer<typeof bookCopyStatusSchema>;
 export const reservationStatusSchema = z.enum(['active', 'fulfilled', 'cancelled']);
 export type ReservationStatus = z.infer<typeof reservationStatusSchema>;
 
+export const checkoutRequestStatusSchema = z.enum([
+  'pending',
+  'fulfilled',
+  'cancelled',
+  'rejected',
+]);
+export type CheckoutRequestStatus = z.infer<typeof checkoutRequestStatusSchema>;
+
 export const fineStatusSchema = z.enum(['unpaid', 'paid', 'waived']);
 export type FineStatus = z.infer<typeof fineStatusSchema>;
 

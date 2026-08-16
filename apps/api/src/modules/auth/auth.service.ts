@@ -204,6 +204,7 @@ export class AuthService {
     await this.assertOtpValid(user, dto.otp);
 
     user.passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    user.mustChangePassword = false;
     clearOtpFields(user);
     await this.usersService.save(user);
     await this.refreshTokens.revokeAllForUser(user.id);
@@ -345,7 +346,7 @@ export class AuthService {
     return this.usersService.toPublic(updated);
   }
 
-  async changePassword(userId: string, dto: ChangePasswordDto) {
+  async changePassword(userId: string, dto: ChangePasswordDto, res: Response) {
     const user = await this.usersService.findById(userId);
     if (!user) throw new UnauthorizedException();
 
@@ -353,8 +354,9 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Current password is incorrect');
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 12);
-    await this.usersService.updatePasswordHash(userId, passwordHash);
-    return { ok: true };
+    await this.usersService.updatePasswordHash(userId, passwordHash, false);
+    await this.refreshTokens.revokeAllForUser(userId);
+    return this.logout(res);
   }
 
   /**

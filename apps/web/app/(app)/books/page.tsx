@@ -4,14 +4,20 @@ import { useState, type CSSProperties, type SyntheticEvent } from 'react';
 import { Button, Checkbox, Field, TextInput } from '@shared/ui/components';
 import {
   BookCard,
+  MemberContent,
   MemberEmpty,
   MemberError,
   MemberLoadingGrid,
+  MemberPageHeader,
   RequireMember,
 } from '@/components/member';
 import { useBooks } from '@/lib/bookly';
 
 const PAGE_SIZE = 12;
+
+function normalizeIsbn(value: string): string {
+  return value.trim().replace(/[-\s]/g, '');
+}
 
 function BrowseBooksContent() {
   const [titleQ, setTitleQ] = useState('');
@@ -39,6 +45,7 @@ function BrowseBooksContent() {
 
   const total = books.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const searching = Boolean(applied.q || applied.author || applied.isbn || applied.availableOnly);
 
   function applyFilters(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +53,7 @@ function BrowseBooksContent() {
     setApplied({
       q: titleQ.trim(),
       author: author.trim(),
-      isbn: isbn.trim(),
+      isbn: normalizeIsbn(isbn),
       availableOnly,
       page: 1,
     });
@@ -61,57 +68,67 @@ function BrowseBooksContent() {
     setApplied({ q: '', author: '', isbn: '', availableOnly: false, page: 1 });
   }
 
+  function onAvailableOnlyChange(checked: boolean) {
+    setAvailableOnly(checked);
+    setPage(1);
+    setApplied({
+      q: titleQ.trim(),
+      author: author.trim(),
+      isbn: normalizeIsbn(isbn),
+      availableOnly: checked,
+      page: 1,
+    });
+  }
+
   function goToPage(next: number) {
     setPage(next);
     setApplied((prev) => ({ ...prev, page: next }));
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <header className="member-enter">
-        <h1 className="m-0 text-2xl font-semibold tracking-tight text-[color:var(--bookly-navy)]">
-          Browse Books
-        </h1>
-        <p className="mt-2 mb-0 text-[color:var(--bookly-muted)]">
-          Search the catalog by title, author, or ISBN. Reserve unavailable titles from
-          the detail page.
-        </p>
-      </header>
+    <MemberContent className="flex flex-col gap-8">
+      <MemberPageHeader
+        title="Browse Books"
+        description="Search the catalog by title, author, or ISBN. Reserve unavailable titles from the detail page."
+      />
 
       <form
         onSubmit={applyFilters}
-        className="member-card member-enter grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-4"
+        className="member-card member-search-card member-enter"
         style={{ '--member-stagger': 1 } as CSSProperties}
       >
-        <Field label="Title" htmlFor="book-q">
-          <TextInput
-            id="book-q"
-            value={titleQ}
-            onChange={(e) => setTitleQ(e.target.value)}
-            placeholder="Search title"
-          />
-        </Field>
-        <Field label="Author" htmlFor="book-author">
-          <TextInput
-            id="book-author"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="Author name"
-          />
-        </Field>
-        <Field label="ISBN" htmlFor="book-isbn">
-          <TextInput
-            id="book-isbn"
-            value={isbn}
-            onChange={(e) => setIsbn(e.target.value)}
-            placeholder="ISBN"
-          />
-        </Field>
-        <div className="flex flex-col justify-end gap-3">
+        <div className="member-search-fields">
+          <Field label="Title" htmlFor="book-q" className="mb-0">
+            <TextInput
+              id="book-q"
+              value={titleQ}
+              onChange={(e) => setTitleQ(e.target.value)}
+              placeholder="Search title"
+            />
+          </Field>
+          <Field label="Author" htmlFor="book-author" className="mb-0">
+            <TextInput
+              id="book-author"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Author name"
+            />
+          </Field>
+          <Field label="ISBN" htmlFor="book-isbn" className="mb-0">
+            <TextInput
+              id="book-isbn"
+              value={isbn}
+              onChange={(e) => setIsbn(e.target.value)}
+              placeholder="ISBN"
+            />
+          </Field>
+        </div>
+        <div className="member-search-actions">
           <Checkbox
             id="available-only"
+            className="mb-0"
             checked={availableOnly}
-            onChange={(e) => setAvailableOnly(e.target.checked)}
+            onChange={(e) => onAvailableOnlyChange(e.target.checked)}
             label="Available only"
           />
           <div className="flex flex-wrap gap-2">
@@ -132,21 +149,25 @@ function BrowseBooksContent() {
 
       {!books.isPending && !books.isError && (books.data?.items.length ?? 0) === 0 ? (
         <MemberEmpty
-          title="No books matched"
-          description="Try a different title, author, or clear your filters."
+          title="No books found"
+          description={
+            searching
+              ? 'Try adjusting your title, author, ISBN, or availability filter.'
+              : 'The catalog is empty right now. Check back soon.'
+          }
         />
       ) : null}
 
       {!books.isPending && books.data && books.data.items.length > 0 ? (
-        <>
-          <p className="m-0 text-sm text-[color:var(--bookly-muted)]">
+        <section className="member-catalog-results">
+          <p className="member-catalog-count">
             Showing {books.data.items.length} of {total} title{total === 1 ? '' : 's'}
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="member-book-grid">
             {books.data.items.map((book, index) => (
               <div
                 key={book.id}
-                className="member-enter"
+                className="member-enter h-full"
                 style={{ '--member-stagger': Math.min(index, 8) } as CSSProperties}
               >
                 <BookCard book={book} />
@@ -178,9 +199,9 @@ function BrowseBooksContent() {
               </Button>
             </div>
           ) : null}
-        </>
+        </section>
       ) : null}
-    </div>
+    </MemberContent>
   );
 }
 

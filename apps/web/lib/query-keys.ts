@@ -4,6 +4,7 @@ import type {
   ListLoansParams,
   ListMembersParams,
   ListReservationsParams,
+  ListCheckoutRequestsParams,
   LookupLoanParams,
   ListBookCopiesParams,
 } from '@shared/types';
@@ -49,6 +50,15 @@ export const queryKeys = {
     mine: (params?: ListReservationsParams) =>
       [...queryKeys.reservations.all, 'mine', params ?? {}] as const,
     byBook: (bookId: string) => [...queryKeys.reservations.all, 'book', bookId] as const,
+  },
+  checkoutRequests: {
+    all: ['checkoutRequests'] as const,
+    list: (params?: ListCheckoutRequestsParams) =>
+      [...queryKeys.checkoutRequests.all, 'list', params ?? {}] as const,
+    mine: (params?: ListCheckoutRequestsParams) =>
+      [...queryKeys.checkoutRequests.all, 'mine', params ?? {}] as const,
+    details: () => [...queryKeys.checkoutRequests.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.checkoutRequests.details(), id] as const,
   },
   fines: {
     all: ['fines'] as const,
