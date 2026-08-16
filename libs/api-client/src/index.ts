@@ -9,14 +9,18 @@ import {
   userSchema,
   ticketSchema,
   categorySchema,
+  messageSchema,
+  createMessageSchema,
   paginatedTicketsResponseSchema,
   type ApiErrorBody,
   type User,
   type Ticket,
   type Category,
+  type Message,
   type TicketPriority,
   type TicketStatus,
   type CreateTicketInput,
+  type CreateMessageInput,
   type PaginatedTicketsResponse,
   type TicketQueryParams,
 } from '@shared/types';
@@ -26,14 +30,18 @@ export {
   userSchema,
   ticketSchema,
   categorySchema,
+  messageSchema,
+  createMessageSchema,
   paginatedTicketsResponseSchema,
   type ApiErrorBody,
   type User,
   type Ticket,
   type Category,
+  type Message,
   type TicketPriority,
   type TicketStatus,
   type CreateTicketInput,
+  type CreateMessageInput,
   type PaginatedTicketsResponse,
   type TicketQueryParams,
 };
@@ -159,6 +167,15 @@ export function createTicketsApi(client: AxiosInstance) {
     async create(input: CreateTicketInput): Promise<Ticket> {
       const { data } = await client.post('/tickets', input);
       return ticketSchema.parse(unwrapData(data));
+    },
+    async getMessages(ticketId: string): Promise<Message[]> {
+      const { data } = await client.get(`/tickets/${ticketId}/messages`);
+      const unwrapped = unwrapData<Message[]>(data);
+      return z.array(messageSchema).parse(unwrapped);
+    },
+    async createMessage(ticketId: string, input: CreateMessageInput): Promise<Message> {
+      const { data } = await client.post(`/tickets/${ticketId}/messages`, input);
+      return messageSchema.parse(unwrapData(data));
     },
   };
 }

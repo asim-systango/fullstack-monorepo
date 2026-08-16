@@ -99,3 +99,27 @@ export const ticketQueryParamsSchema = z.object({
   search: z.string().optional(),
 });
 export type TicketQueryParams = z.infer<typeof ticketQueryParamsSchema>;
+
+export const messageSchema = z.object({
+  id: z.string().uuid(),
+  ticketId: z.string().uuid(),
+  senderId: z.string().uuid(),
+  body: z.string(),
+  isInternal: z.boolean(),
+  createdAt: z.string(),
+  sender: z
+    .object({
+      id: z.string().uuid(),
+      email: z.string().optional(),
+      name: z.string().optional(),
+      role: z.enum(['user', 'staff', 'admin']).optional(),
+    })
+    .optional(),
+});
+export type Message = z.infer<typeof messageSchema>;
+
+export const createMessageSchema = z.object({
+  body: z.string().min(1, 'Message body cannot be empty'),
+  isInternal: z.boolean().optional().default(false),
+});
+export type CreateMessageInput = z.infer<typeof createMessageSchema>;
