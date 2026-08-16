@@ -128,9 +128,14 @@ export class JobsService {
 
   async forceClose(id: string) {
     // Do not use findOnePublic — admin force-close / company suspend must still
-    // reach jobs whose company is already marked suspended.
-    const job = await this.jobsRepo.findOne({ where: { id } });
+    // reach jobs whose company is already marked suspended, and soft-deleted
+    const job = await this.jobsRepo.findOne({ where: { id }, withDeleted: true });
     if (!job) throw new NotFoundException('Job not found');
-    return this.runCloseTransaction(id);
+    return this.jobsRepo.manager.transaction(async (manager) => {
+      job.status = JobStatus.CLOSED;
+      await manager.save(job);
+      await this.applicationsService.rejectOpenForJob(id, manager);
+      return job;
+    });
   }
 }

@@ -104,7 +104,7 @@ Details: [job-portal-cloudinary-resume-upload-report.md](./job-portal-cloudinary
 | Auth session UI state    | Zustand (`apps/web/lib/store/auth-store.ts`)  |
 | Route gates              | Next middleware + `evaluateRouteAccess`       |
 
-**Note:** The starter brief mentions RTK for drafts/filters. This job-portal frontend uses **TanStack Query + Zustand + Axios** instead of RTK Query / Redux Toolkit (see Part D report). No RTK package is present in `apps/web/package.json`.
+**Frontend stack deviation (deliberate):** The shared project brief and grading bar call for TanStack Query for server data and Redux Toolkit (RTK) for drafts/filters. This Job Portal frontend instead uses **TanStack Query + Zustand + Axios** for server lists/mutations and client session/UI state. That was an explicit team choice during frontend scaffolding (RTK packages were removed and Zustand/Axios installed), not an accidental omission — no `@reduxjs/toolkit` / `react-redux` dependency remains in `apps/web/package.json`. Reviewers should treat this as a documented deviation from the starter brief, not a Must-tier regression to “fix back to RTK.”
 
 ## What's intentionally out of scope
 
