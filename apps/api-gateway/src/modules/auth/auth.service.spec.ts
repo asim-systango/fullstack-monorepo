@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 import { User, UserStatus } from '../../database/entities/user.entity';
 import { Organization, OrganizationStatus } from '../../database/entities/organization.entity';
+import { AUTH_ERRORS } from './constants/auth.constants';
 import type { Response } from 'express';
 
 function makeUser(overrides: Partial<User> = {}): User {
@@ -128,7 +129,7 @@ describe('AuthService', () => {
       userRepository.findOne.mockResolvedValue(user);
       const res = { cookie: jest.fn() } as unknown as Response;
 
-      await expect(service.login({ email: user.email, password: 'x' }, res)).rejects.toThrow('User account is inactive');
+      await expect(service.login({ email: user.email, password: 'x' }, res)).rejects.toThrow(AUTH_ERRORS.USER_INACTIVE);
     });
 
     it('throws error if password is invalid', async () => {
@@ -167,7 +168,7 @@ describe('AuthService', () => {
 
       const res = { cookie: jest.fn() } as unknown as Response;
 
-      await expect(service.login({ email: user.email, password }, res)).rejects.toThrow('Organization account is inactive');
+      await expect(service.login({ email: user.email, password }, res)).rejects.toThrow(AUTH_ERRORS.ORGANIZATION_INACTIVE);
     });
 
     it('throws error if organizationSlug does not match organization', async () => {
@@ -180,7 +181,7 @@ describe('AuthService', () => {
 
       const res = { cookie: jest.fn() } as unknown as Response;
 
-      await expect(service.login({ email: user.email, password, organizationSlug: 'acme' }, res)).rejects.toThrow('Organization mismatch');
+      await expect(service.login({ email: user.email, password, organizationSlug: 'acme' }, res)).rejects.toThrow(AUTH_ERRORS.ORGANIZATION_MISMATCH);
     });
   });
 
