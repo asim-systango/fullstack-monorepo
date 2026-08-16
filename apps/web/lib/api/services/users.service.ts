@@ -1,4 +1,3 @@
-import { unwrapData } from '@shared/api-client';
 import { apiClient } from '../config/axios-client';
 import { API_ENDPOINTS } from '../constants/endpoints';
 import type {
@@ -8,12 +7,19 @@ import type {
     InviteUserResponse,
 } from '../types/users.types';
 
+function extractData<T>(payload: unknown): T {
+    if (payload !== null && typeof payload === 'object' && 'data' in payload) {
+        return (payload as { data: T }).data;
+    }
+    return payload as T;
+}
+
 export const usersApi = {
     async getUsers(query: GetUsersQuery = {}): Promise<GetUsersResponse> {
         const response = await apiClient.get<GetUsersResponse>(API_ENDPOINTS.USERS.GET_ALL, {
             params: query,
         });
-        return unwrapData<GetUsersResponse>(response.data);
+        return extractData<GetUsersResponse>(response.data);
     },
 
     async inviteUser(payload: InviteUserPayload): Promise<InviteUserResponse> {
@@ -21,6 +27,6 @@ export const usersApi = {
             API_ENDPOINTS.USERS.INVITE,
             payload,
         );
-        return unwrapData<InviteUserResponse>(response.data);
+        return extractData<InviteUserResponse>(response.data);
     },
 };
