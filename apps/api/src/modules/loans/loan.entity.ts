@@ -23,6 +23,10 @@ import type { Fine } from '../fines/fine.entity';
   unique: true,
   where: '"returned_at" IS NULL',
 })
+@Index('uq_loan_active_user_title', ['userId', 'bookId'], {
+  unique: true,
+  where: '"returned_at" IS NULL',
+})
 @Index('idx_loan_active_user_due', ['userId', 'dueDate'], {
   where: '"returned_at" IS NULL',
 })
@@ -66,6 +70,12 @@ export class Loan {
   /** Gateway user UUID (staff) — no DB FK. */
   @Column({ name: 'returned_to', type: 'uuid', nullable: true })
   returnedTo!: string | null;
+
+  @Column({ name: 'reminder_sent_at', type: 'timestamptz', nullable: true })
+  reminderSentAt!: Date | null;
+
+  @Column({ name: 'overdue_notified_at', type: 'timestamptz', nullable: true })
+  overdueNotifiedAt!: Date | null;
 
   @OneToOne('Fine', 'loan')
   fine?: Fine | null;

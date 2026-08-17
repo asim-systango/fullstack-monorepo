@@ -21,6 +21,10 @@ export class ListReservationsQueryDto {
   userId?: string;
 
   @IsOptional()
+  @IsUUID()
+  bookId?: string;
+
+  @IsOptional()
   @IsEnum(ReservationStatus)
   status?: ReservationStatus;
 }

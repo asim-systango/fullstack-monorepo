@@ -20,6 +20,14 @@ export class MemberProfile {
   @Column({ name: 'user_id', type: 'uuid', unique: true })
   userId!: string;
 
+  /** Read-only mirror of gateway email for desk search. */
+  @Column({ type: 'citext' })
+  email!: string;
+
+  /** Read-only mirror of gateway name for desk search. */
+  @Column({ name: 'full_name', type: 'varchar', length: 120 })
+  fullName!: string;
+
   @Column({ type: 'varchar', length: 20, default: MemberStatus.Active })
   status!: MemberStatus;
 

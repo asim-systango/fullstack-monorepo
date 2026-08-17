@@ -1,36 +1,254 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from './book.entity';
+import { BookCopy } from './book-copy.entity';
 import type { CreateBookDto } from './dto/create-book.dto';
 import type { ListBooksQueryDto } from './dto/list-books-query.dto';
 import type { UpdateBookDto } from './dto/update-book.dto';
+import { BookCopyStatus } from './enums/book-copy-status.enum';
+
+type PaginatedBooks = {
+  items: Book[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+function normalizeIsbn(value: string): string {
+  return value.trim().replace(/[-\s]/g, '');
+}
+
+type BookDetail = Book & {
+  totalCopies: number;
+  availableCopies: number;
+  onLoanCopies: number;
+};
+
+const SORT_COLUMN: Record<string, string> = {
+  title: 'book.title',
+  author: 'book.author',
+  publishedYear: 'book.publishedYear',
+  createdAt: 'book.createdAt',
+};
 
 @Injectable()
 export class BooksService {
   constructor(
     @InjectRepository(Book)
     private readonly books: Repository<Book>,
+    @InjectRepository(BookCopy)
+    private readonly copies: Repository<BookCopy>,
   ) {}
 
-  // Scaffold — implement catalog CRUD + soft-delete + filters next.
-  list(_query: ListBooksQueryDto): Promise<{ items: Book[]; total: number }> {
-    return Promise.resolve({ items: [], total: 0 });
+  async list(query: ListBooksQueryDto): Promise<PaginatedBooks> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const qb = this.books.createQueryBuilder('book');
+
+    this.applyCatalogFilters(qb, query);
+    this.applySort(qb, query.sort);
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { items: await this.withCopyCounts(items), total, page, limit };
   }
 
-  create(_dto: CreateBookDto): Promise<Book> {
-    throw new Error('Not implemented');
+  async listDeleted(query: ListBooksQueryDto): Promise<PaginatedBooks> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const qb = this.books
+      .createQueryBuilder('book')
+      .withDeleted()
+      .where('book.deletedAt IS NOT NULL');
+
+    if (query.q?.trim()) {
+      const q = `%${query.q.trim()}%`;
+      qb.andWhere('(book.title ILIKE :q OR book.author ILIKE :q OR book.isbn ILIKE :q)', { q });
+    }
+    if (query.author?.trim()) {
+      qb.andWhere('book.author ILIKE :author', {
+        author: `%${query.author.trim()}%`,
+      });
+    }
+    if (query.isbn?.trim()) {
+      qb.andWhere(
+        "REPLACE(REPLACE(book.isbn, '-', ''), ' ', '') ILIKE :isbn",
+        { isbn: `%${normalizeIsbn(query.isbn)}%` },
+      );
+    }
+
+    this.applySort(qb, query.sort);
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { items, total, page, limit };
   }
 
-  findOne(_id: string): Promise<Book> {
-    throw new Error('Not implemented');
+  async findOne(id: string): Promise<BookDetail> {
+    const book = await this.books.findOne({ where: { id } });
+    if (!book) {
+      throw new NotFoundException('Book not found');
+    }
+
+    const counts = await this.copies
+      .createQueryBuilder('copy')
+      .select('COUNT(*)', 'total')
+      .addSelect(`SUM(CASE WHEN copy.status = :available THEN 1 ELSE 0 END)`, 'available')
+      .addSelect(`SUM(CASE WHEN copy.status = :onLoan THEN 1 ELSE 0 END)`, 'onLoan')
+      .where('copy.bookId = :bookId', { bookId: id })
+      .andWhere('copy.deleted_at IS NULL')
+      .setParameters({
+        available: BookCopyStatus.Available,
+        onLoan: BookCopyStatus.OnLoan,
+      })
+      .getRawOne<{ total: string; available: string; onLoan: string }>();
+
+    return Object.assign(book, {
+      totalCopies: Number(counts?.total ?? 0),
+      availableCopies: Number(counts?.available ?? 0),
+      onLoanCopies: Number(counts?.onLoan ?? 0),
+    });
   }
 
-  update(_id: string, _dto: UpdateBookDto): Promise<Book> {
-    throw new Error('Not implemented');
+  async create(dto: CreateBookDto, createdBy: string): Promise<Book> {
+    const book = this.books.create({
+      title: dto.title,
+      author: dto.author,
+      isbn: dto.isbn,
+      description: dto.description ?? null,
+      publishedYear: dto.publishedYear ?? null,
+      createdBy,
+    });
+    return this.books.save(book);
   }
 
-  softDelete(_id: string): Promise<void> {
-    throw new Error('Not implemented');
+  async update(id: string, dto: UpdateBookDto): Promise<Book> {
+    const book = await this.requireActiveBook(id);
+    if (dto.title !== undefined) book.title = dto.title;
+    if (dto.author !== undefined) book.author = dto.author;
+    if (dto.isbn !== undefined) book.isbn = dto.isbn;
+    if (dto.description !== undefined) book.description = dto.description;
+    if (dto.publishedYear !== undefined) book.publishedYear = dto.publishedYear;
+    return this.books.save(book);
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.requireActiveBook(id);
+
+    const onLoanCount = await this.copies.count({
+      where: { bookId: id, status: BookCopyStatus.OnLoan },
+    });
+    if (onLoanCount > 0) {
+      throw new ConflictException(
+        'Cannot delete book while one or more copies are on loan',
+      );
+    }
+
+    await this.books.softDelete(id);
+  }
+
+  async restore(id: string): Promise<Book> {
+    const book = await this.books.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!book || !book.deletedAt) {
+      throw new NotFoundException('Deleted book not found');
+    }
+    await this.books.recover(book);
+    return this.requireActiveBook(id);
+  }
+
+  /** Ensures the book exists and is not soft-deleted. */
+  async requireActiveBook(id: string): Promise<Book> {
+    const book = await this.books.findOne({ where: { id } });
+    if (!book) {
+      throw new NotFoundException('Book not found');
+    }
+    return book;
+  }
+
+  private applyCatalogFilters(
+    qb: ReturnType<Repository<Book>['createQueryBuilder']>,
+    query: ListBooksQueryDto,
+  ): void {
+    if (query.q?.trim()) {
+      const q = `%${query.q.trim()}%`;
+      qb.andWhere('(book.title ILIKE :q OR book.author ILIKE :q OR book.isbn ILIKE :q)', { q });
+    }
+    if (query.author?.trim()) {
+      qb.andWhere('book.author ILIKE :author', {
+        author: `%${query.author.trim()}%`,
+      });
+    }
+    if (query.isbn?.trim()) {
+      qb.andWhere(
+        "REPLACE(REPLACE(book.isbn, '-', ''), ' ', '') ILIKE :isbn",
+        { isbn: `%${normalizeIsbn(query.isbn)}%` },
+      );
+    }
+    if (query.availableOnly) {
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM book_copy copy
+          WHERE copy.book_id = book.id
+            AND copy.deleted_at IS NULL
+            AND copy.status = :availableStatus
+        )`,
+        { availableStatus: BookCopyStatus.Available },
+      );
+    }
+  }
+
+  private applySort(
+    qb: ReturnType<Repository<Book>['createQueryBuilder']>,
+    sort?: string,
+  ): void {
+    const raw = sort ?? 'title';
+    const descending = raw.startsWith('-');
+    const field = descending ? raw.slice(1) : raw;
+    const column = SORT_COLUMN[field] ?? 'book.title';
+    qb.orderBy(column, descending ? 'DESC' : 'ASC');
+  }
+
+  private async withCopyCounts(books: Book[]): Promise<Book[]> {
+    if (books.length === 0) return books;
+
+    const ids = books.map((book) => book.id);
+    const rows = await this.copies
+      .createQueryBuilder('copy')
+      .select('copy.book_id', 'bookId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN copy.status = :available THEN 1 ELSE 0 END)`,
+        'available',
+      )
+      .where('copy.bookId IN (:...ids)', { ids })
+      .andWhere('copy.deleted_at IS NULL')
+      .setParameter('available', BookCopyStatus.Available)
+      .groupBy('copy.book_id')
+      .getRawMany<{ bookId?: string; book_id?: string; total: string; available: string }>();
+
+    const counts = new Map(
+      rows.map((row) => {
+        const bookId = row.bookId ?? row.book_id ?? '';
+        return [
+          bookId,
+          {
+            totalCopies: Number(row.total ?? 0),
+            availableCopies: Number(row.available ?? 0),
+          },
+        ] as const;
+      }),
+    );
+
+    return books.map((book) =>
+      Object.assign(book, {
+        totalCopies: counts.get(book.id)?.totalCopies ?? 0,
+        availableCopies: counts.get(book.id)?.availableCopies ?? 0,
+      }),
+    );
   }
 }
