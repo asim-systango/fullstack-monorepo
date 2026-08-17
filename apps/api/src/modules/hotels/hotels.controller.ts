@@ -23,7 +23,13 @@ export class HotelsController {
   @Get()
   @Public()
   findAll(@Query() query: HotelQueryDto) {
-    return this.hotelsService.findAll(query);
+    return this.hotelsService.findAll({ ...query, withDeleted: false });
+  }
+
+  @Get('manage')
+  @Roles('admin', 'staff')
+  findAllManage(@Query() query: HotelQueryDto) {
+    return this.hotelsService.findAll({ ...query, withDeleted: true });
   }
 
   @Get(':id')
@@ -40,13 +46,17 @@ export class HotelsController {
 
   @Patch(':id')
   @Roles('admin', 'staff')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateHotelDto) {
-    return this.hotelsService.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateHotelDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.hotelsService.update(id, dto, user.id, user.role);
   }
 
   @Delete(':id')
   @Roles('admin', 'staff')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.hotelsService.softDelete(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
+    return this.hotelsService.softDelete(id, user.id, user.role);
   }
 }

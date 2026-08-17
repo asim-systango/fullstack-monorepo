@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -64,6 +65,14 @@ export class BookingsService {
     return booking;
   }
 
+  async findOneForUser(id: string, userId: string, role: string) {
+    const booking = await this.findOne(id);
+    if (role !== 'admin' && booking.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to view this booking');
+    }
+    return booking;
+  }
+
   /**
    * Atomically creates a Booking + PaymentIntent after verifying room availability.
    * This is the REQUIRED TRANSACTION for grading.
@@ -76,7 +85,7 @@ export class BookingsService {
 
     // Validate dates
     if (new Date(checkIn) >= new Date(checkOut)) {
-      throw new ConflictException('Check-in date must be before check-out date');
+      throw new BadRequestException('Check-in date must be before check-out date');
     }
 
     return this.dataSource.transaction(async (manager) => {
@@ -96,7 +105,7 @@ export class BookingsService {
         .getRepository(Booking)
         .createQueryBuilder('booking')
         .where('booking.roomId = :roomId', { roomId })
-        .andWhere('booking.status = :status', { status: 'confirmed' })
+        .andWhere("booking.status != 'cancelled'")
         .andWhere('booking.checkIn < :checkOut', { checkOut })
         .andWhere('booking.checkOut > :checkIn', { checkIn })
         .getOne();

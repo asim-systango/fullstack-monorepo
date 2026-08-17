@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Hotel } from './hotel.entity';
@@ -62,14 +62,20 @@ export class HotelsService {
     return this.hotels.save(hotel);
   }
 
-  async update(id: string, dto: UpdateHotelDto) {
+  async update(id: string, dto: UpdateHotelDto, userId: string, role: string) {
     const hotel = await this.findOne(id);
+    if (role !== 'admin' && hotel.managerId !== userId) {
+      throw new ForbiddenException('You can only manage your own hotels');
+    }
     Object.assign(hotel, dto);
     return this.hotels.save(hotel);
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string, userId: string, role: string) {
     const hotel = await this.findOne(id);
+    if (role !== 'admin' && hotel.managerId !== userId) {
+      throw new ForbiddenException('You can only manage your own hotels');
+    }
     await this.hotels.softDelete(hotel.id);
     return { deleted: true };
   }

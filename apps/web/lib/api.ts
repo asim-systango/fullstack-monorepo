@@ -106,7 +106,8 @@ export const hotelApi = {
     limit?: number;
     withDeleted?: boolean;
   }): Promise<PaginatedResponse<Hotel>> {
-    const { data } = await apiClient.get('/hotels', { params });
+    const url = params.withDeleted ? '/hotels/manage' : '/hotels';
+    const { data } = await apiClient.get(url, { params });
     return unwrapData(data);
   },
 

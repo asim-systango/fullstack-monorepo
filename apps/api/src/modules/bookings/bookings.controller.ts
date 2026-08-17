@@ -24,8 +24,8 @@ export class BookingsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.bookingsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
+    return this.bookingsService.findOneForUser(id, user.id, user.role);
   }
 
   @Post()
