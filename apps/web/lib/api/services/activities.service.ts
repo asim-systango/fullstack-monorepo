@@ -1,17 +1,12 @@
 import { apiClient } from '../config/axios-client';
 import { API_ENDPOINTS } from '../constants/endpoints';
+import { extractData } from '../utils/extract-data';
 import type {
     Activity,
     CreateActivityPayload,
     UpdateActivityPayload,
 } from '../types/activities.types';
 
-function extractData<T>(payload: unknown): T {
-    if (payload !== null && typeof payload === 'object' && 'data' in payload) {
-        return (payload as { data: T }).data;
-    }
-    return payload as T;
-}
 
 export const activitiesService = {
     getAllActivities: async (): Promise<Activity[]> => {
