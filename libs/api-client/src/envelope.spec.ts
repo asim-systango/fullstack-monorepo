@@ -81,13 +81,9 @@ describe('createAuthApi envelope smoke', () => {
       }),
     ).resolves.toBeUndefined();
     await expect(
-      auth.changePasswordOtp({ currentPassword: 'password123' }),
-    ).resolves.toBeUndefined();
-    await expect(
       auth.changePassword({
         currentPassword: 'password123',
         newPassword: 'password456',
-        otp: '123456',
       }),
     ).resolves.toBeUndefined();
     await expect(auth.logout({ refreshToken: 'refresh-token' })).resolves.toBeUndefined();

@@ -20,7 +20,6 @@ import {
   LoginDto,
   RefreshTokenDto,
   RegisterDto,
-  RequestChangePasswordOtpDto,
   ResendOtpDto,
   ResetPasswordDto,
   UpdateMeDto,
@@ -351,34 +350,12 @@ export class AuthService {
 
   async changePassword(userId: string, dto: ChangePasswordDto, res: Response) {
     const user = await this.requireCurrentPassword(userId, dto.currentPassword);
-    if (user.otpPurpose !== 'password_change') {
-      throw new BadRequestException(INVALID_OR_EXPIRED_VERIFICATION_CODE);
-    }
-
-    await this.assertOtpValid(user, dto.otp);
 
     user.passwordHash = await bcrypt.hash(dto.newPassword, 12);
     user.mustChangePassword = false;
-    clearOtpFields(user);
     await this.usersService.save(user);
     await this.refreshTokens.revokeAllForUser(userId);
     return this.logout(res);
-  }
-
-  async requestChangePasswordOtp(userId: string, dto: RequestChangePasswordOtpDto) {
-    const user = await this.requireCurrentPassword(userId, dto.currentPassword);
-    if (isOtpCooldownActive(user) && user.otpPurpose === 'password_change') {
-      throw new BadRequestException('Please wait before requesting another code');
-    }
-
-    const { user: withOtp, otp } = await applyIssuedOtp(user, 'password_change');
-    await this.usersService.save(withOtp);
-    await this.mailer.sendOtpEmail({
-      to: withOtp.email,
-      otp,
-      purpose: 'password_change',
-    });
-    return { ok: true };
   }
 
   private async requireCurrentPassword(userId: string, currentPassword: string) {

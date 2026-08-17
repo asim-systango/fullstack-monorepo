@@ -10,7 +10,6 @@ import { UsersService } from '../../modules/users/users.service';
 
 const ALLOWED_WHILE_MUST_CHANGE: ReadonlyArray<{ method: string; path: string }> = [
   { method: 'POST', path: '/auth/change-password' },
-  { method: 'POST', path: '/auth/change-password/otp' },
   { method: 'GET', path: '/auth/me' },
   { method: 'POST', path: '/auth/logout' },
   { method: 'POST', path: '/auth/refresh' },

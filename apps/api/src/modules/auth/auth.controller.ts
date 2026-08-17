@@ -18,7 +18,6 @@ import {
   LogoutDto,
   RefreshTokenDto,
   RegisterDto,
-  RequestChangePasswordOtpDto,
   ResendOtpDto,
   ResetPasswordDto,
   UpdateMeDto,
@@ -147,28 +146,12 @@ export class AuthController {
   }
 
   @ApiCookieAuth('access_token')
-  @Post('change-password/otp')
-  @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @ApiOperation({
-    summary: 'Email an OTP to confirm a password change',
-    description:
-      'Requires the current password. Sends a 6-digit code to the signed-in account.',
-  })
-  requestChangePasswordOtp(
-    @CurrentUser() user: PublicUser,
-    @Body() dto: RequestChangePasswordOtpDto,
-  ) {
-    return this.authService.requestChangePasswordOtp(user.id, dto);
-  }
-
-  @ApiCookieAuth('access_token')
   @Post('change-password')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Change password (requires current password and OTP)',
+    summary: 'Change password (requires current password)',
     description:
-      'Verifies the emailed OTP, updates the password, revokes sessions, and clears the auth cookie. Client should redirect to login.',
+      'Updates the password, revokes sessions, and clears the auth cookie. Client should redirect to login.',
   })
   changePassword(
     @CurrentUser() user: PublicUser,

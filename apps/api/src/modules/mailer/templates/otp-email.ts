@@ -1,6 +1,6 @@
 import { escapeHtml, wrapBooklyEmail } from './layout';
 
-export type OtpEmailPurpose = 'signup' | 'password_reset' | 'password_change';
+export type OtpEmailPurpose = 'signup' | 'password_reset';
 
 function copyFor(purpose: OtpEmailPurpose): {
   subject: string;
@@ -14,15 +14,6 @@ function copyFor(purpose: OtpEmailPurpose): {
       headline: 'Verify your email',
       intro: 'Use this code to finish creating your BOOKLY account.',
       text: (otp) => `Your BOOKLY verification code is ${otp}. It expires in 10 minutes.`,
-    };
-  }
-  if (purpose === 'password_change') {
-    return {
-      subject: 'BOOKLY — confirm password change',
-      headline: 'Confirm password change',
-      intro: 'Use this code to confirm changing your BOOKLY password.',
-      text: (otp) =>
-        `Your BOOKLY password change code is ${otp}. It expires in 10 minutes.`,
     };
   }
   return {

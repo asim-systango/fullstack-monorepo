@@ -20,7 +20,7 @@ export class MailerService {
   async sendOtpEmail(input: {
     to: string;
     otp: string;
-    purpose: 'signup' | 'password_reset' | 'password_change';
+    purpose: 'signup' | 'password_reset';
   }): Promise<void> {
     const { subject, text, html } = buildOtpEmail({
       otp: input.otp,
