@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -43,7 +44,7 @@ export class GoalsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get one own goal with progress' })
   @ApiOkResponse({ description: 'Goal with progress' })
-  findOne(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  findOne(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.goalsService.findOne(user.id, id);
   }
 
@@ -52,7 +53,7 @@ export class GoalsController {
   @ApiOkResponse({ description: 'Updated goal with progress' })
   update(
     @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateGoalDto,
   ) {
     return this.goalsService.update(user.id, id, dto);
@@ -62,7 +63,7 @@ export class GoalsController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Delete own goal' })
   @ApiOkResponse({ description: 'Deletion acknowledged' })
-  async remove(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  async remove(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.goalsService.remove(user.id, id);
     return { id };
   }

@@ -52,10 +52,15 @@ export class PersonalRecordsService {
       });
     }
 
+    // A weighted set always outranks a bodyweight-based PR (no existing weight to compare
+    // against), and otherwise only beats a strictly lower weighted best.
+    // A bodyweight (null-weight) set can never overwrite a weighted PR — it can only beat
+    // an existing bodyweight-based best on reps. Mirrors `recomputeForExercise`'s rule that
+    // weighted sets always take priority over bodyweight sets whenever any weighted set exists.
     const beats =
       weightKg !== null
-        ? weightKg > Number(existing.bestWeightKg)
-        : set.reps > existing.bestReps;
+        ? existing.bestWeightKg === null || weightKg > Number(existing.bestWeightKg)
+        : existing.bestWeightKg === null && set.reps > existing.bestReps;
 
     if (!beats) {
       return null;

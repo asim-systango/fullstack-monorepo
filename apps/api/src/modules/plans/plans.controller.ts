@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -43,7 +44,7 @@ export class PlansController {
   @Get(':id')
   @ApiOperation({ summary: 'Get one own workout plan' })
   @ApiOkResponse({ description: 'Plan with its days' })
-  findOne(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  findOne(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.plansService.findOne(user.id, id);
   }
 
@@ -52,7 +53,7 @@ export class PlansController {
   @ApiOkResponse({ description: 'Updated plan' })
   update(
     @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePlanDto,
   ) {
     return this.plansService.update(user.id, id, dto);
@@ -62,7 +63,7 @@ export class PlansController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Delete own plan' })
   @ApiOkResponse({ description: 'Deletion acknowledged' })
-  async remove(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  async remove(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.plansService.remove(user.id, id);
     return { id };
   }

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -56,7 +57,7 @@ export class WorkoutsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get one own workout with exercise logs and sets' })
   @ApiOkResponse({ description: 'Workout with exercise logs and sets' })
-  findOne(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  findOne(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.workoutsService.findOne(user.id, id);
   }
 
@@ -70,7 +71,7 @@ export class WorkoutsController {
   @ApiOkResponse({ description: 'Updated workout' })
   update(
     @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateWorkoutDto,
   ) {
     return this.workoutsService.update(user.id, id, dto);
@@ -80,7 +81,7 @@ export class WorkoutsController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Soft-delete own workout' })
   @ApiOkResponse({ description: 'Deletion acknowledged' })
-  async remove(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  async remove(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.workoutsService.softDelete(user.id, id);
     return { id };
   }

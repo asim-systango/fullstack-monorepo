@@ -6,6 +6,11 @@ import { ExerciseLog } from '../modules/workouts/exercise-log.entity';
 import { Set } from '../modules/workouts/set.entity';
 import { PersonalRecord } from '../modules/personal-records/personal-record.entity';
 import { CoachAthlete } from '../modules/coach/coach-athlete.entity';
+import { Goal } from '../modules/goals/goal.entity';
+import { WorkoutPlan } from '../modules/plans/workout-plan.entity';
+import { PlanDay } from '../modules/plans/plan-day.entity';
+
+const BENCH_PRESS = 'Bench Press';
 
 /**
  * userId is a plain FK into the gateway's `users` table (same Postgres database,
@@ -62,7 +67,7 @@ async function seedWorkoutData(
 ): Promise<void> {
   await logWorkout(athleteId, 'Push Day', '2026-08-01T09:00:00.000Z', [
     {
-      name: 'Bench Press',
+      name: BENCH_PRESS,
       sets: [
         { reps: 8, weightKg: 80 },
         { reps: 6, weightKg: 85 },
@@ -96,7 +101,7 @@ async function seedWorkoutData(
 
   await logWorkout(secondAthleteId, 'Pull Day', '2026-08-08T09:00:00.000Z', [
     {
-      name: 'Bench Press',
+      name: BENCH_PRESS,
       sets: [
         { reps: 10, weightKg: 60 },
         { reps: 8, weightKg: 65 },
@@ -112,7 +117,7 @@ async function seedWorkoutData(
   ]);
 
   const prs: Array<Pick<PersonalRecord, 'exerciseName' | 'bestWeightKg' | 'bestReps'>> = [
-    { exerciseName: 'Bench Press', bestWeightKg: 85, bestReps: 6 },
+    { exerciseName: BENCH_PRESS, bestWeightKg: 85, bestReps: 6 },
     { exerciseName: 'Overhead Press', bestWeightKg: 45, bestReps: 6 },
     { exerciseName: 'Squat', bestWeightKg: 105, bestReps: 5 },
     { exerciseName: 'Deadlift', bestWeightKg: 140, bestReps: 3 },
@@ -120,6 +125,83 @@ async function seedWorkoutData(
   for (const pr of prs) {
     await dataSource.getRepository(PersonalRecord).save({ userId: athleteId, ...pr });
   }
+}
+
+async function seedGoals(athleteId: string): Promise<void> {
+  const goalRepo = dataSource.getRepository(Goal);
+  const existing = await goalRepo.count({ where: { userId: athleteId } });
+  if (existing > 0) {
+    console.log('Goals already seeded — skipped.');
+    return;
+  }
+
+  await goalRepo.save([
+    {
+      // Athlete already has a Bench Press PR of 85kg — shows non-zero, non-100% progress.
+      userId: athleteId,
+      exerciseName: BENCH_PRESS,
+      targetWeightKg: 100,
+      targetReps: 5,
+      targetDate: '2026-12-31',
+    },
+    {
+      // No PR yet for this exercise — shows the 0%-progress case on a cold demo.
+      userId: athleteId,
+      exerciseName: 'Incline Bench Press',
+      targetWeightKg: 60,
+      targetReps: 8,
+      targetDate: null,
+    },
+  ]);
+  console.log('Goals seeded: 2 (Bench Press, Incline Bench Press) for user@demo.local.');
+}
+
+async function seedPlans(athleteId: string): Promise<void> {
+  const planRepo = dataSource.getRepository(WorkoutPlan);
+  const existing = await planRepo.count({ where: { userId: athleteId } });
+  if (existing > 0) {
+    console.log('Plans already seeded — skipped.');
+    return;
+  }
+
+  await dataSource.transaction(async (manager) => {
+    const plan = await manager.save(WorkoutPlan, {
+      userId: athleteId,
+      title: 'Push/Pull/Legs',
+      notes: 'Seeded 3-day split for the demo.',
+    });
+
+    const days: Array<{
+      dayLabel: string;
+      order: number;
+      exercises: PlanDay['exercises'];
+    }> = [
+      {
+        dayLabel: 'Push',
+        order: 0,
+        exercises: [
+          { exerciseName: BENCH_PRESS, targetSets: 4, targetReps: 6 },
+          { exerciseName: 'Overhead Press', targetSets: 3, targetReps: 8 },
+        ],
+      },
+      {
+        dayLabel: 'Pull',
+        order: 1,
+        exercises: [{ exerciseName: 'Deadlift', targetSets: 3, targetReps: 5 }],
+      },
+      {
+        dayLabel: 'Legs',
+        order: 2,
+        exercises: [{ exerciseName: 'Squat', targetSets: 4, targetReps: 5 }],
+      },
+    ];
+
+    for (const day of days) {
+      await manager.save(PlanDay, { planId: plan.id, ...day });
+    }
+  });
+
+  console.log('Plan seeded: "Push/Pull/Legs" (3 days) for user@demo.local.');
 }
 
 async function seedCoachAssignment(
@@ -154,6 +236,8 @@ async function seed() {
   }
 
   await seedCoachAssignment(coachId, athleteId);
+  await seedGoals(athleteId);
+  await seedPlans(athleteId);
 
   await dataSource.destroy();
 }

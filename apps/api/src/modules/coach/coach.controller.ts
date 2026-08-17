@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -36,7 +37,7 @@ export class CoachController {
   @Get('athletes/:athleteId')
   @ApiOperation({ summary: 'Athlete details assigned to this coach' })
   @ApiOkResponse({ description: 'Assigned athletes details' })
-  getAthletesDetails(@Param('athleteId') athleteId: string) {
+  getAthletesDetails(@Param('athleteId', ParseUUIDPipe) athleteId: string) {
     return this.coachService.getAthletesDetails(athleteId);
   }
 
@@ -45,7 +46,7 @@ export class CoachController {
   @ApiOkResponse({ description: 'Paginated workouts' })
   getAthleteWorkouts(
     @CurrentUser() user: JwtUser,
-    @Param('athleteId') athleteId: string,
+    @Param('athleteId', ParseUUIDPipe) athleteId: string,
     @Query() query: ListWorkoutsDto,
   ) {
     return this.coachService.getAthleteWorkouts(user.id, athleteId, query);
@@ -54,7 +55,10 @@ export class CoachController {
   @Get('athletes/:athleteId/prs')
   @ApiOperation({ summary: "Read-only: an assigned athlete's personal records" })
   @ApiOkResponse({ description: 'Personal records' })
-  getAthletePrs(@CurrentUser() user: JwtUser, @Param('athleteId') athleteId: string) {
+  getAthletePrs(
+    @CurrentUser() user: JwtUser,
+    @Param('athleteId', ParseUUIDPipe) athleteId: string,
+  ) {
     return this.coachService.getAthletePrs(user.id, athleteId);
   }
 
@@ -99,7 +103,7 @@ export class CoachController {
   @HttpCode(200)
   @ApiOperation({ summary: '[Admin] Remove a coach-athlete assignment' })
   @ApiOkResponse({ description: 'Deletion acknowledged' })
-  async unassign(@Param('id') id: string) {
+  async unassign(@Param('id', ParseUUIDPipe) id: string) {
     await this.coachService.unassignAthlete(id);
     return { id };
   }
