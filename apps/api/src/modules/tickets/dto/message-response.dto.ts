@@ -39,8 +39,14 @@ export class MessageResponseDto {
   @ApiProperty({ example: 'b47c943e-3221-4f18-974a-4e2b02e7d701' })
   userId!: string;
 
+  @ApiProperty({ example: 'b47c943e-3221-4f18-974a-4e2b02e7d701' })
+  senderId!: string;
+
   @ApiProperty({ enum: MessageType, example: MessageType.PUBLIC })
   messageType!: MessageType;
+
+  @ApiProperty({ example: false })
+  isInternal!: boolean;
 
   @ApiProperty({ example: 'Checking auth logs for user.' })
   body!: string;
@@ -54,18 +60,38 @@ export class MessageResponseDto {
   @ApiPropertyOptional({ type: [AttachmentResponseDto] })
   attachments!: AttachmentResponseDto[];
 
+  @ApiPropertyOptional({
+    example: { id: 'uuid', name: 'John Doe', email: 'user@example.com', role: 'user' },
+  })
+  sender?: {
+    id: string;
+    email?: string;
+    name?: string;
+    role?: string;
+  };
+
   public static fromEntity(entity: Message): MessageResponseDto {
     const dto = new MessageResponseDto();
     dto.id = entity.id;
     dto.ticketId = entity.ticketId;
     dto.userId = entity.userId;
+    dto.senderId = entity.userId;
     dto.messageType = entity.messageType;
+    dto.isInternal = entity.messageType === MessageType.INTERNAL_NOTE;
     dto.body = entity.body;
     dto.metadata = entity.metadata || {};
     dto.createdAt = entity.createdAt;
     dto.attachments = (entity.attachments || []).map((att) =>
       AttachmentResponseDto.fromEntity(att),
     );
+    if (entity.user) {
+      dto.sender = {
+        id: entity.user.id,
+        email: entity.user.email,
+        name: entity.user.name,
+        role: entity.user.role,
+      };
+    }
     return dto;
   }
 }

@@ -40,6 +40,7 @@ export function TicketThread({
   const isClosed = ticket.status === 'closed';
 
   const [body, setBody] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,14 +55,20 @@ export function TicketThread({
       return;
     }
 
+    let finalBody = body.trim();
+    if (attachmentUrl.trim()) {
+      finalBody += `\n\n📎 Attachment: ${attachmentUrl.trim()}`;
+    }
+
     createMessageMutation.mutate(
       {
-        body: body.trim(),
+        body: finalBody,
         isInternal: isStaffOrAdmin ? isInternal : false,
       },
       {
         onSuccess: () => {
           setBody('');
+          setAttachmentUrl('');
           setIsInternal(false);
         },
         onError: (err) => {
@@ -149,6 +156,17 @@ export function TicketThread({
                 placeholder="Type your response here..."
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
+              />
+            </Field>
+
+            <Field label="Attachment URL (Optional)" htmlFor="reply-attachment">
+              <input
+                id="reply-attachment"
+                type="url"
+                placeholder="https://example.com/screenshot.png"
+                value={attachmentUrl}
+                onChange={(e) => setAttachmentUrl(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </Field>
 

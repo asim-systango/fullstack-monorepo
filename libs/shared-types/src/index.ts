@@ -103,9 +103,11 @@ export type TicketQueryParams = z.infer<typeof ticketQueryParamsSchema>;
 export const messageSchema = z.object({
   id: z.string().uuid(),
   ticketId: z.string().uuid(),
-  senderId: z.string().uuid(),
+  senderId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
   body: z.string(),
-  isInternal: z.boolean(),
+  isInternal: z.boolean().optional().default(false),
+  messageType: z.string().optional(),
   createdAt: z.string(),
   sender: z
     .object({
@@ -123,3 +125,53 @@ export const createMessageSchema = z.object({
   isInternal: z.boolean().optional().default(false),
 });
 export type CreateMessageInput = z.infer<typeof createMessageSchema>;
+
+export const assignTicketSchema = z.object({
+  assigneeId: z.string().uuid().nullable(),
+  expectedVersion: z.number().optional(),
+  reason: z.string().optional(),
+});
+export type AssignTicketInput = z.infer<typeof assignTicketSchema>;
+
+export const updateTicketStatusSchema = z.object({
+  status: ticketStatusSchema,
+  expectedVersion: z.number().optional(),
+  reason: z.string().optional(),
+});
+export type UpdateTicketStatusInput = z.infer<typeof updateTicketStatusSchema>;
+
+export const createCategoryInputSchema = z.object({
+  name: z.string().min(1, 'Category name is required').max(100),
+  slug: z.string().max(100).optional(),
+  description: z.string().optional(),
+  isActive: z.boolean().optional(),
+  slaPolicies: z.array(slaPolicySchema).optional(),
+});
+export type CreateCategoryInput = z.infer<typeof createCategoryInputSchema>;
+
+export const updateCategoryInputSchema = createCategoryInputSchema.partial();
+export type UpdateCategoryInput = z.infer<typeof updateCategoryInputSchema>;
+
+export const ticketEventSchema = z.object({
+  id: z.string().uuid(),
+  ticketId: z.string().uuid(),
+  actorId: z.string().uuid(),
+  eventType: z.string(),
+  oldValue: z.record(z.unknown()).nullable().optional(),
+  newValue: z.record(z.unknown()).nullable().optional(),
+  reason: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type TicketEvent = z.infer<typeof ticketEventSchema>;
+
+export const notificationSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  ticketId: z.string().uuid(),
+  type: z.string(),
+  title: z.string(),
+  body: z.string().nullable().optional(),
+  readAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+});
+export type Notification = z.infer<typeof notificationSchema>;

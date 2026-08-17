@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useAuth } from './auth-provider';
 import { Button } from '@shared/ui/components';
 
+import { NotificationsPopover } from '@/components/support-desk/notifications-popover';
+
 function AuthNav() {
   const { user, loading, logout } = useAuth();
 
@@ -14,6 +16,7 @@ function AuthNav() {
   if (user) {
     return (
       <>
+        <NotificationsPopover />
         <span className="font-mono text-xs text-muted-foreground">
           {user.name} · {user.role}
         </span>
@@ -49,7 +52,7 @@ function MainNav() {
           {(user.role === 'staff' || user.role === 'admin') && (
             <Link href="/agent">Agent Inbox</Link>
           )}
-          {user.role === 'admin' && <Link href="/categories">Categories</Link>}
+          {user.role === 'admin' && <Link href="/admin/categories">Categories</Link>}
         </>
       )}
       <Link href="/ui">UI kit</Link>

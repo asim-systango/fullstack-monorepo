@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { Attachment } from './attachment.entity';
+import { User } from '../users/user.entity';
 
 export enum MessageType {
   PUBLIC = 'public',
@@ -56,6 +57,10 @@ export class Message {
   })
   @JoinColumn({ name: 'ticket_id' })
   ticket!: Ticket;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
+  user?: User;
 
   @OneToMany(() => Attachment, (attachment) => attachment.message)
   attachments!: Attachment[];

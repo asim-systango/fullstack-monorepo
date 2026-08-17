@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { AgentInboxFilters } from '@/components/support-desk/agent-inbox-filters';
+import { AgentDashboardStats } from '@/components/support-desk/agent-dashboard-stats';
 import { TicketList } from '@/components/support-desk/ticket-list';
 import { useTickets } from '@/lib/hooks/use-tickets';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
@@ -124,7 +125,8 @@ export default function AgentInboxPage() {
         subtitle="Staff management portal for customer support tickets"
       />
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 space-y-6">
+        <AgentDashboardStats />
         <AgentInboxFilters />
         {content}
       </div>

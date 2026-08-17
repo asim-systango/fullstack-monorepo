@@ -12,6 +12,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@shared/ui/components';
+import { SlaBreachBadge } from './sla-breach-badge';
 
 function getStatusTone(status: TicketStatus) {
   switch (status) {
@@ -71,12 +72,15 @@ export function TicketList({ tickets }: Readonly<{ tickets: Ticket[] }>) {
               #{ticket.ticketNumber}
             </TableCell>
             <TableCell className="font-medium">
-              <Link
-                href={`/tickets/${ticket.id}`}
-                className="hover:underline text-foreground font-semibold"
-              >
-                {ticket.subject}
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link
+                  href={`/tickets/${ticket.id}`}
+                  className="hover:underline text-foreground font-semibold"
+                >
+                  {ticket.subject}
+                </Link>
+                <SlaBreachBadge ticket={ticket} />
+              </div>
             </TableCell>
             <TableCell>{ticket.categoryName ?? ticket.category?.name ?? '—'}</TableCell>
 
@@ -85,6 +89,7 @@ export function TicketList({ tickets }: Readonly<{ tickets: Ticket[] }>) {
                 {ticket.status.toUpperCase()}
               </Badge>
             </TableCell>
+
             <TableCell>
               <Badge tone={getPriorityTone(ticket.priority)}>
                 {ticket.priority.toUpperCase()}
@@ -96,7 +101,7 @@ export function TicketList({ tickets }: Readonly<{ tickets: Ticket[] }>) {
             <TableCell>
               <Link
                 href={`/tickets/${ticket.id}`}
-                className="ui-button ui-button-xs ui-button-ghost"
+                className="ui-button ui-button-xs ui-button-ghost px-2"
               >
                 View
               </Link>

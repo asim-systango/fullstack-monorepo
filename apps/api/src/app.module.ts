@@ -8,6 +8,7 @@ import { HealthModule } from './modules/health';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { EventsModule } from './modules/events/events.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 const db = databaseConfig();
 
@@ -26,6 +27,7 @@ const db = databaseConfig();
     CategoriesModule,
     TicketsModule,
     EventsModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsEnum,
   IsOptional,
+  IsBoolean,
   IsArray,
   ValidateNested,
   IsUrl,
@@ -47,6 +48,11 @@ export class CreateMessageDto {
   @IsOptional()
   @IsEnum(MessageType)
   messageType?: MessageType = MessageType.PUBLIC;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isInternal?: boolean;
 
   @ApiPropertyOptional({ type: [CreateAttachmentDto] })
   @IsOptional()

@@ -365,6 +365,7 @@ export class TicketsService {
     const qb = this.messageRepository
       .createQueryBuilder('message')
       .leftJoinAndSelect('message.attachments', 'attachments')
+      .leftJoinAndSelect('message.user', 'user')
       .where('message.ticketId = :ticketId', { ticketId });
 
     if (user.role === 'user') {
@@ -392,7 +393,9 @@ export class TicketsService {
       throw new BadRequestException('Cannot reply to a closed ticket.');
     }
 
-    const messageType = dto.messageType ?? MessageType.PUBLIC;
+    const messageType = dto.isInternal
+      ? MessageType.INTERNAL_NOTE
+      : (dto.messageType ?? MessageType.PUBLIC);
     if (messageType === MessageType.INTERNAL_NOTE && user.role === 'user') {
       throw new ForbiddenException('Only staff members can post internal notes.');
     }
@@ -450,7 +453,7 @@ export class TicketsService {
 
       const fullMessage = await messageRepo.findOne({
         where: { id: savedMessage.id },
-        relations: ['attachments'],
+        relations: ['attachments', 'user'],
       });
 
       return fullMessage || savedMessage;

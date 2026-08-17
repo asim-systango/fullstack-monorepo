@@ -41,8 +41,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [refresh]);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignore network failures on logout
+    } finally {
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        window.location.assign('/login');
+      }
+    }
   }, []);
 
   const value = useMemo(
