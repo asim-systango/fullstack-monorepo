@@ -12,6 +12,7 @@ export const DEALS_ERRORS = {
 export const DEALS_MESSAGES = {
   DEAL_CREATED: 'Deal created successfully.',
   DEALS_RETRIEVED: 'Deals retrieved successfully.',
+  DEAL_RETRIEVED: 'Deal retrieved successfully.',
   DEAL_UPDATED: 'Deal details updated successfully.',
   DEAL_STAGE_UPDATED: 'Deal stage updated successfully.',
 } as const;

@@ -5,6 +5,7 @@ import { UserRepository } from '../../database/repositories/user.repository';
 import { CreateDealDto } from './dto/create-deal.dto';
 import { UpdateDealDto } from './dto/update-deal.dto';
 import { UpdateDealStageDto } from './dto/update-deal-stage.dto';
+import { GetDealsDto } from './dto/get-deals.dto';
 import { Deal, DealStage } from '../../database/entities/deal.entity';
 import { LeadStage } from '../../database/entities/lead.entity';
 import { User } from '../../database/entities/user.entity';
@@ -17,6 +18,42 @@ export class DealsService {
     private readonly leadRepository: LeadRepository,
     private readonly userRepository: UserRepository,
   ) {}
+
+  async getDeals(currentUser: User, userRole: string, query: GetDealsDto) {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(DEALS_ERRORS.USER_NO_ORG);
+    }
+
+    const options = {
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      stage: query.stage,
+      ownerId: userRole === 'SALES_REP' ? currentUser.id : query.ownerId,
+    };
+
+    return this.dealRepository.findDeals(orgId, options);
+  }
+
+  async getDealDetails(id: string, currentUser: User, userRole: string): Promise<Deal> {
+    const orgId = currentUser.organizationId;
+    if (!orgId) {
+      throw new Error(DEALS_ERRORS.USER_NO_ORG);
+    }
+
+    const deal = await this.dealRepository.findDetailsById(id);
+    if (!deal || deal.organizationId !== orgId) {
+      throw new Error(DEALS_ERRORS.DEAL_NOT_FOUND);
+    }
+
+    // Role check: SALES_REP can only view details for deals they own
+    if (userRole === 'SALES_REP' && deal.ownerId !== currentUser.id) {
+      throw new Error(DEALS_ERRORS.UNAUTHORIZED_ACCESS);
+    }
+
+    return deal;
+  }
 
   async createDeal(
     createDealDto: CreateDealDto,

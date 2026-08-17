@@ -8,21 +8,21 @@ import {
     type Activity,
 } from '@/lib/api';
 
-type LeadActivityTimelineProps = Readonly<{
-    leadId: string;
+type DealActivityTimelineProps = Readonly<{
+    dealId: string;
     activities: Activity[];
     loading: boolean;
     onRefresh: () => void;
 }>;
 
-export function LeadActivityTimeline({
-    leadId,
+export function DealActivityTimeline({
+    dealId,
     activities,
     loading,
     onRefresh,
-}: LeadActivityTimelineProps) {
+}: DealActivityTimelineProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [activityType, setActivityType] = useState<ActivityType>(ActivityType.FOLLOW_UP);
+    const [activityType, setActivityType] = useState<ActivityType>(ActivityType.MEETING);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [dueDateStr, setDueDateStr] = useState('');
@@ -86,7 +86,7 @@ export function LeadActivityTimeline({
             }
 
             await activitiesService.createActivity({
-                leadId,
+                dealId,
                 activityType,
                 title: title.trim(),
                 description: description.trim() || undefined,
@@ -99,7 +99,7 @@ export function LeadActivityTimeline({
             setIsModalOpen(false);
             onRefresh();
         } catch (err: unknown) {
-            console.error('Failed to create activity:', err);
+            console.error('Failed to create deal activity:', err);
             const apiError = err as { response?: { data?: { message?: string } }; message?: string };
             setFormError(apiError?.response?.data?.message || apiError?.message || 'Failed to create activity.');
         } finally {
@@ -133,7 +133,7 @@ export function LeadActivityTimeline({
         if (activities.length === 0) {
             return (
                 <div className="py-8 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl">
-                    No activities logged yet. Click &quot;+ Log activity&quot; above to add one.
+                    No activities logged for this deal yet. Click &quot;+ Log activity&quot; above.
                 </div>
             );
         }
@@ -155,7 +155,7 @@ export function LeadActivityTimeline({
                         : 'bg-indigo-600 border-zinc-900 ring-2 ring-indigo-500/40';
 
                     const buttonClass = isDone
-                        ? 'text-zinc-500 hover:text-zinc-350'
+                        ? 'text-zinc-500 hover:text-zinc-400'
                         : 'text-indigo-400 hover:text-indigo-300';
 
                     return (
@@ -163,7 +163,7 @@ export function LeadActivityTimeline({
                             {/* Timeline Dot */}
                             <div className={`absolute -left-[27px] top-1 w-3 h-3 rounded-full border-2 transition ${dotClass}`} />
 
-                            <div className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-4 space-y-2 hover:border-zinc-750 transition shadow-md">
+                            <div className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-4 space-y-2 hover:border-zinc-700 transition shadow-md">
                                 <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center space-x-2">
                                         <Badge tone={getActivityTypeBadgeTone(act.activityType)}>
@@ -180,12 +180,12 @@ export function LeadActivityTimeline({
                                 </div>
 
                                 {act.description && (
-                                    <p className="text-xs text-zinc-350 bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-850">
+                                    <p className="text-xs text-zinc-300 bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800">
                                         {act.description}
                                     </p>
                                 )}
 
-                                <div className="flex items-center justify-between text-[10px] text-zinc-450 pt-1">
+                                <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
                                     <div>
                                         by <span className="text-zinc-300 font-medium">{creatorName}</span> · {formattedDate}
                                     </div>
@@ -211,9 +211,9 @@ export function LeadActivityTimeline({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                 <div>
-                    <h3 className="text-sm font-bold text-white">Activity timeline</h3>
-                    <p className="text-[10px] text-zinc-450 mt-0.5">
-                        Log phone calls, follow-ups, meetings, and notes for this lead.
+                    <h3 className="text-sm font-bold text-white">Deal Activity Timeline</h3>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">
+                        Log calls, demo meetings, proposal notes, and tasks for this deal.
                     </p>
                 </div>
                 <Button
@@ -241,7 +241,7 @@ export function LeadActivityTimeline({
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
                         <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
-                            <h3 className="text-sm font-bold text-white">+ Log Activity</h3>
+                            <h3 className="text-sm font-bold text-white">+ Log Activity on Deal</h3>
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
@@ -259,15 +259,15 @@ export function LeadActivityTimeline({
 
                         <form onSubmit={handleCreateActivity} className="space-y-4 text-xs">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-semibold text-zinc-350 block">Activity Type</label>
+                                <label className="text-[10px] font-semibold text-zinc-300 block">Activity Type</label>
                                 <Select
                                     value={activityType}
                                     onChange={(e) => setActivityType(e.target.value as ActivityType)}
                                     className="w-full text-xs"
                                 >
-                                    <option value={ActivityType.FOLLOW_UP}>🔄 Follow-Up</option>
+                                    <option value={ActivityType.MEETING}>📅 Demo / Meeting</option>
                                     <option value={ActivityType.CALL}>📞 Call</option>
-                                    <option value={ActivityType.MEETING}>📅 Meeting</option>
+                                    <option value={ActivityType.FOLLOW_UP}>🔄 Follow-Up</option>
                                     <option value={ActivityType.EMAIL}>📧 Email</option>
                                     <option value={ActivityType.NOTE}>📝 Note</option>
                                     <option value={ActivityType.TASK}>☑️ Task</option>
@@ -275,11 +275,11 @@ export function LeadActivityTimeline({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-semibold text-zinc-350 block">
+                                <label className="text-[10px] font-semibold text-zinc-300 block">
                                     Title <span className="text-red-400">*</span>
                                 </label>
                                 <TextInput
-                                    placeholder="e.g. Check back after budget review"
+                                    placeholder="e.g. Conduct technical demo with VP Engineering"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     className="w-full text-xs"
@@ -287,9 +287,9 @@ export function LeadActivityTimeline({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-semibold text-zinc-350 block">Description / Notes</label>
+                                <label className="text-[10px] font-semibold text-zinc-300 block">Description / Notes</label>
                                 <TextInput
-                                    placeholder="Additional details about the interaction..."
+                                    placeholder="Key takeaways, questions asked, or next steps..."
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="w-full text-xs"
@@ -297,7 +297,7 @@ export function LeadActivityTimeline({
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-semibold text-zinc-350 block">Due Date (Optional)</label>
+                                <label className="text-[10px] font-semibold text-zinc-300 block">Due / Scheduled Date</label>
                                 <input
                                     type="date"
                                     value={dueDateStr}

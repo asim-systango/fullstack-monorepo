@@ -15,18 +15,18 @@ function extractData<T>(payload: unknown): T {
 
 export const activitiesService = {
     getAllActivities: async (): Promise<Activity[]> => {
-        const response = await apiClient.get<any>(API_ENDPOINTS.ACTIVITIES.GET_ALL);
-        const extracted = extractData<any>(response.data);
+        const response = await apiClient.get<unknown>(API_ENDPOINTS.ACTIVITIES.GET_ALL);
+        const extracted = extractData<Activity[] | { data: Activity[] }>(response.data);
         return Array.isArray(extracted) ? extracted : extracted?.data || [];
     },
 
     createActivity: async (payload: CreateActivityPayload): Promise<Activity> => {
-        const response = await apiClient.post<any>(API_ENDPOINTS.ACTIVITIES.CREATE, payload);
+        const response = await apiClient.post<unknown>(API_ENDPOINTS.ACTIVITIES.CREATE, payload);
         return extractData<Activity>(response.data);
     },
 
     updateActivity: async (id: string, payload: UpdateActivityPayload): Promise<Activity> => {
-        const response = await apiClient.patch<any>(API_ENDPOINTS.ACTIVITIES.UPDATE(id), payload);
+        const response = await apiClient.patch<unknown>(API_ENDPOINTS.ACTIVITIES.UPDATE(id), payload);
         return extractData<Activity>(response.data);
     },
 };
