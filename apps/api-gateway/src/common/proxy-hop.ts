@@ -6,13 +6,27 @@ import type { Request, Response } from 'express';
 
 /** Paths handled by the gateway itself (not proxied to apps/api). */
 export function isGatewayOwnedPath(path: string): boolean {
-  return (
+  if (
     path === '/health' ||
     path.startsWith('/health/') ||
-    path.startsWith('/auth') ||
+    path === '/api/v1/health' ||
+    path.startsWith('/api/v1/health/') ||
     path.startsWith('/docs') ||
     path.startsWith('/swagger')
-  );
+  ) {
+    return true;
+  }
+
+  const gatewayAuthPaths = [
+    '/auth/login',
+    '/auth/logout',
+    '/auth/me',
+    '/api/v1/auth/login',
+    '/api/v1/auth/logout',
+    '/api/v1/auth/me',
+  ];
+
+  return gatewayAuthPaths.some((p) => path === p || path.startsWith(`${p}/`));
 }
 
 type ProxyOutgoing = {

@@ -25,6 +25,7 @@ const dataSource = new DataSource({
   entities: [resolve(__dirname, '../**/*.entity.{ts,js}')],
   migrations: [resolve(__dirname, './migrations/*.{ts,js}')],
   synchronize: false,
+  ssl: url.includes('supabase') ? { rejectUnauthorized: false } : undefined,
 });
 
 export default dataSource;

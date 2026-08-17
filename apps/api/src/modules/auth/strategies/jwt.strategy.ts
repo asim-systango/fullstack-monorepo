@@ -1,37 +1,48 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { loadApiEnv } from '../../../common/env';
-import type { JwtUser, UserRole } from '../../../common/auth';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UserRepository } from '../../../database/repositories/user.repository';
+import { UserStatus } from '../../../database/entities/user.entity';
+import { JwtTokenType } from '../constants/auth.constants';
 
-type JwtPayload = { sub: string; email: string; role: string };
-
-const ROLES: readonly UserRole[] = ['admin', 'user', 'staff'];
-
-function isUserRole(value: string): value is UserRole {
-  return (ROLES as readonly string[]).includes(value);
+export interface JwtPayload {
+  sub: string;
+  email: string;
+  organizationId?: string | null;
+  roleId?: string;
+  type?: string;
+  iat?: number;
+  exp?: number;
 }
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    const env = loadApiEnv();
+  constructor(private readonly userRepository: UserRepository) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: env.JWT_SECRET,
-      algorithms: ['HS256'],
+      secretOrKey: process.env.JWT_SECRET || 'dev-jwt-secret-min-16chars',
     });
   }
 
-  validate(payload: JwtPayload): JwtUser {
-    if (!payload.sub || !payload.email || !isUserRole(payload.role)) {
-      throw new UnauthorizedException('Invalid token claims');
+  async validate(payload: JwtPayload) {
+    if (payload.type === JwtTokenType.PASSWORD_RESET) {
+      throw new UnauthorizedException(
+        'Password reset token cannot be used for API authentication',
+      );
     }
-    return {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
-    };
+
+    const user = await this.userRepository.findById(payload.sub);
+    if (!user || (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING)) {
+      throw new UnauthorizedException('User is inactive or token is invalid');
+    }
+
+    if (user.isPasswordChangeRequired) {
+      throw new ForbiddenException(
+        'Password change is required before accessing API endpoints',
+      );
+    }
+
+    return user;
   }
 }

@@ -1,0 +1,51 @@
+/**
+ * Centralised UI Error & Status Messages
+ *
+ * All user-facing notification, alert, and error strings are centralized
+ * here to prevent magic string duplication and allow easy i18n/localization.
+ */
+
+export const AUTH_ERROR_MESSAGES = {
+  REQUIRED_FIELDS: 'Please provide both email address and password.',
+  INVALID_CREDENTIALS: 'Invalid email or password. Please try again.',
+  SERVER_ERROR: 'Something went wrong. Please check your connection or try again later.',
+  UNEXPECTED_ERROR: 'Something went wrong. Please try again later.',
+} as const;
+
+export const SYSTEM_MESSAGES = {
+  GENERIC_SOMETHING_WENT_WRONG: 'Something went wrong. Please try again later.',
+  NETWORK_CONNECTION_ERROR:
+    'Unable to connect to server. Please check your network connection.',
+} as const;
+
+export const SUPER_ADMIN_MESSAGES = {
+  TITLE: 'Platform Super Admin Console',
+  SUBTITLE: 'Cross-tenant administration, organization overview, and platform metrics.',
+  TOTAL_ORGANIZATIONS: 'Total Organizations',
+  TOTAL_USERS: 'Total Platform Users',
+  PENDING_INVITES: 'Pending Invites',
+  TOTAL_REQUESTS: 'Organization Requests',
+  PROVISION_MODAL_TITLE: 'Provision New Client Organization',
+  PROVISION_MODAL_SUBTITLE:
+    'Create an isolated tenant workspace and assign an initial organization administrator.',
+} as const;
+
+export const ORGANIZATION_ONBOARDING_MESSAGES = {
+  PAGE_TITLE: 'Onboard New Tenant Organization',
+  PAGE_SUBTITLE:
+    'Provision an enterprise tenant workspace, setup domain routing, and assign the primary organization administrator.',
+  SECTION_ORG_INFO: '1. Corporate Organization Details',
+  SECTION_ADMIN_INFO: '2. Primary Administrator Contact',
+  SECTION_OPTIONAL_INFO: '3. Additional Corporate Metadata',
+  SUCCESS_ONBOARDED: 'Organization onboarded successfully! Tenant workspace is now live.',
+} as const;
+
+export const PUBLIC_ONBOARDING_REQUEST_MESSAGES = {
+  PAGE_TITLE: 'Request CRM Access for your Organization',
+  PAGE_SUBTITLE:
+    'Join thousands of organizations transforming their business with our CRM platform.',
+  SUCCESS_SUBMITTED:
+    'Your request has been successfully submitted! Our team will review it and contact you shortly.',
+  ERROR_ALREADY_EXISTS: 'An onboarding request for this organization already exists.',
+  ERROR_TOO_MANY_REQUESTS: 'Too many requests from this email. Please try again later.',
+} as const;

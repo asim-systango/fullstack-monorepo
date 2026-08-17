@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to {{organizationName}}</title>
+</head>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700;">Welcome to {{organizationName}}</h1>
+      <p style="margin-top: 8px; opacity: 0.9; font-size: 14px;">Your CRM Administrator Account Has Been Provisioned</p>
+    </div>
+    <div style="padding: 32px 24px; color: #334155;">
+      <p style="font-size: 16px; margin-top: 0;">Hello <strong>{{adminName}}</strong>,</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+        You have been designated as the <strong>Organization Administrator</strong> for <strong>{{organizationName}}</strong>. You can now access your enterprise dashboard using the credentials below:
+      </p>
+      
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0;">
+        <div style="margin-bottom: 12px;">
+          <span style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 600; display: block;">Login Email</span>
+          <strong style="font-size: 15px; color: #0f172a;">{{toEmail}}</strong>
+        </div>
+        <div>
+          <span style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 600; display: block;">Temporary Password</span>
+          <code style="font-size: 16px; font-family: monospace; color: #4f46e5; background: #eef2ff; padding: 4px 8px; border-radius: 4px; font-weight: 700;">{{tempPassword}}</code>
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: #e11d48; line-height: 1.5; margin-bottom: 24px;">
+        ⚠️ <strong>Action Required:</strong> For security purposes, you will be required to update your temporary password immediately upon your first login.
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="{{loginUrl}}" style="background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);">
+          Log In to CRM Dashboard
+        </a>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">
+        If you have any questions, please reach out to system support.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

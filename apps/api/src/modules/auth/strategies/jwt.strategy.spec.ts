@@ -1,59 +1,69 @@
-import { UnauthorizedException } from '@nestjs/common';
-import { JwtStrategy } from './jwt.strategy';
+import { UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { JwtStrategy, JwtPayload } from './jwt.strategy';
+import { UserRepository } from '../../../database/repositories/user.repository';
+import { UserStatus } from '../../../database/entities/user.entity';
+import { JwtTokenType } from '../constants/auth.constants';
 
-describe('JwtStrategy (api)', () => {
-  const originalEnv = { ...process.env };
-  let strategy: JwtStrategy;
+describe('JwtStrategy (apps/api)', () => {
+    let strategy: JwtStrategy;
+    let userRepository: jest.Mocked<UserRepository>;
 
-  beforeAll(() => {
-    Object.assign(process.env, {
-      NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/app',
-      JWT_SECRET: 'test-jwt-secret-16',
-      JWT_EXPIRES_IN: '1h',
-      PORT: '3002',
+    beforeEach(() => {
+        userRepository = {
+            findById: jest.fn(),
+        } as unknown as jest.Mocked<UserRepository>;
+
+        strategy = new JwtStrategy(userRepository);
     });
-    strategy = new JwtStrategy();
-  });
 
-  afterAll(() => {
-    for (const key of Object.keys(process.env)) {
-      if (!(key in originalEnv)) delete process.env[key];
-    }
-    Object.assign(process.env, originalEnv);
-  });
+    it('throws UnauthorizedException if token type is PASSWORD_RESET', async () => {
+        const payload: JwtPayload = {
+            sub: 'user-1',
+            email: 'test@example.com',
+            type: JwtTokenType.PASSWORD_RESET,
+        };
 
-  it('maps valid Bearer claims to JwtUser', () => {
-    expect(
-      strategy.validate({
-        sub: '11111111-1111-1111-1111-111111111111',
-        email: 'user@example.com',
-        role: 'user',
-      }),
-    ).toEqual({
-      id: '11111111-1111-1111-1111-111111111111',
-      email: 'user@example.com',
-      role: 'user',
+        await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
     });
-  });
 
-  it('rejects invalid role claims', () => {
-    expect(() =>
-      strategy.validate({
-        sub: '11111111-1111-1111-1111-111111111111',
-        email: 'user@example.com',
-        role: 'superadmin',
-      }),
-    ).toThrow(UnauthorizedException);
-  });
+    it('throws UnauthorizedException if user is not found', async () => {
+        userRepository.findById.mockResolvedValue(null as any);
+        const payload: JwtPayload = { sub: 'user-1', email: 'test@example.com' };
 
-  it('rejects missing subject', () => {
-    expect(() =>
-      strategy.validate({
-        sub: '',
-        email: 'user@example.com',
-        role: 'user',
-      }),
-    ).toThrow(UnauthorizedException);
-  });
+        await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException if user status is INACTIVE', async () => {
+        userRepository.findById.mockResolvedValue({
+            id: 'user-1',
+            status: UserStatus.INACTIVE,
+        } as any);
+        const payload: JwtPayload = { sub: 'user-1', email: 'test@example.com' };
+
+        await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws ForbiddenException if isPasswordChangeRequired is true', async () => {
+        userRepository.findById.mockResolvedValue({
+            id: 'user-1',
+            status: UserStatus.ACTIVE,
+            isPasswordChangeRequired: true,
+        } as any);
+        const payload: JwtPayload = { sub: 'user-1', email: 'test@example.com' };
+
+        await expect(strategy.validate(payload)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('returns user if user is active and password change is not required', async () => {
+        const mockUser = {
+            id: 'user-1',
+            status: UserStatus.ACTIVE,
+            isPasswordChangeRequired: false,
+        };
+        userRepository.findById.mockResolvedValue(mockUser as any);
+        const payload: JwtPayload = { sub: 'user-1', email: 'test@example.com' };
+
+        const result = await strategy.validate(payload);
+        expect(result).toEqual(mockUser);
+    });
 });
