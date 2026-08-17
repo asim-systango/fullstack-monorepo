@@ -19,7 +19,6 @@ async function bootstrap() {
   app.use(requestIdMiddleware());
   app.use(securityHeadersMiddleware());
 
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -43,7 +42,8 @@ async function bootstrap() {
   await app.listen(appSettings.PORT);
   console.log(`Domain API listening on http://localhost:${appSettings.PORT}`);
   if (appSettings.NODE_ENV !== 'production') {
-    console.log(`Swagger UI: http:  }
+    console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
+  }
 }
 
 void bootstrap();

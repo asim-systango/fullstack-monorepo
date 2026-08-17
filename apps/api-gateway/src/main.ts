@@ -84,7 +84,8 @@ async function bootstrap() {
     `API gateway listening on http://localhost:${appSettings.PORT} → upstream ${appSettings.API_UPSTREAM_URL}`,
   );
   if (appSettings.NODE_ENV !== 'production') {
-    console.log(`Swagger UI: http:  }
+    console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
+  }
 }
 
 void bootstrap();
