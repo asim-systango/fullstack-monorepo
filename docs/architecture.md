@@ -58,9 +58,51 @@ Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Domain notes
 
-_Describe your ERD and key invariants here._
+### ERD & Entities
 
-## Demo script
+- **Hotel**: Main listing entity. Stores metadata like name, city, address, description, and image URL. Supports soft delete using TypeORM `deletedAt` column.
+- **Room**: Belongs to a Hotel. Has `type` (`single`, `double`, `suite`), `pricePerNight` (stored in integer cents), `capacity`, and `amenities`.
+- **Booking**: Connects `roomId` and `userId` for specific `checkIn` and `checkOut` dates. Tracks reservation state (`pending`, `confirmed`, `completed`, `cancelled`) and `totalPrice`.
+- **PaymentIntent**: Created atomically within a transaction during booking. Tracks billing status (`pending`, `paid`, `failed`, `refunded`).
+- **Review**: Guest-submitted feedback. Stores `rating` (1-5) and `comment`.
 
-1. Register / login
-2. …
+### Key Invariants
+
+1. **No Overlapping Bookings**: The `BookingsService` verifies that no other active (non-cancelled) reservation exists for the same `roomId` that overlaps with the selected `checkIn` and `checkOut` range.
+2. **Atomic Transactional Booking & Payment**: The booking creation and corresponding `PaymentIntent` are saved within a database transaction, guaranteeing atomic payment registration.
+3. **Completed-Stay Review Enforcement**: The `ReviewsService` ensures a user can only leave a review for a hotel if they have a historical reservation with status `completed`.
+
+---
+
+## Demo Script
+
+### 1. Multi-Role Authentication Flow (~1 min)
+
+- Open the application at `http://localhost:3006`.
+- Navigate to `/login` and log in with three roles to check RBAC:
+  - **User (Guest)**: `user@demo.local` / `password123`
+  - **Staff (Hotel Manager)**: `staff@demo.local` / `password123`
+  - **Admin**: `admin@demo.local` / `password123`
+
+### 2. Core Booking Happy Path (~2 min)
+
+- Log in as `user@demo.local`.
+- Search hotels in the catalog page, select **Coastal Breeze Resort**.
+- Enter check-in and check-out dates, click **Check Availability**.
+- Click **Book Now** on the available "Ocean View Single" room.
+- In the premium payment modal, review the total calculated price and click **Confirm & Pay**.
+- The page automatically redirects to **My Bookings**, showing the booking as `Confirmed` and payment as `Paid`.
+
+### 3. Invariant Overlap Failure Walkthrough (~1 min)
+
+- Log in as `user@demo.local`.
+- Go to the same room at **Coastal Breeze Resort**.
+- Attempt to select dates that conflict with the newly made booking (e.g. overlapping check-in/out).
+- Try to confirm booking; expect a clean overlap alert rejecting the transaction.
+
+### 4. Admin/Staff Hotel & Booking Management (~1 min)
+
+- Log in as `staff@demo.local` or `admin@demo.local`.
+- Navigate to `/manager` or click **Add Room** on the hotel detail page to perform CRUD management actions.
+- Manage room listing status, and review the revenue summary/occupancy metrics.
+- **Soft Delete**: As an administrator, delete a hotel from the public view, verifying it no longer appears in search but remains in the database.

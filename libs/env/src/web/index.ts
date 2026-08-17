@@ -9,7 +9,7 @@ export const webEnvSchema = z.object({
   /** Browser axios base — default `/api` (Next rewrite → gateway). */
   NEXT_PUBLIC_API_URL: z.string().min(1).default('/api'),
   /** Server-only rewrite target for next.config.ts. */
-  API_GATEWAY_URL: z.string().url().default('http://localhost:3001'),
+  API_GATEWAY_URL: z.string().url().default('http://localhost:3005'),
 });
 
 export type WebEnv = z.infer<typeof webEnvSchema>;

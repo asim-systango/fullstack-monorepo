@@ -17,7 +17,7 @@ describe('JwtStrategy (gateway)', () => {
       JWT_SECRET: 'test-jwt-secret-16',
       JWT_EXPIRES_IN: '1h',
       COOKIE_SECURE: 'false',
-      CORS_ORIGIN: 'http://localhost:3000',
+      CORS_ORIGIN: 'http://localhost:3006',
       API_UPSTREAM_URL: 'http://localhost:3002',
     });
     strategy = new JwtStrategy(usersService as unknown as UsersService);

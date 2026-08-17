@@ -1,13 +1,13 @@
 import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+import hotelFiltersReducer from './hotel-filters-slice';
+import bookingFiltersReducer from './booking-filters-slice';
 
 /**
  * Ownership rule:
  * - RTK owns unfinished drafts, selection, and filter chrome only.
  * - TanStack Query owns server lists and mutations.
  * Never put Nest entity arrays into this store.
- *
- * Extend this slice (or add slices) for your domain drafts.
  */
 type UiState = {
   filterDraft: string;
@@ -37,6 +37,8 @@ export const { setFilterDraft, applyFilter } = uiSlice.actions;
 export const store = configureStore({
   reducer: {
     ui: uiSlice.reducer,
+    hotelFilters: hotelFiltersReducer,
+    bookingFilters: bookingFiltersReducer,
   },
 });
 

@@ -5,6 +5,11 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
+import { HotelsModule } from './modules/hotels';
+import { RoomsModule } from './modules/rooms';
+import { BookingsModule } from './modules/bookings';
+import { ReviewsModule } from './modules/reviews';
+import { PaymentsModule } from './modules/payments';
 
 const db = databaseConfig();
 
@@ -20,6 +25,11 @@ const db = databaseConfig();
     }),
     AuthModule,
     HealthModule,
+    HotelsModule,
+    RoomsModule,
+    BookingsModule,
+    ReviewsModule,
+    PaymentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
