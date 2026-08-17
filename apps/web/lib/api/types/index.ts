@@ -5,5 +5,6 @@ export * from './organization.types';
 export * from './users.types';
 export * from './contacts.types';
 export * from './leads.types';
+export * from './deals.types';
 export * from './activities.types';
 

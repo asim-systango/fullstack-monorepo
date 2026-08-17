@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Alert, Badge, Button, Card, type BadgeTone } from '@shared/ui';
+import { Alert, Button, Card, type BadgeTone } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
 import {
@@ -23,6 +23,7 @@ import {
     LeadActivityTimeline,
     EditLeadModal,
 } from '@/components/leads';
+import { CreateDealModal } from '@/components/deals';
 
 type LeadDetailPageProps = Readonly<{
     params: Promise<{ id: string }>;
@@ -35,7 +36,9 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
     const router = useRouter();
     const { user: currentUser, isAuthenticated, loading: authLoading } = useAuth();
 
-    const userRole = typeof currentUser?.role === 'object' && currentUser.role !== null ? (currentUser.role as { name?: string }).name || '' : (currentUser?.role as string) || '';
+    const userRole = typeof currentUser?.role === 'object' && currentUser.role !== null
+        ? (currentUser.role as { name?: string }).name || ''
+        : (currentUser?.role as string) || '';
     const canEditDetails = userRole === 'ORG_ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'SALES_LEAD';
 
     const [lead, setLead] = useState<Lead | null>(null);
@@ -47,6 +50,7 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
     const [activitiesLoading, setActivitiesLoading] = useState(false);
     const [updatingStage, setUpdatingStage] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isConvertToDealOpen, setIsConvertToDealOpen] = useState(false);
 
     const [notification, setNotification] = useState<{
         message: string;
@@ -128,9 +132,15 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
         }
     }, [isAuthenticated, leadId, fetchLeadDetails, fetchActivities, fetchFormDropdowns]);
 
-    // Handle Stage Update - always use leadId from URL params to avoid undefined
+    // Handle Stage Update
     const handleStageChange = async (newStage: LeadStage) => {
         if (!leadId || (lead && lead.stage === newStage)) return;
+
+        // If user wants to mark converted, trigger the convert-to-deal modal directly
+        if (newStage === LeadStage.CONVERTED) {
+            setIsConvertToDealOpen(true);
+            return;
+        }
 
         setUpdatingStage(true);
         try {
@@ -165,21 +175,13 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
         void fetchLeadDetails();
     };
 
-    const getStageBadgeTone = (stage: LeadStage): BadgeTone => {
-        switch (stage) {
-            case LeadStage.NEW:
-                return 'neutral';
-            case LeadStage.CONTACTED:
-                return 'accent';
-            case LeadStage.QUALIFIED:
-                return 'accent';
-            case LeadStage.CONVERTED:
-                return 'success';
-            case LeadStage.LOST:
-                return 'danger';
-            default:
-                return 'neutral';
-        }
+    const handleDealCreatedAndRedirect = (createdDeal: { id: string; title: string }) => {
+        setNotification({
+            message: `Lead converted! Redirecting to deal "${createdDeal.title}"...`,
+            type: 'success',
+        });
+        // Redirect directly to the newly created deal page
+        router.push(`/deals/${createdDeal.id}`);
     };
 
     if (authLoading || loading) {
@@ -226,16 +228,41 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
             title="Lead Details"
             subtitle="View, track pipeline progress, update stage, and log activities for this lead."
             headerActions={
-                canEditDetails ? (
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setIsEditOpen(true)}
-                        className="text-xs px-4 py-2"
-                    >
-                        ✏️ Edit Lead
-                    </Button>
-                ) : undefined
+                <div className="flex items-center gap-2.5">
+                    {canEditDetails && lead.stage !== LeadStage.CONVERTED && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setIsConvertToDealOpen(true)}
+                            className="text-xs px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-semibold shadow-md shadow-emerald-600/20"
+                        >
+                            💼 Convert to Deal
+                        </Button>
+                    )}
+
+                    {lead.stage === LeadStage.CONVERTED && (
+                        <Link href="/deals">
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                className="text-xs px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white font-semibold shadow-md shadow-indigo-600/20"
+                            >
+                                💼 View in Deals →
+                            </Button>
+                        </Link>
+                    )}
+
+                    {canEditDetails && (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setIsEditOpen(true)}
+                            className="text-xs px-4 py-2"
+                        >
+                            ✏️ Edit Lead
+                        </Button>
+                    )}
+                </div>
             }
         >
             <div className="space-y-6 max-w-7xl mx-auto">
@@ -271,7 +298,7 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column (2/3 width) */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Top Main Lead Card matching Mockup */}
+                        {/* Top Main Lead Card */}
                         <Card className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6 space-y-6 shadow-xl">
                             {/* Header Title & Stage Badge */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
@@ -300,9 +327,10 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
                                 currentStage={lead.stage}
                                 updating={updatingStage}
                                 onStageChange={handleStageChange}
+                                onConvertToDeal={() => setIsConvertToDealOpen(true)}
                             />
 
-                            {/* Lead Details Grid matching Mockup */}
+                            {/* Lead Details Grid */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-zinc-800 text-xs">
                                 <div>
                                     <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
@@ -363,6 +391,16 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
                     contacts={contactsList}
                     users={usersList}
                     onSuccess={handleLeadUpdated}
+                />
+
+                {/* Convert Lead to Deal Modal Component */}
+                <CreateDealModal
+                    isOpen={isConvertToDealOpen}
+                    onClose={() => setIsConvertToDealOpen(false)}
+                    leads={lead ? [lead] : []}
+                    initialLeadId={lead?.id}
+                    users={usersList}
+                    onSuccess={handleDealCreatedAndRedirect}
                 />
             </div>
         </AppShell>

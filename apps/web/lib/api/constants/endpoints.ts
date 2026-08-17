@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
   },
   DASHBOARD: {
     OVERALL_KPIS: '/dashboard/overall-kpis',
+    CRM_KPIS: '/dashboard/crm-kpis',
   },
   USERS: {
     GET_ALL: '/users',
@@ -36,5 +37,12 @@ export const API_ENDPOINTS = {
     GET_ALL: '/activities',
     CREATE: '/activities',
     UPDATE: (id: string) => `/activities/${id}`,
+  },
+  DEALS: {
+    GET_ALL: '/deals',
+    CREATE: '/deals',
+    UPDATE: (id: string) => `/deals/${id}`,
+    UPDATE_STAGE: (id: string) => `/deals/${id}/stage`,
+    GET_DETAILS: (id: string) => `/deals/${id}`,
   },
 } as const;

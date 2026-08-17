@@ -2,59 +2,51 @@
 
 import React from 'react';
 import { Badge, Button } from '@shared/ui';
-import { LeadStage } from '@/lib/api';
+import { DealStage } from '@/lib/api';
 
-type LeadStageStepperProps = Readonly<{
-    currentStage: LeadStage;
+type DealStageStepperProps = Readonly<{
+    currentStage: DealStage;
     updating: boolean;
-    onStageChange: (newStage: LeadStage) => void;
-    onConvertToDeal?: () => void;
+    onStageChange: (newStage: DealStage) => void;
 }>;
 
 interface StageStep {
-    stage: LeadStage;
+    stage: DealStage;
     label: string;
     stepNumber: number;
 }
 
 const STAGES: StageStep[] = [
-    { stage: LeadStage.NEW, label: 'NEW', stepNumber: 1 },
-    { stage: LeadStage.CONTACTED, label: 'CONTACTED', stepNumber: 2 },
-    { stage: LeadStage.QUALIFIED, label: 'QUALIFIED', stepNumber: 3 },
-    { stage: LeadStage.CONVERTED, label: 'CONVERTED', stepNumber: 4 },
+    { stage: DealStage.OPEN, label: 'OPEN', stepNumber: 1 },
+    { stage: DealStage.DEMO, label: 'DEMO', stepNumber: 2 },
+    { stage: DealStage.PROPOSAL, label: 'PROPOSAL', stepNumber: 3 },
+    { stage: DealStage.NEGOTIATION, label: 'NEGOTIATION', stepNumber: 4 },
+    { stage: DealStage.WON, label: 'WON', stepNumber: 5 },
 ];
 
-export function LeadStageStepper({
+export function DealStageStepper({
     currentStage,
     updating,
     onStageChange,
-    onConvertToDeal,
-}: LeadStageStepperProps) {
-    const getStageIndex = (stage: LeadStage) => {
+}: DealStageStepperProps) {
+    const getStageIndex = (stage: DealStage) => {
         switch (stage) {
-            case LeadStage.NEW:
+            case DealStage.OPEN:
                 return 0;
-            case LeadStage.CONTACTED:
+            case DealStage.DEMO:
                 return 1;
-            case LeadStage.QUALIFIED:
+            case DealStage.PROPOSAL:
                 return 2;
-            case LeadStage.CONVERTED:
+            case DealStage.NEGOTIATION:
                 return 3;
+            case DealStage.WON:
+                return 4;
             default:
                 return -1; // LOST or unknown
         }
     };
 
     const currentIndex = getStageIndex(currentStage);
-
-    const handleStepClick = (stage: LeadStage, isLocked: boolean) => {
-        if (isLocked || updating) return;
-        if (stage === LeadStage.CONVERTED && onConvertToDeal) {
-            onConvertToDeal();
-        } else {
-            onStageChange(stage);
-        }
-    };
 
     return (
         <div className="space-y-6">
@@ -64,19 +56,18 @@ export function LeadStageStepper({
                     {STAGES.map((s, idx) => {
                         const isCompleted = currentIndex > idx;
                         const isCurrent = currentIndex === idx;
-                        const isLocked = (currentStage === LeadStage.CONVERTED || currentStage === LeadStage.LOST) && idx < 3;
-                        const isConverted = currentStage === LeadStage.CONVERTED && idx === 3;
+                        const isWon = currentStage === DealStage.WON && idx === 4;
 
                         return (
                             <button
                                 key={s.stage}
                                 type="button"
-                                disabled={updating || isLocked}
-                                onClick={() => handleStepClick(s.stage, isLocked)}
-                                className={`flex flex-col items-center group focus:outline-none ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                disabled={updating}
+                                onClick={() => onStageChange(s.stage)}
+                                className="flex flex-col items-center group focus:outline-none cursor-pointer"
                             >
                                 <div
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-200 ${isConverted
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-200 ${isWon
                                         ? 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-lg shadow-emerald-500/30'
                                         : isCompleted
                                             ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
@@ -85,11 +76,11 @@ export function LeadStageStepper({
                                                 : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
                                         }`}
                                 >
-                                    {isCompleted || isConverted ? '✓' : s.stepNumber}
+                                    {isCompleted || isWon ? '✓' : s.stepNumber}
                                 </div>
                                 <span
-                                    className={`text-[10px] font-bold tracking-wider mt-2 transition ${isCurrent || isConverted
-                                        ? isConverted ? 'text-emerald-400 font-extrabold' : 'text-indigo-400 font-extrabold'
+                                    className={`text-[10px] font-bold tracking-wider mt-2 transition ${isCurrent || isWon
+                                        ? isWon ? 'text-emerald-400 font-extrabold' : 'text-indigo-400 font-extrabold'
                                         : isCompleted
                                             ? 'text-white'
                                             : 'text-zinc-500 group-hover:text-zinc-300'
@@ -105,7 +96,7 @@ export function LeadStageStepper({
                 {/* Progress Background Connector Line */}
                 <div className="absolute top-8 left-8 right-8 h-0.5 bg-zinc-800 -z-0">
                     <div
-                        className={`h-full transition-all duration-300 ${currentStage === LeadStage.CONVERTED ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                        className={`h-full transition-all duration-300 ${currentStage === DealStage.WON ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                         style={{
                             width: `${currentIndex <= 0
                                 ? 0
@@ -119,81 +110,79 @@ export function LeadStageStepper({
             {/* Quick Stage Action Buttons */}
             <div className="pt-3 border-t border-zinc-800/80">
                 <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2.5">
-                    Quick Stage Actions
+                    Pipeline Stage Actions
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                    {currentStage === LeadStage.CONVERTED ? (
+                    {currentStage === DealStage.WON ? (
                         <>
-                            <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => {
-                                    if (onConvertToDeal) onConvertToDeal();
-                                }}
-                                className="text-xs px-3.5 py-1.5 cursor-pointer bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-600/20"
-                            >
-                                💼 Convert to Deal / View Deals →
-                            </Button>
+                            <Badge tone="success" className="py-1 px-3 text-xs">
+                                🏆 Deal Closed Won
+                            </Badge>
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 disabled={updating}
-                                onClick={() => onStageChange(LeadStage.LOST)}
-                                className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
+                                onClick={() => onStageChange(DealStage.OPEN)}
+                                className="text-xs px-3 py-1.5 text-zinc-400 hover:text-white"
                             >
-                                Mark Lost
+                                Reopen Deal
                             </Button>
                         </>
-                    ) : currentStage === LeadStage.LOST ? (
+                    ) : currentStage === DealStage.LOST ? (
                         <>
                             <Badge tone="danger" className="py-1 px-3 text-xs">
-                                ❌ Lead Marked as Lost
+                                ❌ Deal Marked as Lost
                             </Badge>
                             <Button
                                 type="button"
-                                variant="primary"
+                                variant="secondary"
                                 size="sm"
                                 disabled={updating}
-                                onClick={() => {
-                                    if (onConvertToDeal) {
-                                        onConvertToDeal();
-                                    } else {
-                                        onStageChange(LeadStage.CONVERTED);
-                                    }
-                                }}
+                                onClick={() => onStageChange(DealStage.OPEN)}
                                 className="text-xs px-3 py-1.5"
                             >
-                                Mark Converted
+                                Reopen Deal
                             </Button>
                         </>
                     ) : (
                         <>
-                            {currentStage !== LeadStage.CONTACTED && (
+                            {currentStage !== DealStage.DEMO && (
                                 <Button
                                     type="button"
                                     variant="secondary"
                                     size="sm"
                                     disabled={updating}
-                                    onClick={() => onStageChange(LeadStage.CONTACTED)}
+                                    onClick={() => onStageChange(DealStage.DEMO)}
                                     className="text-xs px-3 py-1.5"
                                 >
-                                    Mark Contacted
+                                    Move to Demo
                                 </Button>
                             )}
 
-                            {currentStage !== LeadStage.QUALIFIED && (
+                            {currentStage !== DealStage.PROPOSAL && (
                                 <Button
                                     type="button"
                                     variant="secondary"
                                     size="sm"
                                     disabled={updating}
-                                    onClick={() => onStageChange(LeadStage.QUALIFIED)}
+                                    onClick={() => onStageChange(DealStage.PROPOSAL)}
+                                    className="text-xs px-3 py-1.5"
+                                >
+                                    Move to Proposal
+                                </Button>
+                            )}
+
+                            {currentStage !== DealStage.NEGOTIATION && (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={updating}
+                                    onClick={() => onStageChange(DealStage.NEGOTIATION)}
                                     className="text-xs px-3 py-1.5 font-medium"
                                 >
-                                    Mark Qualified
+                                    Move to Negotiation
                                 </Button>
                             )}
 
@@ -202,16 +191,10 @@ export function LeadStageStepper({
                                 variant="primary"
                                 size="sm"
                                 disabled={updating}
-                                onClick={() => {
-                                    if (onConvertToDeal) {
-                                        onConvertToDeal();
-                                    } else {
-                                        onStageChange(LeadStage.CONVERTED);
-                                    }
-                                }}
-                                className="text-xs px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-semibold shadow-md shadow-emerald-600/20"
+                                onClick={() => onStageChange(DealStage.WON)}
+                                className="text-xs px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 font-semibold text-white shadow-md shadow-emerald-600/20"
                             >
-                                💼 Mark Converted (Create Deal)
+                                🏆 Mark Closed Won
                             </Button>
 
                             <Button
@@ -219,7 +202,7 @@ export function LeadStageStepper({
                                 variant="ghost"
                                 size="sm"
                                 disabled={updating}
-                                onClick={() => onStageChange(LeadStage.LOST)}
+                                onClick={() => onStageChange(DealStage.LOST)}
                                 className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
                             >
                                 Mark Lost
