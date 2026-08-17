@@ -26,10 +26,10 @@ export function RequireRole({ roles, children }: RequireRoleProps) {
 
   if (loading) {
     return (
-      <div className="tg-page-loading" role="status" aria-live="polite" aria-busy="true">
+      <output className="tg-page-loading" aria-live="polite" aria-busy="true">
         <span className="tg-api-loading-spinner" aria-hidden />
         <span>Loading…</span>
-      </div>
+      </output>
     );
   }
 

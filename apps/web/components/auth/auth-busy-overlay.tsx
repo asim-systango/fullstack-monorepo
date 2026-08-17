@@ -14,11 +14,11 @@ export function AuthBusyOverlay() {
   if (!pendingAction) return null;
 
   return (
-    <div className="tg-api-loading" role="status" aria-live="polite" aria-busy="true">
+    <output className="tg-api-loading" aria-live="polite" aria-busy="true">
       <div className="tg-api-loading-card">
         <span className="tg-api-loading-spinner" aria-hidden />
         <span>{LABELS[pendingAction]}</span>
       </div>
-    </div>
+    </output>
   );
 }

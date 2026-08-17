@@ -40,7 +40,6 @@ export function FoodImage({
     if (imageUrl) {
       return (
         <div style={heroStyle}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt={alt}
@@ -70,7 +69,6 @@ export function FoodImage({
   if (imageUrl) {
     return (
       <div style={baseStyle}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
           alt={alt}

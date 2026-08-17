@@ -24,11 +24,11 @@ export function ApiLoadingOverlay() {
   if (pendingAction || !visible) return null;
 
   return (
-    <div className="tg-api-loading" role="status" aria-live="polite" aria-busy="true">
+    <output className="tg-api-loading" aria-live="polite" aria-busy="true">
       <div className="tg-api-loading-card">
         <span className="tg-api-loading-spinner" aria-hidden />
         <span>Loading…</span>
       </div>
-    </div>
+    </output>
   );
 }

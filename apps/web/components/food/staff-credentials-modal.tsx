@@ -3,6 +3,7 @@
 import { Copy } from 'lucide-react';
 import type { StaffLoginDetails } from '@/lib/types/food-delivery';
 import { toastSuccess } from '@/lib/toast';
+import { ModalShell } from '@/components/ui/modal-shell';
 
 type StaffCredentialsModalProps = Readonly<{
   open: boolean;
@@ -16,7 +17,7 @@ async function copyText(value: string, label: string) {
     await navigator.clipboard.writeText(value);
     toastSuccess(`${label} copied`);
   } catch {
-    // Clipboard may be unavailable outside secure context.
+    // Clipboard can be unavailable in insecure contexts
   }
 }
 
@@ -26,28 +27,20 @@ export function StaffCredentialsModal({
   staffLogin,
   onClose,
 }: StaffCredentialsModalProps) {
-  if (!open || !staffLogin) return null;
-
   return (
-    <div className="tg-modal-backdrop" onClick={onClose} role="presentation">
-      <div
-        className="tg-card tg-modal-panel tg-fade-in"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="staff-credentials-title"
-        onClick={(e) => e.stopPropagation()}
+    <ModalShell open={open && Boolean(staffLogin)} onClose={onClose} labelledBy="staff-credentials-title">
+      <p
+        id="staff-credentials-title"
+        style={{ margin: 0, fontSize: 17, fontWeight: 500, color: 'var(--tg-text)' }}
       >
-        <p
-          id="staff-credentials-title"
-          style={{ margin: 0, fontSize: 17, fontWeight: 500, color: 'var(--tg-text)' }}
-        >
-          Restaurant created
-        </p>
-        <p style={{ margin: '8px 0 18px', fontSize: 13.5, color: 'var(--tg-text-muted)', lineHeight: 1.5 }}>
-          Share these staff login details with <strong>{restaurantName}</strong>. They can sign in at{' '}
-          <strong>/login</strong> to manage their kitchen.
-        </p>
+        Restaurant created
+      </p>
+      <p style={{ margin: '8px 0 18px', fontSize: 13.5, color: 'var(--tg-text-muted)', lineHeight: 1.5 }}>
+        Share these staff login details with <strong>{restaurantName}</strong>. They can sign in at{' '}
+        <strong>/login</strong> to manage their kitchen.
+      </p>
 
+      {staffLogin ? (
         <div className="tg-credentials-box">
           <div>
             <p className="tg-credentials-label">Email</p>
@@ -84,13 +77,13 @@ export function StaffCredentialsModal({
             <p className="tg-credentials-role">{staffLogin.role}</p>
           </div>
         </div>
+      ) : null}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
-          <button type="button" className="tg-btn tg-btn-primary" onClick={onClose}>
-            Done
-          </button>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+        <button type="button" className="tg-btn tg-btn-primary" onClick={onClose}>
+          Done
+        </button>
       </div>
-    </div>
+    </ModalShell>
   );
 }
