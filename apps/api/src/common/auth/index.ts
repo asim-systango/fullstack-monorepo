@@ -11,4 +11,5 @@ export {
   type UserRole,
 } from '@shared/http/auth';
 
+export { MustChangePasswordGuard } from './must-change-password.guard';
 export type { JwtUser } from './jwt-user';

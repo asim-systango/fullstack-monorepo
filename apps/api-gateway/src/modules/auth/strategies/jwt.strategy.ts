@@ -17,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           const cookies = req?.cookies as Record<string, string> | undefined;
           return cookies?.[AUTH_COOKIE_NAME] ?? null;
         },
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
       secretOrKey: env.JWT_SECRET,

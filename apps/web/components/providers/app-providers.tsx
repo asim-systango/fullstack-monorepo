@@ -1,11 +1,11 @@
 'use client';
 
+import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Provider as ReduxProvider } from 'react-redux';
-import { useState, type ReactNode } from 'react';
-import { store } from '@/lib/store';
+import { Provider } from 'react-redux';
 import { AuthProvider } from '@/components/auth';
+import { store } from '@/lib/store';
 
 export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(
@@ -22,11 +22,13 @@ export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   );
 
   return (
-    <ReduxProvider store={store}>
+    <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>{children}</AuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+        {process.env.NODE_ENV === 'development' ? (
+          <ReactQueryDevtools initialIsOpen={false} />
+        ) : null}
       </QueryClientProvider>
-    </ReduxProvider>
+    </Provider>
   );
 }

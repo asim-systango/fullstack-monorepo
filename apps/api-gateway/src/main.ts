@@ -1,7 +1,7 @@
 import './load-env';
 import 'reflect-metadata';
+import { ConsoleLogger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import type { Request } from 'express';
@@ -18,9 +18,25 @@ import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
 import { requestIdMiddleware, securityHeadersMiddleware } from '@shared/http/middleware';
 import { setupSwagger } from '@shared/http/swagger';
 
+/** Drop Nest's duplicate "successfully started" — we print one listen line. */
+class GatewayBootstrapLogger extends ConsoleLogger {
+  override log(message: unknown, context?: string): void {
+    if (
+      context === 'NestApplication' &&
+      typeof message === 'string' &&
+      message.includes('successfully started')
+    ) {
+      return;
+    }
+    super.log(message, context);
+  }
+}
+
 async function bootstrap() {
   const appSettings = appConfig();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new GatewayBootstrapLogger(),
+  });
   app.enableShutdownHooks();
 
   app.use(compression());
@@ -71,22 +87,23 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
-  setupSwagger(app, {
-    title: 'API Gateway',
+  await setupSwagger(app, {
+    title: 'BOOKLY API',
     description:
-      'Cookie JWT BFF — auth on the gateway; domain routes proxy to apps/api. ' +
-      'Use **Authorize** with the `access_token` cookie after `POST /auth/login`.',
-    auth: 'cookie',
+      'Unified API docs on the **gateway** (preferred). ' +
+      'Auth (`/auth/*`, `/users/*`) runs here with cookie JWT; ' +
+      'domain routes (`/books`, `/loans`, …) are proxied to apps/api. ' +
+      '1) `POST /auth/login` 2) cookie is set 3) try domain routes. ' +
+      'Internal `/internal/*` routes are omitted. ' +
+      'Successful responses are wrapped as `{ data: ... }`.',
+    auth: 'cookie-and-bearer',
     cookieName: 'access_token',
+    mergeOpenApiFrom: `${appSettings.API_UPSTREAM_URL}/docs-json`,
+    excludeMergedPathPrefixes: ['/internal'],
   });
 
   await app.listen(appSettings.PORT);
-  console.log(
-    `API gateway listening on http://localhost:${appSettings.PORT} → upstream ${appSettings.API_UPSTREAM_URL}`,
-  );
-  if (appSettings.NODE_ENV !== 'production') {
-    console.log(`Swagger UI: http://localhost:${appSettings.PORT}/docs`);
-  }
+  console.log(`Running on http://localhost:${appSettings.PORT}`);
 }
 
 void bootstrap();

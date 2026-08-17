@@ -33,9 +33,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+        if: success() || failure()
       - run: pnpm lint:sonar
+        if: success() || failure()
       - run: pnpm test:coverage
+        if: success() || failure()
       - run: pnpm build
+        if: success() || failure()
         env:
           NODE_ENV: production
           API_GATEWAY_URL: http://localhost:3001
