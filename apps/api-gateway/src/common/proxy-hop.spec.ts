@@ -61,6 +61,21 @@ describe('applyAuthCookieToProxyRequest (cookie → Bearer hop)', () => {
 
     expect(setHeader).toHaveBeenCalledWith(REQUEST_ID_HEADER, 'trace-123');
   });
+
+  it('falls back to header when correlationId is undefined', () => {
+    const setHeader = jest.fn();
+    const removeHeader = jest.fn();
+
+    applyAuthCookieToProxyRequest(
+      { setHeader, removeHeader },
+      {
+        cookies: {},
+        headers: { [REQUEST_ID_HEADER]: 'header-trace-456' },
+      },
+    );
+
+    expect(setHeader).toHaveBeenCalledWith(REQUEST_ID_HEADER, 'header-trace-456');
+  });
 });
 
 describe('sendProxyError', () => {

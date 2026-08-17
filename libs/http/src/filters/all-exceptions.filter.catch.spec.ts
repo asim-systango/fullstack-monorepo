@@ -100,4 +100,42 @@ describe('AllExceptionsFilter.catch', () => {
       Object.assign(process.env, { NODE_ENV: prev });
     }
   });
+
+  it('handles array message in HttpException body without explicit details', () => {
+    const { host, json } = hostWithResponse();
+    filter.catch(
+      new HttpException({ message: ['msg1', 'msg2'] }, HttpStatus.BAD_REQUEST),
+      host,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: ['msg1', 'msg2'],
+        details: [
+          { field: 'request', message: 'msg1' },
+          { field: 'request', message: 'msg2' },
+        ],
+      }),
+    );
+  });
+
+  it('handles empty/unknown HttpException body', () => {
+    const { host, json } = hostWithResponse();
+    filter.catch(new HttpException({}, HttpStatus.BAD_REQUEST), host);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Unexpected error',
+      }),
+    );
+  });
+
+  it('handles non-Error exceptions', () => {
+    const { host, status, json } = hostWithResponse();
+    filter.catch('string error', host);
+    expect(status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Unexpected error',
+      }),
+    );
+  });
 });
