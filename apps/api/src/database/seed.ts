@@ -241,6 +241,23 @@ async function seed() {
     );
   }
 
+  const tripSettleExists = await settlements.findOne({
+    where: { groupId: trip.id, payerUserId: alex.id },
+  });
+  if (!tripSettleExists) {
+    await settlements.save(
+      settlements.create({
+        groupId: trip.id,
+        payerUserId: alex.id,
+        payeeUserId: staff.id,
+        createdByUserId: alex.id,
+        amountCents: 40000,
+        note: 'Scooter share',
+        settledAt: new Date(),
+      }),
+    );
+  }
+
   console.log('Seed complete — password for all demo users: password123');
   console.log('Demo logins:', [admin.email, demoUser.email, staff.email, alex.email]);
 

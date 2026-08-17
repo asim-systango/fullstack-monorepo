@@ -63,8 +63,8 @@ Compact index only. Full acceptance criteria, verification, and file lists are i
 
 - [x] Task 3: Auth backend — User entity, tokens, register/login/logout/verify/resend/forgot/reset
 - [x] Task 4: Web API routing to `apps/api` and auth API client extensions
-- [ ] Task 5: Auth frontend — verify, forgot, reset pages + register/login UX
-- [ ] Task 6: Domain seed script (`pnpm seed:api`) with pre-verified demo users
+- [x] Task 5: Auth frontend — verify, forgot, reset pages + register/login UX
+- [x] Task 6: Domain seed script (`pnpm seed:api`) with pre-verified demo users
 
 ### Checkpoint: Auth E2E
 
@@ -75,10 +75,10 @@ Compact index only. Full acceptance criteria, verification, and file lists are i
 
 ### Phase 3: Groups & invites (Tasks 7–10)
 
-- [ ] Task 7: Groups backend — create, list, detail, membership, platform admin access
-- [ ] Task 8: Group invites backend — SMTP invite, accept/decline, lookup, `/invites/me`
-- [ ] Task 9: Groups frontend — `/groups` list and create-group flow (staff)
-- [ ] Task 10: Invites frontend — invite form and `/invites/accept` page
+- [x] Task 7: Groups backend — create, list, detail, membership, platform admin access
+- [x] Task 8: Group invites backend — SMTP invite, accept/decline, lookup, `/invites/me`
+- [x] Task 9: Groups frontend — `/groups` list and create-group flow (staff)
+- [x] Task 10: Invites frontend — invite form and `/invites/accept` page
 
 ### Checkpoint: Groups E2E
 
@@ -88,8 +88,8 @@ Compact index only. Full acceptance criteria, verification, and file lists are i
 
 ### Phase 4: Expenses (Tasks 11–12)
 
-- [ ] Task 11: Expenses backend — create, list/filter, get, admin PATCH, soft-delete, audit
-- [ ] Task 12: Expenses frontend — group detail expense list, filters, add-expense split editor
+- [x] Task 11: Expenses backend — create, list/filter, get, admin PATCH, soft-delete, audit
+- [x] Task 12: Expenses frontend — group detail expense list, filters, add-expense split editor
 
 ### Checkpoint: Expenses
 
@@ -99,9 +99,9 @@ Compact index only. Full acceptance criteria, verification, and file lists are i
 
 ### Phase 5: Balances & settlements (Tasks 13–15)
 
-- [ ] Task 13: Balances backend — net computation and simplified debts endpoint
-- [ ] Task 14: Settlements backend — create with debt cap, list history
-- [ ] Task 15: Balances frontend — `/groups/[id]/balances` and settle-up dialog
+- [x] Task 13: Balances backend — net computation and simplified debts endpoint
+- [x] Task 14: Settlements backend — create with debt cap, list history
+- [x] Task 15: Balances frontend — `/groups/[id]/balances` and settle-up dialog
 
 ### Checkpoint: Core Splitter E2E
 
@@ -111,15 +111,15 @@ Compact index only. Full acceptance criteria, verification, and file lists are i
 
 ### Phase 6: Admin polish & docs (Tasks 16–18)
 
-- [ ] Task 16: Admin expense edit UI and deleted-expenses audit view
-- [ ] Task 17: Route protection, email-verified gate, and role-based UI
-- [ ] Task 18: Shared Zod types, `docs/architecture.md`, and demo script
+- [x] Task 16: Admin expense edit UI and deleted-expenses audit view
+- [x] Task 17: Route protection, email-verified gate, and role-based UI
+- [x] Task 18: Shared Zod types, `docs/architecture.md`, and demo script
 
 ### Checkpoint: Complete
 
 - [ ] All Must success criteria in SPEC.md satisfied
 - [ ] `pnpm build`, `pnpm typecheck`, `pnpm lint` pass
-- [ ] 5-minute demo script ready for PR
+- [x] 5-minute demo script ready for PR
 - [ ] Human review before Should-tier features
 
 ## Parallelization Opportunities

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Card, EmptyState, Skeleton, StatusMessage } from '@shared/ui/components';
 import { Avatar } from '@/components/splitter';
+import { IconChevronRight } from '@/components/splitter/icons';
 import { splitterApi } from '@/lib/api';
 
 export default function ActivityPage() {
@@ -36,7 +37,7 @@ export default function ActivityPage() {
     );
   }
 
-  const groups = groupsQuery.data ?? [];
+  const groups = groupsQuery.data?.items ?? [];
   if (groups.length === 0) {
     return (
       <EmptyState
@@ -57,23 +58,25 @@ export default function ActivityPage() {
       <ul className="space-y-3">
         {groups.map((group) => (
           <li key={group.id}>
-            <Link
-              href={`/groups/${group.id}`}
-              className="block no-underline hover:no-underline"
-            >
-              <Card className="splitter-shadow splitter-card-hover">
-                <div className="flex items-center gap-3">
-                  <Avatar name={group.name} />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-foreground">{group.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {group.currency} · {group.myRole ?? 'member'}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium text-primary">View</span>
+            <Card className="splitter-shadow p-0 splitter-card-hover">
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                <Avatar name={group.name} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-foreground">{group.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {group.currency} · {group.memberCount}{' '}
+                    {group.memberCount === 1 ? 'member' : 'members'}
+                  </p>
                 </div>
-              </Card>
-            </Link>
+                <Link
+                  href={`/groups/${group.id}`}
+                  className="splitter-open-group shrink-0 self-center"
+                >
+                  View
+                  <IconChevronRight />
+                </Link>
+              </div>
+            </Card>
           </li>
         ))}
       </ul>

@@ -1,33 +1,45 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type SyntheticEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState, type SyntheticEvent } from 'react';
 import {
   Alert,
   Button,
-  Card,
-  Field,
   Form,
+  Spinner,
   StatusMessage,
   TextInput,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
+import { AuthInputGroup } from '@/components/splitter/auth-input-group';
 import { AuthLayout } from '@/components/splitter';
+import { IconLock, IconMail, IconPerson } from '@/components/splitter/icons';
 import { authApi } from '@/lib/api';
+import { rememberReturnPath, safeReturnPath } from '@/lib/return-url';
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const returnUrl = safeReturnPath(searchParams.get('returnUrl'));
+  const invitedEmail = searchParams.get('email') ?? '';
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(invitedEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+
+  const loginHref =
+    returnUrl !== '/groups'
+      ? `/login?returnUrl=${encodeURIComponent(returnUrl)}&email=${encodeURIComponent(email)}`
+      : '/login';
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
     setError(null);
     try {
+      rememberReturnPath(returnUrl);
       await authApi.register({ name, email, password });
       setDone(true);
     } catch (err) {
@@ -43,10 +55,10 @@ export default function RegisterPage() {
         <Alert tone="success">
           <p className="text-sm">
             We sent a verification link to <strong>{email}</strong>. Click the link in the
-            email, then come back and log in.
+            email, then log in to join the group.
           </p>
         </Alert>
-        <Link href="/login" className="mt-6 inline-block">
+        <Link href={loginHref} className="mt-6 inline-block">
           <Button>Go to login</Button>
         </Link>
       </AuthLayout>
@@ -56,60 +68,80 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Start splitting expenses in seconds"
+      subtitle={
+        invitedEmail
+          ? 'Create an account with the invited email to join the group'
+          : 'Start splitting expenses in seconds'
+      }
     >
-      <Card className="splitter-shadow border-0 sm:border">
-        <Form pending={pending} onSubmit={onSubmit} className="space-y-4">
-          <Field label="Full name" htmlFor="register-name" required disabled={pending}>
-            <TextInput
-              id="register-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="name"
-            />
-          </Field>
-          <Field label="Email" htmlFor="register-email" required disabled={pending}>
-            <TextInput
-              id="register-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </Field>
-          <Field
-            label="Password"
-            htmlFor="register-password"
-            required
-            hint="At least 8 characters"
+      <Form pending={pending} onSubmit={onSubmit} className="splitter-auth-form">
+        <AuthInputGroup label="Full name" htmlFor="register-name" icon={<IconPerson />}>
+          <TextInput
+            id="register-name"
+            className="splitter-auth-input"
+            placeholder="Enter your full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
             disabled={pending}
-          >
-            <TextInput
-              id="register-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </Field>
-          {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button
-            type="submit"
-            className="w-full"
-            loading={pending}
-            loadingText="Creating…"
-          >
-            Sign up
-          </Button>
-        </Form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-primary">
-            Log in
-          </Link>
-        </p>
-      </Card>
+            required
+          />
+        </AuthInputGroup>
+        <AuthInputGroup
+          label="Email address"
+          htmlFor="register-email"
+          icon={<IconMail />}
+        >
+          <TextInput
+            id="register-email"
+            type="email"
+            className="splitter-auth-input"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            disabled={pending}
+            required
+          />
+        </AuthInputGroup>
+        <AuthInputGroup label="Password" htmlFor="register-password" icon={<IconLock />}>
+          <TextInput
+            id="register-password"
+            type="password"
+            className="splitter-auth-input"
+            placeholder="At least 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            autoComplete="new-password"
+            disabled={pending}
+            required
+          />
+        </AuthInputGroup>
+        {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+        <Button
+          type="submit"
+          className="splitter-auth-submit w-full"
+          loading={pending}
+          loadingText="Creating…"
+        >
+          Sign up
+        </Button>
+      </Form>
+      <p className="splitter-auth-switch">
+        Already have an account?{' '}
+        <Link href={loginHref} className="splitter-auth-link">
+          Log in
+        </Link>
+      </p>
     </AuthLayout>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<Spinner label="Loading" />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

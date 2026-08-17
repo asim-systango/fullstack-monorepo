@@ -12,8 +12,9 @@ export function ProtectedLayout({ children }: Readonly<{ children: ReactNode }>)
 
   useEffect(() => {
     if (loading) return;
+    const next = window.location.pathname + window.location.search;
     if (!user) {
-      router.replace('/login');
+      router.replace(`/login?returnUrl=${encodeURIComponent(next)}`);
       return;
     }
     if (!user.emailVerified) {

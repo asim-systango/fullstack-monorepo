@@ -9,6 +9,8 @@ import { ExpensesModule } from './modules/expenses';
 import { GroupsModule } from './modules/groups';
 import { HealthModule } from './modules/health';
 import { MailModule } from './modules/mail';
+import { SettlementsModule } from './modules/settlements/settlements.module';
+import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
 
@@ -22,10 +24,12 @@ const db = databaseConfig();
       ...db,
     }),
     MailModule,
+    UsersModule,
     AuthModule,
     GroupsModule,
     ExpensesModule,
     BalancesModule,
+    SettlementsModule,
     HealthModule,
   ],
   providers: [

@@ -16,5 +16,6 @@ import { BalancesService } from './balances.service';
   ],
   controllers: [BalancesController],
   providers: [BalancesService],
+  exports: [BalancesService],
 })
 export class BalancesModule {}

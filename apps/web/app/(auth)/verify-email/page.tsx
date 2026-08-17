@@ -7,6 +7,7 @@ import { Alert, Button, Spinner, StatusMessage } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { AuthLayout } from '@/components/splitter';
 import { authApi } from '@/lib/api';
+import { peekRememberedReturnPath } from '@/lib/return-url';
 
 function VerifyEmailContent() {
   const params = useSearchParams();
@@ -14,6 +15,14 @@ function VerifyEmailContent() {
   const token = params.get('token');
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [loginHref, setLoginHref] = useState('/login');
+
+  useEffect(() => {
+    const remembered = peekRememberedReturnPath();
+    if (remembered) {
+      setLoginHref(`/login?returnUrl=${encodeURIComponent(remembered)}`);
+    }
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -40,7 +49,7 @@ function VerifyEmailContent() {
     body = (
       <>
         <Alert tone="success">{message}</Alert>
-        <Button className="mt-6" onClick={() => router.push('/login')}>
+        <Button className="mt-6" onClick={() => router.push(loginHref)}>
           Continue to login
         </Button>
       </>

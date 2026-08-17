@@ -82,6 +82,19 @@ export class BalancesService {
     };
   }
 
+  /** Max the debtor can pay the creditor without reversing nets. */
+  outstandingBetween(
+    members: { userId: string; netCents: number }[],
+    payerUserId: string,
+    payeeUserId: string,
+  ) {
+    const payer = members.find((m) => m.userId === payerUserId);
+    const payee = members.find((m) => m.userId === payeeUserId);
+    if (!payer || !payee) return 0;
+    if (payer.netCents >= 0 || payee.netCents <= 0) return 0;
+    return Math.min(-payer.netCents, payee.netCents);
+  }
+
   private addCents(nets: NetMap, userId: string, delta: number) {
     nets.set(userId, (nets.get(userId) ?? 0) + delta);
   }

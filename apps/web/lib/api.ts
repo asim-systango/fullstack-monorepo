@@ -12,7 +12,8 @@ export const apiClient = createApiClient({
   baseURL,
   onUnauthorized: () => {
     if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.assign('/login');
+      const next = window.location.pathname + window.location.search;
+      window.location.assign(`/login?returnUrl=${encodeURIComponent(next)}`);
     }
   },
 });
