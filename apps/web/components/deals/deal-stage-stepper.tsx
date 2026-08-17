@@ -48,6 +48,127 @@ export function DealStageStepper({
 
     const currentIndex = getStageIndex(currentStage);
 
+    const getStepCircleClass = (isWon: boolean, isCompleted: boolean, isCurrent: boolean) => {
+        if (isWon) return 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-lg shadow-emerald-500/30';
+        if (isCompleted) return 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30';
+        if (isCurrent) return 'bg-indigo-500 text-white ring-4 ring-indigo-500/20 shadow-md shadow-indigo-500/40';
+        return 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-300';
+    };
+
+    const getStepLabelClass = (isWon: boolean, isCurrent: boolean, isCompleted: boolean) => {
+        if (isWon) return 'text-emerald-400 font-extrabold';
+        if (isCurrent) return 'text-indigo-400 font-extrabold';
+        if (isCompleted) return 'text-white';
+        return 'text-zinc-500 group-hover:text-zinc-300';
+    };
+
+    const renderActionButtons = () => {
+        if (currentStage === DealStage.WON) {
+            return (
+                <>
+                    <Badge tone="success" className="py-1 px-3 text-xs">
+                        🏆 Deal Closed Won
+                    </Badge>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(DealStage.OPEN)}
+                        className="text-xs px-3 py-1.5 text-zinc-400 hover:text-white"
+                    >
+                        Reopen Deal
+                    </Button>
+                </>
+            );
+        }
+
+        if (currentStage === DealStage.LOST) {
+            return (
+                <>
+                    <Badge tone="danger" className="py-1 px-3 text-xs">
+                        ❌ Deal Marked as Lost
+                    </Badge>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(DealStage.OPEN)}
+                        className="text-xs px-3 py-1.5"
+                    >
+                        Reopen Deal
+                    </Button>
+                </>
+            );
+        }
+
+        return (
+            <>
+                {currentStage !== DealStage.DEMO && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(DealStage.DEMO)}
+                        className="text-xs px-3 py-1.5"
+                    >
+                        Move to Demo
+                    </Button>
+                )}
+
+                {currentStage !== DealStage.PROPOSAL && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(DealStage.PROPOSAL)}
+                        className="text-xs px-3 py-1.5"
+                    >
+                        Move to Proposal
+                    </Button>
+                )}
+
+                {currentStage !== DealStage.NEGOTIATION && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(DealStage.NEGOTIATION)}
+                        className="text-xs px-3 py-1.5 font-medium"
+                    >
+                        Move to Negotiation
+                    </Button>
+                )}
+
+                <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    disabled={updating}
+                    onClick={() => onStageChange(DealStage.WON)}
+                    className="text-xs px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 font-semibold text-white shadow-md shadow-emerald-600/20"
+                >
+                    🏆 Mark Closed Won
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={updating}
+                    onClick={() => onStageChange(DealStage.LOST)}
+                    className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
+                >
+                    Mark Lost
+                </Button>
+            </>
+        );
+    };
+
     return (
         <div className="space-y-6">
             {/* Horizontal Visual Pipeline Progress Tracker */}
@@ -67,24 +188,20 @@ export function DealStageStepper({
                                 className="flex flex-col items-center group focus:outline-none cursor-pointer"
                             >
                                 <div
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-200 ${isWon
-                                        ? 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-lg shadow-emerald-500/30'
-                                        : isCompleted
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                                            : isCurrent
-                                                ? 'bg-indigo-500 text-white ring-4 ring-indigo-500/20 shadow-md shadow-indigo-500/40'
-                                                : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
-                                        }`}
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-200 ${getStepCircleClass(
+                                        isWon,
+                                        isCompleted,
+                                        isCurrent,
+                                    )}`}
                                 >
                                     {isCompleted || isWon ? '✓' : s.stepNumber}
                                 </div>
                                 <span
-                                    className={`text-[10px] font-bold tracking-wider mt-2 transition ${isCurrent || isWon
-                                        ? isWon ? 'text-emerald-400 font-extrabold' : 'text-indigo-400 font-extrabold'
-                                        : isCompleted
-                                            ? 'text-white'
-                                            : 'text-zinc-500 group-hover:text-zinc-300'
-                                        }`}
+                                    className={`text-[10px] font-bold tracking-wider mt-2 transition ${getStepLabelClass(
+                                        isWon,
+                                        isCurrent,
+                                        isCompleted,
+                                    )}`}
                                 >
                                     {s.label}
                                 </span>
@@ -113,102 +230,7 @@ export function DealStageStepper({
                     Pipeline Stage Actions
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                    {currentStage === DealStage.WON ? (
-                        <>
-                            <Badge tone="success" className="py-1 px-3 text-xs">
-                                🏆 Deal Closed Won
-                            </Badge>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => onStageChange(DealStage.OPEN)}
-                                className="text-xs px-3 py-1.5 text-zinc-400 hover:text-white"
-                            >
-                                Reopen Deal
-                            </Button>
-                        </>
-                    ) : currentStage === DealStage.LOST ? (
-                        <>
-                            <Badge tone="danger" className="py-1 px-3 text-xs">
-                                ❌ Deal Marked as Lost
-                            </Badge>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => onStageChange(DealStage.OPEN)}
-                                className="text-xs px-3 py-1.5"
-                            >
-                                Reopen Deal
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            {currentStage !== DealStage.DEMO && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled={updating}
-                                    onClick={() => onStageChange(DealStage.DEMO)}
-                                    className="text-xs px-3 py-1.5"
-                                >
-                                    Move to Demo
-                                </Button>
-                            )}
-
-                            {currentStage !== DealStage.PROPOSAL && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled={updating}
-                                    onClick={() => onStageChange(DealStage.PROPOSAL)}
-                                    className="text-xs px-3 py-1.5"
-                                >
-                                    Move to Proposal
-                                </Button>
-                            )}
-
-                            {currentStage !== DealStage.NEGOTIATION && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled={updating}
-                                    onClick={() => onStageChange(DealStage.NEGOTIATION)}
-                                    className="text-xs px-3 py-1.5 font-medium"
-                                >
-                                    Move to Negotiation
-                                </Button>
-                            )}
-
-                            <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => onStageChange(DealStage.WON)}
-                                className="text-xs px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 font-semibold text-white shadow-md shadow-emerald-600/20"
-                            >
-                                🏆 Mark Closed Won
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => onStageChange(DealStage.LOST)}
-                                className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
-                            >
-                                Mark Lost
-                            </Button>
-                        </>
-                    )}
+                    {renderActionButtons()}
                 </div>
             </div>
         </div>

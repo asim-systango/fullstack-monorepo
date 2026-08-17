@@ -204,6 +204,25 @@ export default function DealDetailPage({ params }: DealDetailPageProps) {
         ? `${deal.owner.firstName || ''} ${deal.owner.lastName || ''}`.trim() || deal.owner.email
         : 'Unassigned';
 
+    const getDealStageBadgeClass = (stage: DealStage) => {
+        switch (stage) {
+            case DealStage.OPEN:
+                return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+            case DealStage.DEMO:
+                return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+            case DealStage.PROPOSAL:
+                return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+            case DealStage.NEGOTIATION:
+                return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+            case DealStage.WON:
+                return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+            case DealStage.LOST:
+                return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+            default:
+                return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+        }
+    };
+
     return (
         <AppShell
             title="Deal Details"
@@ -268,18 +287,7 @@ export default function DealDetailPage({ params }: DealDetailPageProps) {
                                     <div className="text-2xl font-extrabold text-emerald-400 font-mono">
                                         {formatCurrency(deal.amount)}
                                     </div>
-                                    <span className={`px-3 py-1 text-xs font-bold rounded-full border tracking-wide uppercase shadow-sm ${deal.stage === DealStage.OPEN
-                                        ? 'bg-zinc-800 text-zinc-300 border-zinc-700'
-                                        : deal.stage === DealStage.DEMO
-                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                                            : deal.stage === DealStage.PROPOSAL
-                                                ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                                                : deal.stage === DealStage.NEGOTIATION
-                                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                                    : deal.stage === DealStage.WON
-                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                                        }`}>
+                                    <span className={`px-3 py-1 text-xs font-bold rounded-full border tracking-wide uppercase shadow-sm ${getDealStageBadgeClass(deal.stage)}`}>
                                         {deal.stage}
                                     </span>
                                 </div>

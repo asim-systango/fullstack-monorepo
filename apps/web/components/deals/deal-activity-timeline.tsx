@@ -121,6 +121,91 @@ export function DealActivityTimeline({
         }
     };
 
+    const renderTimeline = () => {
+        if (loading) {
+            return (
+                <div className="py-8 text-center text-zinc-500 text-xs">
+                    Loading activities...
+                </div>
+            );
+        }
+
+        if (activities.length === 0) {
+            return (
+                <div className="py-8 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl">
+                    No activities logged for this deal yet. Click &quot;+ Log activity&quot; above.
+                </div>
+            );
+        }
+
+        return (
+            <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
+                {activities.map((act) => {
+                    const creatorName = act.creator
+                        ? `${act.creator.firstName || ''} ${act.creator.lastName || ''}`.trim() || act.creator.email
+                        : 'User';
+
+                    const formattedDate = act.dueAt
+                        ? `due ${new Date(Number(act.dueAt)).toLocaleDateString()}`
+                        : `created ${new Date(Number(act.createdAt)).toLocaleDateString()}`;
+
+                    const isDone = Boolean(act.completedAt);
+                    const dotClass = isDone
+                        ? 'bg-emerald-500 border-emerald-400'
+                        : 'bg-indigo-600 border-zinc-900 ring-2 ring-indigo-500/40';
+
+                    const buttonClass = isDone
+                        ? 'text-zinc-500 hover:text-zinc-400'
+                        : 'text-indigo-400 hover:text-indigo-300';
+
+                    return (
+                        <div key={act.id} className="relative group">
+                            {/* Timeline Dot */}
+                            <div className={`absolute -left-[27px] top-1 w-3 h-3 rounded-full border-2 transition ${dotClass}`} />
+
+                            <div className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-4 space-y-2 hover:border-zinc-700 transition shadow-md">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Badge tone={getActivityTypeBadgeTone(act.activityType)}>
+                                            {getActivityIcon(act.activityType)} {act.activityType}
+                                        </Badge>
+                                        <span className={`text-xs font-semibold ${isDone ? 'line-through text-zinc-500' : 'text-white'}`}>
+                                            {act.title}
+                                        </span>
+                                    </div>
+
+                                    <span className="text-[10px] text-zinc-500">
+                                        {new Date(Number(act.createdAt)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+
+                                {act.description && (
+                                    <p className="text-xs text-zinc-300 bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800">
+                                        {act.description}
+                                    </p>
+                                )}
+
+                                <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
+                                    <div>
+                                        by <span className="text-zinc-300 font-medium">{creatorName}</span> · {formattedDate}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleComplete(act)}
+                                        className={`font-semibold transition hover:underline cursor-pointer ${buttonClass}`}
+                                    >
+                                        {isDone ? 'Completed ✓' : 'Mark complete'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <Card className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-6 space-y-5 shadow-lg">
             {/* Header */}
@@ -149,79 +234,7 @@ export function DealActivityTimeline({
             )}
 
             {/* Activity List Timeline */}
-            {loading ? (
-                <div className="py-8 text-center text-zinc-500 text-xs">
-                    Loading activities...
-                </div>
-            ) : activities.length === 0 ? (
-                <div className="py-8 text-center text-zinc-500 text-xs border border-dashed border-zinc-800 rounded-xl">
-                    No activities logged for this deal yet. Click "+ Log activity" above.
-                </div>
-            ) : (
-                <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-800">
-                    {activities.map((act) => {
-                        const creatorName = act.creator
-                            ? `${act.creator.firstName || ''} ${act.creator.lastName || ''}`.trim() || act.creator.email
-                            : 'User';
-
-                        const formattedDate = act.dueAt
-                            ? `due ${new Date(Number(act.dueAt)).toLocaleDateString()}`
-                            : `created ${new Date(Number(act.createdAt)).toLocaleDateString()}`;
-
-                        const isDone = Boolean(act.completedAt);
-
-                        return (
-                            <div key={act.id} className="relative group">
-                                {/* Timeline Dot */}
-                                <div
-                                    className={`absolute -left-[27px] top-1 w-3 h-3 rounded-full border-2 transition ${isDone
-                                            ? 'bg-emerald-500 border-emerald-400'
-                                            : 'bg-indigo-600 border-zinc-900 ring-2 ring-indigo-500/40'
-                                        }`}
-                                />
-
-                                <div className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-4 space-y-2 hover:border-zinc-700 transition shadow-md">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center space-x-2">
-                                            <Badge tone={getActivityTypeBadgeTone(act.activityType)}>
-                                                {getActivityIcon(act.activityType)} {act.activityType}
-                                            </Badge>
-                                            <span className={`text-xs font-semibold ${isDone ? 'line-through text-zinc-500' : 'text-white'}`}>
-                                                {act.title}
-                                            </span>
-                                        </div>
-
-                                        <span className="text-[10px] text-zinc-500">
-                                            {new Date(Number(act.createdAt)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-
-                                    {act.description && (
-                                        <p className="text-xs text-zinc-300 bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800">
-                                            {act.description}
-                                        </p>
-                                    )}
-
-                                    <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
-                                        <div>
-                                            by <span className="text-zinc-300 font-medium">{creatorName}</span> · {formattedDate}
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => handleToggleComplete(act)}
-                                            className={`font-semibold transition hover:underline cursor-pointer ${isDone ? 'text-zinc-500 hover:text-zinc-400' : 'text-indigo-400 hover:text-indigo-300'
-                                                }`}
-                                        >
-                                            {isDone ? 'Completed ✓' : 'Mark complete'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+            {renderTimeline()}
 
             {/* Log Activity Modal */}
             {isModalOpen && (

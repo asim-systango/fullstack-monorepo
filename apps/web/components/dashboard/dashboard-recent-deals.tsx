@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@shared/ui';
 import { DealStage, type Deal } from '@/lib/api';
-import { formatCurrencyINR } from './dashboard-kpi-cards';
 
 type DashboardRecentDealsProps = Readonly<{
     deals: Deal[];
@@ -12,13 +11,13 @@ type DashboardRecentDealsProps = Readonly<{
 }>;
 
 export function DashboardRecentDeals({ deals, loading }: DashboardRecentDealsProps) {
-    const formatDate = (dateStr?: string | number) => {
-        if (!dateStr) return '—';
-        return new Date(dateStr).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-        });
+    const formatCurrencyINR = (amount?: number | string | null) => {
+        if (amount === undefined || amount === null || Number.isNaN(Number(amount))) return '₹0';
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0,
+        }).format(Number(amount));
     };
 
     const getDealStageBadgeStyle = (stage: DealStage) => {
@@ -26,9 +25,9 @@ export function DashboardRecentDeals({ deals, loading }: DashboardRecentDealsPro
             case DealStage.OPEN:
                 return 'bg-zinc-800 text-zinc-300 border-zinc-700';
             case DealStage.DEMO:
-                return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
             case DealStage.PROPOSAL:
-                return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+                return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
             case DealStage.NEGOTIATION:
                 return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
             case DealStage.WON:
@@ -38,6 +37,73 @@ export function DashboardRecentDeals({ deals, loading }: DashboardRecentDealsPro
             default:
                 return 'bg-zinc-800 text-zinc-300 border-zinc-700';
         }
+    };
+
+    const renderContent = () => {
+        if (loading) {
+            return <div className="py-8 text-center text-xs text-zinc-500">Loading recent deals...</div>;
+        }
+
+        if (deals.length === 0) {
+            return (
+                <div className="py-8 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
+                    No active deals found. Convert an existing lead to create your first deal.
+                </div>
+            );
+        }
+
+        return (
+            <div className="overflow-x-auto -mx-5 px-5">
+                <Table>
+                    <TableHead>
+                        <TableRow className="border-b border-zinc-800/80 text-[11px] text-zinc-400 uppercase tracking-wider">
+                            <TableHeaderCell className="py-2.5 font-semibold">DEAL</TableHeaderCell>
+                            <TableHeaderCell className="py-2.5 font-semibold">STAGE</TableHeaderCell>
+                            <TableHeaderCell className="py-2.5 font-semibold">AMOUNT</TableHeaderCell>
+                            <TableHeaderCell className="py-2.5 font-semibold">CLOSE DATE</TableHeaderCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {deals.map((deal) => (
+                            <TableRow
+                                key={deal.id}
+                                className="border-b border-zinc-800/40 hover:bg-zinc-800/30 transition text-xs"
+                            >
+                                <TableCell className="font-semibold text-white py-3.5">
+                                    <Link
+                                        href={`/deals/${deal.id}`}
+                                        className="hover:text-indigo-400 transition"
+                                    >
+                                        {deal.title}
+                                    </Link>
+                                </TableCell>
+                                <TableCell className="py-3.5">
+                                    <span
+                                        className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md border tracking-wider uppercase inline-block ${getDealStageBadgeStyle(
+                                            deal.stage,
+                                        )}`}
+                                    >
+                                        {deal.stage}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="text-zinc-200 font-mono py-3.5">
+                                    {formatCurrencyINR(deal.amount)}
+                                </TableCell>
+                                <TableCell className="text-zinc-400 text-xs py-3.5">
+                                    {deal.expectedCloseDate
+                                        ? new Date(deal.expectedCloseDate).toLocaleDateString('en-GB', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric',
+                                        })
+                                        : '—'}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        );
     };
 
     return (
@@ -53,59 +119,8 @@ export function DashboardRecentDeals({ deals, loading }: DashboardRecentDealsPro
                 </Link>
             </div>
 
-            {/* Table */}
-            {loading ? (
-                <div className="py-8 text-center text-xs text-zinc-500">Loading recent deals...</div>
-            ) : deals.length === 0 ? (
-                <div className="py-8 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
-                    No active deals found. Convert an existing lead to create your first deal.
-                </div>
-            ) : (
-                <div className="overflow-x-auto -mx-5 px-5">
-                    <Table>
-                        <TableHead>
-                            <TableRow className="border-b border-zinc-800/80 text-[11px] text-zinc-400 uppercase tracking-wider">
-                                <TableHeaderCell className="py-2.5 font-semibold">DEAL</TableHeaderCell>
-                                <TableHeaderCell className="py-2.5 font-semibold">STAGE</TableHeaderCell>
-                                <TableHeaderCell className="py-2.5 font-semibold">AMOUNT</TableHeaderCell>
-                                <TableHeaderCell className="py-2.5 font-semibold">CLOSE DATE</TableHeaderCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {deals.map((deal) => (
-                                <TableRow
-                                    key={deal.id}
-                                    className="border-b border-zinc-800/40 hover:bg-zinc-800/30 transition text-xs"
-                                >
-                                    <TableCell className="font-semibold text-white py-3.5">
-                                        <Link
-                                            href={`/deals/${deal.id}`}
-                                            className="hover:text-indigo-400 transition"
-                                        >
-                                            {deal.title}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell className="py-3.5">
-                                        <span
-                                            className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md border tracking-wider uppercase inline-block ${getDealStageBadgeStyle(
-                                                deal.stage,
-                                            )}`}
-                                        >
-                                            {deal.stage}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-emerald-400 font-mono font-bold py-3.5">
-                                        {formatCurrencyINR(deal.amount)}
-                                    </TableCell>
-                                    <TableCell className="text-zinc-400 font-mono text-[11px] py-3.5">
-                                        {formatDate(deal.expectedCloseDate)}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            )}
+            {/* Table or Placeholder */}
+            {renderContent()}
         </Card>
     );
 }

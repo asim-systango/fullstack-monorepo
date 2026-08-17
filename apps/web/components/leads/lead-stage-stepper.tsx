@@ -56,6 +56,135 @@ export function LeadStageStepper({
         }
     };
 
+    const getStepCircleClass = (isConverted: boolean, isCompleted: boolean, isCurrent: boolean) => {
+        if (isConverted) return 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-lg shadow-emerald-500/30';
+        if (isCompleted) return 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30';
+        if (isCurrent) return 'bg-indigo-500 text-white ring-4 ring-indigo-500/20 shadow-md shadow-indigo-500/40';
+        return 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-300';
+    };
+
+    const getStepLabelClass = (isConverted: boolean, isCurrent: boolean, isCompleted: boolean) => {
+        if (isConverted) return 'text-emerald-400 font-extrabold';
+        if (isCurrent) return 'text-indigo-400 font-extrabold';
+        if (isCompleted) return 'text-white';
+        return 'text-zinc-500 group-hover:text-zinc-300';
+    };
+
+    const renderActionButtons = () => {
+        if (currentStage === LeadStage.CONVERTED) {
+            return (
+                <>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => {
+                            if (onConvertToDeal) onConvertToDeal();
+                        }}
+                        className="text-xs px-3.5 py-1.5 cursor-pointer bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-600/20"
+                    >
+                        💼 Convert to Deal / View Deals →
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(LeadStage.LOST)}
+                        className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
+                    >
+                        Mark Lost
+                    </Button>
+                </>
+            );
+        }
+
+        if (currentStage === LeadStage.LOST) {
+            return (
+                <>
+                    <Badge tone="danger" className="py-1 px-3 text-xs">
+                        ❌ Lead Marked as Lost
+                    </Badge>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => {
+                            if (onConvertToDeal) {
+                                onConvertToDeal();
+                            } else {
+                                onStageChange(LeadStage.CONVERTED);
+                            }
+                        }}
+                        className="text-xs px-3 py-1.5"
+                    >
+                        Mark Converted
+                    </Button>
+                </>
+            );
+        }
+
+        return (
+            <>
+                {currentStage !== LeadStage.CONTACTED && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(LeadStage.CONTACTED)}
+                        className="text-xs px-3 py-1.5"
+                    >
+                        Mark Contacted
+                    </Button>
+                )}
+
+                {currentStage !== LeadStage.QUALIFIED && (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={updating}
+                        onClick={() => onStageChange(LeadStage.QUALIFIED)}
+                        className="text-xs px-3 py-1.5 font-medium"
+                    >
+                        Mark Qualified
+                    </Button>
+                )}
+
+                <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    disabled={updating}
+                    onClick={() => {
+                        if (onConvertToDeal) {
+                            onConvertToDeal();
+                        } else {
+                            onStageChange(LeadStage.CONVERTED);
+                        }
+                    }}
+                    className="text-xs px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-semibold shadow-md shadow-emerald-600/20"
+                >
+                    💼 Mark Converted (Create Deal)
+                </Button>
+
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={updating}
+                    onClick={() => onStageChange(LeadStage.LOST)}
+                    className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
+                >
+                    Mark Lost
+                </Button>
+            </>
+        );
+    };
+
     return (
         <div className="space-y-6">
             {/* Horizontal Visual Pipeline Progress Tracker */}
@@ -76,24 +205,20 @@ export function LeadStageStepper({
                                 className={`flex flex-col items-center group focus:outline-none ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                             >
                                 <div
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-200 ${isConverted
-                                        ? 'bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-lg shadow-emerald-500/30'
-                                        : isCompleted
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                                            : isCurrent
-                                                ? 'bg-indigo-500 text-white ring-4 ring-indigo-500/20 shadow-md shadow-indigo-500/40'
-                                                : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
-                                        }`}
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-200 ${getStepCircleClass(
+                                        isConverted,
+                                        isCompleted,
+                                        isCurrent,
+                                    )}`}
                                 >
                                     {isCompleted || isConverted ? '✓' : s.stepNumber}
                                 </div>
                                 <span
-                                    className={`text-[10px] font-bold tracking-wider mt-2 transition ${isCurrent || isConverted
-                                        ? isConverted ? 'text-emerald-400 font-extrabold' : 'text-indigo-400 font-extrabold'
-                                        : isCompleted
-                                            ? 'text-white'
-                                            : 'text-zinc-500 group-hover:text-zinc-300'
-                                        }`}
+                                    className={`text-[10px] font-bold tracking-wider mt-2 transition ${getStepLabelClass(
+                                        isConverted,
+                                        isCurrent,
+                                        isCompleted,
+                                    )}`}
                                 >
                                     {s.label}
                                 </span>
@@ -122,110 +247,7 @@ export function LeadStageStepper({
                     Quick Stage Actions
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                    {currentStage === LeadStage.CONVERTED ? (
-                        <>
-                            <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => {
-                                    if (onConvertToDeal) onConvertToDeal();
-                                }}
-                                className="text-xs px-3.5 py-1.5 cursor-pointer bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-600/20"
-                            >
-                                💼 Convert to Deal / View Deals →
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => onStageChange(LeadStage.LOST)}
-                                className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
-                            >
-                                Mark Lost
-                            </Button>
-                        </>
-                    ) : currentStage === LeadStage.LOST ? (
-                        <>
-                            <Badge tone="danger" className="py-1 px-3 text-xs">
-                                ❌ Lead Marked as Lost
-                            </Badge>
-                            <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => {
-                                    if (onConvertToDeal) {
-                                        onConvertToDeal();
-                                    } else {
-                                        onStageChange(LeadStage.CONVERTED);
-                                    }
-                                }}
-                                className="text-xs px-3 py-1.5"
-                            >
-                                Mark Converted
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            {currentStage !== LeadStage.CONTACTED && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled={updating}
-                                    onClick={() => onStageChange(LeadStage.CONTACTED)}
-                                    className="text-xs px-3 py-1.5"
-                                >
-                                    Mark Contacted
-                                </Button>
-                            )}
-
-                            {currentStage !== LeadStage.QUALIFIED && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled={updating}
-                                    onClick={() => onStageChange(LeadStage.QUALIFIED)}
-                                    className="text-xs px-3 py-1.5 font-medium"
-                                >
-                                    Mark Qualified
-                                </Button>
-                            )}
-
-                            <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => {
-                                    if (onConvertToDeal) {
-                                        onConvertToDeal();
-                                    } else {
-                                        onStageChange(LeadStage.CONVERTED);
-                                    }
-                                }}
-                                className="text-xs px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white font-semibold shadow-md shadow-emerald-600/20"
-                            >
-                                💼 Mark Converted (Create Deal)
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={updating}
-                                onClick={() => onStageChange(LeadStage.LOST)}
-                                className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
-                            >
-                                Mark Lost
-                            </Button>
-                        </>
-                    )}
+                    {renderActionButtons()}
                 </div>
             </div>
         </div>

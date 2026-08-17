@@ -79,6 +79,76 @@ export function DashboardUpcomingTasks({ tasks, loading, onRefresh }: DashboardU
         }
     };
 
+    const renderTaskList = () => {
+        if (loading) {
+            return <div className="py-8 text-center text-xs text-zinc-500">Loading tasks...</div>;
+        }
+
+        if (tasks.length === 0) {
+            return (
+                <div className="py-8 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
+                    No upcoming tasks. Log activities from leads or deals.
+                </div>
+            );
+        }
+
+        return (
+            <div className="divide-y divide-zinc-800/50">
+                {tasks.map((task) => {
+                    const isDone = Boolean(task.completedAt);
+                    const isBusy = togglingId === task.id;
+
+                    return (
+                        <div
+                            key={task.id}
+                            className="py-3.5 first:pt-1 last:pb-1 flex items-start space-x-3 group"
+                        >
+                            {/* Checkbox */}
+                            <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleToggleTask(task)}
+                                className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition cursor-pointer shrink-0 ${isDone
+                                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                                    : 'bg-zinc-950 border-zinc-700 hover:border-indigo-400 group-hover:border-zinc-500'
+                                    }`}
+                            >
+                                {isDone && (
+                                    <svg
+                                        className="w-2.5 h-2.5 stroke-current"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <polyline points="2.5 6 5 8.5 9.5 3.5" />
+                                    </svg>
+                                )}
+                            </button>
+
+                            {/* Task Details */}
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                                <div
+                                    className={`text-xs font-semibold tracking-tight transition ${isDone ? 'line-through text-zinc-500' : 'text-white'
+                                        }`}
+                                >
+                                    {task.title}
+                                </div>
+                                <div className="text-[11px] text-zinc-400 font-normal">
+                                    <span className="text-zinc-300 font-medium">
+                                        {formatTypeLabel(task.activityType)}
+                                    </span>{' '}
+                                    · {formatDueRelative(task.dueAt, task.createdAt)}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <Card className="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-4 h-full">
             {/* Header */}
@@ -90,67 +160,7 @@ export function DashboardUpcomingTasks({ tasks, loading, onRefresh }: DashboardU
             </div>
 
             {/* Task List */}
-            {loading ? (
-                <div className="py-8 text-center text-xs text-zinc-500">Loading tasks...</div>
-            ) : tasks.length === 0 ? (
-                <div className="py-8 text-center text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
-                    No upcoming tasks. Log activities from leads or deals.
-                </div>
-            ) : (
-                <div className="divide-y divide-zinc-800/50">
-                    {tasks.map((task) => {
-                        const isDone = Boolean(task.completedAt);
-                        const isBusy = togglingId === task.id;
-
-                        return (
-                            <div
-                                key={task.id}
-                                className="py-3.5 first:pt-1 last:pb-1 flex items-start space-x-3 group"
-                            >
-                                {/* Checkbox */}
-                                <button
-                                    type="button"
-                                    disabled={isBusy}
-                                    onClick={() => handleToggleTask(task)}
-                                    className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition cursor-pointer shrink-0 ${isDone
-                                        ? 'bg-indigo-600 border-indigo-500 text-white'
-                                        : 'bg-zinc-950 border-zinc-700 hover:border-indigo-400 group-hover:border-zinc-500'
-                                        }`}
-                                >
-                                    {isDone && (
-                                        <svg
-                                            className="w-2.5 h-2.5 stroke-current"
-                                            viewBox="0 0 12 12"
-                                            fill="none"
-                                            strokeWidth="2.5"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <polyline points="2.5 6 5 8.5 9.5 3.5" />
-                                        </svg>
-                                    )}
-                                </button>
-
-                                {/* Task Details */}
-                                <div className="space-y-0.5 min-w-0 flex-1">
-                                    <div
-                                        className={`text-xs font-semibold tracking-tight transition ${isDone ? 'line-through text-zinc-500' : 'text-white'
-                                            }`}
-                                    >
-                                        {task.title}
-                                    </div>
-                                    <div className="text-[11px] text-zinc-400 font-normal">
-                                        <span className="text-zinc-300 font-medium">
-                                            {formatTypeLabel(task.activityType)}
-                                        </span>{' '}
-                                        · {formatDueRelative(task.dueAt, task.createdAt)}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+            {renderTaskList()}
         </Card>
     );
 }

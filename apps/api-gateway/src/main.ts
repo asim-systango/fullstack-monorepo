@@ -49,7 +49,7 @@ async function bootstrap() {
       proxyTimeout: 10_000,
       pathFilter: (pathname) => !isGatewayOwnedPath(pathname),
       on: {
-        proxyReq: (proxyReq, req, res) => {
+        proxyReq: (proxyReq, req, _res) => {
           applyAuthCookieToProxyRequest(proxyReq, req as Request);
           fixRequestBody(proxyReq, req);
         },

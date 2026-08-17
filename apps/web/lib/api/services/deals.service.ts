@@ -1,6 +1,6 @@
 import { apiClient } from '../config/axios-client';
 import { API_ENDPOINTS } from '../constants/endpoints';
-import {
+import type {
     GetDealsParams,
     Deal,
     CreateDealPayload,
@@ -43,8 +43,8 @@ function extractData<T>(payload: unknown): T {
 
 export const dealsService = {
     getDeals: async (params?: GetDealsParams): Promise<PaginatedDealsResponse> => {
-        const response = await apiClient.get<any>(API_ENDPOINTS.DEALS.GET_ALL, { params });
-        const extracted = extractData<any>(response.data);
+        const response = await apiClient.get<unknown>(API_ENDPOINTS.DEALS.GET_ALL, { params });
+        const extracted = extractData<PaginatedDealsResponse | Deal[]>(response.data);
 
         if (Array.isArray(extracted)) {
             return {
@@ -56,32 +56,33 @@ export const dealsService = {
             };
         }
 
+        const paginated = extracted as PaginatedDealsResponse | undefined;
         return {
-            data: extracted?.data || [],
-            total: extracted?.total || 0,
-            page: extracted?.page || params?.page || 1,
-            limit: extracted?.limit || params?.limit || 10,
-            totalPages: extracted?.totalPages || 1,
+            data: paginated?.data || [],
+            total: paginated?.total || 0,
+            page: paginated?.page || params?.page || 1,
+            limit: paginated?.limit || params?.limit || 10,
+            totalPages: paginated?.totalPages || 1,
         };
     },
 
     getDealDetails: async (id: string): Promise<Deal> => {
-        const response = await apiClient.get<any>(API_ENDPOINTS.DEALS.GET_DETAILS(id));
+        const response = await apiClient.get<unknown>(API_ENDPOINTS.DEALS.GET_DETAILS(id));
         return extractData<Deal>(response.data);
     },
 
     createDeal: async (payload: CreateDealPayload): Promise<Deal> => {
-        const response = await apiClient.post<any>(API_ENDPOINTS.DEALS.CREATE, payload);
+        const response = await apiClient.post<unknown>(API_ENDPOINTS.DEALS.CREATE, payload);
         return extractData<Deal>(response.data);
     },
 
     updateDeal: async (id: string, payload: UpdateDealPayload): Promise<Deal> => {
-        const response = await apiClient.patch<any>(API_ENDPOINTS.DEALS.UPDATE(id), payload);
+        const response = await apiClient.patch<unknown>(API_ENDPOINTS.DEALS.UPDATE(id), payload);
         return extractData<Deal>(response.data);
     },
 
     updateDealStage: async (id: string, payload: UpdateDealStagePayload): Promise<Deal> => {
-        const response = await apiClient.patch<any>(API_ENDPOINTS.DEALS.UPDATE_STAGE(id), payload);
+        const response = await apiClient.patch<unknown>(API_ENDPOINTS.DEALS.UPDATE_STAGE(id), payload);
         return extractData<Deal>(response.data);
     },
 };

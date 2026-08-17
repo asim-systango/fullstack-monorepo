@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Alert, Button, Card, type BadgeTone } from '@shared/ui';
+import { Alert, Button, Card } from '@shared/ui';
 import { useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout/app-shell';
 import {
@@ -215,6 +215,23 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
         );
     }
 
+    const getStageBadgeTone = (stage: LeadStage) => {
+        switch (stage) {
+            case LeadStage.NEW:
+                return 'bg-sky-500/10 text-sky-400 border-sky-500/30';
+            case LeadStage.CONTACTED:
+                return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+            case LeadStage.QUALIFIED:
+                return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
+            case LeadStage.CONVERTED:
+                return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+            case LeadStage.LOST:
+                return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+            default:
+                return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+        }
+    };
+
     const contactName = lead.contact
         ? `${lead.contact.firstName || ''} ${lead.contact.lastName || ''}`.trim() || lead.contact.email
         : 'Unassigned Contact';
@@ -308,16 +325,7 @@ export default function LeadDetailPage({ params }: LeadDetailPageProps) {
                                         <p className="text-xs text-zinc-400 mt-1">{lead.description}</p>
                                     )}
                                 </div>
-                                <span className={`px-3 py-1 text-xs font-bold rounded-full border tracking-wide uppercase shadow-sm ${lead.stage === LeadStage.NEW
-                                    ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
-                                    : lead.stage === LeadStage.CONTACTED
-                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                        : lead.stage === LeadStage.QUALIFIED
-                                            ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
-                                            : lead.stage === LeadStage.CONVERTED
-                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                                    }`}>
+                                <span className={`px-3 py-1 text-xs font-bold rounded-full border tracking-wide uppercase shadow-sm ${getStageBadgeTone(lead.stage)}`}>
                                     {lead.stage}
                                 </span>
                             </div>
