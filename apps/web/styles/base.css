@@ -1,4 +1,31 @@
-/* App-level base styles only — tokens live in @shared/ui/theme. */
+@theme {
+  --font-sans: var(--font-plus-jakarta-sans), sans-serif;
+}
+
+:root {
+  /* Elegant deep blue/violet dark theme */
+  --background: #030712; /* Gray-950 */
+  --foreground: #f9fafb; /* Gray-50 */
+  --muted: #0b0f19; /* Gray-900 */
+  --muted-foreground: #9ca3af; /* Gray-400 */
+  --border: rgb(255, 255, 255, 0.08);
+  --input: rgb(255, 255, 255, 0.12);
+  --accent: #8b5cf6; /* Violet-500 */
+  --accent-foreground: #fff;
+  --ring: #a78bfa; /* Violet-400 */
+  --card: rgb(17, 24, 39, 0.6); /* Glassmorphic card surface */
+  --card-foreground: #f9fafb;
+  --primary: #fff;
+  --primary-foreground: #030712;
+  --secondary: #1f2937; /* Gray-800 */
+  --secondary-foreground: #f9fafb;
+  --success: #10b981;
+  --success-foreground: #030712;
+  --destructive: #f43f5e;
+  --destructive-foreground: #fff;
+  --warning: #f59e0b;
+  --warning-foreground: #030712;
+}
 
 @layer base {
   * {
@@ -11,20 +38,6 @@
 
   body {
     @apply min-h-full bg-background font-sans text-foreground;
-
-    /* Soft paper wash — flat canvas + faint top highlight (no heavy gradient). */
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--paper-50) 70%, var(--background)) 0%,
-      var(--background) 28%
-    );
-    background-attachment: fixed;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body {
-      background-image: none;
-    }
   }
 
   a:not(.ui-button) {
@@ -36,5 +49,116 @@
 
   code {
     @apply rounded-sm bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground;
+  }
+}
+
+@layer components {
+  /* Expansion of layout container for better card presentation */
+  .ui-page {
+    max-width: 72rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    padding-top: 2.5rem !important;
+  }
+
+  /* Glassmorphic top navigation bar */
+  .ui-shell-header {
+    backdrop-filter: blur(16px);
+    background: rgb(17, 24, 39, 0.4);
+    border: 1px solid rgb(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    padding: 1.25rem 1.75rem !important;
+    margin-bottom: 2.5rem !important;
+    box-shadow: 0 4px 30px rgb(0, 0, 0, 0.2);
+  }
+
+  .ui-shell-title {
+    color: var(--foreground);
+    font-weight: 800;
+  }
+
+  /* Cards design refinements: glass effect + hover transitions */
+  .ui-card {
+    transition:
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border-radius: 1.25rem !important;
+    border: 1px solid rgb(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgb(0, 0, 0, 0.15);
+  }
+
+  .ui-card:hover {
+    transform: translateY(-5px);
+    border-color: rgb(139, 92, 246, 0.3) !important;
+    box-shadow:
+      0 12px 30px rgb(0, 0, 0, 0.35),
+      0 0 15px rgb(139, 92, 246, 0.1) !important;
+  }
+
+  /* Interactive inputs and control buttons adjustments */
+  .ui-button-primary {
+    background: #7c3aed !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 4px 14px rgb(124, 58, 237, 0.15);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      opacity 0.15s ease !important;
+    font-weight: 600 !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .ui-button-primary:hover {
+    background: #6d28d9 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgb(124, 58, 237, 0.25);
+    opacity: 0.95;
+  }
+
+  .ui-button-primary:active {
+    transform: translateY(1px);
+  }
+
+  .ui-button-ghost {
+    border: 1px solid rgb(255, 255, 255, 0.15) !important;
+    background: transparent !important;
+    color: #f9fafb !important;
+  }
+
+  .ui-button-ghost:hover {
+    background: rgb(255, 255, 255, 0.08) !important;
+    border-color: rgb(255, 255, 255, 0.25) !important;
+  }
+
+  .ui-input,
+  .ui-select,
+  .ui-textarea {
+    background-color: rgb(15, 23, 42, 0.6) !important;
+    border: 1px solid rgb(255, 255, 255, 0.1) !important;
+    border-radius: 0.5rem !important;
+    color: #f9fafb !important;
+  }
+
+  .ui-input:focus,
+  .ui-select:focus,
+  .ui-textarea:focus {
+    border-color: rgb(139, 92, 246, 0.5) !important;
+    box-shadow: 0 0 0 2px rgb(139, 92, 246, 0.2) !important;
+  }
+
+  /* Dialog glass overlay */
+  .ui-dialog::backdrop {
+    background: rgb(3, 7, 18, 0.8) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .ui-dialog-panel {
+    background: #0f172a !important;
+    border: 1px solid rgb(255, 255, 255, 0.1) !important;
+    border-radius: 1.25rem !important;
+    box-shadow: 0 20px 50px rgb(0, 0, 0, 0.5) !important;
   }
 }

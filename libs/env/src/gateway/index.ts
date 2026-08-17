@@ -5,7 +5,7 @@ import { nodeEnv } from '../node-env';
 export const gatewayEnvSchema = z
   .object({
     NODE_ENV: nodeEnv,
-    PORT: z.coerce.number().default(3001),
+    PORT: z.coerce.number().default(3005),
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().min(16),
     // Constrained to what `jwtExpiryToMs` (auth.service.ts) can parse, so the cookie
@@ -23,7 +23,7 @@ export const gatewayEnvSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((v) => v === 'true'),
-    CORS_ORIGIN: z.string().default('http://localhost:3000'),
+    CORS_ORIGIN: z.string().default('http://localhost:3006'),
     API_UPSTREAM_URL: z.string().url().default('http://localhost:3002'),
   })
   .superRefine((env, ctx) => {

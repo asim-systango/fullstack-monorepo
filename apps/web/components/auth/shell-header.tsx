@@ -39,8 +39,9 @@ function AuthNav() {
 
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Book your luxury stay today',
 }: Readonly<{ title: string; subtitle?: string }>) {
+  const { user } = useAuth();
   return (
     <header className="ui-shell-header">
       <div>
@@ -49,6 +50,15 @@ export function ShellHeader({
       </div>
       <nav className="ui-shell-nav">
         <Link href="/">Home</Link>
+        <Link href="/hotels">Hotels</Link>
+        {user ? (
+          <>
+            <Link href="/bookings">My Bookings</Link>
+            {(user.role === 'admin' || user.role === 'staff') && (
+              <Link href="/manager">Manager Dashboard</Link>
+            )}
+          </>
+        ) : null}
         <Link href="/ui">UI kit</Link>
         <AuthNav />
       </nav>
