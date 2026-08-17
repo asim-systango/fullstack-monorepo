@@ -4,13 +4,18 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
+import { BalancesModule } from './modules/balances/balances.module';
+import { ExpensesModule } from './modules/expenses';
+import { GroupsModule } from './modules/groups';
 import { HealthModule } from './modules/health';
+import { MailModule } from './modules/mail';
+import { SettlementsModule } from './modules/settlements/settlements.module';
+import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
 
 /**
- * Internal domain API — Bearer JWT only (cookie auth lives on api-gateway).
- * Add your domain modules here (do not put product CRUD in Next).
+ * Splitter domain API — auth, mail, and expense modules live here.
  * Entities registered via TypeOrmModule.forFeature are auto-loaded.
  */
 @Module({
@@ -18,7 +23,13 @@ const db = databaseConfig();
     TypeOrmModule.forRoot({
       ...db,
     }),
+    MailModule,
+    UsersModule,
     AuthModule,
+    GroupsModule,
+    ExpensesModule,
+    BalancesModule,
+    SettlementsModule,
     HealthModule,
   ],
   providers: [
