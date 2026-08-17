@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import type { Category, TicketPriority } from '@shared/api-client';
 import {
   Button,
@@ -67,7 +67,7 @@ export function CategoryForm({
     );
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
 
