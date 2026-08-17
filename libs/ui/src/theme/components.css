@@ -19,11 +19,11 @@
   }
 
   .ui-button-md {
-    @apply px-3.5 py-2;
+    @apply px-3 py-2;
   }
 
   .ui-button-primary {
-    @apply border border-transparent bg-primary text-primary-foreground;
+    @apply border border-transparent bg-primary text-white;
     @apply hover:bg-[color-mix(in_oklch,var(--primary)_88%,var(--background))];
   }
 
@@ -33,12 +33,12 @@
   }
 
   .ui-button-ghost {
-    @apply border border-border bg-transparent text-foreground;
+    @apply border border-border bg-transparent text-black;
     @apply hover:bg-muted;
   }
 
   .ui-button-danger {
-    @apply border border-transparent bg-destructive text-destructive-foreground;
+    @apply border border-transparent bg-destructive text-white;
     @apply hover:bg-[color-mix(in_oklch,var(--destructive)_88%,var(--background))];
   }
 
@@ -56,7 +56,7 @@
 
   /* —— Card —— */
   .ui-card {
-    @apply rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm;
+    @apply rounded-lg border-0 bg-white p-4 text-card-foreground shadow-md;
   }
 
   .ui-card-header {
@@ -64,7 +64,7 @@
   }
 
   .ui-card-title {
-    @apply m-0 text-base font-semibold text-card-foreground;
+    @apply m-0 text-base font-semibold text-black;
   }
 
   .ui-card-description {
@@ -93,7 +93,7 @@
   }
 
   .ui-field-label {
-    @apply mb-1 block text-xs font-medium text-muted-foreground;
+    @apply mb-1 block text-xs font-medium text-black;
   }
 
   .ui-field-required {
@@ -114,7 +114,7 @@
 
   .ui-input,
   .ui-select {
-    @apply w-full rounded-md border border-input bg-card px-2.5 py-2 text-sm text-foreground;
+    @apply w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     transition-property: color, background-color, border-color, box-shadow;
@@ -124,6 +124,20 @@
 
   .ui-input {
     @apply placeholder:text-muted-foreground read-only:bg-muted;
+  }
+
+  /* —— Password input —— */
+  .ui-password-input {
+    @apply relative;
+  }
+
+  .ui-password-input-control {
+    @apply pr-9;
+  }
+
+  .ui-password-input-toggle {
+    @apply absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .ui-textarea {
@@ -309,7 +323,9 @@
 
   /* —— Layout —— */
   .ui-page {
-    @apply mx-auto max-w-3xl px-5 pb-16 pt-8;
+    @apply px-6 py-8;
+
+    /* @apply mx-auto max-w-3xl px-5 pb-16 pt-8; */
   }
 
   .ui-page-header {
@@ -318,7 +334,7 @@
 
   .ui-page-title {
     @apply m-0 font-semibold tracking-tight text-foreground;
-    font-size: var(--text-page-title);
+    font-size: 24px;
   }
 
   .ui-page-description {
@@ -335,7 +351,7 @@
 
   .ui-shell-title {
     @apply m-0 font-semibold tracking-tight text-foreground;
-    font-size: var(--text-page-title);
+    font-size: 24px;
   }
 
   .ui-shell-subtitle {
@@ -351,6 +367,23 @@
     transition-property: color;
     transition-duration: var(--duration-fast);
     transition-timing-function: var(--ease-standard);
+  }
+
+  /* —— Auth screen (login/register) — no shell chrome, centered card —— */
+  .ui-auth-screen {
+    @apply flex min-h-screen flex-col items-center justify-center gap-6  bg-lightgray  px-4 py-10;
+  }
+
+  .ui-auth-brand {
+    @apply m-0 text-4xl font-semibold tracking-tight text-primary mb-3;
+  }
+
+  .ui-auth-card {
+    @apply w-full max-w-md px-7 py-10;
+  }
+
+  .ui-auth-footer {
+    @apply text-sm text-muted-foreground;
   }
 
   .ui-shell-nav a.ui-button {
@@ -387,7 +420,7 @@
   }
 
   .ui-dialog-panel {
-    @apply relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-md;
+    @apply relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-md bg-white;
     grid-area: 1 / 1;
   }
 
@@ -417,7 +450,7 @@
 
   /* —— Table —— */
   .ui-table-wrap {
-    @apply w-full overflow-x-auto rounded-lg border border-border;
+    @apply w-full overflow-x-auto rounded-lg border border-[#e2e8f0];
   }
 
   .ui-table {
@@ -425,15 +458,15 @@
   }
 
   .ui-thead {
-    @apply bg-muted text-muted-foreground;
+    @apply bg-white text-muted-foreground;
   }
 
   .ui-th {
-    @apply border-b border-border px-3 py-2 font-medium;
+    @apply border-b border-[#e2e8f0] px-3 py-3 font-medium uppercase text-xs;
   }
 
   .ui-td {
-    @apply border-b border-border px-3 py-2 text-foreground;
+    @apply border-b border-[#e2e8f0] px-3 py-3 text-black text-sm;
   }
 
   .ui-tr:last-child .ui-td {
@@ -450,5 +483,134 @@
     margin: -1px;
     padding: 0;
     clip-path: inset(50%);
+  }
+
+  /* —— App shell —— */
+  .ui-app-shell {
+    @apply flex h-screen max-h-screen w-full overflow-hidden bg-white;
+  }
+
+  .ui-app-header {
+    @apply sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-border bg-card px-4;
+  }
+
+  .ui-app-header-start {
+    @apply flex items-center gap-2;
+  }
+
+  .ui-app-header-mobile-toggle {
+    @apply inline-flex size-9 items-center justify-center rounded-md transition-all text-foreground hover:bg-primary/10 md:hidden hover:text-primary;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .ui-app-header-desktop-toggle {
+    @apply hidden size-9 items-center justify-center rounded-md transition-all text-foreground hover:bg-primary/10 hover:text-primary md:inline-flex;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .ui-app-brand {
+    @apply h-16 flex text-2xl justify-center font-semibold tracking-tight text-primary no-underline hover:no-underline;
+  }
+
+  .ui-app-body {
+    @apply flex flex-1 flex-col w-full overflow-hidden;
+  }
+
+  .ui-app-main {
+    @apply flex-1 w-full overflow-auto bg-lightgray;
+  }
+
+  .ui-app-footer {
+    @apply border-t border-border p-5 text-center text-xs text-muted-foreground bg-white;
+  }
+
+  /* —— Sidebar (desktop) —— */
+  .ui-sidebar {
+    @apply hidden w-56 shrink-0 flex-col justify-between border-r border-border bg-card p-5 md:flex;
+    transition-property: width;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-sidebar-collapsed {
+    @apply w-16 items-center;
+  }
+
+  .ui-sidebar-nav {
+    @apply flex-1;
+  }
+
+  .ui-sidebar-toggle {
+    @apply inline-flex size-9 items-center justify-center self-start rounded-md text-muted-foreground hover:bg-muted hover:text-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    transition-property: color, background-color;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  /* —— Nav list (shared by desktop sidebar + mobile drawer) —— */
+  .ui-nav-list {
+    @apply flex flex-col gap-1;
+  }
+
+  .ui-nav-item {
+    @apply flex items-center gap-3 rounded-md px-5 py-3 text-sm font-medium text-muted-foreground no-underline transition-all hover:bg-transparent hover:text-primary hover:no-underline;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    transition-property: color, background-color;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-nav-item-active {
+    @apply bg-primary text-white hover:bg-primary font-semibold hover:text-white mb-3;
+  }
+
+  .ui-nav-item-icon {
+    @apply shrink-0;
+  }
+
+  /* —— Mobile drawer (Dialog variant) —— */
+  .ui-mobile-drawer {
+    @apply items-stretch justify-start p-2;
+  }
+
+  .ui-mobile-drawer .ui-dialog-panel {
+    @apply h-full max-w-72 rounded-none border-0 border-r border-border p-4;
+  }
+
+  /* —— User profile menu —— */
+  .ui-user-menu {
+    @apply relative;
+  }
+
+  .ui-user-menu-trigger {
+    @apply inline-flex size-9 items-center justify-center rounded-full;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .ui-user-menu-avatar {
+    @apply inline-flex size-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white cursor-pointer;
+  }
+
+  .ui-user-menu-panel {
+    @apply absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border border-border bg-white p-2 text-card-foreground shadow-md;
+  }
+
+  .ui-user-menu-identity {
+    @apply mb-2 border-b border-border px-2 pb-2;
+  }
+
+  .ui-user-menu-name {
+    @apply m-0 truncate text-sm font-medium text-foreground;
+  }
+
+  .ui-user-menu-email {
+    @apply m-0 truncate text-xs text-muted-foreground;
+  }
+
+  .ui-user-menu-item {
+    @apply flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-all hover:bg-muted hover:text-primary;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply disabled:pointer-events-none disabled:opacity-50;
   }
 }

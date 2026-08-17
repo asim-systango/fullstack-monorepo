@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, type SyntheticEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState, type SyntheticEvent } from 'react';
 import {
   Button,
   Card,
@@ -11,79 +11,134 @@ import {
   CardTitle,
   Field,
   Form,
-  Page,
-  TextInput,
+  PasswordInput,
   StatusMessage,
+  TextInput,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
+import { useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
+import { getHomeHref } from '@/lib/role-home';
+import { getEmailError, getPasswordError, isValidEmail } from '@/lib/validation';
+import { BicepsFlexed } from 'lucide-react';
 
 const isProd = process.env.NODE_ENV === 'production';
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const { refresh } = useAuth();
   const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
   const [password, setPassword] = useState(isProd ? '' : 'password123');
-  const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  function validate(): boolean {
+    const nextEmailError = getEmailError(email);
+    const nextPasswordError = getPasswordError(password, 1);
+
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
+    return !nextEmailError && !nextPasswordError;
+  }
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (pending) return;
+    setFormError(null);
+    if (!validate()) return;
+
     setPending(true);
-    setError(null);
     try {
-      await authApi.login({ email, password });
+      const loggedInUser = await authApi.login({ email, password });
       await refresh();
-      router.push('/');
+      const isSafeNext =
+        Boolean(next) && next!.startsWith('/') && !next!.startsWith('//');
+      router.push(isSafeNext ? next! : getHomeHref(loggedInUser.role));
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
-    } finally {
+      setFormError(err instanceof ApiClientError ? err.message : 'Login failed');
       setPending(false);
     }
   }
 
   return (
-    <Page>
-      <ShellHeader title="Log in" subtitle="Sign in with your demo account" />
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>
-            Primary actions use ink. Links and focus rings use accent blue.
+    <div className="ui-auth-screen">
+      <p className="ui-auth-brand flex items-center gap-1">
+        <BicepsFlexed className="text-black" size={30} /> Fitness
+      </p>
+      <Card className="ui-auth-card">
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl ">Welcome</CardTitle>
+          <CardDescription className="text-base mb-4">
+            Sign in to your account
           </CardDescription>
         </CardHeader>
-        <Form pending={pending} onSubmit={onSubmit}>
-          <Field label="Email" htmlFor="login-email" required disabled={pending}>
+        <Form pending={pending} onSubmit={onSubmit} noValidate>
+          <Field
+            label="Email"
+            htmlFor="login-email"
+            required
+            error={emailError ?? undefined}
+            disabled={pending}
+            className="mb-6"
+          >
             <TextInput
               id="login-email"
               name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => {
+                if (email.trim()) {
+                  setEmailError(
+                    isValidEmail(email) ? null : 'Enter a valid email address',
+                  );
+                }
+              }}
               autoComplete="email"
             />
           </Field>
-          <Field label="Password" htmlFor="login-password" required disabled={pending}>
-            <TextInput
+          <Field
+            label="Password"
+            htmlFor="login-password"
+            required
+            error={passwordError ?? undefined}
+            disabled={pending}
+            className="mb-8"
+          >
+            <PasswordInput
               id="login-password"
               name="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
           </Field>
-          {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" loading={pending} loadingText="Signing in…">
-            Sign in
+          {formError ? <StatusMessage tone="error">{formError}</StatusMessage> : null}
+          <Button
+            type="submit"
+            loading={pending}
+            loadingText="Signing in…"
+            className="w-full"
+          >
+            Login
           </Button>
         </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          No account? <Link href="/register">Register</Link>
-        </p>
       </Card>
-    </Page>
+      <p className="ui-auth-footer">
+        Don't have an account? <Link href="/register">Register</Link>
+      </p>
+    </div>
   );
 }

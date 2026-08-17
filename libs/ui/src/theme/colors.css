@@ -1,6 +1,6 @@
 /*
   Semantic roles (light / dark).
-  primary = ink · accent = blue (links/focus only).
+  primary = Fitness brand blue (--blue-500) · accent = blue (links/focus only).
 */
 
 :root {
@@ -13,8 +13,8 @@
   --ring: var(--blue-500);
   --card: var(--white);
   --card-foreground: var(--ink-950);
-  --primary: var(--ink-950);
-  --primary-foreground: var(--paper-50);
+  --primary: var(--blue-500);
+  --primary-foreground: var(--ink-950);
   --secondary: var(--paper-200);
   --secondary-foreground: var(--ink-900);
   --accent: var(--blue-600);
@@ -25,6 +25,8 @@
   --success-foreground: var(--white);
   --warning: var(--amber-600);
   --warning-foreground: var(--ink-950);
+  --white: var(--white);
+  --lightgray: var(--lightgray-500);
 }
 
 .dark {
@@ -37,7 +39,7 @@
   --ring: var(--blue-400);
   --card: var(--ink-900);
   --card-foreground: var(--paper-100);
-  --primary: var(--paper-100);
+  --primary: var(--teal-500);
   --primary-foreground: var(--ink-950);
   --secondary: var(--ink-800);
   --secondary-foreground: var(--paper-100);
@@ -49,4 +51,6 @@
   --success-foreground: var(--ink-950);
   --warning: var(--amber-400);
   --warning-foreground: var(--ink-950);
+  --white: var(--white);
+  --lightgray: var(--lightgray-500);
 }

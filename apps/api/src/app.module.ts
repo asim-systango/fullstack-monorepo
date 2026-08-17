@@ -4,7 +4,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
+import { CoachModule } from './modules/coach';
+import { GoalsModule } from './modules/goals';
 import { HealthModule } from './modules/health';
+import { PersonalRecordsModule } from './modules/personal-records';
+import { PlansModule } from './modules/plans';
+import { WorkoutsModule } from './modules/workouts';
 
 const db = databaseConfig();
 
@@ -19,7 +24,12 @@ const db = databaseConfig();
       ...db,
     }),
     AuthModule,
+    CoachModule,
+    GoalsModule,
     HealthModule,
+    PersonalRecordsModule,
+    PlansModule,
+    WorkoutsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
