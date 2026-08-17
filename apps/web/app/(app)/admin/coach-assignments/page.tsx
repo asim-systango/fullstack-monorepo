@@ -178,7 +178,7 @@ export default function CoachAssignmentsPage() {
           <DialogTitle>Remove assignment?</DialogTitle>
         </DialogHeader>
         <DialogBody>
-          The coach will lose read-only access to this athlete's workouts and PRs.
+          The coach will lose read-only access to this athlete&apos;s workouts and PRs.
         </DialogBody>
         <DialogFooter>
           <Button

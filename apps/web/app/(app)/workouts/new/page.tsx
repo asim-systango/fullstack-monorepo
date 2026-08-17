@@ -51,7 +51,7 @@ export default function NewWorkoutPage() {
     if (!draft.performedAt) {
       dispatch(setLoggerPerformedAt(todayDateInput()));
     }
-  }, []);
+  }, [dispatch, draft.performedAt]);
 
   const mutation = useMutation({
     mutationFn: createWorkout,

@@ -126,7 +126,7 @@ export default function DashboardPage() {
 
               {workoutsQuery.isError ? (
                 <Alert tone="danger" title="Something went wrong">
-                  <p className="m-0 mb-2">We couldn't load your recent workouts.</p>
+                  <p className="m-0 mb-2">We couldn&apos;t load your recent workouts.</p>
                   <Button size="sm" onClick={() => void workoutsQuery.refetch()}>
                     Try again
                   </Button>
@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
               {prsQuery.isError ? (
                 <Alert tone="danger" title="Something went wrong">
-                  <p className="m-0 mb-2">We couldn't load your personal records.</p>
+                  <p className="m-0 mb-2">We couldn&apos;t load your personal records.</p>
                   <Button size="sm" onClick={() => void prsQuery.refetch()}>
                     Try again
                   </Button>
@@ -221,7 +221,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="mb-5">Today's goals</CardTitle>
+            <CardTitle className="mb-5">Today&apos;s goals</CardTitle>
             <Link
               href="/goals"
               className="inline-flex items-center gap-1 text-sm font-medium text-primary no-underline hover:underline"
@@ -234,7 +234,7 @@ export default function DashboardPage() {
 
             {goalsQuery.isError ? (
               <Alert tone="danger" title="Something went wrong">
-                <p className="m-0 mb-2">We couldn't load your goals.</p>
+                <p className="m-0 mb-2">We couldn&apos;t load your goals.</p>
                 <Button size="sm" onClick={() => void goalsQuery.refetch()}>
                   Try again
                 </Button>

@@ -137,7 +137,7 @@ function LoginForm() {
         </Form>
       </Card>
       <p className="ui-auth-footer">
-        Don't have an account? <Link href="/register">Register</Link>
+        Don&apos;t have an account? <Link href="/register">Register</Link>
       </p>
     </div>
   );
