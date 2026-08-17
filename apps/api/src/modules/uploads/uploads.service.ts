@@ -18,6 +18,8 @@ export class UploadsService {
     const timestamp = Math.floor(Date.now() / 1000);
     const uploadFolder = `${FOLDER_PREFIX}/${folder}`;
     const paramsToSign = `folder=${uploadFolder}&timestamp=${timestamp}`;
+    // Cloudinary signed uploads require SHA-1 of sorted params + API secret.
+    // eslint-disable-next-line sonarjs/hashing -- protocol-mandated signature, not a password hash
     const signature = createHash('sha1')
       .update(paramsToSign + config.apiSecret)
       .digest('hex');

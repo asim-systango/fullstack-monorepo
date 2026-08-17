@@ -35,13 +35,11 @@ export class MenuItemsService {
       }
     }
 
-    const items = await this.menuItemRepo.find({
+    return this.menuItemRepo.find({
       where: { restaurantId: query.restaurantId },
       withDeleted: includeDeleted,
       order: { name: 'ASC' },
     });
-
-    return items;
   }
 
   async getById(id: string) {
