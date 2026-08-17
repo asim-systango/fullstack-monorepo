@@ -1,5 +1,6 @@
 import { apiClient } from '../config/axios-client';
 import { API_ENDPOINTS } from '../constants/endpoints';
+import { extractData } from '../utils/extract-data';
 import type {
     GetContactsParams,
     GetContactsResponse,
@@ -8,13 +9,6 @@ import type {
     UpdateContactPayload,
     UpdateContactResponse,
 } from '../types/contacts.types';
-
-function extractData<T>(payload: unknown): T {
-    if (payload !== null && typeof payload === 'object' && 'data' in payload) {
-        return (payload as { data: T }).data;
-    }
-    return payload as T;
-}
 
 export class ContactsService {
     async getContacts(params?: GetContactsParams): Promise<GetContactsResponse> {
