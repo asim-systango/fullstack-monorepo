@@ -12,6 +12,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     passwordHash: '',
     name: 'Demo',
     role: 'user',
+    deliveryAddress: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -23,11 +24,13 @@ describe('AuthService', () => {
     findByEmail: jest.fn(),
     findById: jest.fn(),
     create: jest.fn(),
+    saveDeliveryAddress: jest.fn(),
     toPublic: jest.fn((user: User) => ({
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      deliveryAddress: user.deliveryAddress ?? null,
     })),
   };
 
@@ -102,6 +105,7 @@ describe('AuthService', () => {
         email: created.email,
         name: created.name,
         role: created.role,
+        deliveryAddress: null,
       });
     });
 
@@ -181,6 +185,27 @@ describe('AuthService', () => {
         service.login({ email: 'missing@example.com', password: 'x' }, res),
       ).rejects.toBeInstanceOf(UnauthorizedException);
       expect(res.cookie).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('saveDeliveryAddress', () => {
+    it('delegates to the users service', async () => {
+      const updated = {
+        id: '11111111-1111-1111-1111-111111111111',
+        email: 'user@example.com',
+        name: 'Demo',
+        role: 'user' as const,
+        deliveryAddress: '21 MG Road, Indore',
+      };
+      usersService.saveDeliveryAddress.mockResolvedValue(updated);
+
+      await expect(service.saveDeliveryAddress(updated.id, '21 MG Road, Indore')).resolves.toEqual(
+        updated,
+      );
+      expect(usersService.saveDeliveryAddress).toHaveBeenCalledWith(
+        updated.id,
+        '21 MG Road, Indore',
+      );
     });
   });
 

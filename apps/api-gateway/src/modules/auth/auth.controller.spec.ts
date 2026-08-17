@@ -10,12 +10,14 @@ describe('AuthController', () => {
     email: 'user@example.com',
     name: 'Demo',
     role: 'user' as const,
+    deliveryAddress: null,
   };
 
   const authService = {
     register: jest.fn(),
     login: jest.fn(),
     logout: jest.fn(),
+    saveDeliveryAddress: jest.fn(),
   };
 
   let controller: AuthController;
@@ -103,5 +105,18 @@ describe('AuthController', () => {
     authService.logout.mockReturnValue({ ok: true });
     expect(controller.logout(res)).toEqual({ ok: true });
     expect(authService.logout).toHaveBeenCalledWith(res);
+  });
+
+  it('saveAddress delegates to the service', async () => {
+    const updated = { ...publicUser, deliveryAddress: '21 MG Road, Indore' };
+    authService.saveDeliveryAddress.mockResolvedValue(updated);
+
+    await expect(
+      controller.saveAddress(publicUser, { deliveryAddress: '21 MG Road, Indore' }),
+    ).resolves.toEqual(updated);
+    expect(authService.saveDeliveryAddress).toHaveBeenCalledWith(
+      publicUser.id,
+      '21 MG Road, Indore',
+    );
   });
 });
