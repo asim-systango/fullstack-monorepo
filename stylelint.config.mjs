@@ -1,7 +1,7 @@
 /** @type {import('stylelint').Config} */
 export default {
   extends: ['stylelint-config-standard'],
-  ignoreFiles: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/coverage/**'],
+  ignoreFiles: ['**/node_modules/**', '**/.next/**', '**/.next-build/**', '**/dist/**', '**/coverage/**'],
   rules: {
     // Mirror Sonar css:S8778 — all @import must come before other at-rules/style rules.
     // Ignore Tailwind v4 at-rules that may appear between build-time imports.

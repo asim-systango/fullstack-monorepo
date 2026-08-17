@@ -2,7 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersService, type User } from '../../users';
 
-describe('JwtStrategy (gateway)', () => {
+describe('JwtStrategy (api)', () => {
   const usersService = {
     findById: jest.fn(),
     toPublic: jest.fn((user: User) => ({
@@ -11,6 +11,7 @@ describe('JwtStrategy (gateway)', () => {
       name: user.name,
       role: user.role,
       emailVerified: user.emailVerifiedAt != null,
+      mustChangePassword: user.mustChangePassword,
     })),
   };
 
@@ -22,11 +23,6 @@ describe('JwtStrategy (gateway)', () => {
       NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/app',
       JWT_SECRET: 'test-jwt-secret-16',
-      JWT_EXPIRES_IN: '1h',
-      COOKIE_SECURE: 'false',
-      CORS_ORIGIN: 'http://localhost:3000',
-      API_UPSTREAM_URL: 'http://localhost:3002',
-      INTERNAL_SERVICE_TOKEN: 'test-internal-token-16',
     });
     strategy = new JwtStrategy(usersService as unknown as UsersService);
   });
@@ -49,6 +45,8 @@ describe('JwtStrategy (gateway)', () => {
       name: 'Demo',
       role: 'user',
       passwordHash: 'hash',
+      emailVerifiedAt: new Date(),
+      mustChangePassword: false,
     } as User;
     usersService.findById.mockResolvedValue(user);
 
@@ -63,7 +61,8 @@ describe('JwtStrategy (gateway)', () => {
       email: user.email,
       name: user.name,
       role: user.role,
-      emailVerified: false,
+      emailVerified: true,
+      mustChangePassword: false,
     });
   });
 

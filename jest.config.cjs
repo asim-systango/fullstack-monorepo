@@ -61,6 +61,7 @@ module.exports = {
     'apps/web/lib/api-base-url.ts',
     'libs/http/src/**/*.ts',
     'libs/api-client/src/**/*.ts',
+    '!libs/api-client/src/bookly/**',
     'libs/shared-types/src/index.ts',
     'libs/ui/src/cn.ts',
     'libs/ui/src/components/status-message.tsx',

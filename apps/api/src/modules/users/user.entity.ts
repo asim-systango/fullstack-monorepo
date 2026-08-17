@@ -9,7 +9,7 @@ import {
 /** Rename `staff` to a domain role (company, agent, coach, …). */
 export type UserRole = 'admin' | 'user' | 'staff';
 
-export type OtpPurpose = 'signup' | 'password_reset' | 'password_change';
+export type OtpPurpose = 'signup' | 'password_reset';
 
 @Entity({ name: 'users' })
 export class User {

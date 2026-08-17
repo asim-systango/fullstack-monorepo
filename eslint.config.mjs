@@ -15,6 +15,7 @@ export default [
     ignores: [
       '**/dist/**',
       '**/.next/**',
+      '**/.next-build/**',
       '**/node_modules/**',
       '**/data/**',
       '**/coverage/**',
