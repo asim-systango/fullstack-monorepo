@@ -6,7 +6,11 @@ import axios, {
 import { z } from 'zod';
 import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
 
+import { API_ENDPOINTS } from './endpoints';
+
+export { API_ENDPOINTS };
 export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export { z } from 'zod';
 
 export class ApiClientError extends Error {
   readonly statusCode: number;
@@ -68,9 +72,9 @@ export function createApiClient(options: CreateApiClientOptions = {}): AxiosInst
       if (apiError.statusCode === 401) {
         const url = error.config?.url ?? '';
         if (
-          !url.includes('/auth/me') &&
-          !url.includes('/auth/login') &&
-          !url.includes('/auth/register')
+          !url.includes(API_ENDPOINTS.AUTH.ME) &&
+          !url.includes(API_ENDPOINTS.AUTH.LOGIN) &&
+          !url.includes(API_ENDPOINTS.AUTH.REGISTER)
         ) {
           onUnauthorized?.();
         }
@@ -85,7 +89,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): AxiosInst
 export function createAuthApi(client: AxiosInstance) {
   return {
     async login(input: { email: string; password: string }): Promise<User> {
-      const { data } = await client.post('/auth/login', input);
+      const { data } = await client.post(API_ENDPOINTS.AUTH.LOGIN, input);
       return userSchema.parse(unwrapData(data));
     },
     async register(input: {
@@ -93,15 +97,15 @@ export function createAuthApi(client: AxiosInstance) {
       password: string;
       name: string;
     }): Promise<User> {
-      const { data } = await client.post('/auth/register', input);
+      const { data } = await client.post(API_ENDPOINTS.AUTH.REGISTER, input);
       return userSchema.parse(unwrapData(data));
     },
     async me(): Promise<User> {
-      const { data } = await client.get('/auth/me');
+      const { data } = await client.get(API_ENDPOINTS.AUTH.ME);
       return userSchema.parse(unwrapData(data));
     },
     async logout(): Promise<void> {
-      await client.post('/auth/logout');
+      await client.post(API_ENDPOINTS.AUTH.LOGOUT);
     },
   };
 }
@@ -109,9 +113,48 @@ export function createAuthApi(client: AxiosInstance) {
 export function createHealthApi(client: AxiosInstance) {
   return {
     async check(): Promise<{ status: string }> {
-      const { data } = await client.get('/health');
+      const { data } = await client.get(API_ENDPOINTS.HEALTH.CHECK);
       const parsed = z.object({ status: z.string() }).parse(unwrapData(data));
       return { status: parsed.status };
+    },
+  };
+}
+
+/** Multi-step API Calls interface using the single Axios client */
+export function createAppointmentsApi(client: AxiosInstance) {
+  return {
+    // Step 1: Check doctor availability
+    async checkAvailability(doctorId: string, date: string) {
+      const { data } = await client.get(API_ENDPOINTS.APPOINTMENTS.CHECK_AVAILABILITY, {
+        params: { doctorId, date },
+      });
+      return unwrapData(data);
+    },
+    // Step 2: Lock requested slot
+    async lockSlot(doctorId: string, slotTime: string) {
+      const { data } = await client.post(API_ENDPOINTS.APPOINTMENTS.LOCK_SLOT, {
+        doctorId,
+        slotTime,
+      });
+      return unwrapData<{ lockId: string; expiresAt: string }>(data);
+    },
+    // Step 3: Confirm final booking with lockId
+    async confirmBooking(payload: { lockId: string; doctorId: string; notes?: string }) {
+      const { data } = await client.post(
+        API_ENDPOINTS.APPOINTMENTS.CONFIRM_BOOKING,
+        payload,
+      );
+      return unwrapData(data);
+    },
+    // General list
+    async list(params?: Record<string, unknown>) {
+      const { data } = await client.get(API_ENDPOINTS.APPOINTMENTS.LIST, { params });
+      return unwrapData(data);
+    },
+    // Cancel appointment
+    async cancel(id: string) {
+      const { data } = await client.post(API_ENDPOINTS.APPOINTMENTS.CANCEL(id));
+      return unwrapData(data);
     },
   };
 }

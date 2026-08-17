@@ -9,8 +9,8 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["src"],
-  "exclude": ["src/**/*.spec.ts", "dist"]
+  "exclude": ["dist"]
 }

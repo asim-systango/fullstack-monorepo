@@ -1,17 +1,25 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
+import { AuditLoggerInterceptor } from './common/interceptors/audit-logger.interceptor';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
+import { DoctorModule } from './modules/doctor';
+import { PatientModule } from './modules/patient';
+import { SlotModule } from './modules/slot';
+import { AppointmentModule } from './modules/appointment';
+import { PrescriptionModule } from './modules/prescription';
+import { MedicalNoteModule } from './modules/medical-note';
+import { PaymentModule } from './modules/payment/payment.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 const db = databaseConfig();
 
 /**
  * Internal domain API — Bearer JWT only (cookie auth lives on api-gateway).
- * Add your domain modules here (do not put product CRUD in Next).
- * Entities registered via TypeOrmModule.forFeature are auto-loaded.
+ * Domain modules registered here. Entities auto-loaded via TypeOrmModule.forFeature.
  */
 @Module({
   imports: [
@@ -20,10 +28,19 @@ const db = databaseConfig();
     }),
     AuthModule,
     HealthModule,
+    DoctorModule,
+    PatientModule,
+    SlotModule,
+    AppointmentModule,
+    PrescriptionModule,
+    MedicalNoteModule,
+    PaymentModule,
+    UploadModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: AuditLoggerInterceptor },
   ],
 })
 export class AppModule {}

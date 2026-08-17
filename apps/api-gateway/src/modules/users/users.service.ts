@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, type UserRole } from './user.entity';
+import { Role, User, type UserRole } from './user.entity';
 
 @Injectable()
 export class UsersService {
@@ -14,6 +14,10 @@ export class UsersService {
     return this.users.findOne({ where: { email: email.toLowerCase() } });
   }
 
+  findByPhone(phone: string) {
+    return this.users.findOne({ where: { phone } });
+  }
+
   findById(id: string) {
     return this.users.findOne({ where: { id } });
   }
@@ -21,24 +25,88 @@ export class UsersService {
   async create(input: {
     email: string;
     passwordHash: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    phone?: string;
+    avatarUrl?: string | null;
     role?: UserRole;
   }) {
+    const fullName =
+      input.name ||
+      [input.firstName, input.lastName].filter(Boolean).join(' ') ||
+      input.email.split('@')[0];
+
     const user = this.users.create({
       email: input.email.toLowerCase(),
       passwordHash: input.passwordHash,
-      name: input.name,
-      role: input.role ?? 'user',
+      firstName: input.firstName,
+      lastName: input.lastName,
+      name: fullName,
+      phone: input.phone,
+      avatarUrl: input.avatarUrl ?? null,
+      role: input.role ?? Role.PATIENT,
+      isActive: true,
+      emailVerified: false,
     });
     return this.users.save(user);
   }
 
+  async updateRefreshToken(userId: string, hashedRefreshToken: string | null) {
+    await this.users.update(userId, { hashedRefreshToken });
+  }
+
+  async updatePassword(userId: string, passwordHash: string) {
+    await this.users.update(userId, { passwordHash });
+  }
+
+  async updateProfile(
+    userId: string,
+    input: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      avatarUrl?: string | null;
+    },
+  ) {
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (!user) return null;
+
+    if (input.firstName !== undefined) user.firstName = input.firstName;
+    if (input.lastName !== undefined) user.lastName = input.lastName;
+    if (input.firstName !== undefined || input.lastName !== undefined) {
+      user.name = [
+        user.firstName ?? user.name?.split(' ')[0],
+        input.lastName ?? user.name?.split(' ').slice(1).join(' '),
+      ]
+        .filter(Boolean)
+        .join(' ');
+    }
+    if (input.phone !== undefined) user.phone = input.phone;
+    if (input.avatarUrl !== undefined) user.avatarUrl = input.avatarUrl;
+
+    const saved = await this.users.save(user);
+    return this.toPublic(saved);
+  }
+
   toPublic(user: User) {
+    const firstName =
+      user.firstName || user.name?.split(' ')[0] || user.email.split('@')[0];
+    const lastName = user.lastName || user.name?.split(' ').slice(1).join(' ') || '';
+
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      firstName,
+      lastName,
+      name: user.name || `${firstName} ${lastName}`.trim(),
+      phone: user.phone ?? '',
+      avatarUrl: user.avatarUrl ?? null,
       role: user.role,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }
