@@ -257,7 +257,7 @@ function GroupsPageContent() {
         <Card className="splitter-shadow overflow-hidden p-0">
           <div className="splitter-brand-gradient px-6 py-8 text-white">
             <p className="text-sm font-medium text-white/80">Welcome, {firstName}</p>
-            <h2 className="mt-1 text-2xl font-bold">Your groups live here</h2>
+            <h2 className="mt-1 text-2xl font-bold">My groups live here</h2>
             <p className="mt-2 max-w-lg text-sm text-white/85">
               Groups stay available after everyone settles up. Settled does not delete or
               disable a group — you can keep adding expenses anytime.
@@ -398,15 +398,15 @@ function GroupsPageContent() {
       <header className="splitter-page-header">
         <div className="splitter-page-header-copy">
           <p className="text-sm text-muted-foreground">👋 Hello, {firstName}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-bold tracking-tight">Your groups</h2>
+          <div className="splitter-page-title-row">
+            <h2 className="text-2xl font-bold tracking-tight">My groups</h2>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               + Create group
             </Button>
           </div>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            All your groups in one place. Settled groups stay listed. Blocked groups are
-            read-only.
+            All of your groups in one place. Settled groups stay listed. Blocked groups
+            are read-only.
           </p>
         </div>
 

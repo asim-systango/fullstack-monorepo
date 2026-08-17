@@ -37,12 +37,6 @@ function netBalanceClass(netCents: number) {
   return 'font-semibold tabular-nums text-muted-foreground';
 }
 
-function outstandingCap(payerNet: number, payeeNet: number) {
-  const debtor = payerNet < 0 ? -payerNet : 0;
-  const creditor = payeeNet > 0 ? payeeNet : 0;
-  return Math.max(0, Math.min(debtor, creditor));
-}
-
 function formatNetBalance(netCents: number, currency: string) {
   if (netCents === 0) return 'settled';
   if (netCents > 0) return `+${formatMoney(netCents, currency)}`;
@@ -108,6 +102,14 @@ function toneAmountClass(tone: DebtTone): string {
   if (tone === 'owe') return 'text-lg font-bold tabular-nums text-destructive';
   if (tone === 'owed') return 'text-lg font-bold tabular-nums text-success';
   return 'text-lg font-bold tabular-nums text-primary';
+}
+
+function canSettleDebt(
+  debt: Balances['debts'][number],
+  currentUserId: string | undefined,
+  groupWritable: boolean,
+): boolean {
+  return Boolean(groupWritable && currentUserId && debt.toUserId === currentUserId);
 }
 
 function settlementEmptyCopy(hasAny: boolean): { title: string; description: string } {
@@ -184,6 +186,9 @@ export function GroupBalancesView({
   const settleMutation = useMutation({
     mutationFn: () => {
       if (!settle) throw new Error('No settlement selected');
+      if (!user?.id || settle.payeeUserId !== user.id) {
+        throw new Error('You can only settle amounts that someone owes you');
+      }
       const cents = parseMoneyToCents(amount);
       if (cents == null || cents < 1) {
         throw new Error('Amount must be at least 1 cent');
@@ -282,6 +287,7 @@ export function GroupBalancesView({
   const settlementEmpty = settlementEmptyCopy(Boolean(settlementsQuery.data?.length));
 
   function openSettle(payerUserId: string, payeeUserId: string, maxCents: number) {
+    if (!user?.id || payeeUserId !== user.id) return;
     setError(null);
     setSettle({ payerUserId, payeeUserId, maxCents });
     setAmount(centsToInput(maxCents));
@@ -440,17 +446,17 @@ export function GroupBalancesView({
                       <span className={toneAmountClass(view.tone)}>
                         {formatMoney(debt.amountCents, currency)}
                       </span>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled={!canSettle}
-                        title={blocked ? 'This group is blocked' : undefined}
-                        onClick={() =>
-                          openSettle(debt.fromUserId, debt.toUserId, debt.amountCents)
-                        }
-                      >
-                        Settle
-                      </Button>
+                      {canSettleDebt(debt, user?.id, canSettle) ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() =>
+                            openSettle(debt.fromUserId, debt.toUserId, debt.amountCents)
+                          }
+                        >
+                          Settle
+                        </Button>
+                      ) : null}
                     </div>
                   </li>
                 );
@@ -601,48 +607,16 @@ export function GroupBalancesView({
               }}
               className="space-y-4"
             >
-              <Field label="Payer" htmlFor="settle-payer">
-                <Select
-                  id="settle-payer"
-                  value={settle.payerUserId}
-                  onChange={(e) => {
-                    const payerUserId = e.target.value;
-                    const payer = members.find((m) => m.userId === payerUserId);
-                    const payee = members.find((m) => m.userId === settle.payeeUserId);
-                    const max =
-                      payer && payee ? outstandingCap(payer.netCents, payee.netCents) : 0;
-                    setSettle({ ...settle, payerUserId, maxCents: max });
-                    setAmount(centsToInput(max));
-                  }}
-                >
-                  {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.name}
-                      {m.userId === user?.id ? ' (you)' : ''}
-                    </option>
-                  ))}
-                </Select>
+              <p className="text-sm text-muted-foreground">
+                Record that they paid you. You can only settle money owed to you.
+              </p>
+              <Field label="From">
+                <p className="text-sm font-medium">
+                  {members.find((m) => m.userId === settle.payerUserId)?.name ?? 'Member'}
+                </p>
               </Field>
-              <Field label="Payee" htmlFor="settle-payee">
-                <Select
-                  id="settle-payee"
-                  value={settle.payeeUserId}
-                  onChange={(e) => {
-                    const payeeUserId = e.target.value;
-                    const payer = members.find((m) => m.userId === settle.payerUserId);
-                    const payee = members.find((m) => m.userId === payeeUserId);
-                    const max =
-                      payer && payee ? outstandingCap(payer.netCents, payee.netCents) : 0;
-                    setSettle({ ...settle, payeeUserId, maxCents: max });
-                    setAmount(centsToInput(max));
-                  }}
-                >
-                  {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.name}
-                    </option>
-                  ))}
-                </Select>
+              <Field label="To">
+                <p className="text-sm font-medium">You</p>
               </Field>
               <Field label="Amount" htmlFor="settle-amount" required>
                 <TextInput

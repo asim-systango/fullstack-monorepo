@@ -250,6 +250,22 @@ export function IconGoogle(props: IconProps) {
   );
 }
 
+export function IconCheck(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 12.5 9.5 17 19 7.5" />
+    </IconBase>
+  );
+}
+
+export function IconClose(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </IconBase>
+  );
+}
+
 export function IconApple(props: IconProps) {
   return (
     <svg

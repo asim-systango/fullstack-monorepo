@@ -3,6 +3,13 @@ function safeReturnPath(value: string | null | undefined): string {
   return value;
 }
 
+/** Google/social login: keep invite links, otherwise land on the groups list. */
+function oauthReturnPath(value: string | null | undefined): string {
+  const path = safeReturnPath(value);
+  if (path.startsWith('/invites/accept')) return path;
+  return '/groups';
+}
+
 const RETURN_URL_STORAGE_KEY = 'splitter.returnUrl';
 
 function rememberReturnPath(path: string) {
@@ -33,6 +40,7 @@ function takeRememberedReturnPath(): string | null {
 
 export {
   safeReturnPath,
+  oauthReturnPath,
   rememberReturnPath,
   peekRememberedReturnPath,
   takeRememberedReturnPath,

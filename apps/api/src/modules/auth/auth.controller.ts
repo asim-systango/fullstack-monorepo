@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiCreatedResponse,
@@ -7,10 +16,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { CurrentUser, Public } from '../../common/auth';
-import { PublicUser } from '../users';
+import { PublicUser, User } from '../users';
 import { AuthService } from './auth.service';
+import { GoogleAuthGuard } from './google-auth.guard';
 import {
   ForgotPasswordDto,
   LoginDto,
@@ -85,6 +95,26 @@ export class AuthController {
   @ApiOperation({ summary: 'Set new password using reset token' })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Public()
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Start Google OAuth (browser redirect)' })
+  googleAuth() {
+    return;
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({
+    summary: 'Google OAuth callback — sets cookie and redirects to the web app',
+  })
+  async googleCallback(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as User;
+    const returnUrl = typeof req.query.state === 'string' ? req.query.state : undefined;
+    await this.authService.issueGoogleSession(user, res, returnUrl);
   }
 
   @ApiCookieAuth('access_token')

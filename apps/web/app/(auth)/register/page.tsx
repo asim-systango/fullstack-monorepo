@@ -13,7 +13,7 @@ import {
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { AuthInputGroup } from '@/components/splitter/auth-input-group';
-import { AuthLayout } from '@/components/splitter';
+import { AuthLayout, GoogleContinueButton } from '@/components/splitter';
 import { IconLock, IconMail, IconPerson } from '@/components/splitter/icons';
 import { authApi } from '@/lib/api';
 import { rememberReturnPath, safeReturnPath } from '@/lib/return-url';
@@ -128,6 +128,13 @@ function RegisterForm() {
           Sign up
         </Button>
       </Form>
+
+      <div className="splitter-auth-divider" aria-hidden="true">
+        or continue with
+      </div>
+
+      <GoogleContinueButton returnUrl={returnUrl} disabled={pending} />
+
       <p className="splitter-auth-switch">
         Already have an account?{' '}
         <Link href={loginHref} className="splitter-auth-link">

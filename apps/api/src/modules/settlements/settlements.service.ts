@@ -7,6 +7,13 @@ import { GroupsService } from '../groups/groups.service';
 import { Settlement } from './settlement.entity';
 import type { CreateSettlementDto } from './dto/create-settlement.dto';
 
+/** Only the creditor (payee) may record a settlement — not the debtor, and not a third party. */
+export function assertActorIsSettlementPayee(actorUserId: string, payeeUserId: string) {
+  if (payeeUserId !== actorUserId) {
+    throw new ForbiddenException('You can only settle amounts that someone owes you');
+  }
+}
+
 @Injectable()
 export class SettlementsService {
   constructor(
@@ -18,6 +25,7 @@ export class SettlementsService {
 
   async create(groupId: string, dto: CreateSettlementDto, user: PublicUser) {
     await this.groupsService.assertWritable(groupId, user);
+    assertActorIsSettlementPayee(user.id, dto.payeeUserId);
 
     if (dto.payerUserId === dto.payeeUserId) {
       throw new BadRequestException('Payer and payee must be different people');

@@ -13,15 +13,8 @@ import {
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { AuthInputGroup } from '@/components/splitter/auth-input-group';
-import { AuthLayout } from '@/components/splitter';
-import {
-  IconApple,
-  IconEye,
-  IconEyeOff,
-  IconGoogle,
-  IconLock,
-  IconMail,
-} from '@/components/splitter/icons';
+import { AuthLayout, GoogleContinueButton } from '@/components/splitter';
+import { IconEye, IconEyeOff, IconLock, IconMail } from '@/components/splitter/icons';
 import { useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 import { peekRememberedReturnPath, safeReturnPath } from '@/lib/return-url';
@@ -36,6 +29,7 @@ function LoginForm() {
     ? queryReturn
     : (peekRememberedReturnPath() ?? '/groups');
   const invitedEmail = searchParams.get('email');
+  const oauthError = searchParams.get('error');
   const { refresh } = useAuth();
   const [email, setEmail] = useState(invitedEmail || (isProd ? '' : 'staff@demo.local'));
   const [password, setPassword] = useState(isProd ? '' : 'password123');
@@ -136,6 +130,12 @@ function LoginForm() {
           </Link>
         </div>
 
+        {oauthError === 'google' ? (
+          <StatusMessage tone="error">
+            Google sign-in was cancelled or failed. Try again, or use email and password.
+          </StatusMessage>
+        ) : null}
+
         {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
         {unverifiedEmail ? (
           <Alert tone="info">
@@ -167,30 +167,7 @@ function LoginForm() {
         or continue with
       </div>
 
-      <div className="splitter-auth-social">
-        <button
-          type="button"
-          className="splitter-auth-social-btn"
-          disabled
-          title="Coming soon"
-        >
-          <span className="splitter-auth-social-icon">
-            <IconGoogle />
-          </span>
-          <span className="splitter-auth-social-label">Continue with Google</span>
-        </button>
-        <button
-          type="button"
-          className="splitter-auth-social-btn"
-          disabled
-          title="Coming soon"
-        >
-          <span className="splitter-auth-social-icon">
-            <IconApple />
-          </span>
-          <span className="splitter-auth-social-label">Continue with Apple</span>
-        </button>
-      </div>
+      <GoogleContinueButton returnUrl={returnUrl} disabled={pending} />
 
       <p className="splitter-auth-switch">
         New to Splitter?{' '}

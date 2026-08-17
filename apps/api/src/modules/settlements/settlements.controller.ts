@@ -12,7 +12,9 @@ export class SettlementsController {
   constructor(private readonly settlementsService: SettlementsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Record a settlement between two members' })
+  @ApiOperation({
+    summary: 'Record a settlement for money owed to the current user',
+  })
   create(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @Body() dto: CreateSettlementDto,

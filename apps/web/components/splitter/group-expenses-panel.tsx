@@ -148,18 +148,11 @@ export function GroupExpensesPanel(props: GroupExpensesPanelProps) {
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-semibold">Expenses</h3>
-        <div className="flex flex-wrap items-center gap-2">
-          {showAuditToggle ? (
-            <Button size="sm" variant="ghost" onClick={onToggleAudit}>
-              {showAudit ? 'Hide deleted' : 'Show deleted'}
-            </Button>
-          ) : null}
-          {canMutate ? (
-            <Button size="sm" onClick={onAdd}>
-              Add expense
-            </Button>
-          ) : null}
-        </div>
+        {showAuditToggle ? (
+          <Button size="sm" variant="ghost" onClick={onToggleAudit}>
+            {showAudit ? 'Hide deleted' : 'Show deleted'}
+          </Button>
+        ) : null}
       </div>
 
       <Form

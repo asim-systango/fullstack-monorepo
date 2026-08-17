@@ -11,6 +11,17 @@ import { Settlement } from '../settlements/settlement.entity';
 
 type NetMap = Map<string, number>;
 
+/** Payer sent money to payee: debtor net rises, creditor net falls. */
+export function applySettlementToNets(
+  nets: NetMap,
+  payerUserId: string,
+  payeeUserId: string,
+  amountCents: number,
+) {
+  nets.set(payerUserId, (nets.get(payerUserId) ?? 0) + amountCents);
+  nets.set(payeeUserId, (nets.get(payeeUserId) ?? 0) - amountCents);
+}
+
 @Injectable()
 export class BalancesService {
   constructor(
@@ -61,8 +72,7 @@ export class BalancesService {
 
     const settlementRows = await this.settlements.find({ where: { groupId } });
     for (const s of settlementRows) {
-      this.addCents(nets, s.payerUserId, -s.amountCents);
-      this.addCents(nets, s.payeeUserId, s.amountCents);
+      applySettlementToNets(nets, s.payerUserId, s.payeeUserId, s.amountCents);
     }
 
     const members = memberRows.map((m) => ({

@@ -100,6 +100,8 @@ API_URL=https://api.yourdomain.com
 
 If the API is on a different public origin (cross-origin), you must also configure CORS and cookies on `apps/api` (`CORS_ORIGIN`, `COOKIE_SECURE`).
 
+Google sign-in uses a browser redirect to `/api/auth/google` (rewritten to the Nest API). Configure Google credentials on **`apps/api/.env`**, not in the web app.
+
 ---
 
 ## How API proxying works

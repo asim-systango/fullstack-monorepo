@@ -183,6 +183,19 @@ Copy from [`apps/api/.env.example`](./.env.example). Key groups:
 | --------------------------- | ------- | --------------------- |
 | `GROUP_INVITE_EXPIRES_DAYS` | `7`     | Group invite link TTL |
 
+### Google OAuth
+
+| Variable               | Description                                                       |
+| ---------------------- | ----------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID`     | Google Cloud OAuth client ID                                      |
+| `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client secret                                  |
+| `GOOGLE_CALLBACK_URL`  | Optional. Defaults to `{APP_PUBLIC_URL}/api/auth/google/callback` |
+
+In [Google Cloud Console](https://console.cloud.google.com/apis/credentials) add:
+
+- **Authorized JavaScript origins:** `http://localhost:3000`
+- **Authorized redirect URIs:** `http://localhost:3000/api/auth/google/callback`
+
 Canonical names (`JWT_SECRET`, `SMTP_*`) and aliases (`AUTH_*`, `MAIL_*`, `DATABASE_*`) are both supported — see `.env.example`.
 
 ---

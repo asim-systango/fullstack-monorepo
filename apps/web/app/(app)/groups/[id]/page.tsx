@@ -27,6 +27,7 @@ import {
   ExpenseEditor,
   GroupExpensesPanel,
   GroupMembersPanel,
+  ToastBanner,
   WhoOwesPreview,
 } from '@/components/splitter';
 import { splitterApi } from '@/lib/api';
@@ -52,7 +53,7 @@ export default function GroupDetailPage() {
   const [expenseOpen, setExpenseOpen] = useState<'create' | string | null>(null);
   const [expenseError, setExpenseError] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteHint, setInviteHint] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [showAudit, setShowAudit] = useState(false);
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
@@ -77,19 +78,13 @@ export default function GroupDetailPage() {
         sortBy: filterApplied.sortBy,
         sortDir: filterApplied.sortDir,
       }),
-    enabled: Boolean(groupId),
+    enabled: groupQuery.isSuccess,
   });
 
   const balancesQuery = useQuery({
     queryKey: ['balances', groupId],
     queryFn: () => splitterApi.getBalances(groupId),
-    enabled: Boolean(groupId),
-  });
-
-  const invitesQuery = useQuery({
-    queryKey: ['group-invites', groupId],
-    queryFn: () => splitterApi.listGroupInvites(groupId),
-    enabled: Boolean(groupId) && groupQuery.data?.myRole != null,
+    enabled: groupQuery.isSuccess,
   });
 
   const deletedQuery = useQuery({
@@ -144,10 +139,13 @@ export default function GroupDetailPage() {
     onSuccess: () => {
       setInviteEmail('');
       setInviteError(null);
-      setInviteHint('Invite sent.');
+      setInviteSuccess(
+        'Invitation sent! Your friend will receive an email with the invitation.',
+      );
       invalidateGroup();
     },
     onError: (err) => {
+      setInviteSuccess(null);
       setInviteError(
         err instanceof ApiClientError ? err.message : 'Could not send invite',
       );
@@ -182,7 +180,17 @@ export default function GroupDetailPage() {
   }
 
   if (groupQuery.isError || !groupQuery.data) {
-    return <StatusMessage tone="error">Group not found or access denied.</StatusMessage>;
+    return (
+      <EmptyState
+        title="You don't have access to this group"
+        description="This group may belong to a different account, or it no longer exists. Your groups are listed on the Groups page."
+        action={
+          <Link href="/groups">
+            <Button>View your groups</Button>
+          </Link>
+        }
+      />
+    );
   }
 
   const group = groupQuery.data;
@@ -191,17 +199,6 @@ export default function GroupDetailPage() {
   const isPlatformAdmin = user?.role === 'admin';
   const canMutate = isMember && !group.blocked;
   const members = group.members.map((m) => ({ userId: m.userId, name: m.name }));
-
-  async function onLookup() {
-    setInviteHint(null);
-    setInviteError(null);
-    try {
-      const found = await splitterApi.lookupUser(inviteEmail);
-      setInviteHint(`Registered user: ${found.name}`);
-    } catch {
-      setInviteHint('No account yet — they can register, then accept the invite.');
-    }
-  }
 
   function renderDeletedAudit() {
     if (deletedQuery.isLoading) {
@@ -245,46 +242,47 @@ export default function GroupDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link href="/groups" className="text-sm text-muted-foreground">
-            ← Groups
-          </Link>
-          <div className="mt-2 flex items-center gap-3">
-            <Avatar name={group.name} size="lg" />
-            <div>
-              <h2 className="text-2xl font-bold">{group.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {group.currency} · {group.members.length} members
-              </p>
-            </div>
+      {inviteSuccess ? (
+        <ToastBanner message={inviteSuccess} onDismiss={() => setInviteSuccess(null)} />
+      ) : null}
+      <div className="splitter-group-header">
+        <Link href="/groups" className="splitter-group-header-back">
+          ← Groups
+        </Link>
+        <div className="splitter-group-header-row">
+          <div className="splitter-group-header-identity">
+            <Avatar name={group.name} size="md" />
+            <h2 className="text-2xl font-bold tracking-tight">{group.name}</h2>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {isPlatformAdmin ? (
-            <Button
-              variant="secondary"
-              onClick={() =>
-                group.blocked ? unblockGroup.mutate() : blockGroup.mutate()
-              }
-              loading={blockGroup.isPending || unblockGroup.isPending}
+          <div className="splitter-group-header-actions">
+            {isPlatformAdmin ? (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  group.blocked ? unblockGroup.mutate() : blockGroup.mutate()
+                }
+                loading={blockGroup.isPending || unblockGroup.isPending}
+              >
+                {group.blocked ? 'Unblock group' : 'Block group'}
+              </Button>
+            ) : null}
+            {canMutate ? (
+              <Button
+                onClick={() => {
+                  setExpenseError(null);
+                  setExpenseOpen('create');
+                }}
+              >
+                Add expense
+              </Button>
+            ) : null}
+            <Link
+              href={`/groups/${groupId}/balances`}
+              className="splitter-group-header-action-link"
             >
-              {group.blocked ? 'Unblock group' : 'Block group'}
-            </Button>
-          ) : null}
-          {canMutate ? (
-            <Button
-              onClick={() => {
-                setExpenseError(null);
-                setExpenseOpen('create');
-              }}
-            >
-              Add expense
-            </Button>
-          ) : null}
-          <Link href={`/groups/${groupId}/balances`}>
-            <Button variant="secondary">Settle up</Button>
-          </Link>
+              <Button variant="secondary">Settle up</Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -371,43 +369,24 @@ export default function GroupDetailPage() {
                     id="invite-email"
                     type="email"
                     value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onChange={(e) => {
+                      setInviteEmail(e.target.value);
+                      setInviteError(null);
+                    }}
                     placeholder="friend@example.com"
                   />
                 </Field>
-                {inviteHint ? (
-                  <p className="text-sm text-muted-foreground">{inviteHint}</p>
-                ) : null}
                 {inviteError ? (
                   <StatusMessage tone="error">{inviteError}</StatusMessage>
                 ) : null}
-                <div className="flex gap-2">
-                  <Button
-                    type="submit"
-                    loading={sendInvite.isPending}
-                    disabled={!inviteEmail.trim()}
-                  >
-                    Send invite
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => void onLookup()}
-                  >
-                    Look up
-                  </Button>
-                </div>
+                <Button
+                  type="submit"
+                  loading={sendInvite.isPending}
+                  disabled={!inviteEmail.trim()}
+                >
+                  Send invite
+                </Button>
               </Form>
-              {invitesQuery.data?.length ? (
-                <ul className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
-                  {invitesQuery.data.map((invite) => (
-                    <li key={invite.id} className="flex justify-between gap-2">
-                      <span>{invite.inviteeEmail}</span>
-                      <Badge tone="neutral">pending</Badge>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
             </Card>
           )}
         </section>

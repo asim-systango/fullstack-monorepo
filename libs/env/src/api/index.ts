@@ -35,6 +35,19 @@ export const apiEnvSchema = z.object({
   EMAIL_VERIFICATION_EXPIRES_IN: durationStringSchema('1d'),
   PASSWORD_RESET_EXPIRES_IN: durationStringSchema('30m'),
   GROUP_INVITE_EXPIRES_DAYS: z.coerce.number().int().positive().default(7),
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v : undefined)),
+  GOOGLE_CLIENT_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v : undefined)),
+  GOOGLE_CALLBACK_URL: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v : undefined))
+    .pipe(z.string().url().optional()),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

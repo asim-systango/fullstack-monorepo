@@ -20,19 +20,34 @@ export class UsersService {
 
   async create(input: {
     email: string;
-    passwordHash: string;
+    passwordHash?: string | null;
     name: string;
     role?: UserRole;
     emailVerifiedAt?: Date | null;
+    googleId?: string | null;
   }) {
     const user = this.users.create({
       email: input.email.toLowerCase(),
-      passwordHash: input.passwordHash,
+      passwordHash: input.passwordHash ?? null,
       name: input.name,
       role: input.role ?? 'user',
       emailVerifiedAt: input.emailVerifiedAt ?? null,
+      googleId: input.googleId ?? null,
     });
     return this.users.save(user);
+  }
+
+  findByGoogleId(googleId: string) {
+    return this.users.findOne({ where: { googleId } });
+  }
+
+  async linkGoogleAccount(userId: string, googleId: string) {
+    const existing = await this.findById(userId);
+    await this.users.update(userId, {
+      googleId,
+      emailVerifiedAt: existing?.emailVerifiedAt ?? new Date(),
+    });
+    return this.findById(userId);
   }
 
   async updatePassword(userId: string, passwordHash: string) {

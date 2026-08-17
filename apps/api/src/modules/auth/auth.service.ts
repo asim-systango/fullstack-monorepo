@@ -13,7 +13,7 @@ import { IsNull, Repository } from 'typeorm';
 import { QueryFailedError } from 'typeorm';
 import { AUTH_COOKIE_NAME, loadApiEnv, parseDurationToMs } from '../../common/env';
 import { MailService } from '../mail/mail.service';
-import { UsersService } from '../users';
+import { User, UsersService } from '../users';
 import { EmailVerificationToken } from './email-verification-token.entity';
 import { PasswordResetToken } from './password-reset-token.entity';
 import {
@@ -25,6 +25,7 @@ import {
   VerifyEmailDto,
 } from './dto/auth.dto';
 import { generateRawToken, hashToken } from './token.util';
+import { safeAppPath } from './oauth-path.util';
 
 export { AUTH_COOKIE_NAME };
 
@@ -158,6 +159,66 @@ export class AuthService {
       throw new ForbiddenException('Please verify your email');
     }
 
+    await this.setSessionCookie(user, res);
+    return this.usersService.toPublic(user);
+  }
+
+  async findOrCreateFromGoogle(profile: {
+    googleId: string;
+    email: string;
+    name: string;
+  }) {
+    const email = profile.email.toLowerCase();
+    const byGoogle = await this.usersService.findByGoogleId(profile.googleId);
+    if (byGoogle) return byGoogle;
+
+    const existing = await this.usersService.findByEmail(email);
+    if (existing) {
+      const linked = await this.usersService.linkGoogleAccount(
+        existing.id,
+        profile.googleId,
+      );
+      if (!linked) {
+        throw new UnauthorizedException('Unable to link Google account');
+      }
+      return linked;
+    }
+
+    try {
+      return await this.usersService.create({
+        email,
+        name: profile.name || email.split('@')[0] || 'user',
+        passwordHash: null,
+        googleId: profile.googleId,
+        emailVerifiedAt: new Date(),
+        role: 'user',
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        const raced = await this.usersService.findByEmail(email);
+        if (raced) return raced;
+      }
+      throw err;
+    }
+  }
+
+  async issueGoogleSession(user: User, res: Response, returnUrl?: string) {
+    await this.setSessionCookie(user, res);
+    const origin = this.env.APP_PUBLIC_URL.replace(/\/$/, '');
+    res.redirect(`${origin}${safeAppPath(returnUrl)}`);
+  }
+
+  logout(res: Response) {
+    res.clearCookie(AUTH_COOKIE_NAME, {
+      httpOnly: true,
+      secure: this.env.COOKIE_SECURE,
+      sameSite: 'lax',
+      path: '/',
+    });
+    return { ok: true };
+  }
+
+  private async setSessionCookie(user: User, res: Response) {
     const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
@@ -171,18 +232,6 @@ export class AuthService {
       path: '/',
       maxAge: parseDurationToMs(this.env.JWT_EXPIRES_IN),
     });
-
-    return this.usersService.toPublic(user);
-  }
-
-  logout(res: Response) {
-    res.clearCookie(AUTH_COOKIE_NAME, {
-      httpOnly: true,
-      secure: this.env.COOKIE_SECURE,
-      sameSite: 'lax',
-      path: '/',
-    });
-    return { ok: true };
   }
 
   private async issueVerificationToken(userId: string, email: string, name: string) {
