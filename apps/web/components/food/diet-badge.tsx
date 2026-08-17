@@ -42,6 +42,21 @@ function DietMark({ kind }: Readonly<{ kind: 'veg' | 'non_veg' }>) {
   );
 }
 
+function DietMarks({ dietType }: Readonly<{ dietType: RestaurantDietType }>) {
+  if (dietType === 'non_veg') {
+    return <DietMark kind="non_veg" />;
+  }
+  if (dietType === 'both') {
+    return (
+      <>
+        <DietMark kind="veg" />
+        <DietMark kind="non_veg" />
+      </>
+    );
+  }
+  return <DietMark kind="veg" />;
+}
+
 export function dietTypeLabel(type: RestaurantDietType): string {
   return LABELS[type];
 }
@@ -58,16 +73,7 @@ export function DietBadge({ dietType = 'both' }: Readonly<{ dietType?: Restauran
         color: 'var(--tg-text)',
       }}
     >
-      {dietType === 'non_veg' ? (
-        <DietMark kind="non_veg" />
-      ) : dietType === 'both' ? (
-        <>
-          <DietMark kind="veg" />
-          <DietMark kind="non_veg" />
-        </>
-      ) : (
-        <DietMark kind="veg" />
-      )}
+      <DietMarks dietType={dietType} />
       {LABELS[dietType]}
     </span>
   );

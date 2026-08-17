@@ -13,6 +13,8 @@ import type { RestaurantDietType, StaffLoginDetails } from '@/lib/types/food-del
 import { parseRestaurant } from '@/lib/validation/food-delivery';
 import { toastApiError, toastError, toastSuccess } from '@/lib/toast';
 
+const INVALID_INPUT_CLASS = ' tg-input-invalid';
+
 export default function AdminRestaurantsPage() {
   const { data, isError, error } = useRestaurants();
   const createRestaurant = useCreateRestaurant();
@@ -154,7 +156,7 @@ export default function AdminRestaurantsPage() {
 
           <label className="tg-label">Name</label>
           <input
-            className={`tg-input${errors.name ? ' tg-input-invalid' : ''}`}
+            className={`tg-input${errors.name ? INVALID_INPUT_CLASS : ''}`}
             value={name}
             onChange={(e) => {
               const next = e.target.value;
@@ -167,7 +169,7 @@ export default function AdminRestaurantsPage() {
 
           <label className="tg-label">Restaurant email</label>
           <input
-            className={`tg-input${errors.ownerEmail ? ' tg-input-invalid' : ''}`}
+            className={`tg-input${errors.ownerEmail ? INVALID_INPUT_CLASS : ''}`}
             type="email"
             value={ownerEmail}
             onChange={(e) => {
@@ -188,7 +190,7 @@ export default function AdminRestaurantsPage() {
 
           <label className="tg-label">Cuisine</label>
           <input
-            className={`tg-input${errors.cuisine ? ' tg-input-invalid' : ''}`}
+            className={`tg-input${errors.cuisine ? INVALID_INPUT_CLASS : ''}`}
             value={cuisine}
             onChange={(e) => {
               const next = e.target.value;
@@ -213,7 +215,7 @@ export default function AdminRestaurantsPage() {
 
           <label className="tg-label">Address</label>
           <textarea
-            className={`tg-textarea${errors.address ? ' tg-input-invalid' : ''}`}
+            className={`tg-textarea${errors.address ? INVALID_INPUT_CLASS : ''}`}
             value={address}
             onChange={(e) => {
               const next = e.target.value;
@@ -226,7 +228,7 @@ export default function AdminRestaurantsPage() {
 
           <label className="tg-label">Delivery time</label>
           <input
-            className={`tg-input${errors.eta ? ' tg-input-invalid' : ''}`}
+            className={`tg-input${errors.eta ? INVALID_INPUT_CLASS : ''}`}
             value={eta}
             onChange={(e) => {
               const next = e.target.value;
@@ -240,7 +242,7 @@ export default function AdminRestaurantsPage() {
 
           <label className="tg-label">Rating</label>
           <input
-            className={`tg-input${errors.rating ? ' tg-input-invalid' : ''}`}
+            className={`tg-input${errors.rating ? INVALID_INPUT_CLASS : ''}`}
             type="number"
             step="0.1"
             min="0"

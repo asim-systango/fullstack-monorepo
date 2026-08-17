@@ -23,6 +23,9 @@ import { toastApiError, toastSuccess } from '@/lib/toast';
 import type { PaymentCheckout } from '@/lib/types/food-delivery';
 import { parsePlaceOrder } from '@/lib/validation/food-delivery';
 
+const COLOR_TEXT = 'var(--tg-text)';
+const COLOR_TEXT_MUTED = 'var(--tg-text-muted)';
+
 function CartContent() {
   const router = useRouter();
   const { user, refresh, saveAddress } = useAuth();
@@ -70,7 +73,7 @@ function CartContent() {
 
   if (isError) {
     return (
-      <p style={{ color: 'var(--tg-text-muted)', textAlign: 'center', padding: '40px 0' }}>
+      <p style={{ color: COLOR_TEXT_MUTED, textAlign: 'center', padding: '40px 0' }}>
         Could not load your cart. Please try again.
       </p>
     );
@@ -93,10 +96,10 @@ function CartContent() {
         >
           <ShoppingCart size={22} color="var(--tg-text-faint)" />
         </div>
-        <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--tg-text)', margin: '0 0 6px' }}>
+        <p style={{ fontSize: 16, fontWeight: 500, color: COLOR_TEXT, margin: '0 0 6px' }}>
           Your cart is empty
         </p>
-        <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '0 0 18px' }}>
+        <p style={{ fontSize: 13, color: COLOR_TEXT_MUTED, margin: '0 0 18px' }}>
           Add items from a restaurant to see them here.
         </p>
         <Link href="/restaurants" className="tg-btn tg-btn-primary" style={{ textDecoration: 'none' }}>
@@ -203,10 +206,10 @@ function CartContent() {
   return (
     <div className="tg-cart-grid">
       <div>
-        <h1 style={{ fontSize: 19, fontWeight: 500, margin: '0 0 4px', color: 'var(--tg-text)' }}>
+        <h1 style={{ fontSize: 19, fontWeight: 500, margin: '0 0 4px', color: COLOR_TEXT }}>
           Your cart
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--tg-text-muted)', margin: '0 0 16px' }}>
+        <p style={{ fontSize: 13, color: COLOR_TEXT_MUTED, margin: '0 0 16px' }}>
           {cart.restaurantName}
         </p>
 
@@ -225,10 +228,10 @@ function CartContent() {
               }}
             >
               <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--tg-text)' }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: COLOR_TEXT }}>
                   {line.name}
                 </p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--tg-text-muted)' }}>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: COLOR_TEXT_MUTED }}>
                   {formatInr(line.price)} each
                 </p>
               </div>
@@ -258,7 +261,7 @@ function CartContent() {
                   style={{
                     fontSize: 14,
                     fontWeight: 500,
-                    color: 'var(--tg-text)',
+                    color: COLOR_TEXT,
                     minWidth: 64,
                     textAlign: 'right',
                   }}
@@ -295,10 +298,10 @@ function CartContent() {
                 style={{ marginTop: 3 }}
               />
               <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--tg-text)' }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: COLOR_TEXT }}>
                   Saved address
                 </p>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--tg-text-muted)' }}>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: COLOR_TEXT_MUTED }}>
                   <MapPin size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
                   {savedAddress}
                 </p>
@@ -326,7 +329,7 @@ function CartContent() {
                 style={{ marginTop: 3 }}
               />
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--tg-text)' }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: COLOR_TEXT }}>
                   Deliver to a different address
                 </p>
                 {!useSavedAddress ? (

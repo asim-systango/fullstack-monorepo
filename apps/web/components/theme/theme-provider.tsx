@@ -30,6 +30,7 @@ function readDomTheme(): Theme {
     const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (saved === 'dark' || saved === 'light') return saved;
   } catch {
+    // localStorage can throw in private mode
   }
   return 'light';
 }
@@ -49,6 +50,7 @@ export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
+      // localStorage can throw in private mode
     }
   }, [theme, ready]);
 

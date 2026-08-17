@@ -21,7 +21,9 @@ export function PasswordInput({
         {...rest}
         id={id}
         type={visible ? 'text' : 'password'}
-        className={`tg-input tg-input-password${invalid ? ' tg-input-invalid' : ''}${className ? ` ${className}` : ''}`}
+        className={['tg-input', 'tg-input-password', invalid ? 'tg-input-invalid' : '', className]
+          .filter(Boolean)
+          .join(' ')}
         autoComplete={rest.autoComplete ?? 'current-password'}
       />
       <button

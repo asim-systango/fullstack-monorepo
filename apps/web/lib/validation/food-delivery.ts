@@ -36,10 +36,12 @@ type ParseResult<T> =
   | { success: true; data: T }
   | { success: false; errors: Record<string, string> };
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,24}$/;
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function parseOptionalNumber(value: string | number | undefined): number | undefined {
+  if (value === undefined || value === '') return undefined;
+  return typeof value === 'number' ? value : Number(value);
+}
 
 const STRONG_PASSWORD_RE =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -119,7 +121,7 @@ export function parseMenuItem(input: {
     errors.description = 'Description is too long';
   }
 
-  if (input.price === '' || input.price === null || input.price === undefined) {
+  if (input.price === '') {
     errors.price = 'Price is required';
   } else if (!Number.isFinite(price) || price <= 0) {
     errors.price = 'Price must be greater than zero';
@@ -153,12 +155,7 @@ export function parseRestaurant(input: {
   const ownerEmail = input.ownerEmail.trim();
   const eta = input.eta?.trim();
   const dietType = input.dietType;
-  const rating =
-    input.rating === '' || input.rating === undefined || input.rating === null
-      ? undefined
-      : typeof input.rating === 'number'
-        ? input.rating
-        : Number(input.rating);
+  const rating = parseOptionalNumber(input.rating);
   const errors: Record<string, string> = {};
 
   if (!name) errors.name = 'Name is required';

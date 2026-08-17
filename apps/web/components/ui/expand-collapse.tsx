@@ -12,7 +12,7 @@ type ExpandCollapseProps = Readonly<{
 export function ExpandCollapse({ open, children, className, style }: ExpandCollapseProps) {
   return (
     <div
-      className={`tg-expand${open ? ' is-open' : ''}${className ? ` ${className}` : ''}`}
+      className={['tg-expand', open ? 'is-open' : '', className].filter(Boolean).join(' ')}
       style={style}
       aria-hidden={!open}
       inert={!open}
