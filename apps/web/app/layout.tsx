@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
 import { AppProviders } from '@/components/providers';
+import Navbar from '@/components/navigation/navbar';
 import '../styles/globals.css';
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -18,8 +19,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'LMS - Learning Management System',
+  description: 'Platform for instructors to create courses and students to learn',
 };
 
 export default function RootLayout({
@@ -32,7 +33,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <Navbar />
+          <main className="min-h-screen bg-gray-50">{children}</main>
+        </AppProviders>
       </body>
     </html>
   );

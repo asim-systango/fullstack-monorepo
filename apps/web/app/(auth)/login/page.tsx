@@ -16,7 +16,7 @@ import {
   StatusMessage,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
+import { useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -33,6 +33,17 @@ export default function LoginPage() {
     e.preventDefault();
     setPending(true);
     setError(null);
+    // Client-side validation
+    if (!email) {
+      setError('Please enter a valid email');
+      setPending(false);
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      setPending(false);
+      return;
+    }
     try {
       await authApi.login({ email, password });
       await refresh();
@@ -46,7 +57,7 @@ export default function LoginPage() {
 
   return (
     <Page>
-      <ShellHeader title="Log in" subtitle="Sign in with your demo account" />
+      {/* <ShellHeader title="Log in" subtitle="Sign in with your demo account" /> */}
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Welcome back</CardTitle>

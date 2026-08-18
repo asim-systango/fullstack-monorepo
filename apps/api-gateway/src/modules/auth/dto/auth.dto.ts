@@ -1,5 +1,6 @@
 import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserRole } from '../../users';
 
 export class RegisterDto {
   @ApiProperty()
@@ -17,6 +18,12 @@ export class RegisterDto {
   @MinLength(1)
   @MaxLength(120)
   name!: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  role!: UserRole;
 }
 
 export class LoginDto {

@@ -41,6 +41,7 @@ export function ShellHeader({
   title,
   subtitle = 'App starter — add your domain UI here',
 }: Readonly<{ title: string; subtitle?: string }>) {
+  const { user } = useAuth();
   return (
     <header className="ui-shell-header">
       <div>
@@ -49,7 +50,11 @@ export function ShellHeader({
       </div>
       <nav className="ui-shell-nav">
         <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        {user && (user.role === 'staff' || user.role === 'admin') && (
+          <Link href="/instructor">Instructor</Link>
+        )}
+        {user && user.role === 'admin' && <Link href="/admin">Admin</Link>}
+        {/* <Link href="/ui">UI kit</Link> */}
         <AuthNav />
       </nav>
     </header>
