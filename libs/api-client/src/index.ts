@@ -92,6 +92,7 @@ export function createAuthApi(client: AxiosInstance) {
       email: string;
       password: string;
       name: string;
+      role: 'admin' | 'user' | 'staff';
     }): Promise<User> {
       const { data } = await client.post('/auth/register', input);
       return userSchema.parse(unwrapData(data));

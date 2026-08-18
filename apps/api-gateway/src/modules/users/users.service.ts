@@ -33,12 +33,18 @@ export class UsersService {
     return this.users.save(user);
   }
 
-  toPublic(user: User) {
+  toPublic(user: User, token: string | null = null) {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      token: token,
     };
+  }
+
+  async findAll() {
+    const users = await this.users.find();
+    return users.map((user) => this.toPublic(user));
   }
 }
