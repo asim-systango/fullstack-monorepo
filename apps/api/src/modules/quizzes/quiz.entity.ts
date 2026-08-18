@@ -28,10 +28,10 @@ export class Quiz {
   @Column()
   title!: string;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt!: Date;
 
   @OneToMany(() => Question, (question) => question.quiz, { cascade: true })

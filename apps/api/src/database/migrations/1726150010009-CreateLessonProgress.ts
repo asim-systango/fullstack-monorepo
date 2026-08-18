@@ -11,8 +11,8 @@ export class CreateLessonProgress1726150010009 implements MigrationInterface {
         "studentId" uuid NOT NULL,
         "completed" boolean NOT NULL DEFAULT false,
         "completedAt" timestamptz,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_lesson_progress" PRIMARY KEY ("id")
       );
     `);

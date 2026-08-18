@@ -13,8 +13,8 @@ export class CreateQuestions1726150010004 implements MigrationInterface {
         "correctAnswer" text,
         "choices" jsonb,
         "position" integer NOT NULL,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_questions" PRIMARY KEY ("id"),
         CONSTRAINT "CHK_questions_type" CHECK ("type" IN ('mcq', 'short_answer'))
       );

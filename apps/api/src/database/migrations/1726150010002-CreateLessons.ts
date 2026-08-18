@@ -11,8 +11,8 @@ export class CreateLessons1726150010002 implements MigrationInterface {
         "title" character varying NOT NULL,
         "content" text,
         "position" integer NOT NULL,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_lessons" PRIMARY KEY ("id")
       );
     `);

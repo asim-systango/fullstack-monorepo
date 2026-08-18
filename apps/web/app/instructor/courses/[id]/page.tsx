@@ -125,12 +125,16 @@ export default function InstructorCourseEditor() {
 
   const createQuiz = async () => {
     try {
+      console.log(questions, '======questions');
       await apiClient.post('/quizzes', {
         courseId: id,
         title: quizTitle,
         dueAt: quizDueDate || null,
         questions: questions.map((q) => ({
-          ...q,
+          choices: q.choices,
+          position: q.position,
+          prompt: q.prompt,
+          type: q.type,
         })),
       });
       setShowQuizForm(false);

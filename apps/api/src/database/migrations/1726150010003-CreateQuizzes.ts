@@ -10,8 +10,8 @@ export class CreateQuizzes1726150010003 implements MigrationInterface {
         "courseId" uuid NOT NULL,
         "title" character varying NOT NULL,
         "dueAt" timestamptz,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_quizzes" PRIMARY KEY ("id")
       );
     `);

@@ -12,6 +12,6 @@ export class Enrollment {
   @Column({ type: 'uuid' })
   studentId!: string;
 
-  @CreateDateColumn({ name: 'enrolled_at', type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz' })
   enrolledAt!: Date;
 }

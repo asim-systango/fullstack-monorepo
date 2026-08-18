@@ -11,6 +11,8 @@ export class CreateSubmissions1726150010006 implements MigrationInterface {
         "studentId" uuid NOT NULL,
         "answers" jsonb NOT NULL,
         "submittedAt" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_submissions" PRIMARY KEY ("id")
       );
     `);

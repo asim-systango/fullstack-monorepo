@@ -9,8 +9,8 @@ export class CreateCertificates1726150010008 implements MigrationInterface {
         "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "enrollmentId" uuid NOT NULL,
         "issuedAt" timestamptz NOT NULL,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_certificates" PRIMARY KEY ("id"),
         CONSTRAINT "UQ_certificates_enrollment_id" UNIQUE ("enrollmentId")
       );

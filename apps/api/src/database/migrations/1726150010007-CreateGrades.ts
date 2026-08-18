@@ -11,8 +11,8 @@ export class CreateGrades1726150010007 implements MigrationInterface {
         "graderId" uuid NOT NULL,
         "score" integer NOT NULL,
         "feedback" text,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_grades" PRIMARY KEY ("id"),
         CONSTRAINT "UQ_grades_submission_id" UNIQUE ("submissionId")
       );

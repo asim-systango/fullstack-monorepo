@@ -28,7 +28,7 @@ export class Submission {
   @Column({ type: 'jsonb' })
   answers!: Array<{ questionId: string; answer: string }>;
 
-  @CreateDateColumn({ name: 'submitted_at', type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz' })
   submittedAt!: Date;
 
   @OneToOne(() => Grade, (grade) => grade.submission)

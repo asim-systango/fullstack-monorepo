@@ -32,10 +32,10 @@ export class Lesson {
   @Column({ type: 'integer' })
   position!: number;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt!: Date;
 
   @OneToMany(() => LessonProgress, (progress) => progress.lesson)

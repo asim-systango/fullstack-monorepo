@@ -10,11 +10,11 @@ export class CreateCourses1726150010001 implements MigrationInterface {
         "title" character varying NOT NULL,
         "slug" character varying NOT NULL,
         "description" text,
-        "instructor_id" uuid NOT NULL,
-        "published_at" timestamptz,
-        "deleted_at" timestamptz,
-        "created_at" timestamptz NOT NULL DEFAULT now(),
-        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        "instructorId" uuid NOT NULL,
+        "publishedAt" timestamptz,
+        "deletedAt" timestamptz,
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_courses" PRIMARY KEY ("id")
       );
     `);
