@@ -37,8 +37,11 @@ export class CoachController {
   @Get('athletes/:athleteId')
   @ApiOperation({ summary: 'Athlete details assigned to this coach' })
   @ApiOkResponse({ description: 'Assigned athletes details' })
-  getAthletesDetails(@Param('athleteId', ParseUUIDPipe) athleteId: string) {
-    return this.coachService.getAthletesDetails(athleteId);
+  getAthletesDetails(
+    @CurrentUser() user: JwtUser,
+    @Param('athleteId', ParseUUIDPipe) athleteId: string,
+  ) {
+    return this.coachService.getAthletesDetails(user.id, athleteId);
   }
 
   @Get('athletes/:athleteId/workouts')

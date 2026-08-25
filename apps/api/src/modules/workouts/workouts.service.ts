@@ -20,6 +20,18 @@ import { Set } from './set.entity';
 import { Workout } from './workout.entity';
 
 const WORKOUT_NOT_FOUND = 'Workout not found';
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// A date-only `dateTo` (e.g. "2024-06-01") parses as 00:00:00 UTC, which would exclude
+// same-day workouts logged later in the day. Push it to the end of that calendar day so
+// the upper bound is inclusive, as the DTO promises.
+function endOfDayInclusive(dateTo: string): Date {
+  const date = new Date(dateTo);
+  if (DATE_ONLY_PATTERN.test(dateTo)) {
+    date.setUTCHours(23, 59, 59, 999);
+  }
+  return date;
+}
 
 export type PaginatedWorkoutMetaData = {
   total: number;
@@ -104,11 +116,14 @@ export class WorkoutsService {
 
     // Filter by date range
     if (query.dateFrom && query.dateTo) {
-      baseWhere.performedAt = Between(new Date(query.dateFrom), new Date(query.dateTo));
+      baseWhere.performedAt = Between(
+        new Date(query.dateFrom),
+        endOfDayInclusive(query.dateTo),
+      );
     } else if (query.dateFrom) {
       baseWhere.performedAt = MoreThanOrEqual(new Date(query.dateFrom));
     } else if (query.dateTo) {
-      baseWhere.performedAt = LessThanOrEqual(new Date(query.dateTo));
+      baseWhere.performedAt = LessThanOrEqual(endOfDayInclusive(query.dateTo));
     }
 
     // Search workout title OR exercise name

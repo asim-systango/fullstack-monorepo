@@ -70,7 +70,12 @@ export class CoachService {
     });
   }
 
-  async getAthletesDetails(athleteId: string): Promise<AssignedAthlete> {
+  async getAthletesDetails(
+    coachUserId: string,
+    athleteId: string,
+  ): Promise<AssignedAthlete> {
+    await this.ensureAthleteAssigned(coachUserId, athleteId);
+
     const rows: Array<{ id: string; email: string; name: string | null }> =
       await this.dataSource.query(`SELECT id, email, name FROM users WHERE id = $1`, [
         athleteId,
