@@ -19,6 +19,7 @@ module.exports = {
           esModuleInterop: true,
           jsx: 'react-jsx',
           paths: {
+            '@shared/api-client': ['libs/api-client/src/index.ts'],
             '@shared/env': ['libs/env/src/index.ts'],
             '@shared/env/*': ['libs/env/src/*/index.ts'],
             '@shared/http': ['libs/http/src/index.ts'],
@@ -34,6 +35,7 @@ module.exports = {
   },
   testEnvironment: 'node',
   moduleNameMapper: {
+    '^@shared/api-client$': '<rootDir>/libs/api-client/src/index.ts',
     '^@shared/env$': '<rootDir>/libs/env/src/index.ts',
     '^@shared/env/(.*)$': '<rootDir>/libs/env/src/$1/index.ts',
     '^@shared/http$': '<rootDir>/libs/http/src/index.ts',
@@ -42,6 +44,7 @@ module.exports = {
     '^@shared/ui$': '<rootDir>/libs/ui/src/index.ts',
     '^@shared/ui/(.*)$': '<rootDir>/libs/ui/src/$1',
   },
+
   setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/.next/'],
   collectCoverageFrom: [

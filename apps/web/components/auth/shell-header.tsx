@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useAuth } from './auth-provider';
 import { Button } from '@shared/ui/components';
 
+import { NotificationsPopover } from '@/components/support-desk/notifications-popover';
+
 function AuthNav() {
   const { user, loading, logout } = useAuth();
 
@@ -14,6 +16,7 @@ function AuthNav() {
   if (user) {
     return (
       <>
+        <NotificationsPopover />
         <span className="font-mono text-xs text-muted-foreground">
           {user.name} · {user.role}
         </span>
@@ -37,9 +40,29 @@ function AuthNav() {
   );
 }
 
+function MainNav() {
+  const { user } = useAuth();
+
+  return (
+    <>
+      <Link href="/">Home</Link>
+      {user && (
+        <>
+          <Link href="/tickets">My Tickets</Link>
+          {(user.role === 'staff' || user.role === 'admin') && (
+            <Link href="/agent">Agent Inbox</Link>
+          )}
+          {user.role === 'admin' && <Link href="/admin/categories">Categories</Link>}
+        </>
+      )}
+      <Link href="/ui">UI kit</Link>
+    </>
+  );
+}
+
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Support Desk Management',
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <header className="ui-shell-header">
@@ -48,8 +71,7 @@ export function ShellHeader({
         <p className="ui-shell-subtitle">{subtitle}</p>
       </div>
       <nav className="ui-shell-nav">
-        <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        <MainNav />
         <AuthNav />
       </nav>
     </header>

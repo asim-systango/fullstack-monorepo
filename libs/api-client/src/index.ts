@@ -4,9 +4,63 @@ import axios, {
   type CreateAxiosDefaults,
 } from 'axios';
 import { z } from 'zod';
-import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
+import {
+  apiErrorSchema,
+  userSchema,
+  ticketSchema,
+  categorySchema,
+  messageSchema,
+  createMessageSchema,
+  paginatedTicketsResponseSchema,
+  ticketEventSchema,
+  notificationSchema,
+  type ApiErrorBody,
+  type User,
+  type Ticket,
+  type Category,
+  type Message,
+  type TicketPriority,
+  type TicketStatus,
+  type CreateTicketInput,
+  type CreateMessageInput,
+  type PaginatedTicketsResponse,
+  type TicketQueryParams,
+  type AssignTicketInput,
+  type UpdateTicketStatusInput,
+  type CreateCategoryInput,
+  type UpdateCategoryInput,
+  type TicketEvent,
+  type Notification,
+} from '@shared/types';
 
-export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export {
+  apiErrorSchema,
+  userSchema,
+  ticketSchema,
+  categorySchema,
+  messageSchema,
+  createMessageSchema,
+  paginatedTicketsResponseSchema,
+  ticketEventSchema,
+  notificationSchema,
+  type ApiErrorBody,
+  type User,
+  type Ticket,
+  type Category,
+  type Message,
+  type TicketPriority,
+  type TicketStatus,
+  type CreateTicketInput,
+  type CreateMessageInput,
+  type PaginatedTicketsResponse,
+  type TicketQueryParams,
+  type AssignTicketInput,
+  type UpdateTicketStatusInput,
+  type CreateCategoryInput,
+  type UpdateCategoryInput,
+  type TicketEvent,
+  type Notification,
+};
 
 export class ApiClientError extends Error {
   readonly statusCode: number;
@@ -112,6 +166,87 @@ export function createHealthApi(client: AxiosInstance) {
       const { data } = await client.get('/health');
       const parsed = z.object({ status: z.string() }).parse(unwrapData(data));
       return { status: parsed.status };
+    },
+  };
+}
+
+export function createTicketsApi(client: AxiosInstance) {
+  return {
+    async list(params?: TicketQueryParams): Promise<PaginatedTicketsResponse> {
+      const { data } = await client.get('/tickets', { params });
+      return paginatedTicketsResponseSchema.parse(unwrapData(data));
+    },
+    async getById(id: string): Promise<Ticket> {
+      const { data } = await client.get(`/tickets/${id}`);
+      return ticketSchema.parse(unwrapData(data));
+    },
+    async create(input: CreateTicketInput): Promise<Ticket> {
+      const { data } = await client.post('/tickets', input);
+      return ticketSchema.parse(unwrapData(data));
+    },
+    async assign(id: string, input: AssignTicketInput): Promise<Ticket> {
+      const { data } = await client.patch(`/tickets/${id}/assign`, input);
+      return ticketSchema.parse(unwrapData(data));
+    },
+    async updateStatus(id: string, input: UpdateTicketStatusInput): Promise<Ticket> {
+      const { data } = await client.patch(`/tickets/${id}/status`, input);
+      return ticketSchema.parse(unwrapData(data));
+    },
+    async delete(
+      id: string,
+    ): Promise<{ id: string; deletedAt: string; deletedBy: string }> {
+      const { data } = await client.delete(`/tickets/${id}`);
+      return unwrapData(data);
+    },
+    async getMessages(ticketId: string): Promise<Message[]> {
+      const { data } = await client.get(`/tickets/${ticketId}/messages`);
+      const unwrapped = unwrapData<Message[]>(data);
+      return z.array(messageSchema).parse(unwrapped);
+    },
+    async createMessage(ticketId: string, input: CreateMessageInput): Promise<Message> {
+      const { data } = await client.post(`/tickets/${ticketId}/messages`, input);
+      return messageSchema.parse(unwrapData(data));
+    },
+    async getEvents(ticketId: string): Promise<TicketEvent[]> {
+      const { data } = await client.get(`/tickets/${ticketId}/events`);
+      const unwrapped = unwrapData<TicketEvent[]>(data);
+      return z.array(ticketEventSchema).parse(unwrapped);
+    },
+  };
+}
+
+export function createCategoriesApi(client: AxiosInstance) {
+  return {
+    async list(): Promise<Category[]> {
+      const { data } = await client.get('/categories');
+      const unwrapped = unwrapData<Category[]>(data);
+      return z.array(categorySchema).parse(unwrapped);
+    },
+    async create(input: CreateCategoryInput): Promise<Category> {
+      const { data } = await client.post('/categories', input);
+      return categorySchema.parse(unwrapData(data));
+    },
+    async update(id: string, input: UpdateCategoryInput): Promise<Category> {
+      const { data } = await client.patch(`/categories/${id}`, input);
+      return categorySchema.parse(unwrapData(data));
+    },
+    async delete(id: string): Promise<{ success: boolean; id: string }> {
+      const { data } = await client.delete(`/categories/${id}`);
+      return unwrapData(data);
+    },
+  };
+}
+
+export function createNotificationsApi(client: AxiosInstance) {
+  return {
+    async list(): Promise<Notification[]> {
+      const { data } = await client.get('/notifications');
+      const unwrapped = unwrapData<Notification[]>(data);
+      return z.array(notificationSchema).parse(unwrapped);
+    },
+    async markAsRead(id: string): Promise<Notification> {
+      const { data } = await client.patch(`/notifications/${id}/read`);
+      return notificationSchema.parse(unwrapData(data));
     },
   };
 }
