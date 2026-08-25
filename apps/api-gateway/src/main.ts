@@ -41,7 +41,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // After cookieParser: forward domain routes to apps/api with Bearer JWT.
   app.use(
     createProxyMiddleware({
       target: appSettings.API_UPSTREAM_URL,

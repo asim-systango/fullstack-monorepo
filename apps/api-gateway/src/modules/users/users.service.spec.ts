@@ -8,6 +8,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     passwordHash: 'hash',
     name: 'Demo',
     role: 'user',
+    deliveryAddress: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -19,6 +20,7 @@ describe('UsersService', () => {
     findOne: jest.fn(),
     create: jest.fn((v: Partial<User>) => v),
     save: jest.fn(async (v: User) => v),
+    update: jest.fn(),
   };
 
   let service: UsersService;
@@ -64,13 +66,43 @@ describe('UsersService', () => {
     expect(created.email).toBe('new@example.com');
   });
 
-  it('toPublic omits passwordHash', () => {
-    const user = makeUser({ passwordHash: 'secret' });
+  it('toPublic omits passwordHash and includes deliveryAddress', () => {
+    const user = makeUser({ passwordHash: 'secret', deliveryAddress: '21 MG Road' });
     expect(service.toPublic(user)).toEqual({
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      deliveryAddress: '21 MG Road',
     });
+  });
+
+  it('toPublic maps a missing deliveryAddress to null', () => {
+    const user = makeUser({ deliveryAddress: undefined as unknown as string | null });
+    expect(service.toPublic(user).deliveryAddress).toBeNull();
+  });
+
+  it('saveDeliveryAddress trims and persists the address', async () => {
+    const user = makeUser({ deliveryAddress: '21 MG Road, Indore' });
+    repo.update.mockResolvedValue({ affected: 1 });
+    repo.findOne.mockResolvedValue(user);
+
+    await expect(service.saveDeliveryAddress(user.id, '  21 MG Road, Indore  ')).resolves.toEqual({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      deliveryAddress: '21 MG Road, Indore',
+    });
+    expect(repo.update).toHaveBeenCalledWith(user.id, { deliveryAddress: '21 MG Road, Indore' });
+  });
+
+  it('saveDeliveryAddress throws when the user no longer exists', async () => {
+    repo.update.mockResolvedValue({ affected: 1 });
+    repo.findOne.mockResolvedValue(null);
+
+    await expect(service.saveDeliveryAddress('missing-id', '21 MG Road')).rejects.toThrow(
+      'User not found',
+    );
   });
 });

@@ -32,7 +32,8 @@ cp apps/web/.env.local.example apps/web/.env.local
 
 pnpm docker:db
 pnpm migration:run
-pnpm seed
+pnpm migration:run:api
+pnpm seed:all
 pnpm dev
 pnpm doctor
 ```
@@ -44,7 +45,17 @@ Needs **Node ≥ 20**, **pnpm 10.18.1**, and **Docker**.
 | Check        | Command / URL                                                                               |
 | ------------ | ------------------------------------------------------------------------------------------- |
 | Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready`  |
-| Demo users   | Run `pnpm seed` — one account per gateway role (`admin`, `staff`, `user`) for local testing |
+| Demo users + menus | Run `pnpm seed:all` — gateway users, then restaurants, menus, cart, and sample orders |
+
+**TastyGo cold demo (no Razorpay / Cloudinary keys required)**
+
+| Role | Email | Password | Start here |
+| --- | --- | --- | --- |
+| customer | `customer@tastygo.com` | `User@1234` | `/restaurants` · `/cart` already has 6 items |
+| staff | `hasty@tastygo.com` | `Hasty@12` | `/restaurant/dashboard` · incoming `placed` order |
+| admin | `admin@tastygo.com` | `Admin@123` | `/admin/restaurants` |
+
+Place order is the Must path. Razorpay and Cloudinary are Stretch — leave those env vars commented.
 
 ## Where you write code
 
@@ -82,7 +93,9 @@ pnpm dev:web
 | `pnpm migration:run:api`           | Your domain migrations                                          |
 | `pnpm migration:generate`          | Generate a domain migration                                     |
 | `pnpm migration:revert` / `:api`   | Revert latest gateway / domain migration                        |
-| `pnpm seed`                        | Seed demo users                                                 |
+| `pnpm seed`                        | Seed demo users (gateway only)                                  |
+| `pnpm seed:api`                    | Seed restaurants, menus, cart, orders                           |
+| `pnpm seed:all`                    | Gateway users + domain seed (use this for a cold reviewer run)  |
 | `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
 | `pnpm test:coverage`               | Jest + coverage thresholds (CI gate)                            |
 | `pnpm test:gateway` / `test:api`   | Per-app Jest                                                    |

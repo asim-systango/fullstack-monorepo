@@ -26,6 +26,13 @@ const config = [
       },
     },
   },
+  {
+    files: ['components/food/food-image.tsx', 'components/food/image-upload-modal.tsx'],
+    rules: {
+      // Cloudinary and blob preview URLs are not a good fit for next/image.
+      '@next/next/no-img-element': 'off',
+    },
+  },
 ];
 
 export default config;

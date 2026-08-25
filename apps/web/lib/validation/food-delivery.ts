@@ -1,0 +1,203 @@
+import type { RestaurantDietType } from '@/lib/types/food-delivery';
+
+export type PlaceOrderFormValues = {
+  deliveryAddress: string;
+};
+
+export type MenuItemFormValues = {
+  name: string;
+  description?: string;
+  price: number;
+};
+
+export type RestaurantFormValues = {
+  name: string;
+  cuisine: string;
+  address: string;
+  description?: string;
+  ownerEmail: string;
+  eta?: string;
+  rating?: number;
+  dietType: RestaurantDietType;
+};
+
+export type LoginFormValues = {
+  email: string;
+  password: string;
+};
+
+export type RegisterFormValues = {
+  name: string;
+  email: string;
+  password: string;
+};
+
+type ParseResult<T> =
+  | { success: true; data: T }
+  | { success: false; errors: Record<string, string> };
+
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,24}$/;
+
+function parseOptionalNumber(value: string | number | undefined): number | undefined {
+  if (value === undefined || value === '') return undefined;
+  return typeof value === 'number' ? value : Number(value);
+}
+
+const STRONG_PASSWORD_RE =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+export function parseLogin(input: {
+  email: string;
+  password: string;
+}): ParseResult<LoginFormValues> {
+  const email = input.email.trim();
+  const password = input.password;
+  const errors: Record<string, string> = {};
+
+  if (!email) errors.email = 'Email is required';
+  else if (!EMAIL_RE.test(email)) errors.email = 'Enter a valid email';
+
+  if (!password) errors.password = 'Password is required';
+
+  if (Object.keys(errors).length) return { success: false, errors };
+  return { success: true, data: { email, password } };
+}
+
+export function parseRegister(input: {
+  name: string;
+  email: string;
+  password: string;
+}): ParseResult<RegisterFormValues> {
+  const name = input.name.trim();
+  const email = input.email.trim();
+  const password = input.password;
+  const errors: Record<string, string> = {};
+
+  if (!name) errors.name = 'Name is required';
+  else if (name.length > 120) errors.name = 'Name is too long';
+
+  if (!email) errors.email = 'Email is required';
+  else if (!EMAIL_RE.test(email)) errors.email = 'Enter a valid email';
+
+  if (!password) {
+    errors.password = 'Password is required';
+  } else if (!STRONG_PASSWORD_RE.test(password)) {
+    errors.password =
+      'Use 8+ characters with uppercase, lowercase, a number, and a special character';
+  } else if (password.length > 128) {
+    errors.password = 'Password is too long';
+  }
+
+  if (Object.keys(errors).length) return { success: false, errors };
+  return { success: true, data: { name, email, password } };
+}
+
+export function parsePlaceOrder(input: { deliveryAddress: string }): ParseResult<PlaceOrderFormValues> {
+  const deliveryAddress = input.deliveryAddress.trim();
+  const errors: Record<string, string> = {};
+  if (deliveryAddress.length < 5) {
+    errors.deliveryAddress = 'Delivery address must be at least 5 characters';
+  } else if (deliveryAddress.length > 500) {
+    errors.deliveryAddress = 'Delivery address is too long';
+  }
+  if (Object.keys(errors).length) return { success: false, errors };
+  return { success: true, data: { deliveryAddress } };
+}
+
+export function parseMenuItem(input: {
+  name: string;
+  description?: string;
+  price: string | number;
+}): ParseResult<MenuItemFormValues> {
+  const name = input.name.trim();
+  const description = input.description?.trim();
+  const price = typeof input.price === 'number' ? input.price : Number(input.price);
+  const errors: Record<string, string> = {};
+
+  if (!name) errors.name = 'Name is required';
+  else if (name.length > 120) errors.name = 'Name is too long';
+
+  if (description && description.length > 500) {
+    errors.description = 'Description is too long';
+  }
+
+  if (input.price === '') {
+    errors.price = 'Price is required';
+  } else if (!Number.isFinite(price) || price <= 0) {
+    errors.price = 'Price must be greater than zero';
+  }
+
+  if (Object.keys(errors).length) return { success: false, errors };
+  return {
+    success: true,
+    data: {
+      name,
+      description: description || undefined,
+      price,
+    },
+  };
+}
+
+export function parseRestaurant(input: {
+  name: string;
+  cuisine: string;
+  address: string;
+  description?: string;
+  ownerEmail: string;
+  eta?: string;
+  rating?: string | number;
+  dietType: RestaurantDietType;
+}): ParseResult<RestaurantFormValues> {
+  const name = input.name.trim();
+  const cuisine = input.cuisine.trim();
+  const address = input.address.trim();
+  const description = input.description?.trim();
+  const ownerEmail = input.ownerEmail.trim();
+  const eta = input.eta?.trim();
+  const dietType = input.dietType;
+  const rating = parseOptionalNumber(input.rating);
+  const errors: Record<string, string> = {};
+
+  if (!name) errors.name = 'Name is required';
+  else if (name.length > 120) errors.name = 'Name is too long';
+
+  if (!cuisine) errors.cuisine = 'Cuisine is required';
+  else if (cuisine.length > 80) errors.cuisine = 'Cuisine is too long';
+
+  if (address.length < 5) errors.address = 'Address must be at least 5 characters';
+  else if (address.length > 500) errors.address = 'Address is too long';
+
+  if (!ownerEmail) errors.ownerEmail = 'Restaurant email is required';
+  else if (!EMAIL_RE.test(ownerEmail)) errors.ownerEmail = 'Enter a valid email';
+
+  if (eta && eta.length > 40) errors.eta = 'Delivery time is too long';
+
+  if (rating !== undefined) {
+    if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+      errors.rating = 'Rating must be between 0 and 5';
+    }
+  }
+
+  if (description && description.length > 500) {
+    errors.description = 'Description is too long';
+  }
+
+  if (dietType !== 'veg' && dietType !== 'non_veg' && dietType !== 'both') {
+    errors.dietType = 'Choose veg, non-veg, or both';
+  }
+
+  if (Object.keys(errors).length) return { success: false, errors };
+  return {
+    success: true,
+    data: {
+      name,
+      cuisine,
+      address,
+      description: description || undefined,
+      ownerEmail,
+      eta: eta || undefined,
+      rating,
+      dietType,
+    },
+  };
+}

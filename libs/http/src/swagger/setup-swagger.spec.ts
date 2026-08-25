@@ -56,7 +56,10 @@ describe('setupSwagger', () => {
       app,
       { paths: {} },
       expect.objectContaining({
-        swaggerOptions: expect.objectContaining({ persistAuthorization: true }),
+        swaggerOptions: expect.objectContaining({
+          persistAuthorization: true,
+          withCredentials: true,
+        }),
       }),
     );
   });
@@ -74,5 +77,16 @@ describe('setupSwagger', () => {
       { paths: {} },
       expect.any(Object),
     );
+  });
+
+  it('mounts cookie and bearer when auth is an array', () => {
+    setupSwagger(
+      app,
+      { title: 'Unified', description: 'All', auth: ['cookie', 'bearer'] },
+      true,
+    );
+
+    expect(SwaggerModule.createDocument).toHaveBeenCalled();
+    expect(SwaggerModule.setup).toHaveBeenCalled();
   });
 });

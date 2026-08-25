@@ -10,12 +10,14 @@ describe('AuthController', () => {
     email: 'user@example.com',
     name: 'Demo',
     role: 'user' as const,
+    deliveryAddress: null,
   };
 
   const authService = {
     register: jest.fn(),
     login: jest.fn(),
     logout: jest.fn(),
+    saveDeliveryAddress: jest.fn(),
   };
 
   let controller: AuthController;
@@ -30,27 +32,43 @@ describe('AuthController', () => {
     controller = moduleRef.get(AuthController);
   });
 
-  it('register returns the created public user', async () => {
+  it('register returns the created public user and passes response', async () => {
+    const res = { cookie: jest.fn() } as unknown as Response;
     authService.register.mockResolvedValue(publicUser);
     await expect(
-      controller.register({
+      controller.register(
+        {
+          email: 'user@example.com',
+          password: 'password123',
+          name: 'Demo',
+        },
+        res,
+      ),
+    ).resolves.toEqual(publicUser);
+    expect(authService.register).toHaveBeenCalledWith(
+      {
         email: 'user@example.com',
         password: 'password123',
         name: 'Demo',
-      }),
-    ).resolves.toEqual(publicUser);
+      },
+      res,
+    );
   });
 
   it('register surfaces ConflictException from the service', async () => {
+    const res = { cookie: jest.fn() } as unknown as Response;
     authService.register.mockRejectedValue(
       new ConflictException('Unable to create account with those details'),
     );
     await expect(
-      controller.register({
-        email: 'user@example.com',
-        password: 'password123',
-        name: 'Demo',
-      }),
+      controller.register(
+        {
+          email: 'user@example.com',
+          password: 'password123',
+          name: 'Demo',
+        },
+        res,
+      ),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
@@ -87,5 +105,18 @@ describe('AuthController', () => {
     authService.logout.mockReturnValue({ ok: true });
     expect(controller.logout(res)).toEqual({ ok: true });
     expect(authService.logout).toHaveBeenCalledWith(res);
+  });
+
+  it('saveAddress delegates to the service', async () => {
+    const updated = { ...publicUser, deliveryAddress: '21 MG Road, Indore' };
+    authService.saveDeliveryAddress.mockResolvedValue(updated);
+
+    await expect(
+      controller.saveAddress(publicUser, { deliveryAddress: '21 MG Road, Indore' }),
+    ).resolves.toEqual(updated);
+    expect(authService.saveDeliveryAddress).toHaveBeenCalledWith(
+      publicUser.id,
+      '21 MG Road, Indore',
+    );
   });
 });

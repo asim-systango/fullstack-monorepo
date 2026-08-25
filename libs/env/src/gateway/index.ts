@@ -1,17 +1,12 @@
 import { z } from 'zod';
 import { nodeEnv } from '../node-env';
 
-/** Browser-facing BFF (`apps/api-gateway`). */
 export const gatewayEnvSchema = z
   .object({
     NODE_ENV: nodeEnv,
     PORT: z.coerce.number().default(3001),
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().min(16),
-    // Constrained to what `jwtExpiryToMs` (auth.service.ts) can parse, so the cookie
-    // maxAge always matches the token TTL. `@nestjs/jwt` accepts looser ms-style
-    // values (e.g. '1.5h'), which would silently yield a 7-day cookie around a
-    // 90-minute token — fail at boot instead.
     JWT_EXPIRES_IN: z
       .string()
       .regex(
