@@ -25,6 +25,7 @@ import {
   CreateMessageDto,
 } from './dto';
 import { SlaPriority } from '../categories/sla-priority.enum';
+import { NotificationsService } from '../notifications/notifications.service';
 import { JwtUser } from '../../common/auth';
 
 @Injectable()
@@ -45,6 +46,7 @@ export class TicketsService {
     private readonly dataSource: DataSource,
     private readonly statusMachine: TicketStatusMachine,
     private readonly eventsService: TicketEventsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -229,6 +231,10 @@ export class TicketsService {
       throw new NotFoundException(`Ticket with ID '${ticketId}' not found.`);
     }
 
+    if (ticket.deletedAt) {
+      throw new NotFoundException(`Ticket with ID '${ticketId}' not found.`);
+    }
+
     if (dto.expectedVersion !== undefined && ticket.version !== dto.expectedVersion) {
       throw new ConflictException(
         `Concurrent modification conflict: expected version ${dto.expectedVersion}, but current version is ${ticket.version}.`,
@@ -277,6 +283,26 @@ export class TicketsService {
     });
     await this.outboxRepository.save(outbox);
 
+    // Create notifications
+    if (ticket.userId !== actorId) {
+      await this.notificationsService.createNotification(
+        ticket.userId,
+        ticketId,
+        'TICKET_ASSIGNED',
+        'Ticket Assignment Updated',
+        `Your ticket assignment has been updated.`,
+      );
+    }
+    if (dto.assigneeId && dto.assigneeId !== actorId) {
+      await this.notificationsService.createNotification(
+        dto.assigneeId,
+        ticketId,
+        'TICKET_ASSIGNED',
+        'Ticket Assigned to You',
+        `You have been assigned to a ticket.`,
+      );
+    }
+
     return this.getTicketById(ticketId);
   }
 
@@ -290,6 +316,10 @@ export class TicketsService {
   ): Promise<Ticket> {
     const ticket = await this.ticketRepository.findOne({ where: { id: ticketId } });
     if (!ticket) {
+      throw new NotFoundException(`Ticket with ID '${ticketId}' not found.`);
+    }
+
+    if (ticket.deletedAt) {
       throw new NotFoundException(`Ticket with ID '${ticketId}' not found.`);
     }
 
@@ -353,6 +383,26 @@ export class TicketsService {
     });
     await this.outboxRepository.save(outbox);
 
+    // Create notifications
+    if (ticket.userId !== actorId) {
+      await this.notificationsService.createNotification(
+        ticket.userId,
+        ticketId,
+        'STATUS_CHANGE',
+        'Ticket Status Updated',
+        `Your ticket status changed from ${oldStatus} to ${dto.status}.`,
+      );
+    }
+    if (ticket.assigneeId && ticket.assigneeId !== actorId) {
+      await this.notificationsService.createNotification(
+        ticket.assigneeId,
+        ticketId,
+        'STATUS_CHANGE',
+        'Ticket Status Updated',
+        `Ticket status changed from ${oldStatus} to ${dto.status}.`,
+      );
+    }
+
     return this.getTicketById(ticketId);
   }
 
@@ -365,7 +415,6 @@ export class TicketsService {
     const qb = this.messageRepository
       .createQueryBuilder('message')
       .leftJoinAndSelect('message.attachments', 'attachments')
-      .leftJoinAndSelect('message.user', 'user')
       .where('message.ticketId = :ticketId', { ticketId });
 
     if (user.role === 'user') {
@@ -388,6 +437,10 @@ export class TicketsService {
     dto: CreateMessageDto,
   ): Promise<Message> {
     const ticket = await this.findOne(ticketId, user);
+
+    if (ticket.deletedAt) {
+      throw new NotFoundException(`Ticket with ID '${ticketId}' not found.`);
+    }
 
     if (ticket.status === TicketStatus.CLOSED) {
       throw new BadRequestException('Cannot reply to a closed ticket.');
@@ -451,9 +504,28 @@ export class TicketsService {
       });
       await outboxRepo.save(outbox);
 
+      // Create notification
+      if (user.role !== 'user' && messageType === MessageType.PUBLIC) {
+        await this.notificationsService.createNotification(
+          ticket.userId,
+          ticketId,
+          'TICKET_REPLIED',
+          'New Reply on Your Ticket',
+          `Support agent added a reply to your ticket.`,
+        );
+      } else if (user.role === 'user' && ticket.assigneeId) {
+        await this.notificationsService.createNotification(
+          ticket.assigneeId,
+          ticketId,
+          'TICKET_REPLIED',
+          'Customer Replied on Ticket',
+          `Customer added a new message to the ticket.`,
+        );
+      }
+
       const fullMessage = await messageRepo.findOne({
         where: { id: savedMessage.id },
-        relations: ['attachments', 'user'],
+        relations: ['attachments'],
       });
 
       return fullMessage || savedMessage;

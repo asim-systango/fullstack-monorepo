@@ -23,8 +23,8 @@ export class SlaPolicy {
   categoryId!: string;
 
   @Column({
-    type: 'enum',
-    enum: SlaPriority,
+    type: 'varchar',
+    length: 20,
     default: SlaPriority.MEDIUM,
   })
   priority!: SlaPriority;

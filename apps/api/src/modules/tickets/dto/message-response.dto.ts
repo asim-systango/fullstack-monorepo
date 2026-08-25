@@ -60,16 +60,6 @@ export class MessageResponseDto {
   @ApiPropertyOptional({ type: [AttachmentResponseDto] })
   attachments!: AttachmentResponseDto[];
 
-  @ApiPropertyOptional({
-    example: { id: 'uuid', name: 'John Doe', email: 'user@example.com', role: 'user' },
-  })
-  sender?: {
-    id: string;
-    email?: string;
-    name?: string;
-    role?: string;
-  };
-
   public static fromEntity(entity: Message): MessageResponseDto {
     const dto = new MessageResponseDto();
     dto.id = entity.id;
@@ -84,14 +74,6 @@ export class MessageResponseDto {
     dto.attachments = (entity.attachments || []).map((att) =>
       AttachmentResponseDto.fromEntity(att),
     );
-    if (entity.user) {
-      dto.sender = {
-        id: entity.user.id,
-        email: entity.user.email,
-        name: entity.user.name,
-        role: entity.user.role,
-      };
-    }
     return dto;
   }
 }

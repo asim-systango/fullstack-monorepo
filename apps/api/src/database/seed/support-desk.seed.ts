@@ -8,6 +8,7 @@ import { Attachment } from '../../modules/tickets/attachment.entity';
 import { Tag } from '../../modules/tickets/tag.entity';
 import { TicketTag } from '../../modules/tickets/ticket-tag.entity';
 import { OutboxEvent } from '../../modules/events/outbox-event.entity';
+import { Notification } from '../../modules/notifications/notification.entity';
 
 interface UserRecord {
   id: string;
@@ -248,6 +249,18 @@ async function seed() {
 
     await messageRepo.save([
       {
+        ticketId: t1.id,
+        userId: staffUser.id,
+        messageType: MessageType.PUBLIC,
+        body: 'Thanks for reaching out! It looks like your payment method was declined. Please check your billing details.',
+      },
+      {
+        ticketId: t1.id,
+        userId: customerUser.id,
+        messageType: MessageType.PUBLIC,
+        body: 'I updated my payment method. Could you please retry processing the invoice?',
+      },
+      {
         ticketId: t2.id,
         userId: staffUser.id,
         messageType: MessageType.INTERNAL_NOTE,
@@ -264,6 +277,18 @@ async function seed() {
         userId: customerUser.id,
         messageType: MessageType.PUBLIC,
         body: 'I lost access to my authenticator app and need help resetting 2FA.',
+      },
+      {
+        ticketId: t3.id,
+        userId: staffUser.id,
+        messageType: MessageType.PUBLIC,
+        body: 'Hello, for account security, please verify your identity by confirming your registration email.',
+      },
+      {
+        ticketId: t3.id,
+        userId: customerUser.id,
+        messageType: MessageType.PUBLIC,
+        body: 'Thanks, I have replied to the verification email with the required documents.',
       },
     ]);
 
@@ -343,6 +368,37 @@ async function seed() {
     ]);
 
     console.log('✅ Outbox Events seeded');
+
+    // 10. Notifications
+    const notificationRepo = queryRunner.manager.getRepository(Notification);
+    await notificationRepo.save([
+      {
+        userId: customerUser.id,
+        ticketId: t2.id,
+        type: 'TICKET_REPLIED',
+        title: 'New Reply on 500 Internal Server Error',
+        body: 'Hello, we have identified the issue with the payment gateway partner and are deploying a fix.',
+        readAt: null,
+      },
+      {
+        userId: staffUser.id,
+        ticketId: t2.id,
+        type: 'TICKET_ASSIGNED',
+        title: 'Assigned to Ticket #500 Internal Server Error',
+        body: 'You have been assigned to handle this urgent technical support request.',
+        readAt: null,
+      },
+      {
+        userId: customerUser.id,
+        ticketId: t1.id,
+        type: 'STATUS_CHANGE',
+        title: 'Ticket Status Updated',
+        body: 'Your ticket status has been updated to PENDING.',
+        readAt: null,
+      },
+    ]);
+
+    console.log('✅ Notifications seeded');
 
     await queryRunner.commitTransaction();
     console.log('🎉 Support Desk Domain Seed Completed Successfully!');

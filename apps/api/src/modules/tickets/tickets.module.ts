@@ -9,7 +9,7 @@ import { TicketTag } from './ticket-tag.entity';
 import { Category } from '../categories/category.entity';
 import { SlaPolicy } from '../categories/sla-policy.entity';
 import { OutboxEvent } from '../events/outbox-event.entity';
-import { User } from '../users/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { TicketsController } from './tickets.controller';
 import { TicketsService } from './tickets.service';
 import { TicketEventsService } from './ticket-events.service';
@@ -27,8 +27,8 @@ import { TicketStatusMachine } from './ticket-status.machine';
       Category,
       SlaPolicy,
       OutboxEvent,
-      User,
     ]),
+    NotificationsModule,
   ],
   controllers: [TicketsController],
   providers: [TicketsService, TicketEventsService, TicketStatusMachine],

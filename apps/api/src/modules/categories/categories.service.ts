@@ -182,14 +182,14 @@ export class CategoriesService {
   async remove(id: string): Promise<{ success: boolean; id: string }> {
     await this.findOne(id);
 
-    // Ticket existence guard: prevent deletion if active tickets exist
+    // Ticket existence guard: prevent deletion if associated tickets exist
     const ticketCount = await this.ticketRepository.count({
       where: { categoryId: id },
     });
 
     if (ticketCount > 0) {
       throw new BadRequestException(
-        `Cannot delete category: ${ticketCount} active ticket(s) are associated with this category`,
+        `Cannot delete category: ${ticketCount} associated ticket(s) are linked to this category`,
       );
     }
 

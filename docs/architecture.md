@@ -79,12 +79,12 @@ The Support Desk domain (`apps/api`) provides end-to-end customer support ticket
 
 ### Status State Machine
 
-| Current Status | Permitted Next Statuses | Action / Trigger                                                                   |
-| -------------- | ----------------------- | ---------------------------------------------------------------------------------- |
-| `open`         | `pending`, `resolved`   | Agent assigns or sends first reply (`pending`), or resolves directly (`resolved`). |
-| `pending`      | `open`, `resolved`      | Customer replies (`open`), or issue is fixed (`resolved`).                         |
-| `resolved`     | `closed`, `open`        | Customer confirms fix (`closed`), or reopens with reply (`open`).                  |
-| `closed`       | _(Terminal)_            | Ticket is archived. No further status changes or messages permitted.               |
+| From       | To                 | Action / Trigger                                                                                     |
+| ---------- | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `open`     | `pending`          | Agent assigns or sends first reply (`pending`). Agents must not jump `open` → `resolved` / `closed`. |
+| `pending`  | `open`, `resolved` | Customer replies (`open`), or issue is fixed (`resolved`).                                           |
+| `resolved` | `closed`, `open`   | Customer confirms fix (`closed`), or reopens with reply (`open`).                                    |
+| `closed`   | _(none)_           | Ticket is archived. Terminal state — no further status changes permitted.                            |
 
 ### Hard Invariants
 

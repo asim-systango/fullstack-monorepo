@@ -38,15 +38,15 @@ export class Ticket {
   subject!: string;
 
   @Column({
-    type: 'enum',
-    enum: TicketStatus,
+    type: 'varchar',
+    length: 20,
     default: TicketStatus.OPEN,
   })
   status!: TicketStatus;
 
   @Column({
-    type: 'enum',
-    enum: SlaPriority,
+    type: 'varchar',
+    length: 20,
     default: SlaPriority.MEDIUM,
   })
   priority!: SlaPriority;
