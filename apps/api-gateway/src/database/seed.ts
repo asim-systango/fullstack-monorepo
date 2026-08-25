@@ -91,7 +91,7 @@ async function seed() {
   for (const row of DEMO_ACCOUNTS) {
     console.log(`  ${row.role.padEnd(6)}  ${row.email}  /  ${row.password}`);
   }
-  console.log('Next: pnpm seed:api  (restaurants + menus)');
+  console.log('Next: pnpm seed:api  (or pnpm seed:all) — restaurants, menus, cart, orders');
 
   await dataSource.destroy();
 }

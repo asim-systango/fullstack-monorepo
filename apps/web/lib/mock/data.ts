@@ -29,6 +29,8 @@ export const MENU_IDS = {
   paneerTikka: 'm1111111-1111-4111-8111-111111111113',
   dalMakhani: 'm1111111-1111-4111-8111-111111111114',
   seasonalLassi: 'm1111111-1111-4111-8111-111111111115',
+  jeeraRice: 'm1111111-1111-4111-8111-111111111116',
+  gulabJamun: 'm1111111-1111-4111-8111-111111111117',
   cheeseburger: 'm2222222-2222-4222-8222-222222222221',
   fries: 'm2222222-2222-4222-8222-222222222222',
   chefPlatter: 'm3333333-3333-4333-8333-333333333331',
@@ -43,6 +45,7 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     address: '142 Rajwada Road, Indore',
     description: 'Homestyle curries and fresh naan.',
     emoji: '🍛',
+    imageUrl: '/seed/restaurants/hasty-tasty.jpg',
     rating: 4.6,
     eta: '25-35 min',
     dietType: 'both',
@@ -125,6 +128,21 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
     name: 'Dal Makhani',
     description: 'Slow-cooked black lentils',
     price: 180,
+    imageUrl: '/seed/menu/dal-makhani.jpg',
+  },
+  {
+    id: MENU_IDS.jeeraRice,
+    restaurantId: RESTAURANT_IDS.hasty,
+    name: 'Jeera Rice',
+    description: 'Cumin-tempered basmati',
+    price: 90,
+  },
+  {
+    id: MENU_IDS.gulabJamun,
+    restaurantId: RESTAURANT_IDS.hasty,
+    name: 'Gulab Jamun',
+    description: 'Warm milk dumplings in syrup',
+    price: 80,
   },
   {
     id: MENU_IDS.seasonalLassi,
@@ -163,16 +181,15 @@ export const SEED_ORDERS: Order[] = [
     userId: DEMO_USER_IDS.user,
     restaurantId: RESTAURANT_IDS.hasty,
     restaurantName: 'Hasty Tasty',
-    status: 'out_for_delivery',
+    status: 'placed',
     deliveryAddress: '21 MG Road, Apt 4B, Indore',
-    paymentStatus: 'paid',
+    paymentStatus: 'pending',
     subtotal: 450,
     deliveryFee: 40,
     platformFee: 22.5,
     taxAmount: 25.63,
     total: 538.13,
     currency: 'INR',
-    estimatedMinutes: 30,
     createdAt: new Date().toISOString(),
     lines: [
       {
@@ -192,12 +209,6 @@ export const SEED_ORDERS: Order[] = [
     ],
     deliveryStatuses: [
       { id: 'ds-1', status: 'placed', createdAt: new Date(Date.now() - 40 * 60000).toISOString() },
-      { id: 'ds-2', status: 'preparing', createdAt: new Date(Date.now() - 25 * 60000).toISOString() },
-      {
-        id: 'ds-3',
-        status: 'out_for_delivery',
-        createdAt: new Date(Date.now() - 10 * 60000).toISOString(),
-      },
     ],
   },
   {
@@ -266,11 +277,27 @@ export const SEED_ORDERS: Order[] = [
   },
 ];
 
+const hastyRestaurant = SEED_RESTAURANTS[0]!;
+
+export const SEED_CART: CartLine[] = SEED_MENU_ITEMS.filter(
+  (item) => item.restaurantId === RESTAURANT_IDS.hasty && !item.deletedAt,
+).map((item, index) => ({
+  id: `cart-${index + 1}`,
+  menuItemId: item.id,
+  name: item.name,
+  price: item.price,
+  quantity: 1,
+  restaurantId: RESTAURANT_IDS.hasty,
+  restaurantName: hastyRestaurant.name,
+}));
+
 export function createMockStore() {
   return {
     restaurants: [...SEED_RESTAURANTS],
     menuItems: [...SEED_MENU_ITEMS],
-    cartsByUser: {} as Record<string, CartLine[]>,
+    cartsByUser: {
+      [DEMO_USER_IDS.user]: [...SEED_CART],
+    } as Record<string, CartLine[]>,
     orders: [...SEED_ORDERS],
     currentUserId: DEMO_USER_IDS.user as string,
   };

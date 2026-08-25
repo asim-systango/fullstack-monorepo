@@ -76,13 +76,13 @@ export class OrdersService {
       .createQueryBuilder('o')
       .leftJoinAndSelect('o.lines', 'lines')
       .leftJoinAndSelect('o.deliveryStatuses', 'deliveryStatuses')
-      .where('o.payment_status = :paid', { paid: OrderPaymentStatus.PAID })
       .orderBy('o.createdAt', 'DESC')
       .addOrderBy('deliveryStatuses.createdAt', 'ASC')
       .skip(skip)
       .take(limit);
 
     if (scope === 'mine') {
+      // Orders this account placed as a customer (all roles).
       qb.andWhere('o.user_id = :userId', { userId: user.id });
     } else if (scope === 'restaurant') {
       if (user.role !== 'staff' && user.role !== 'admin') {
@@ -95,6 +95,7 @@ export class OrdersService {
         }
         qb.andWhere('o.restaurant_id = :restaurantId', { restaurantId: mine.id });
       }
+      // admin + restaurant scope → all restaurants
     } else if (scope === 'all') {
       if (user.role !== 'admin') {
         throw new ForbiddenException('Only admin can list all orders');
@@ -115,14 +116,10 @@ export class OrdersService {
   }
 
   async getById(id: string, user: JwtUser) {
-    return this.loadOrderForUser(id, user, { requirePaid: true });
+    return this.loadOrderForUser(id, user);
   }
 
-  private async loadOrderForUser(
-    id: string,
-    user: JwtUser,
-    options: { requirePaid: boolean },
-  ) {
+  private async loadOrderForUser(id: string, user: JwtUser) {
     const order = await this.orderRepo.findOne({
       where: { id },
       relations: { lines: true, deliveryStatuses: true },
@@ -130,10 +127,6 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    if (options.requirePaid && order.paymentStatus !== OrderPaymentStatus.PAID) {
       throw new NotFoundException('Order not found');
     }
 
@@ -153,6 +146,7 @@ export class OrdersService {
         .leftJoinAndSelect('c.menuItem', 'menuItem')
         .leftJoinAndSelect('menuItem.restaurant', 'restaurant')
         .where('c.userId = :userId', { userId: user.id })
+        .setLock('pessimistic_write')
         .withDeleted()
         .getMany();
 
@@ -160,6 +154,7 @@ export class OrdersService {
         throw new BadRequestException('Cart is empty');
       }
 
+      // Make sure every menu item is still available.
       for (const cartItem of cartItems) {
         if (!cartItem.menuItem || cartItem.menuItem.deletedAt) {
           throw new BadRequestException(
@@ -168,9 +163,16 @@ export class OrdersService {
         }
       }
 
-      const first = cartItems[0]!;
+      const first = cartItems[0];
+      const restaurant = first?.menuItem?.restaurant;
+      if (!first?.menuItem || !restaurant) {
+        throw new BadRequestException(
+          'One or more cart items are no longer available',
+        );
+      }
+
       const restaurantId = first.menuItem.restaurantId;
-      const restaurantName = first.menuItem.restaurant.name;
+      const restaurantName = restaurant.name;
 
       const mixed = cartItems.some(
         (item) => item.menuItem.restaurantId !== restaurantId,
@@ -227,34 +229,31 @@ export class OrdersService {
       return savedOrder.id;
     });
 
-    return this.loadOrderForUser(orderId, user, { requirePaid: false });
+    return this.loadOrderForUser(orderId, user);
   }
 
   async updateStatus(orderId: string, nextStatus: OrderStatus, user: JwtUser) {
-    const order = await this.orderRepo.findOne({
-      where: { id: orderId },
-      relations: { lines: true, deliveryStatuses: true },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    await this.assertCanManageKitchen(order, user);
-
-    if (order.paymentStatus !== OrderPaymentStatus.PAID) {
-      throw new BadRequestException('Order is not paid yet');
-    }
-
-    if (!canMoveStatus(order.status, nextStatus)) {
-      throw new BadRequestException(
-        `Cannot move from ${order.status} to ${nextStatus}`,
-      );
-    }
-
     await this.dataSource.transaction(async (manager) => {
       const orderRepo = manager.getRepository(Order);
       const statusRepo = manager.getRepository(DeliveryStatus);
+
+      const order = await orderRepo
+        .createQueryBuilder('o')
+        .setLock('pessimistic_write')
+        .where('o.id = :id', { id: orderId })
+        .getOne();
+
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      await this.assertCanManageKitchen(order, user);
+
+      if (!canMoveStatus(order.status, nextStatus)) {
+        throw new BadRequestException(
+          `Cannot move from ${order.status} to ${nextStatus}`,
+        );
+      }
 
       order.status = nextStatus;
       if (nextStatus === OrderStatus.PREPARING && !order.estimatedMinutes) {
@@ -284,7 +283,7 @@ export class OrdersService {
       }
     });
 
-    return this.getById(order.id, user);
+    return this.getById(orderId, user);
   }
 
   private async assertCanView(order: Order, user: JwtUser) {

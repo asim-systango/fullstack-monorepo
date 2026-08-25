@@ -221,6 +221,9 @@ export default function RestaurantMenuPage() {
             onUploaded={(url) => setImageUrl(url)}
             onError={toastError}
           />
+          <p style={{ fontSize: 11.5, color: 'var(--tg-text-faint)', margin: '6px 0 0' }}>
+            Cloudinary photo upload is Stretch. Items stay visible with emoji or seed images.
+          </p>
         </div>
       </>
     );

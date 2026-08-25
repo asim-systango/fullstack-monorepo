@@ -53,6 +53,7 @@ export function useMenuItems(restaurantId: string, includeDeleted = false) {
   });
 }
 
+/** Fetch cart only for the logged-in customer and only when enabled. */
 export function useCart(options: UseCartOptions = {}) {
   const { user, loading } = useAuth();
   const canLoadCart =
@@ -137,6 +138,8 @@ export function usePlaceOrder() {
     onSuccess: () => {
       if (user?.id) {
         void queryClient.invalidateQueries({ queryKey: foodKeys.cart(user.id) });
+        void queryClient.invalidateQueries({ queryKey: foodKeys.orders(user.id, 'mine') });
+        void queryClient.invalidateQueries({ queryKey: ['food', 'orders'] });
       }
     },
   });

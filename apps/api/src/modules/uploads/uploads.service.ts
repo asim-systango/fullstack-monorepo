@@ -11,7 +11,7 @@ export class UploadsService {
     const config = cloudinaryConfig();
     if (!config.enabled) {
       throw new ServiceUnavailableException(
-        'Image uploads are not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.',
+        'Cloudinary uploads are Stretch and not configured. Menus still work with emoji or seed images. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to enable.',
       );
     }
 

@@ -6,21 +6,16 @@ import { useRouter } from 'next/navigation';
 import { MapPin, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { RequireRole, useAuth } from '@/components/auth';
 import { AppShell } from '@/components/layout';
-import { MockPaymentDialog, PriceBreakdown } from '@/components/food';
+import { PriceBreakdown } from '@/components/food';
 import {
   useCart,
-  useCreatePaymentCheckout,
   usePlaceOrder,
   useUpdateCartItem,
-  useVerifyPayment,
 } from '@/lib/hooks/food-delivery';
 import { useFormErrors } from '@/lib/hooks/use-form-errors';
 import { useToastQueryError } from '@/lib/hooks/use-toast-query-error';
-import { isMockFoodApiEnabled } from '@/lib/food-api';
 import { calculatePricing, formatInr } from '@/lib/pricing';
-import { openRazorpayCheckout } from '@/lib/razorpay';
 import { toastApiError, toastSuccess } from '@/lib/toast';
-import type { PaymentCheckout } from '@/lib/types/food-delivery';
 import { parsePlaceOrder } from '@/lib/validation/food-delivery';
 
 const COLOR_TEXT = 'var(--tg-text)';
@@ -32,16 +27,11 @@ function CartContent() {
   const { data: cart, isLoading, isError, error } = useCart({ enabled: true });
   const updateItem = useUpdateCartItem();
   const placeOrder = usePlaceOrder();
-  const createPayment = useCreatePaymentCheckout();
-  const verifyPayment = useVerifyPayment();
 
   const savedAddress = user?.deliveryAddress?.trim() ?? '';
   const [useSavedAddress, setUseSavedAddress] = useState(Boolean(savedAddress));
   const [newAddress, setNewAddress] = useState('');
-  const [payOpen, setPayOpen] = useState(false);
-  const [paying, setPaying] = useState(false);
-  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-  const [pendingCheckout, setPendingCheckout] = useState<PaymentCheckout | null>(null);
+  const [placing, setPlacing] = useState(false);
   const { errors, applyParse } = useFormErrors();
 
   useToastQueryError(isError, error);
@@ -53,7 +43,6 @@ function CartContent() {
   }, [savedAddress]);
 
   const deliveryAddress = useSavedAddress && savedAddress ? savedAddress : newAddress;
-  const useMockPayment = isMockFoodApiEnabled();
 
   function syncAddressValidation(nextAddress: string, forceShow = false) {
     return applyParse(parsePlaceOrder({ deliveryAddress: nextAddress }), forceShow);
@@ -119,85 +108,22 @@ function CartContent() {
     return parsed.data.deliveryAddress;
   }
 
-  async function completePayment(orderId: string, checkout: PaymentCheckout) {
-    if (useMockPayment || checkout.mock) {
-      setPendingOrderId(orderId);
-      setPendingCheckout(checkout);
-      setPayOpen(true);
-      return;
-    }
-
-    if (!checkout.razorpayOrderId) {
-      throw new Error('Missing Razorpay order id');
-    }
-
-    const response = await openRazorpayCheckout({
-      keyId: checkout.keyId,
-      amount: checkout.amount,
-      currency: checkout.currency,
-      razorpayOrderId: checkout.razorpayOrderId,
-      prefill: {
-        name: user?.name,
-        email: user?.email,
-      },
-    });
-
-    await verifyPayment.mutateAsync({
-      orderId,
-      input: {
-        razorpayOrderId: response.razorpay_order_id,
-        razorpayPaymentId: response.razorpay_payment_id,
-        razorpaySignature: response.razorpay_signature,
-      },
-    });
-
-    toastSuccess('Payment successful');
-    router.push(`/orders/${orderId}`);
-  }
-
-  async function handlePayClick() {
+  async function handlePlaceOrder() {
     const address = getValidAddress();
     if (!address) return;
 
-    setPaying(true);
+    setPlacing(true);
 
     try {
       const order = await placeOrder.mutateAsync({ deliveryAddress: address });
       await saveAddress({ deliveryAddress: address });
       await refresh();
-      const checkout = await createPayment.mutateAsync(order.id);
-      await completePayment(order.id, checkout);
+      toastSuccess('Order placed');
+      router.push(`/orders/${order.id}`);
     } catch (err) {
       toastApiError(err);
     } finally {
-      setPaying(false);
-    }
-  }
-
-  async function confirmMockPayment() {
-    if (!pendingOrderId || !pendingCheckout) return;
-
-    setPaying(true);
-
-    try {
-      await verifyPayment.mutateAsync({
-        orderId: pendingOrderId,
-        input: {
-          razorpayOrderId:
-            pendingCheckout.razorpayOrderId ?? `order_mock_${pendingOrderId}`,
-          razorpayPaymentId: `pay_mock_${Date.now()}`,
-          razorpaySignature: 'mock_signature',
-        },
-      });
-
-      setPayOpen(false);
-      toastSuccess('Payment successful');
-      router.push(`/orders/${pendingOrderId}`);
-    } catch (err) {
-      toastApiError(err);
-      setPayOpen(false);
-    } finally {
-      setPaying(false);
+      setPlacing(false);
     }
   }
 
@@ -240,7 +166,7 @@ function CartContent() {
                   <button
                     type="button"
                     className="tg-qty-btn"
-                    disabled={paying}
+                    disabled={placing}
                     onClick={() => void changeQty(line.id, line.quantity - 1)}
                   >
                     <Minus size={13} />
@@ -251,7 +177,7 @@ function CartContent() {
                   <button
                     type="button"
                     className="tg-qty-btn"
-                    disabled={paying}
+                    disabled={placing}
                     onClick={() => void changeQty(line.id, line.quantity + 1)}
                   >
                     <Plus size={13} />
@@ -391,11 +317,11 @@ function CartContent() {
         <button
           type="button"
           className="tg-btn tg-btn-primary"
-          disabled={paying}
+          disabled={placing}
           style={{ width: '100%', height: 46, borderRadius: 11, marginTop: 16 }}
-          onClick={() => void handlePayClick()}
+          onClick={() => void handlePlaceOrder()}
         >
-          {paying ? 'Processing…' : `Pay ${formatInr(pricing.total)} and place order`}
+          {placing ? 'Placing order…' : `Place order · ${formatInr(pricing.total)}`}
         </button>
         <p
           style={{
@@ -405,19 +331,9 @@ function CartContent() {
             marginTop: 10,
           }}
         >
-          {useMockPayment
-            ? 'Demo payment · card ending 4242'
-            : 'Secure payment via Razorpay sandbox'}
+          Kitchen receives this immediately. Payment is optional on the order page.
         </p>
       </div>
-
-      <MockPaymentDialog
-        open={payOpen}
-        onOpenChange={setPayOpen}
-        total={pricing.total}
-        pending={paying}
-        onConfirm={() => void confirmMockPayment()}
-      />
     </div>
   );
 }

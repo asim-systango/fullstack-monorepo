@@ -183,27 +183,65 @@ export class PaymentsService {
       }
     }
 
-    await this.dataSource.transaction(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const paymentRepo = manager.getRepository(Payment);
       const orderRepo = manager.getRepository(Order);
 
-      payment.providerPaymentId = dto.razorpayPaymentId;
-      payment.providerSignature = dto.razorpaySignature ?? 'mock_signature';
-      payment.status = PaymentStatus.CAPTURED;
-      payment.paidAt = new Date();
-      payment.failureReason = null;
-      await paymentRepo.save(payment);
+      const lockedOrder = await orderRepo
+        .createQueryBuilder('o')
+        .setLock('pessimistic_write')
+        .where('o.id = :id', { id: orderId })
+        .getOne();
 
-      order.paymentStatus = OrderPaymentStatus.PAID;
-      await orderRepo.save(order);
+      if (!lockedOrder) {
+        throw new NotFoundException('Order not found');
+      }
+
+      if (lockedOrder.paymentStatus === OrderPaymentStatus.PAID) {
+        return {
+          orderId: lockedOrder.id,
+          paymentStatus: lockedOrder.paymentStatus,
+          message: 'Already paid',
+        };
+      }
+
+      const lockedPayment = await paymentRepo
+        .createQueryBuilder('p')
+        .setLock('pessimistic_write')
+        .where('p.id = :id', { id: payment.id })
+        .getOne();
+
+      if (!lockedPayment) {
+        throw new NotFoundException('Payment not found for this Razorpay order id');
+      }
+
+      if (lockedPayment.status === PaymentStatus.CAPTURED) {
+        lockedOrder.paymentStatus = OrderPaymentStatus.PAID;
+        await orderRepo.save(lockedOrder);
+        return {
+          orderId: lockedOrder.id,
+          paymentStatus: OrderPaymentStatus.PAID,
+          message: 'Already paid',
+        };
+      }
+
+      lockedPayment.providerPaymentId = dto.razorpayPaymentId;
+      lockedPayment.providerSignature = dto.razorpaySignature ?? 'mock_signature';
+      lockedPayment.status = PaymentStatus.CAPTURED;
+      lockedPayment.paidAt = new Date();
+      lockedPayment.failureReason = null;
+      await paymentRepo.save(lockedPayment);
+
+      lockedOrder.paymentStatus = OrderPaymentStatus.PAID;
+      await orderRepo.save(lockedOrder);
+
+      return {
+        orderId: lockedOrder.id,
+        paymentStatus: OrderPaymentStatus.PAID,
+        razorpayPaymentId: dto.razorpayPaymentId,
+        message: isMockPayment ? 'Payment captured (mock Razorpay)' : 'Payment captured',
+      };
     });
-
-    return {
-      orderId: order.id,
-      paymentStatus: OrderPaymentStatus.PAID,
-      razorpayPaymentId: dto.razorpayPaymentId,
-      message: isMockPayment ? 'Payment captured (mock Razorpay)' : 'Payment captured',
-    };
   }
 
   private verifyRazorpaySignature(

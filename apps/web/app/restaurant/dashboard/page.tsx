@@ -86,6 +86,7 @@ export default function RestaurantDashboardPage() {
                 <p style={{ margin: '3px 0 0', fontSize: 12.5, color: 'var(--tg-text-muted)' }}>
                   {o.lines.map((l) => `${l.itemName} ×${l.quantity}`).join(', ')} ·{' '}
                   {formatInr(o.total)}
+                  {o.paymentStatus !== 'paid' ? ' · unpaid (still fulfill)' : ''}
                 </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

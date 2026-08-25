@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { isUniqueViolation } from '../../common/db-errors';
 import { MenuItem } from '../restaurants/menu-item.entity';
 import { CartItem } from './cart-item.entity';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
@@ -28,6 +30,7 @@ export type CartSummaryDto = {
 @Injectable()
 export class CartService {
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(CartItem)
     private readonly cartRepo: Repository<CartItem>,
     @InjectRepository(MenuItem)
@@ -58,7 +61,7 @@ export class CartService {
         price: item.menuItem.price,
         quantity: item.quantity,
         restaurantId: item.menuItem.restaurantId,
-        restaurantName: item.menuItem.restaurant.name,
+        restaurantName: item.menuItem.restaurant?.name ?? 'Restaurant',
       });
     }
 
@@ -82,32 +85,51 @@ export class CartService {
       throw new NotFoundException('Menu item not available');
     }
 
-    const currentCart = await this.cartRepo.find({
-      where: { userId },
-      relations: { menuItem: true },
-    });
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        const cartRepo = manager.getRepository(CartItem);
+        const currentCart = await cartRepo
+          .createQueryBuilder('c')
+          .leftJoinAndSelect('c.menuItem', 'menuItem')
+          .where('c.userId = :userId', { userId })
+          .setLock('pessimistic_write')
+          .getMany();
 
-    const existingRestaurantId = currentCart[0]?.menuItem.restaurantId;
-    if (existingRestaurantId && existingRestaurantId !== menuItem.restaurantId) {
-      throw new BadRequestException(
-        'Cart already has items from another restaurant',
-      );
-    }
+        const existingRestaurantId = currentCart.find(
+          (line) => line.menuItem,
+        )?.menuItem?.restaurantId;
+        if (
+          existingRestaurantId &&
+          existingRestaurantId !== menuItem.restaurantId
+        ) {
+          throw new BadRequestException(
+            'Cart already has items from another restaurant',
+          );
+        }
 
-    const existingLine = currentCart.find(
-      (line) => line.menuItemId === dto.menuItemId,
-    );
+        const existingLine = currentCart.find(
+          (line) => line.menuItemId === dto.menuItemId,
+        );
 
-    if (existingLine) {
-      existingLine.quantity += quantity;
-      await this.cartRepo.save(existingLine);
-    } else {
-      const line = this.cartRepo.create({
-        userId,
-        menuItemId: menuItem.id,
-        quantity,
+        if (existingLine) {
+          existingLine.quantity += quantity;
+          await cartRepo.save(existingLine);
+          return;
+        }
+
+        await cartRepo.save(
+          cartRepo.create({
+            userId,
+            menuItemId: menuItem.id,
+            quantity,
+          }),
+        );
       });
-      await this.cartRepo.save(line);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Cart item already exists');
+      }
+      throw err;
     }
 
     return this.getCart(userId);
@@ -141,6 +163,7 @@ export class CartService {
     return this.getCart(userId);
   }
 
+  /** Used by OrdersService inside a DB transaction. */
   async getCartEntities(userId: string) {
     return this.cartRepo
       .createQueryBuilder('c')

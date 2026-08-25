@@ -239,7 +239,7 @@ export const mockFoodApi = {
   async listOrders(filters: OrderFilters = {}): Promise<Paginated<Order>> {
     await delay();
     const scope = filters.scope ?? 'mine';
-    let items = store.orders.filter((o) => o.paymentStatus === 'paid');
+    let items = [...store.orders];
 
     if (scope === 'mine') {
       items = items.filter((o) => o.userId === store.currentUserId);
@@ -247,6 +247,7 @@ export const mockFoodApi = {
       const mine = store.restaurants.find((r) => r.ownerUserId === store.currentUserId);
       items = mine ? items.filter((o) => o.restaurantId === mine.id) : [];
     }
+    // scope === 'all' → no extra filter
 
     if (filters.status) items = items.filter((o) => o.status === filters.status);
     return paginate(items, filters.page, filters.limit);
@@ -255,7 +256,7 @@ export const mockFoodApi = {
   async getOrder(id: string): Promise<Order> {
     await delay();
     const order = store.orders.find((o) => o.id === id);
-    if (!order || order.paymentStatus !== 'paid') {
+    if (!order) {
       throw new ApiClientError({ statusCode: 404, error: 'Not Found', message: 'Order not found' });
     }
     return order;
