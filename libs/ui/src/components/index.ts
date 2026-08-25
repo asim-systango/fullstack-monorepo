@@ -10,6 +10,7 @@ export {
 export { Field, type FieldProps } from './field';
 export { Form, type FormProps } from './form';
 export { TextInput, type TextInputProps } from './text-input';
+export { PasswordInput, type PasswordInputProps } from './password-input';
 export { TextArea, type TextAreaProps } from './text-area';
 export { Select, type SelectProps } from './select';
 export { Checkbox, type CheckboxProps } from './checkbox';

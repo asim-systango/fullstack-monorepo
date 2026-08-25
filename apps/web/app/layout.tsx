@@ -18,8 +18,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'Fitness Tracker',
+  description:
+    'Track your workouts, monitor personal records, and achieve your fitness goals.',
 };
 
 export default function RootLayout({

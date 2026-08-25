@@ -26,9 +26,11 @@
 
   /* Accent blue (scarce — links, focus ring, info only) */
   --blue-400: oklch(70% 0.12 255);
-  --blue-500: oklch(55% 0.16 255);
+
+  /* --blue-500: oklch(55% 0.16 255); */
   --blue-600: oklch(48% 0.17 255);
   --blue-700: oklch(42% 0.15 255);
+  --blue-500: oklch(42.731% 0.1886 265.959);
 
   /* Status */
   --red-500: oklch(55% 0.2 25);
@@ -42,4 +44,15 @@
   --amber-400: oklch(82% 0.12 75);
   --white: oklch(100% 0 0);
   --black: oklch(0% 0 0);
+  --lightgray-500: #eff0f2;
+  --light: #9d9d9d;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
 }
