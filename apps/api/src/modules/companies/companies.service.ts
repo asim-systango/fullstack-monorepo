@@ -7,9 +7,16 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from './company.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { CreateCompanyDTO } from './dto/create-company.dto';
 import { JobsService } from '../jobs/jobs.service';
+import { JobStatus } from '../jobs/job-status.enum';
+
+function isUniqueViolation(err: unknown): boolean {
+  if (!(err instanceof QueryFailedError)) return false;
+  const driverError = (err as { driverError?: { code?: string } }).driverError;
+  return driverError?.code === '23505';
+}
 
 @Injectable()
 export class CompaniesService {
@@ -48,23 +55,31 @@ export class CompaniesService {
       throw new ConflictException('You already have a company profile');
     }
 
-    const company = this.companiesRepo.create({ ...dto, userId });
-    return this.companiesRepo.save(company);
+    try {
+      const company = this.companiesRepo.create({ ...dto, userId });
+      return await this.companiesRepo.save(company);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('You already have a company profile');
+      }
+      throw err;
+    }
   }
 
   async suspend(id: string) {
     const company = await this.findByIdOrThrow(id);
-    company.suspended = true;
-    await this.companiesRepo.save(company);
+    return this.companiesRepo.manager.transaction(async (manager) => {
+      company.suspended = true;
+      await manager.save(company);
 
-    // Force-close every open job this company has, per the doc's suspend behavior.
-    const jobs = await this.jobsService.findAllForOwner(company.id);
-    const openJobs = jobs.filter((job) => job.status === 'open');
-    for (const job of openJobs) {
-      await this.jobsService.forceClose(job.id);
-    }
+      const jobs = await this.jobsService.findAllForOwner(company.id, manager);
+      const openJobs = jobs.filter((job) => job.status === JobStatus.OPEN);
+      for (const job of openJobs) {
+        await this.jobsService.forceClose(job.id, manager);
+      }
 
-    return company;
+      return company;
+    });
   }
 
   async reactivate(id: string) {

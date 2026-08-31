@@ -1,6 +1,21 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Roles, RolesGuard, type JwtUser } from '../../common/auth';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  Roles,
+  RolesGuard,
+  type JwtUser,
+} from '../../common/auth';
 import { BookmarksService } from './bookmarks.service';
 import { CreateBookmarkDto } from './dto/create-bookmark.dto';
 
@@ -25,7 +40,7 @@ export class BookmarksController {
   // Path uses jobId (not bookmark id) so candidates can unsave from a job card without a lookup.
   @Roles('user')
   @Delete(':jobId')
-  remove(@Param('jobId') jobId: string, @CurrentUser() user: JwtUser) {
+  remove(@Param('jobId', ParseUUIDPipe) jobId: string, @CurrentUser() user: JwtUser) {
     return this.bookmarksService.removeByJobId(user.id, jobId);
   }
 }

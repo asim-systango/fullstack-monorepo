@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CompaniesService } from '../companies/companies.service';
 import { ApplicationsService } from '../applications/applications.service';
 import { Job } from './job.entity';
@@ -38,7 +38,8 @@ export class JobsService {
     const qb = this.jobsRepo
       .createQueryBuilder('job')
       .innerJoinAndSelect('job.company', 'company')
-      .where('company.suspended = false');
+      .where('company.suspended = false')
+      .andWhere('job.status = :open', { open: JobStatus.OPEN });
 
     if (title) {
       qb.andWhere('job.title ILIKE :title', { title: `%${title}%` });
@@ -79,8 +80,9 @@ export class JobsService {
     return job;
   }
 
-  findAllForOwner(companyId: string) {
-    return this.jobsRepo.find({
+  findAllForOwner(companyId: string, manager?: EntityManager) {
+    const repo = manager ? manager.getRepository(Job) : this.jobsRepo;
+    return repo.find({
       where: { companyId },
       order: { createdAt: 'DESC' },
       withDeleted: true,
@@ -126,16 +128,19 @@ export class JobsService {
     return this.runCloseTransaction(id);
   }
 
-  async forceClose(id: string) {
+  async forceClose(id: string, manager?: EntityManager) {
     // Do not use findOnePublic — admin force-close / company suspend must still
-    // reach jobs whose company is already marked suspended, and soft-deleted
-    const job = await this.jobsRepo.findOne({ where: { id }, withDeleted: true });
-    if (!job) throw new NotFoundException('Job not found');
-    return this.jobsRepo.manager.transaction(async (manager) => {
+    // reach jobs whose company is already marked suspended, and soft-deleted rows.
+    const closeAndReject = async (em: EntityManager) => {
+      const job = await em.findOne(Job, { where: { id }, withDeleted: true });
+      if (!job) throw new NotFoundException('Job not found');
       job.status = JobStatus.CLOSED;
-      await manager.save(job);
-      await this.applicationsService.rejectOpenForJob(id, manager);
+      await em.save(job);
+      await this.applicationsService.rejectOpenForJob(id, em);
       return job;
-    });
+    };
+
+    if (manager) return closeAndReject(manager);
+    return this.jobsRepo.manager.transaction(closeAndReject);
   }
 }

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -30,7 +31,7 @@ export class ApplicationsController {
   @Roles('user')
   @Post('jobs/:jobId/applications')
   create(
-    @Param('jobId') jobId: string,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
     @CurrentUser() user: JwtUser,
     @Body() dto: CreateApplicationDto,
   ) {
@@ -54,14 +55,14 @@ export class ApplicationsController {
 
   @Roles('staff')
   @Get('company/applications/:id')
-  findOne(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
     return this.applicationsService.findOneOwnedByStaff(id, user.id);
   }
 
   @Roles('staff')
   @Patch('applications/:id/status')
   updateStatus(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser,
     @Body() dto: UpdateApplicationStatusDto,
   ) {

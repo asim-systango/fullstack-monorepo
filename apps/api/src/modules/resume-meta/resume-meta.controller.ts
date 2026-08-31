@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
@@ -51,14 +52,14 @@ export class ResumeMetaController {
 
   @Roles('user')
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
     return this.resumeMetaService.findOwnedOrThrow(id, user.id);
   }
 
   @Roles('user')
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser,
     @Body() dto: UpdateResumeMetaDto,
   ) {
@@ -67,7 +68,7 @@ export class ResumeMetaController {
 
   @Roles('user')
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
     return this.resumeMetaService.remove(id, user.id);
   }
 }

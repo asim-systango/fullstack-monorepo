@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -41,7 +42,7 @@ export class JobsController {
 
   @Public()
   @Get('jobs/:id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.jobsService.findOnePublic(id);
   }
 
@@ -61,7 +62,7 @@ export class JobsController {
   @Roles('staff')
   @Patch('jobs/:id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser,
     @Body() dto: UpdateJobDto,
   ) {
@@ -70,14 +71,14 @@ export class JobsController {
 
   @Roles('staff')
   @Delete('jobs/:id')
-  remove(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
     return this.jobsService.remove(id, user.id);
   }
 
   // Atomic close: job → closed + open applications → rejected (see JobsService.close).
   @Roles('staff')
   @Post('jobs/:id/close')
-  close(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+  close(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtUser) {
     return this.jobsService.close(id, user.id);
   }
 }

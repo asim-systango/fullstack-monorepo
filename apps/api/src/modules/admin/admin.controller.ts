@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Roles, RolesGuard } from '../../common/auth';
 import { CompaniesService } from '../companies/companies.service';
@@ -20,18 +20,18 @@ export class AdminController {
   }
 
   @Post('companies/:id/suspend')
-  suspendCompany(@Param('id') id: string) {
+  suspendCompany(@Param('id', ParseUUIDPipe) id: string) {
     return this.companiesService.suspend(id);
   }
 
   @Post('companies/:id/reactivate')
-  reactivateCompany(@Param('id') id: string) {
+  reactivateCompany(@Param('id', ParseUUIDPipe) id: string) {
     return this.companiesService.reactivate(id);
   }
 
   // Delegates to existing JobsService.forceClose — do not duplicate the transaction here.
   @Post('jobs/:id/force-close')
-  forceCloseJob(@Param('id') id: string) {
+  forceCloseJob(@Param('id', ParseUUIDPipe) id: string) {
     return this.jobsService.forceClose(id);
   }
 }
