@@ -1,9 +1,10 @@
+// apps/api-gateway/src/modules/auth/strategies/jwt.strategy.ts
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
+import { UsersService } from '../../users/users.service';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../../common/env';
-import { UsersService } from '../../users';
 
 type JwtPayload = { sub: string; email: string; role: string };
 

@@ -1,31 +1,27 @@
-import { ShellHeader } from '@/components/auth';
-import { Page } from '@shared/ui/components';
 import Link from 'next/link';
+import { Button } from '@/components/ui';
 
 export default function HomePage() {
   return (
-    <Page>
-      <ShellHeader title="App starter" />
-      <p className="text-foreground">
-        Shared boilerplate: auth shell, TanStack Query + RTK providers, cookie JWT client.
-        Build your assigned domain against the Nest domain API — see{' '}
-        <code>docs/projects/</code>.
+    <main className="mx-auto flex min-h-[calc(100vh-3.25rem)] max-w-feed flex-col justify-center px-4 py-16">
+      <p className="text-sm font-semibold uppercase tracking-wide text-brand">
+        Job Portal
       </p>
-      <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-        <li>
-          Gateway owns cookie JWT auth; domain API owns persistence (Bearer via gateway).
-        </li>
-        <li>TanStack Query owns server lists/mutations.</li>
-        <li>RTK owns drafts / filters / selection only.</li>
-        <li>
-          Prefer <Link href="/ui">@shared/ui/components</Link> (theme via{' '}
-          <code>@shared/ui/theme.css</code>) over one-off styles.
-        </li>
-      </ul>
-      <p className="mt-4">
-        <Link href="/login">Log in</Link> with seed users, then add your feature routes
-        under <code>apps/web/app</code>.
+      <h1 className="mt-2 max-w-2xl text-2xl font-semibold text-primary">
+        Find your next role — or hire the people who will build it.
+      </h1>
+      <p className="mt-3 max-w-xl text-sm text-secondary">
+        Browse open positions, apply with a saved resume, or manage company hiring from
+        one place.
       </p>
-    </Page>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link href="/jobs">
+          <Button>Browse jobs</Button>
+        </Link>
+        <Link href="/register">
+          <Button variant="secondary">Join as candidate</Button>
+        </Link>
+      </div>
+    </main>
   );
 }

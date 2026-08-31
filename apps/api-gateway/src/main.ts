@@ -2,6 +2,7 @@ import './load-env';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import type { Request } from 'express';
@@ -13,6 +14,8 @@ import {
   isGatewayOwnedPath,
   sendProxyError,
 } from './common/proxy-hop';
+import { createMustChangePasswordMiddleware } from './common/middleware/must-change-password.middleware';
+import { UsersService } from './modules/users/users.service';
 import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/filters';
 import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
 import { requestIdMiddleware, securityHeadersMiddleware } from '@shared/http/middleware';
@@ -40,6 +43,9 @@ async function bootstrap() {
     origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     credentials: true,
   });
+
+  // Before proxy: block all routes (gateway + domain) until password is changed.
+  app.use(createMustChangePasswordMiddleware(app.get(UsersService), app.get(JwtService)));
 
   // After cookieParser: forward domain routes to apps/api with Bearer JWT.
   app.use(

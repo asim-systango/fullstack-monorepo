@@ -5,9 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
-/** Rename `staff` to a domain role (company, agent, coach, …). */
-export type UserRole = 'admin' | 'user' | 'staff';
+import { UserRole } from './user-role.enum';
 
 @Entity({ name: 'users' })
 export class User {
@@ -15,16 +13,23 @@ export class User {
   id!: string;
 
   @Column({ unique: true })
-  email!: string;
+  email: string;
 
   @Column({ name: 'password_hash' })
-  passwordHash!: string;
+  password_hash!: string;
 
   @Column()
   name!: string;
 
-  @Column({ type: 'varchar', length: 20, default: 'user' })
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
   role!: UserRole;
+
+  @Column({ name: 'must_change_password', default: false })
+  mustChangePassword!: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

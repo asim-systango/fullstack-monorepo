@@ -1,21 +1,22 @@
-import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './user.entity';
 import { Repository } from 'typeorm';
-import { User, type UserRole } from './user.entity';
+import { UserRole } from './user-role.enum';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly users: Repository<User>,
+    private readonly userRepo: Repository<User>,
   ) {}
 
   findByEmail(email: string) {
-    return this.users.findOne({ where: { email: email.toLowerCase() } });
+    return this.userRepo.findOne({ where: { email: email.toLocaleLowerCase() } });
   }
 
   findById(id: string) {
-    return this.users.findOne({ where: { id } });
+    return this.userRepo.findOne({ where: { id } });
   }
 
   async create(input: {
@@ -23,14 +24,28 @@ export class UsersService {
     passwordHash: string;
     name: string;
     role?: UserRole;
+    mustChangePassword?: boolean;
   }) {
-    const user = this.users.create({
-      email: input.email.toLowerCase(),
-      passwordHash: input.passwordHash,
+    const user = this.userRepo.create({
+      email: input.email.toLocaleLowerCase(),
+      password_hash: input.passwordHash,
       name: input.name,
-      role: input.role ?? 'user',
+      role: input.role ?? UserRole.USER,
+      mustChangePassword: input.mustChangePassword ?? false,
     });
-    return this.users.save(user);
+    return this.userRepo.save(user);
+  }
+
+  async updatePassword(
+    userId: string,
+    passwordHash: string,
+    mustChangePassword: boolean,
+  ) {
+    await this.userRepo.update(userId, {
+      password_hash: passwordHash,
+      mustChangePassword,
+    });
+    return this.findById(userId);
   }
 
   toPublic(user: User) {
@@ -39,6 +54,7 @@ export class UsersService {
       email: user.email,
       name: user.name,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 }

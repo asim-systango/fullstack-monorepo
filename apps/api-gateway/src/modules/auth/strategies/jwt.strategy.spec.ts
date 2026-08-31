@@ -10,6 +10,7 @@ describe('JwtStrategy (gateway)', () => {
       email: user.email,
       name: user.name,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     })),
   };
 
@@ -46,7 +47,8 @@ describe('JwtStrategy (gateway)', () => {
       email: 'user@example.com',
       name: 'Demo',
       role: 'user',
-      passwordHash: 'hash',
+      mustChangePassword: false,
+      password_hash: 'hash',
     } as User;
     usersService.findById.mockResolvedValue(user);
 
@@ -61,6 +63,7 @@ describe('JwtStrategy (gateway)', () => {
       email: user.email,
       name: user.name,
       role: user.role,
+      mustChangePassword: false,
     });
   });
 

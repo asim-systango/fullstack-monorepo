@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
+import { AdminModule } from './modules/admin';
 import { HealthModule } from './modules/health';
-import { UsersModule } from './modules/users';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
 const db = databaseConfig();
 
@@ -26,12 +27,13 @@ const db = databaseConfig();
     TypeOrmModule.forRoot({
       ...db,
     }),
-    UsersModule,
-    AuthModule,
     HealthModule,
+    AuthModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Jwt before Roles so role checks see an authenticated principal (or public skip).
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
