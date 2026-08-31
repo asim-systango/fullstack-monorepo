@@ -58,3 +58,5 @@ export class UsersService {
     };
   }
 }
+
+export type PublicUser = ReturnType<UsersService['toPublic']>;

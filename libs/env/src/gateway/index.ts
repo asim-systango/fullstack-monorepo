@@ -8,7 +8,17 @@ export const gatewayEnvSchema = z
     PORT: z.coerce.number().default(3001),
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().min(16),
-    JWT_EXPIRES_IN: z.string().default('7d'),
+    // Constrained to what `jwtExpiryToMs` (auth.service.ts) can parse, so the cookie
+    // maxAge always matches the token TTL. `@nestjs/jwt` accepts looser ms-style
+    // values (e.g. '1.5h'), which would silently yield a 7-day cookie around a
+    // 90-minute token — fail at boot instead.
+    JWT_EXPIRES_IN: z
+      .string()
+      .regex(
+        /^\d+[smhd]?$/,
+        "must be digits with an optional s/m/h/d suffix (e.g. '900s', '15m', '7d')",
+      )
+      .default('7d'),
     COOKIE_SECURE: z
       .enum(['true', 'false'])
       .default('false')

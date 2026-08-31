@@ -9,12 +9,16 @@ import type { Request } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { AppModule } from './app.module';
 import { appConfig } from './config';
-import { applyAuthCookieToProxyRequest, isGatewayOwnedPath } from './common/proxy-hop';
+import {
+  applyAuthCookieToProxyRequest,
+  isGatewayOwnedPath,
+  sendProxyError,
+} from './common/proxy-hop';
 import { createMustChangePasswordMiddleware } from './common/middleware/must-change-password.middleware';
 import { UsersService } from './modules/users/users.service';
 import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/filters';
 import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
-import { securityHeadersMiddleware } from '@shared/http/middleware';
+import { requestIdMiddleware, securityHeadersMiddleware } from '@shared/http/middleware';
 import { setupSwagger } from '@shared/http/swagger';
 
 async function bootstrap() {
@@ -29,6 +33,7 @@ async function bootstrap() {
     }),
   );
   app.use(cookieParser());
+  app.use(requestIdMiddleware());
 
   const corsOrigins = appSettings.CORS_ORIGIN.split(',')
     .map((origin) => origin.trim())
@@ -47,10 +52,14 @@ async function bootstrap() {
     createProxyMiddleware({
       target: appSettings.API_UPSTREAM_URL,
       changeOrigin: true,
+      proxyTimeout: 10_000,
       pathFilter: (pathname) => !isGatewayOwnedPath(pathname),
       on: {
         proxyReq: (proxyReq, req) => {
           applyAuthCookieToProxyRequest(proxyReq, req as Request);
+        },
+        error: (_err, _req, res) => {
+          sendProxyError(res);
         },
       },
     }),

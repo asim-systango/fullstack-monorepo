@@ -7,7 +7,7 @@ import { AppModule } from './app.module';
 import { appConfig } from './config';
 import { AllExceptionsFilter, validationExceptionFactory } from '@shared/http/filters';
 import { ResponseEnvelopeInterceptor } from '@shared/http/interceptors';
-import { securityHeadersMiddleware } from '@shared/http/middleware';
+import { requestIdMiddleware, securityHeadersMiddleware } from '@shared/http/middleware';
 import { setupSwagger } from '@shared/http/swagger';
 import cookieParser from 'cookie-parser';
 
@@ -17,6 +17,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   app.use(compression());
+  app.use(requestIdMiddleware());
   app.use(securityHeadersMiddleware());
   app.use(cookieParser());
 

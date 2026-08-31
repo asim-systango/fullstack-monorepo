@@ -1,0 +1,13 @@
+# Lockfiles are owned by the package manager, not Prettier.
+# Formatting pnpm-lock.yaml makes every `pnpm install` that changes the dependency
+# graph rewrite the whole file back to pnpm's canonical form — a ~7k-line diff on
+# top of the real change.
+pnpm-lock.yaml
+
+# Build output and generated files
+dist
+.next
+.turbo
+coverage
+*.tsbuildinfo
+apps/web/next-env.d.ts
