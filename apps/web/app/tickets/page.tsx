@@ -13,8 +13,84 @@ import {
 import { RotateCw } from 'lucide-react';
 import { TicketCard } from '@/components/TicketCard';
 import { WaitlistCard } from '@/components/WaitlistCard';
-import { useMyTickets, useMyWaitlist } from '@/hooks/useTickets';
+import {
+  useMyTickets,
+  useMyWaitlist,
+  type TicketItem,
+  type WaitlistEntryItem,
+} from '@/hooks/useTickets';
 import { useAuth } from '@/components/auth/auth-provider';
+
+function TicketListContent(
+  props: Readonly<{
+    isLoading: boolean;
+    isError: boolean;
+    isEmpty: boolean;
+    showWaitlists: boolean;
+    showTickets: boolean;
+    waitlistList: WaitlistEntryItem[];
+    filteredTickets: TicketItem[];
+    onRetry: () => void;
+  }>,
+) {
+  const {
+    isLoading,
+    isError,
+    isEmpty,
+    showWaitlists,
+    showTickets,
+    waitlistList,
+    filteredTickets,
+    onRetry,
+  } = props;
+
+  if (isLoading) {
+    return <LoadingState label="Fetching your ticket wallet & waitlists..." />;
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
+        <span>Failed to load wallet items. Please try again.</span>
+        <Button variant="secondary" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (isEmpty) {
+    return (
+      <EmptyState
+        title="No passes found"
+        description="You haven't registered or joined any event waitlists under this filter."
+        action={
+          <Link href="/events">
+            <Button variant="primary" size="sm" className="font-semibold">
+              Browse Events
+            </Button>
+          </Link>
+        }
+      />
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Show Waitlist Cards first if applicable */}
+      {showWaitlists &&
+        waitlistList.map((entry) => (
+          <WaitlistCard key={`waitlist-${entry.id}`} entry={entry} />
+        ))}
+
+      {/* Show Ticket Cards */}
+      {showTickets &&
+        filteredTickets.map((ticket) => (
+          <TicketCard key={`ticket-${ticket.id}`} ticket={ticket} />
+        ))}
+    </div>
+  );
+}
 
 export default function TicketsPage() {
   const { user, loading: isAuthLoading } = useAuth();
@@ -34,7 +110,9 @@ export default function TicketsPage() {
     isFetching: isWaitlistFetching,
   } = useMyWaitlist();
 
-  const [filter, setFilter] = useState<'ALL' | 'ISSUED' | 'WAITLIST' | 'USED' | 'CANCELLED'>('ALL');
+  const [filter, setFilter] = useState<
+    'ALL' | 'ISSUED' | 'WAITLIST' | 'USED' | 'CANCELLED'
+  >('ALL');
 
   if (isAuthLoading) {
     return (
@@ -53,7 +131,11 @@ export default function TicketsPage() {
         <ShellHeader />
         <main className="mx-auto max-w-4xl px-4 py-12 text-center space-y-4">
           <Alert tone="info" title="Login Required">
-            Please <Link href="/login" className="font-bold underline">log in</Link> to access your ticket wallet.
+            Please{' '}
+            <Link href="/login" className="font-bold underline">
+              log in
+            </Link>{' '}
+            to access your ticket wallet.
           </Alert>
         </main>
       </div>
@@ -65,7 +147,9 @@ export default function TicketsPage() {
     refetchWaitlist();
   };
 
-  const handleTabChange = (status: 'ALL' | 'ISSUED' | 'WAITLIST' | 'USED' | 'CANCELLED') => {
+  const handleTabChange = (
+    status: 'ALL' | 'ISSUED' | 'WAITLIST' | 'USED' | 'CANCELLED',
+  ) => {
     setFilter(status);
   };
 
@@ -88,8 +172,13 @@ export default function TicketsPage() {
 
   const isLoading = isTicketsLoading || isWaitlistLoading;
   const isError = isTicketsError || isWaitlistError;
-  const isSyncing = (isTicketsFetching && !isTicketsLoading) || (isWaitlistFetching && !isWaitlistLoading);
-  const isEmpty = (showTickets ? filteredTickets.length : 0) + (showWaitlists ? waitlistList.length : 0) === 0;
+  const isSyncing =
+    (isTicketsFetching && !isTicketsLoading) ||
+    (isWaitlistFetching && !isWaitlistLoading);
+  const isEmpty =
+    (showTickets ? filteredTickets.length : 0) +
+      (showWaitlists ? waitlistList.length : 0) ===
+    0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -186,42 +275,16 @@ export default function TicketsPage() {
         </div>
 
         {/* Content */}
-        {isLoading ? (
-          <LoadingState label="Fetching your ticket wallet & waitlists..." />
-        ) : isError ? (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
-            <span>Failed to load wallet items. Please try again.</span>
-            <Button variant="secondary" size="sm" onClick={handleSyncAll}>
-              Retry
-            </Button>
-          </div>
-        ) : isEmpty ? (
-          <EmptyState
-            title="No passes found"
-            description="You haven't registered or joined any event waitlists under this filter."
-            action={
-              <Link href="/events">
-                <Button variant="primary" size="sm" className="font-semibold">
-                  Browse Events
-                </Button>
-              </Link>
-            }
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Show Waitlist Cards first if applicable */}
-            {showWaitlists &&
-              waitlistList.map((entry) => (
-                <WaitlistCard key={`waitlist-${entry.id}`} entry={entry} />
-              ))}
-
-            {/* Show Ticket Cards */}
-            {showTickets &&
-              filteredTickets.map((ticket) => (
-                <TicketCard key={`ticket-${ticket.id}`} ticket={ticket} />
-              ))}
-          </div>
-        )}
+        <TicketListContent
+          isLoading={isLoading}
+          isError={isError}
+          isEmpty={isEmpty}
+          showWaitlists={showWaitlists}
+          showTickets={showTickets}
+          waitlistList={waitlistList}
+          filteredTickets={filteredTickets}
+          onRetry={handleSyncAll}
+        />
       </main>
     </div>
   );

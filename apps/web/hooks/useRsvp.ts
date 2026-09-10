@@ -84,12 +84,21 @@ export function useSubmitRsvp() {
 }
 
 export function useMyRsvps() {
-  return useQuery<Array<RsvpRecord & { event: any; ticket?: any }>>({
+  return useQuery<
+    Array<
+      RsvpRecord & { event: Record<string, unknown>; ticket?: Record<string, unknown> }
+    >
+  >({
     queryKey: ['my-rsvps'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: Array<RsvpRecord & { event: any; ticket?: any }> }>(
-        '/my-rsvps',
-      );
+      const { data } = await apiClient.get<{
+        data: Array<
+          RsvpRecord & {
+            event: Record<string, unknown>;
+            ticket?: Record<string, unknown>;
+          }
+        >;
+      }>('/my-rsvps');
       return data.data;
     },
   });

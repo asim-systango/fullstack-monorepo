@@ -23,17 +23,18 @@ export interface ConfirmModalProps {
   onConfirm: () => void;
 }
 
-export function ConfirmModal({
-  open,
-  onOpenChange,
-  title,
-  description,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
-  variant = 'danger',
-  loading = false,
-  onConfirm,
-}: ConfirmModalProps) {
+export function ConfirmModal(props: Readonly<ConfirmModalProps>) {
+  const {
+    open,
+    onOpenChange,
+    title,
+    description,
+    confirmText = 'Confirm',
+    cancelText = 'Cancel',
+    variant = 'danger',
+    loading = false,
+    onConfirm,
+  } = props;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogHeader>

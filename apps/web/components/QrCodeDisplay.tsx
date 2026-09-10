@@ -9,7 +9,37 @@ interface QrCodeDisplayProps {
   size?: number;
 }
 
-export function QrCodeDisplay({ payload, size = 200 }: QrCodeDisplayProps) {
+function QrContent(
+  props: Readonly<{ dataUrl: string; error: boolean; size: number; payload: string }>,
+) {
+  const { dataUrl, error, size, payload } = props;
+  if (dataUrl) {
+    return (
+      <img
+        src={dataUrl}
+        alt={`QR Code for ${payload}`}
+        width={size}
+        height={size}
+        className="rounded-md object-contain"
+      />
+    );
+  }
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center p-2 text-xs text-rose-500">
+        Failed to render QR Code
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+      Generating QR...
+    </div>
+  );
+}
+
+export function QrCodeDisplay(props: Readonly<QrCodeDisplayProps>) {
+  const { payload, size = 200 } = props;
   const [dataUrl, setDataUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<boolean>(false);
@@ -58,23 +88,7 @@ export function QrCodeDisplay({ payload, size = 200 }: QrCodeDisplayProps) {
         className="group relative flex items-center justify-center rounded-xl border border-border/80 bg-white p-3 shadow-md"
         style={{ width: size + 24, height: size + 24 }}
       >
-        {dataUrl ? (
-          <img
-            src={dataUrl}
-            alt={`QR Code for ${payload}`}
-            width={size}
-            height={size}
-            className="rounded-md object-contain"
-          />
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center text-center p-2 text-xs text-rose-500">
-            Failed to render QR Code
-          </div>
-        ) : (
-          <div className="flex items-center justify-center text-xs text-muted-foreground animate-pulse">
-            Generating QR...
-          </div>
-        )}
+        <QrContent dataUrl={dataUrl} error={error} size={size} payload={payload} />
       </div>
 
       <div className="flex items-center gap-2">

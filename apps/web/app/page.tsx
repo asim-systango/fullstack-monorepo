@@ -4,8 +4,76 @@ import Link from 'next/link';
 import { ShellHeader } from '@/components/auth';
 import { Badge, Button, Card, CardBody, LoadingState } from '@shared/ui/components';
 import { EventCard } from '@/components/EventCard';
-import { useEvents } from '@/hooks/useEvents';
+import { useEvents, type EventItem } from '@/hooks/useEvents';
 import { useAuth } from '@/components/auth/auth-provider';
+
+function HeroActionButton({ user }: Readonly<{ user: { role?: string } | null }>) {
+  if (!user) {
+    return (
+      <Link href="/login">
+        <Button variant="secondary" size="md" className="font-semibold text-sm">
+          Log In to Register
+        </Button>
+      </Link>
+    );
+  }
+
+  if (user.role === 'admin' || user.role === 'staff') {
+    return (
+      <Link href="/events/new">
+        <Button variant="secondary" size="md" className="font-semibold text-sm">
+          + Host New Event
+        </Button>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href="/tickets">
+      <Button variant="secondary" size="md" className="font-semibold text-sm">
+        View My Tickets
+      </Button>
+    </Link>
+  );
+}
+
+function HomeFeaturedEvents({
+  isLoading,
+  isError,
+  events,
+}: Readonly<{
+  isLoading: boolean;
+  isError: boolean;
+  events?: EventItem[];
+}>) {
+  if (isLoading) {
+    return <LoadingState label="Loading featured events..." />;
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600">
+        Failed to load events. Make sure Postgres and API services are running.
+      </div>
+    );
+  }
+
+  if (!events || events.length === 0) {
+    return (
+      <div className="rounded-xl border border-border p-8 text-center text-xs text-muted-foreground">
+        No events found. Be the first to create one!
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {events.map((event) => (
+        <EventCard key={event.id} event={event} />
+      ))}
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -13,7 +81,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <ShellHeader title="EventHub Platform" subtitle="Event Management & Ticketing Engine" />
+      <ShellHeader
+        title="EventHub Platform"
+        subtitle="Event Management & Ticketing Engine"
+      />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-12">
         {/* Hero Section */}
@@ -33,8 +104,9 @@ export default function HomePage() {
             </h1>
 
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Fullstack platform featuring real-time capacity management, transactional waitlist promotions,
-              visual QR code passes, and staff check-in scanner tools.
+              Fullstack platform featuring real-time capacity management, transactional
+              waitlist promotions, visual QR code passes, and staff check-in scanner
+              tools.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -44,27 +116,7 @@ export default function HomePage() {
                 </Button>
               </Link>
 
-              {user ? (
-                user.role === 'admin' || user.role === 'staff' ? (
-                  <Link href="/events/new">
-                    <Button variant="secondary" size="md" className="font-semibold text-sm">
-                      + Host New Event
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/tickets">
-                    <Button variant="secondary" size="md" className="font-semibold text-sm">
-                      View My Tickets
-                    </Button>
-                  </Link>
-                )
-              ) : (
-                <Link href="/login">
-                  <Button variant="secondary" size="md" className="font-semibold text-sm">
-                    Log In to Register
-                  </Button>
-                </Link>
-              )}
+              <HeroActionButton user={user} />
             </div>
           </div>
         </div>
@@ -77,9 +129,14 @@ export default function HomePage() {
                 💡
               </div>
               <div>
-                <span className="font-bold text-foreground">Demo Accounts & Quick Testing:</span>
+                <span className="font-bold text-foreground">
+                  Demo Accounts & Quick Testing:
+                </span>
                 <p className="text-muted-foreground mt-0.5">
-                  Password for all: <code className="font-mono bg-background px-1.5 py-0.5 rounded border border-border">password123</code>
+                  Password for all:{' '}
+                  <code className="font-mono bg-background px-1.5 py-0.5 rounded border border-border">
+                    password123
+                  </code>
                 </p>
               </div>
             </div>
@@ -101,31 +158,26 @@ export default function HomePage() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">Upcoming Featured Events</h2>
-              <p className="text-xs text-muted-foreground">Reserve your spot before capacity runs out</p>
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                Upcoming Featured Events
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Reserve your spot before capacity runs out
+              </p>
             </div>
-            <Link href="/events" className="text-xs font-bold text-primary hover:underline">
+            <Link
+              href="/events"
+              className="text-xs font-bold text-primary hover:underline"
+            >
               View All Events ({eventsData?.meta.total || 0}) →
             </Link>
           </div>
 
-          {isLoading ? (
-            <LoadingState label="Loading featured events..." />
-          ) : isError ? (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600">
-              Failed to load events. Make sure Postgres and API services are running.
-            </div>
-          ) : eventsData?.items.length === 0 ? (
-            <div className="rounded-xl border border-border p-8 text-center text-xs text-muted-foreground">
-              No events found. Be the first to create one!
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {eventsData?.items.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          )}
+          <HomeFeaturedEvents
+            isLoading={isLoading}
+            isError={isError}
+            events={eventsData?.items}
+          />
         </section>
       </main>
     </div>

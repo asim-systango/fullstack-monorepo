@@ -18,6 +18,8 @@ export enum EventStatus {
   CANCELLED = 'CANCELLED',
 }
 
+const TIMESTAMP_TZ = 'timestamp with time zone' as const;
+
 @Entity('events')
 export class Event {
   @PrimaryGeneratedColumn('uuid')
@@ -32,10 +34,10 @@ export class Event {
   @Column({ type: 'varchar', length: 255, nullable: true })
   location?: string | null;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @Column({ type: TIMESTAMP_TZ, nullable: true })
   startDate?: Date | null;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @Column({ type: TIMESTAMP_TZ, nullable: true })
   endDate?: Date | null;
 
   @Column({ type: 'int', default: 50 })
@@ -56,13 +58,13 @@ export class Event {
   @Column({ type: 'varchar', length: 100, default: 'General' })
   category!: string;
 
-  @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
+  @DeleteDateColumn({ type: TIMESTAMP_TZ, nullable: true })
   deletedAt?: Date | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: TIMESTAMP_TZ })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: TIMESTAMP_TZ })
   updatedAt!: Date;
 
   @OneToMany(() => Rsvp, (rsvp) => rsvp.event)

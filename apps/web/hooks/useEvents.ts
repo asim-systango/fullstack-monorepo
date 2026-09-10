@@ -73,11 +73,17 @@ export interface AnalyticsResponse {
   };
 }
 
+const EVENTS_QUERY_KEY = 'events';
+const MY_ORGANIZED_EVENTS_QUERY_KEY = 'my-organized-events';
+const EVENT_QUERY_KEY = 'event';
+const ALL_CATEGORY = 'ALL';
+
 export function useEvents(params: QueryEventsParams) {
   const cleanParams: Record<string, string | number> = {};
   if (params.q) cleanParams.q = params.q;
-  if (params.category && params.category !== 'ALL') cleanParams.category = params.category;
-  if (params.status && params.status !== 'ALL') cleanParams.status = params.status;
+  if (params.category && params.category !== ALL_CATEGORY)
+    cleanParams.category = params.category;
+  if (params.status && params.status !== ALL_CATEGORY) cleanParams.status = params.status;
   if (params.organizerId) cleanParams.organizerId = params.organizerId;
   if (params.startDate) cleanParams.startDate = params.startDate;
   if (params.endDate) cleanParams.endDate = params.endDate;
@@ -85,7 +91,7 @@ export function useEvents(params: QueryEventsParams) {
   if (params.limit) cleanParams.limit = params.limit;
 
   return useQuery<EventsResponse>({
-    queryKey: ['events', cleanParams],
+    queryKey: [EVENTS_QUERY_KEY, cleanParams],
     queryFn: async () => {
       const { data } = await apiClient.get<{ data: EventsResponse }>('/events', {
         params: cleanParams,
@@ -101,17 +107,21 @@ export function useEvents(params: QueryEventsParams) {
 export function useMyOrganizedEvents(params: QueryEventsParams = {}) {
   const cleanParams: Record<string, string | number> = {};
   if (params.q) cleanParams.q = params.q;
-  if (params.category && params.category !== 'ALL') cleanParams.category = params.category;
-  if (params.status && params.status !== 'ALL') cleanParams.status = params.status;
+  if (params.category && params.category !== ALL_CATEGORY)
+    cleanParams.category = params.category;
+  if (params.status && params.status !== ALL_CATEGORY) cleanParams.status = params.status;
   if (params.page) cleanParams.page = params.page;
   if (params.limit) cleanParams.limit = params.limit;
 
   return useQuery<EventsResponse>({
-    queryKey: ['my-organized-events', cleanParams],
+    queryKey: [MY_ORGANIZED_EVENTS_QUERY_KEY, cleanParams],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: EventsResponse }>('/events/organizer/my-events', {
-        params: cleanParams,
-      });
+      const { data } = await apiClient.get<{ data: EventsResponse }>(
+        '/events/organizer/my-events',
+        {
+          params: cleanParams,
+        },
+      );
       return data.data;
     },
     staleTime: 0,
@@ -122,11 +132,11 @@ export function useMyOrganizedEvents(params: QueryEventsParams = {}) {
 
 export function useEventDetail(id: string) {
   return useQuery<EventItem & { noCount: number; maybeCount: number }>({
-    queryKey: ['event', id],
+    queryKey: [EVENT_QUERY_KEY, id],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: EventItem & { noCount: number; maybeCount: number } }>(
-        `/events/${id}`,
-      );
+      const { data } = await apiClient.get<{
+        data: EventItem & { noCount: number; maybeCount: number };
+      }>(`/events/${id}`);
       return data.data;
     },
     enabled: Boolean(id),
@@ -144,8 +154,8 @@ export function useCreateEvent() {
       return data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['my-organized-events'] });
+      queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [MY_ORGANIZED_EVENTS_QUERY_KEY] });
     },
   });
 }
@@ -153,14 +163,20 @@ export function useCreateEvent() {
 export function useUpdateEvent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: Partial<CreateEventInput> }) => {
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: Partial<CreateEventInput>;
+    }) => {
       const { data } = await apiClient.patch<{ data: EventItem }>(`/events/${id}`, input);
       return data.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['my-organized-events'] });
-      queryClient.invalidateQueries({ queryKey: ['event', variables.id] });
+      queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [MY_ORGANIZED_EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [EVENT_QUERY_KEY, variables.id] });
     },
   });
 }
@@ -169,13 +185,15 @@ export function usePublishEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await apiClient.patch<{ data: EventItem }>(`/events/${id}/publish`);
+      const { data } = await apiClient.patch<{ data: EventItem }>(
+        `/events/${id}/publish`,
+      );
       return data.data;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['my-organized-events'] });
-      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [MY_ORGANIZED_EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [EVENT_QUERY_KEY, id] });
     },
   });
 }
@@ -184,15 +202,15 @@ export function useCancelEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await apiClient.patch<{ data: { success: boolean; message: string } }>(
-        `/events/${id}/cancel`,
-      );
+      const { data } = await apiClient.patch<{
+        data: { success: boolean; message: string };
+      }>(`/events/${id}/cancel`);
       return data.data;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['my-organized-events'] });
-      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [MY_ORGANIZED_EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [EVENT_QUERY_KEY, id] });
       queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
     },
   });
@@ -202,14 +220,14 @@ export function useDeleteEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await apiClient.delete<{ data: { success: boolean; message: string } }>(
-        `/events/${id}`,
-      );
+      const { data } = await apiClient.delete<{
+        data: { success: boolean; message: string };
+      }>(`/events/${id}`);
       return data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['my-organized-events'] });
+      queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [MY_ORGANIZED_EVENTS_QUERY_KEY] });
     },
   });
 }

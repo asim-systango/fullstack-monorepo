@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { FileText, Ban, Flag } from 'lucide-react';
-import { Badge, Button, Card, CardBody, CardHeader, CardTitle } from '@shared/ui/components';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui/components';
 import { CapacityProgress } from './CapacityProgress';
 import type { EventItem } from '@/hooks/useEvents';
 
@@ -12,7 +19,86 @@ interface EventCardProps {
   isOrganizer?: boolean;
 }
 
-export function EventCard({ event, onDelete, isOrganizer = false }: EventCardProps) {
+function EventStatusBadge(props: Readonly<{ event: EventItem }>) {
+  const { event } = props;
+  if (event.status === 'DRAFT') {
+    return (
+      <Badge
+        tone="neutral"
+        className="text-[10px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-600 border-amber-500/30 flex items-center gap-1"
+      >
+        <FileText className="h-3 w-3" />
+        <span>Draft</span>
+      </Badge>
+    );
+  }
+  if (event.status === 'CANCELLED') {
+    return (
+      <Badge
+        tone="danger"
+        className="text-[10px] font-bold tracking-wider uppercase flex items-center gap-1"
+      >
+        <Ban className="h-3 w-3" />
+        <span>Cancelled</span>
+      </Badge>
+    );
+  }
+  if (event.isCompleted) {
+    return (
+      <Badge
+        tone="neutral"
+        className="text-[10px] font-bold tracking-wider uppercase bg-slate-500/10 text-slate-500 border-slate-500/30 flex items-center gap-1"
+      >
+        <Flag className="h-3 w-3" />
+        <span>Completed</span>
+      </Badge>
+    );
+  }
+  if (event.isFull) {
+    return (
+      <Badge tone="danger" className="text-[10px] font-bold tracking-wider uppercase">
+        Waitlist Active
+      </Badge>
+    );
+  }
+  return (
+    <Badge tone="success" className="text-[10px] font-medium">
+      Open ({event.spotsLeft} left)
+    </Badge>
+  );
+}
+
+function EventButtonContent(props: Readonly<{ event: EventItem }>) {
+  const { event } = props;
+  if (event.status === 'DRAFT') {
+    return (
+      <>
+        <FileText className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+        <span>View / Edit Draft</span>
+      </>
+    );
+  }
+  if (event.status === 'CANCELLED') {
+    return (
+      <>
+        <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+        <span>View Cancelled Event</span>
+      </>
+    );
+  }
+  if (event.isCompleted) {
+    return (
+      <>
+        <Flag className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+        <span>View Event Summary</span>
+      </>
+    );
+  }
+  return <>View Details & RSVP</>;
+}
+
+export function EventCard(props: Readonly<EventCardProps>) {
+  const { event, onDelete, isOrganizer = false } = props;
   const startDate = event.startDate ? new Date(event.startDate) : null;
   const formattedDate = startDate
     ? startDate.toLocaleDateString('en-US', {
@@ -36,31 +122,8 @@ export function EventCard({ event, onDelete, isOrganizer = false }: EventCardPro
           <Badge tone="accent" className="text-xs font-semibold">
             {event.category || 'General'}
           </Badge>
-          
-          {event.status === 'DRAFT' ? (
-            <Badge tone="neutral" className="text-[10px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-600 border-amber-500/30 flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              <span>Draft</span>
-            </Badge>
-          ) : event.status === 'CANCELLED' ? (
-            <Badge tone="danger" className="text-[10px] font-bold tracking-wider uppercase flex items-center gap-1">
-              <Ban className="h-3 w-3" />
-              <span>Cancelled</span>
-            </Badge>
-          ) : event.isCompleted ? (
-            <Badge tone="neutral" className="text-[10px] font-bold tracking-wider uppercase bg-slate-500/10 text-slate-500 border-slate-500/30 flex items-center gap-1">
-              <Flag className="h-3 w-3" />
-              <span>Completed</span>
-            </Badge>
-          ) : event.isFull ? (
-            <Badge tone="danger" className="text-[10px] font-bold tracking-wider uppercase">
-              Waitlist Active
-            </Badge>
-          ) : (
-            <Badge tone="success" className="text-[10px] font-medium">
-              Open ({event.spotsLeft} left)
-            </Badge>
-          )}
+
+          <EventStatusBadge event={event} />
         </div>
         <CardTitle className="line-clamp-2 text-lg font-bold text-foreground transition-colors group-hover:text-primary">
           <Link href={`/events/${event.id}`}>{event.title}</Link>
@@ -74,16 +137,43 @@ export function EventCard({ event, onDelete, isOrganizer = false }: EventCardPro
 
         <div className="space-y-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5 font-medium text-foreground/90">
-            <svg className="h-3.5 w-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg
+              className="h-3.5 w-3.5 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
-            <span>{formattedDate} {startDate ? `• ${formattedTime}` : ''}</span>
+            <span>
+              {formattedDate} {startDate ? `• ${formattedTime}` : ''}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <svg className="h-3.5 w-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className="h-3.5 w-3.5 text-muted-foreground"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
             <span className="truncate">{event.location || 'Location TBD'}</span>
           </div>
@@ -97,24 +187,7 @@ export function EventCard({ event, onDelete, isOrganizer = false }: EventCardPro
               variant={event.status === 'CANCELLED' ? 'ghost' : 'primary'}
               className="w-full text-xs font-semibold"
             >
-              {event.status === 'DRAFT' ? (
-                <>
-                  <FileText className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-                  <span>View / Edit Draft</span>
-                </>
-              ) : event.status === 'CANCELLED' ? (
-                <>
-                  <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-                  <span>View Cancelled Event</span>
-                </>
-              ) : event.isCompleted ? (
-                <>
-                  <Flag className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-                  <span>View Event Summary</span>
-                </>
-              ) : (
-                'View Details & RSVP'
-              )}
+              <EventButtonContent event={event} />
             </Button>
           </Link>
 

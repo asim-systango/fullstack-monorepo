@@ -18,7 +18,14 @@ import {
 } from '@shared/ui/components';
 import { EditEventModal } from '@/components/EditEventModal';
 import { StatCard } from '@/components/StatCard';
-import { useCancelEvent, useDeleteEvent, useEventAnalytics, useMyOrganizedEvents, usePublishEvent, type EventItem } from '@/hooks/useEvents';
+import {
+  useCancelEvent,
+  useDeleteEvent,
+  useEventAnalytics,
+  useMyOrganizedEvents,
+  usePublishEvent,
+  type EventItem,
+} from '@/hooks/useEvents';
 import {
   Rocket,
   FileText,
@@ -34,7 +41,102 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 
-function AnalyticsModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
+function AnalyticsContent({
+  isLoading,
+  isError,
+  analytics,
+  onClose,
+}: Readonly<{
+  isLoading: boolean;
+  isError: boolean;
+  analytics?: {
+    title: string;
+    capacity: number;
+    rsvps: { yes: number };
+    waitlistCount: number;
+    tickets: { issued: number; used: number; occupancyRate: number };
+  };
+  onClose: () => void;
+}>) {
+  if (isLoading) {
+    return <LoadingState label="Calculating analytics metrics..." />;
+  }
+
+  if (isError || !analytics) {
+    return (
+      <div className="space-y-4">
+        <Alert tone="danger" title="Error Loading Analytics">
+          Failed to load analytics metrics for this event.
+        </Alert>
+        <Button variant="secondary" onClick={onClose} className="w-full text-xs">
+          Close
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-bold text-foreground">{analytics.title}</h3>
+        <p className="text-xs text-muted-foreground">
+          Capacity: {analytics.capacity} seats
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
+          <span className="text-muted-foreground block font-medium">YES RSVPs</span>
+          <span className="text-xl font-bold text-emerald-600">
+            {analytics.rsvps.yes}
+          </span>
+        </div>
+        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
+          <span className="text-muted-foreground block font-medium">Waitlist Queue</span>
+          <span className="text-xl font-bold text-amber-600">
+            {analytics.waitlistCount}
+          </span>
+        </div>
+        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
+          <span className="text-muted-foreground block font-medium">Tickets Issued</span>
+          <span className="text-xl font-bold text-foreground">
+            {analytics.tickets.issued}
+          </span>
+        </div>
+        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
+          <span className="text-muted-foreground block font-medium">
+            Tickets Checked-In
+          </span>
+          <span className="text-xl font-bold text-primary">{analytics.tickets.used}</span>
+        </div>
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-border/60 bg-card p-3 text-xs">
+        <div className="flex justify-between font-medium">
+          <span>Occupancy Rate:</span>
+          <span className="font-bold text-primary">
+            {analytics.tickets.occupancyRate}%
+          </span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className="h-full bg-primary transition-all duration-500"
+            style={{ width: `${analytics.tickets.occupancyRate}%` }}
+          />
+        </div>
+      </div>
+
+      <Button variant="secondary" onClick={onClose} className="w-full text-xs">
+        Close Analytics
+      </Button>
+    </div>
+  );
+}
+
+function AnalyticsModal({
+  eventId,
+  onClose,
+}: Readonly<{ eventId: string; onClose: () => void }>) {
   const { data: analytics, isLoading, isError } = useEventAnalytics(eventId);
 
   return (
@@ -46,78 +148,301 @@ function AnalyticsModal({ eventId, onClose }: { eventId: string; onClose: () => 
       onClose={onClose}
       title="Event Analytics Dashboard"
     >
-      {isLoading ? (
-        <LoadingState label="Calculating analytics metrics..." />
-      ) : isError || !analytics ? (
-        <div className="space-y-4">
-          <Alert tone="danger" title="Error Loading Analytics">
-            Failed to load analytics metrics for this event.
-          </Alert>
-          <Button variant="secondary" onClick={onClose} className="w-full text-xs">
-            Close
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-bold text-foreground">{analytics.title}</h3>
-            <p className="text-xs text-muted-foreground">Capacity: {analytics.capacity} seats</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
-              <span className="text-muted-foreground block font-medium">YES RSVPs</span>
-              <span className="text-xl font-bold text-emerald-600">{analytics.rsvps.yes}</span>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
-              <span className="text-muted-foreground block font-medium">Waitlist Queue</span>
-              <span className="text-xl font-bold text-amber-600">{analytics.waitlistCount}</span>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
-              <span className="text-muted-foreground block font-medium">Tickets Issued</span>
-              <span className="text-xl font-bold text-foreground">{analytics.tickets.issued}</span>
-            </div>
-            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
-              <span className="text-muted-foreground block font-medium">Tickets Checked-In</span>
-              <span className="text-xl font-bold text-primary">{analytics.tickets.used}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2 rounded-lg border border-border/60 bg-card p-3 text-xs">
-            <div className="flex justify-between font-medium">
-              <span>Occupancy Rate:</span>
-              <span className="font-bold text-primary">{analytics.tickets.occupancyRate}%</span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full bg-primary transition-all duration-500"
-                style={{ width: `${analytics.tickets.occupancyRate}%` }}
-              />
-            </div>
-          </div>
-
-          <Button variant="secondary" onClick={onClose} className="w-full text-xs">
-            Close Analytics
-          </Button>
-        </div>
-      )}
+      <AnalyticsContent
+        isLoading={isLoading}
+        isError={isError}
+        analytics={analytics}
+        onClose={onClose}
+      />
     </Dialog>
+  );
+}
+
+function OrganizerEventBadge({
+  deletedAt,
+  status,
+  isCompleted,
+}: Readonly<{
+  deletedAt?: string | null;
+  status: string;
+  isCompleted?: boolean;
+}>) {
+  if (deletedAt) {
+    return (
+      <Badge
+        tone="danger"
+        className="text-[10px] font-bold uppercase bg-rose-950/80 text-rose-300 border-rose-800 flex items-center gap-1"
+      >
+        <Trash2 className="h-3 w-3" />
+        <span>Deleted</span>
+      </Badge>
+    );
+  }
+  if (status === 'DRAFT') {
+    return (
+      <Badge
+        tone="neutral"
+        className="text-[10px] font-bold uppercase bg-amber-500/10 text-amber-600 border-amber-500/30 flex items-center gap-1"
+      >
+        <FileText className="h-3 w-3" />
+        <span>Draft</span>
+      </Badge>
+    );
+  }
+  if (status === 'CANCELLED') {
+    return (
+      <Badge
+        tone="danger"
+        className="text-[10px] font-bold uppercase flex items-center gap-1"
+      >
+        <Ban className="h-3 w-3" />
+        <span>Cancelled</span>
+      </Badge>
+    );
+  }
+  if (isCompleted) {
+    return (
+      <Badge
+        tone="neutral"
+        className="text-[10px] font-bold uppercase bg-slate-500/10 text-slate-500 border-slate-500/30 flex items-center gap-1"
+      >
+        <Flag className="h-3 w-3" />
+        <span>Completed</span>
+      </Badge>
+    );
+  }
+  return (
+    <Badge
+      tone="success"
+      className="text-[10px] font-bold uppercase flex items-center gap-1"
+    >
+      <Rocket className="h-3 w-3" />
+      <span>Published</span>
+    </Badge>
+  );
+}
+
+function getEventSubtitle(
+  published: number,
+  draft: number,
+  completed: number,
+  cancelled: number,
+): string {
+  if (published > 0 || draft > 0) {
+    return `${published} Published • ${draft} Drafts`;
+  }
+  if (completed > 0) {
+    return `${completed} Completed`;
+  }
+  if (cancelled > 0) {
+    return `${cancelled} Cancelled`;
+  }
+  return '0 Published • 0 Drafts';
+}
+
+function OrganizerEventListContent({
+  isLoading,
+  isError,
+  filteredItems,
+  statusFilter,
+  refetch,
+  isAdmin,
+  handleEdit,
+  handlePublish,
+  handleCancel,
+  handleDelete,
+  setSelectedAnalyticsId,
+  isPublishPending,
+  isCancelPending,
+}: Readonly<{
+  isLoading: boolean;
+  isError: boolean;
+  filteredItems: EventItem[];
+  statusFilter: string;
+  refetch: () => void;
+  isAdmin: boolean;
+  handleEdit: (event: EventItem) => void;
+  handlePublish: (event: EventItem) => void;
+  handleCancel: (id: string, title: string) => void;
+  handleDelete: (id: string, title: string) => void;
+  setSelectedAnalyticsId: (id: string) => void;
+  isPublishPending: boolean;
+  isCancelPending: boolean;
+}>) {
+  if (isLoading) {
+    return <LoadingState label="Loading organizer dashboard..." />;
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
+        <span>Failed to load organizer events. Please try again.</span>
+        <Button variant="secondary" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (filteredItems.length === 0) {
+    return (
+      <Alert tone="info">No events found under status filter "{statusFilter}".</Alert>
+    );
+  }
+
+  return (
+    <Card className="border border-border/80 bg-card">
+      <CardBody className="p-0 overflow-x-auto">
+        <Table>
+          <thead>
+            <tr className="border-b border-border/60 text-left text-xs font-semibold text-muted-foreground">
+              <th className="p-4">Event Title</th>
+              {isAdmin && <th className="p-4">Organizer ID</th>}
+              <th className="p-4">Status</th>
+              <th className="p-4">Category</th>
+              <th className="p-4">Start Date</th>
+              <th className="p-4">Capacity Status</th>
+              <th className="p-4 text-right">Actions & Lifecycle</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/40 text-xs">
+            {filteredItems.map((event) => (
+              <tr key={event.id} className="hover:bg-secondary/30 transition-colors">
+                <td className="p-4 font-bold text-foreground">
+                  <Link href={`/events/${event.id}`} className="hover:text-primary">
+                    {event.title}
+                  </Link>
+                </td>
+                {isAdmin && (
+                  <td className="p-4 whitespace-nowrap">
+                    <span
+                      className="font-mono text-[10px] text-muted-foreground inline-flex items-center gap-1"
+                      title={event.organizerId}
+                    >
+                      <User className="h-3 w-3" />
+                      <span>{event.organizerId.substring(0, 8)}...</span>
+                    </span>
+                  </td>
+                )}
+                <td className="p-4 whitespace-nowrap">
+                  <OrganizerEventBadge
+                    deletedAt={event.deletedAt}
+                    status={event.status}
+                    isCompleted={event.isCompleted}
+                  />
+                </td>
+                <td className="p-4">
+                  <Badge tone="accent" className="text-[10px]">
+                    {event.category || 'General'}
+                  </Badge>
+                </td>
+                <td className="p-4 whitespace-nowrap">
+                  {event.startDate
+                    ? new Date(event.startDate).toLocaleDateString()
+                    : 'Not set (Draft)'}
+                </td>
+                <td className="p-4 whitespace-nowrap">
+                  <span className="font-semibold">{event.yesCount}</span> /{' '}
+                  {event.capacity}
+                  {event.isFull && !event.isCompleted && (
+                    <Badge tone="danger" className="ml-2 text-[10px]">
+                      FULL ({event.waitlistCount} Waitlist)
+                    </Badge>
+                  )}
+                </td>
+                <td className="p-4 text-right whitespace-nowrap space-x-2">
+                  {!event.deletedAt && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleEdit(event)}
+                      className="text-xs font-semibold"
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Edit
+                    </Button>
+                  )}
+
+                  {!event.deletedAt && event.status === 'DRAFT' && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handlePublish(event)}
+                      loading={isPublishPending}
+                      className="text-xs font-bold"
+                    >
+                      <Rocket className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Publish
+                    </Button>
+                  )}
+
+                  {!event.deletedAt &&
+                    event.status === 'PUBLISHED' &&
+                    !event.isCompleted && (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleCancel(event.id, event.title)}
+                        loading={isCancelPending}
+                        className="text-xs"
+                      >
+                        <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Cancel
+                      </Button>
+                    )}
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSelectedAnalyticsId(event.id)}
+                    className="text-xs"
+                  >
+                    Analytics
+                  </Button>
+
+                  {!event.deletedAt ? (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(event.id, event.title)}
+                      className="text-xs"
+                    >
+                      Delete
+                    </Button>
+                  ) : (
+                    <Badge tone="neutral" className="text-[10px] text-muted-foreground">
+                      Archived
+                    </Badge>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </CardBody>
+    </Card>
   );
 }
 
 export default function OrganizerDashboardPage() {
   const { user, loading: isAuthLoading } = useAuth();
   const toast = useToast();
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'DRAFT' | 'COMPLETED' | 'CANCELLED' | 'DELETED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'PUBLISHED' | 'DRAFT' | 'COMPLETED' | 'CANCELLED' | 'DELETED'
+  >('ALL');
 
-  const { data: eventsData, isLoading, isError, refetch } = useMyOrganizedEvents({ page: 1, limit: 100 });
+  const {
+    data: eventsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useMyOrganizedEvents({ page: 1, limit: 100 });
 
   const deleteMutation = useDeleteEvent();
   const publishMutation = usePublishEvent();
   const cancelMutation = useCancelEvent();
   const [selectedAnalyticsId, setSelectedAnalyticsId] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
-  const [editingDefaultStatus, setEditingDefaultStatus] = useState<'DRAFT' | 'PUBLISHED' | 'CANCELLED' | undefined>(undefined);
+  const [editingDefaultStatus, setEditingDefaultStatus] = useState<
+    'DRAFT' | 'PUBLISHED' | 'CANCELLED' | undefined
+  >(undefined);
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
@@ -156,7 +481,8 @@ export default function OrganizerDashboardPage() {
         <ShellHeader />
         <main className="mx-auto max-w-4xl px-4 py-12 text-center space-y-4">
           <Alert tone="danger" title="Access Restricted">
-            Organizer dashboard is available only to Staff and Admin accounts. Please log in as staff@demo.local.
+            Organizer dashboard is available only to Staff and Admin accounts. Please log
+            in as staff@demo.local.
           </Alert>
         </main>
       </div>
@@ -169,22 +495,31 @@ export default function OrganizerDashboardPage() {
     if (statusFilter === 'DELETED') return Boolean(event.deletedAt);
     if (event.deletedAt && statusFilter !== 'ALL') return false;
     if (statusFilter === 'ALL') return true;
-    if (statusFilter === 'COMPLETED') return event.isCompleted && event.status === 'PUBLISHED';
-    if (statusFilter === 'PUBLISHED') return event.status === 'PUBLISHED' && !event.isCompleted;
+    if (statusFilter === 'COMPLETED')
+      return event.isCompleted && event.status === 'PUBLISHED';
+    if (statusFilter === 'PUBLISHED')
+      return event.status === 'PUBLISHED' && !event.isCompleted;
     return event.status === statusFilter;
   });
 
   const totalEvents = rawItems.length;
-  const publishedCount = rawItems.filter((e) => !e.deletedAt && e.status === 'PUBLISHED' && !e.isCompleted).length;
+  const publishedCount = rawItems.filter(
+    (e) => !e.deletedAt && e.status === 'PUBLISHED' && !e.isCompleted,
+  ).length;
   const draftCount = rawItems.filter((e) => !e.deletedAt && e.status === 'DRAFT').length;
-  const completedCount = rawItems.filter((e) => !e.deletedAt && e.isCompleted && e.status === 'PUBLISHED').length;
-  const cancelledCount = rawItems.filter((e) => !e.deletedAt && e.status === 'CANCELLED').length;
+  const completedCount = rawItems.filter(
+    (e) => !e.deletedAt && e.isCompleted && e.status === 'PUBLISHED',
+  ).length;
+  const cancelledCount = rawItems.filter(
+    (e) => !e.deletedAt && e.status === 'CANCELLED',
+  ).length;
   const deletedCount = rawItems.filter((e) => Boolean(e.deletedAt)).length;
 
   const totalYesRsvps = rawItems.reduce((acc, curr) => acc + curr.yesCount, 0);
   const totalWaitlist = rawItems.reduce((acc, curr) => acc + curr.waitlistCount, 0);
   const totalCapacity = rawItems.reduce((acc, curr) => acc + curr.capacity, 0);
-  const overallOccupancy = totalCapacity > 0 ? Math.round((totalYesRsvps / totalCapacity) * 100) : 0;
+  const overallOccupancy =
+    totalCapacity > 0 ? Math.round((totalYesRsvps / totalCapacity) * 100) : 0;
 
   const handlePublish = (eventItem: EventItem) => {
     setEditingDefaultStatus('PUBLISHED');
@@ -196,6 +531,27 @@ export default function OrganizerDashboardPage() {
     setEditingEvent(eventItem);
   };
 
+  const executeCancel = (id: string, title: string) => {
+    setConfirmState((prev) => ({ ...prev, loading: true }));
+    cancelMutation.mutate(id, {
+      onSuccess: () => {
+        toast.info(`Event "${title}" has been cancelled.`, 'Event Cancelled');
+        setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
+        refetch();
+      },
+      onError: (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        toast.error(
+          err?.response?.data?.message || err?.message || 'Failed to cancel event.',
+          'Error',
+        );
+        setConfirmState((prev) => ({ ...prev, loading: false }));
+      },
+    });
+  };
+
   const handleCancel = (id: string, title: string) => {
     setConfirmState({
       open: true,
@@ -204,19 +560,27 @@ export default function OrganizerDashboardPage() {
       confirmText: 'Yes, Cancel Event',
       variant: 'danger',
       loading: false,
-      action: () => {
-        setConfirmState((prev) => ({ ...prev, loading: true }));
-        cancelMutation.mutate(id, {
-          onSuccess: () => {
-            toast.info(`Event "${title}" has been cancelled.`, 'Event Cancelled');
-            setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
-            refetch();
-          },
-          onError: (err: any) => {
-            toast.error(err?.response?.data?.message || err?.message || 'Failed to cancel event.', 'Error');
-            setConfirmState((prev) => ({ ...prev, loading: false }));
-          },
-        });
+      action: () => executeCancel(id, title),
+    });
+  };
+
+  const executeDelete = (id: string, title: string) => {
+    setConfirmState((prev) => ({ ...prev, loading: true }));
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success(`Event "${title}" deleted.`, 'Deleted');
+        setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
+        refetch();
+      },
+      onError: (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        toast.error(
+          err?.response?.data?.message || err?.message || 'Failed to delete event.',
+          'Error',
+        );
+        setConfirmState((prev) => ({ ...prev, loading: false }));
       },
     });
   };
@@ -229,20 +593,7 @@ export default function OrganizerDashboardPage() {
       confirmText: 'Yes, Delete Event',
       variant: 'danger',
       loading: false,
-      action: () => {
-        setConfirmState((prev) => ({ ...prev, loading: true }));
-        deleteMutation.mutate(id, {
-          onSuccess: () => {
-            toast.success(`Event "${title}" deleted.`, 'Deleted');
-            setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
-            refetch();
-          },
-          onError: (err: any) => {
-            toast.error(err?.response?.data?.message || err?.message || 'Failed to delete event.', 'Error');
-            setConfirmState((prev) => ({ ...prev, loading: false }));
-          },
-        });
-      },
+      action: () => executeDelete(id, title),
     });
   };
 
@@ -254,7 +605,9 @@ export default function OrganizerDashboardPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
         <PageHeader
-          title={isAdmin ? 'Admin Event Management Console' : 'Organizer Management Dashboard'}
+          title={
+            isAdmin ? 'Admin Event Management Console' : 'Organizer Management Dashboard'
+          }
           description={
             isAdmin
               ? 'Full administrative control over all platform events, drafts, publishing, cancellations, and system-wide analytics'
@@ -274,15 +627,12 @@ export default function OrganizerDashboardPage() {
           <StatCard
             title={isAdmin ? 'All Platform Events' : 'My Organized Events'}
             value={totalEvents}
-            subtitle={
-              publishedCount > 0 || draftCount > 0
-                ? `${publishedCount} Published • ${draftCount} Drafts`
-                : completedCount > 0
-                ? `${completedCount} Completed`
-                : cancelledCount > 0
-                ? `${cancelledCount} Cancelled`
-                : '0 Published • 0 Drafts'
-            }
+            subtitle={getEventSubtitle(
+              publishedCount,
+              draftCount,
+              completedCount,
+              cancelledCount,
+            )}
             trend={isAdmin ? 'Global Scope' : 'My Portfolio'}
             icon={<Calendar className="h-4 w-4" />}
           />
@@ -395,165 +745,21 @@ export default function OrganizerDashboardPage() {
             </div>
           </div>
 
-          {isLoading ? (
-            <LoadingState label="Loading organizer dashboard..." />
-          ) : isError ? (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
-              <span>Failed to load organizer events. Please try again.</span>
-              <Button variant="secondary" size="sm" onClick={() => refetch()}>
-                Retry
-              </Button>
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <Alert tone="info">
-              No events found under status filter "{statusFilter}".
-            </Alert>
-          ) : (
-            <Card className="border border-border/80 bg-card">
-              <CardBody className="p-0 overflow-x-auto">
-                <Table>
-                  <thead>
-                    <tr className="border-b border-border/60 text-left text-xs font-semibold text-muted-foreground">
-                      <th className="p-4">Event Title</th>
-                      {isAdmin && <th className="p-4">Organizer ID</th>}
-                      <th className="p-4">Status</th>
-                      <th className="p-4">Category</th>
-                      <th className="p-4">Start Date</th>
-                      <th className="p-4">Capacity Status</th>
-                      <th className="p-4 text-right">Actions & Lifecycle</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40 text-xs">
-                    {filteredItems.map((event) => (
-                      <tr key={event.id} className="hover:bg-secondary/30 transition-colors">
-                        <td className="p-4 font-bold text-foreground">
-                          <Link href={`/events/${event.id}`} className="hover:text-primary">
-                            {event.title}
-                          </Link>
-                        </td>
-                        {isAdmin && (
-                          <td className="p-4 whitespace-nowrap">
-                            <span className="font-mono text-[10px] text-muted-foreground inline-flex items-center gap-1" title={event.organizerId}>
-                              <User className="h-3 w-3" />
-                              <span>{event.organizerId.substring(0, 8)}...</span>
-                            </span>
-                          </td>
-                        )}
-                        <td className="p-4 whitespace-nowrap">
-                          {event.deletedAt ? (
-                            <Badge tone="danger" className="text-[10px] font-bold uppercase bg-rose-950/80 text-rose-300 border-rose-800 flex items-center gap-1">
-                              <Trash2 className="h-3 w-3" />
-                              <span>Deleted</span>
-                            </Badge>
-                          ) : event.status === 'DRAFT' ? (
-                            <Badge tone="neutral" className="text-[10px] font-bold uppercase bg-amber-500/10 text-amber-600 border-amber-500/30 flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              <span>Draft</span>
-                            </Badge>
-                          ) : event.status === 'CANCELLED' ? (
-                            <Badge tone="danger" className="text-[10px] font-bold uppercase flex items-center gap-1">
-                              <Ban className="h-3 w-3" />
-                              <span>Cancelled</span>
-                            </Badge>
-                          ) : event.isCompleted ? (
-                            <Badge tone="neutral" className="text-[10px] font-bold uppercase bg-slate-500/10 text-slate-500 border-slate-500/30 flex items-center gap-1">
-                              <Flag className="h-3 w-3" />
-                              <span>Completed</span>
-                            </Badge>
-                          ) : (
-                            <Badge tone="success" className="text-[10px] font-bold uppercase flex items-center gap-1">
-                              <Rocket className="h-3 w-3" />
-                              <span>Published</span>
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <Badge tone="accent" className="text-[10px]">
-                            {event.category || 'General'}
-                          </Badge>
-                        </td>
-                        <td className="p-4 whitespace-nowrap">
-                          {event.startDate
-                            ? new Date(event.startDate).toLocaleDateString()
-                            : 'Not set (Draft)'}
-                        </td>
-                        <td className="p-4 whitespace-nowrap">
-                          <span className="font-semibold">{event.yesCount}</span> / {event.capacity}
-                          {event.isFull && !event.isCompleted && (
-                            <Badge tone="danger" className="ml-2 text-[10px]">
-                              FULL ({event.waitlistCount} Waitlist)
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="p-4 text-right whitespace-nowrap space-x-2">
-                          {!event.deletedAt && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleEdit(event)}
-                              className="text-xs font-semibold"
-                            >
-                              <Pencil className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Edit
-                            </Button>
-                          )}
-
-                          {/* Publish Draft Action */}
-                          {!event.deletedAt && event.status === 'DRAFT' && (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handlePublish(event)}
-                              loading={publishMutation.isPending}
-                              className="text-xs font-bold"
-                            >
-                              <Rocket className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Publish
-                            </Button>
-                          )}
-
-                          {/* Cancel Published Event Action */}
-                          {!event.deletedAt && event.status === 'PUBLISHED' && !event.isCompleted && (
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => handleCancel(event.id, event.title)}
-                              loading={cancelMutation.isPending}
-                              className="text-xs"
-                            >
-                              <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" /> Cancel
-                            </Button>
-                          )}
-
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setSelectedAnalyticsId(event.id)}
-                            className="text-xs"
-                          >
-                            Analytics
-                          </Button>
-
-                          {!event.deletedAt ? (
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => handleDelete(event.id, event.title)}
-                              className="text-xs"
-                            >
-                              Delete
-                            </Button>
-                          ) : (
-                            <Badge tone="neutral" className="text-[10px] text-muted-foreground">
-                              Archived
-                            </Badge>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </CardBody>
-            </Card>
-          )}
+          <OrganizerEventListContent
+            isLoading={isLoading}
+            isError={isError}
+            filteredItems={filteredItems}
+            statusFilter={statusFilter}
+            refetch={refetch}
+            isAdmin={isAdmin}
+            handleEdit={handleEdit}
+            handlePublish={handlePublish}
+            handleCancel={handleCancel}
+            handleDelete={handleDelete}
+            setSelectedAnalyticsId={setSelectedAnalyticsId}
+            isPublishPending={publishMutation.isPending}
+            isCancelPending={cancelMutation.isPending}
+          />
         </section>
 
         {selectedAnalyticsId && (

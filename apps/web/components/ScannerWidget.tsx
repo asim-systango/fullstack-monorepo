@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Badge, Button, Card, CardBody, CardHeader, CardTitle, Form, TextInput, useToast } from '@shared/ui/components';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Form,
+  TextInput,
+  useToast,
+} from '@shared/ui/components';
 import { useCheckInTicket } from '@/hooks/useTickets';
 import { CameraQrScanner } from './CameraQrScanner';
 
@@ -22,15 +32,20 @@ export function ScannerWidget() {
           'Check-In Successful',
         );
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         const errorMsg =
-          err?.response?.data?.message || err?.message || 'Ticket is invalid or has already been used.';
+          err &&
+          typeof err === 'object' &&
+          'message' in err &&
+          typeof (err as { message: string }).message === 'string'
+            ? (err as { message: string }).message
+            : 'Ticket is invalid or has already been used.';
         toast.error(errorMsg, 'Check-In Failed');
       },
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     handleProcessCheckIn(payloadInput);
   };
@@ -48,7 +63,8 @@ export function ScannerWidget() {
 
       <CardBody className="space-y-5">
         <p className="text-xs text-muted-foreground">
-          Scan an attendee's QR code pass directly using your phone's live camera, or enter the payload manually below.
+          Scan an attendee's QR code pass directly using your phone's live camera, or
+          enter the payload manually below.
         </p>
 
         {/* Live Smartphone Camera QR Scanner */}
@@ -61,7 +77,11 @@ export function ScannerWidget() {
         </div>
 
         {/* Manual Payload Entry Form */}
-        <Form onSubmit={handleSubmit} pending={checkInMutation.isPending} className="space-y-3">
+        <Form
+          onSubmit={handleSubmit}
+          pending={checkInMutation.isPending}
+          className="space-y-3"
+        >
           <div className="flex gap-2">
             <TextInput
               placeholder="e.g. TKT-ad833bfa-21a544e6-1001"
@@ -69,7 +89,12 @@ export function ScannerWidget() {
               onChange={(e) => setPayloadInput(e.target.value)}
               className="flex-1 font-mono text-xs"
             />
-            <Button type="submit" variant="primary" loading={checkInMutation.isPending} loadingText="Verifying...">
+            <Button
+              type="submit"
+              variant="primary"
+              loading={checkInMutation.isPending}
+              loadingText="Verifying..."
+            >
               Check In
             </Button>
           </div>

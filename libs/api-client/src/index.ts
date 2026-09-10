@@ -21,6 +21,8 @@ export class ApiClientError extends Error {
   }
 }
 
+const DEFAULT_ERROR_MESSAGE = 'Something went wrong. Please try again.';
+
 function toApiError(error: AxiosError): ApiClientError {
   const data = error.response?.data;
   const parsed = apiErrorSchema.safeParse(data);
@@ -28,7 +30,7 @@ function toApiError(error: AxiosError): ApiClientError {
     if (parsed.data.statusCode >= 500) {
       return new ApiClientError({
         ...parsed.data,
-        message: 'Something went wrong. Please try again.',
+        message: DEFAULT_ERROR_MESSAGE,
       });
     }
     return new ApiClientError(parsed.data);
@@ -37,26 +39,29 @@ function toApiError(error: AxiosError): ApiClientError {
   return new ApiClientError({
     statusCode: status,
     error: status >= 500 ? 'ServerError' : 'UnknownError',
-    message: status >= 500 ? 'Something went wrong. Please try again.' : 'Request failed. Please try again.',
+    message: status >= 500 ? DEFAULT_ERROR_MESSAGE : 'Request failed. Please try again.',
   });
 }
 
-export function toUserMessage(
-  err: unknown,
-  fallback = 'Something went wrong. Please try again.',
-): string {
+export function toUserMessage(err: unknown, fallback = DEFAULT_ERROR_MESSAGE): string {
   if (err instanceof ApiClientError) {
     if (err.statusCode >= 500) {
-      return 'Something went wrong. Please try again.';
+      return DEFAULT_ERROR_MESSAGE;
     }
-    if (typeof err.message === 'string' && err.message.toLowerCase().includes('status code')) {
-      return 'Something went wrong. Please try again.';
+    if (
+      typeof err.message === 'string' &&
+      err.message.toLowerCase().includes('status code')
+    ) {
+      return DEFAULT_ERROR_MESSAGE;
     }
     return err.message || fallback;
   }
   if (err instanceof Error) {
-    if (err.message.toLowerCase().includes('status code') || err.message.toLowerCase().includes('network error')) {
-      return 'Something went wrong. Please try again.';
+    if (
+      err.message.toLowerCase().includes('status code') ||
+      err.message.toLowerCase().includes('network error')
+    ) {
+      return DEFAULT_ERROR_MESSAGE;
     }
     return err.message;
   }

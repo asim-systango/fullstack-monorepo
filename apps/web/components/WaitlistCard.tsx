@@ -2,14 +2,22 @@
 
 import Link from 'next/link';
 import { Hourglass, Clock, MapPin, Calendar as CalendarIcon } from 'lucide-react';
-import { Badge, Button, Card, CardBody, CardHeader, CardTitle } from '@shared/ui/components';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+} from '@shared/ui/components';
 import type { WaitlistEntryItem } from '@/hooks/useTickets';
 
 interface WaitlistCardProps {
   entry: WaitlistEntryItem;
 }
 
-export function WaitlistCard({ entry }: WaitlistCardProps) {
+export function WaitlistCard(props: Readonly<WaitlistCardProps>) {
+  const { entry } = props;
   const event = entry.event;
   const startDate = event?.startDate ? new Date(event.startDate) : null;
   const formattedDate = startDate
@@ -34,13 +42,18 @@ export function WaitlistCard({ entry }: WaitlistCardProps) {
           <Badge tone="accent" className="text-xs font-semibold">
             {event?.category || 'General'}
           </Badge>
-          <Badge tone="accent" className="text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center gap-1">
+          <Badge
+            tone="accent"
+            className="text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center gap-1"
+          >
             <Hourglass className="h-3 w-3" />
             <span>Position #{entry.position} in Queue</span>
           </Badge>
         </div>
         <CardTitle className="line-clamp-2 text-lg font-bold text-foreground transition-colors group-hover:text-primary">
-          <Link href={`/events/${entry.eventId}`}>{event?.title || 'Waitlisted Event'}</Link>
+          <Link href={`/events/${entry.eventId}`}>
+            {event?.title || 'Waitlisted Event'}
+          </Link>
         </CardTitle>
       </CardHeader>
 
@@ -52,7 +65,9 @@ export function WaitlistCard({ entry }: WaitlistCardProps) {
         <div className="space-y-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5 font-medium text-foreground/90">
             <CalendarIcon className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            <span>{formattedDate} {startDate ? `• ${formattedTime}` : ''}</span>
+            <span>
+              {formattedDate} {startDate ? `• ${formattedTime}` : ''}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -67,7 +82,8 @@ export function WaitlistCard({ entry }: WaitlistCardProps) {
             <span>Waitlist Queue Active</span>
           </p>
           <p className="text-[11px] opacity-90 leading-relaxed">
-            You are #{entry.position} in line. You will automatically receive a confirmed ticket pass if an attendee cancels!
+            You are #{entry.position} in line. You will automatically receive a confirmed
+            ticket pass if an attendee cancels!
           </p>
         </div>
 

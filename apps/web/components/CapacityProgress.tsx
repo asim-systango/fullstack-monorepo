@@ -7,13 +7,10 @@ interface CapacityProgressProps {
   className?: string;
 }
 
-export function CapacityProgress({
-  capacity,
-  yesCount,
-  showText = true,
-  className = '',
-}: CapacityProgressProps) {
-  const percentage = capacity > 0 ? Math.min(100, Math.round((yesCount / capacity) * 100)) : 0;
+export function CapacityProgress(props: Readonly<CapacityProgressProps>) {
+  const { capacity, yesCount, showText = true, className = '' } = props;
+  const percentage =
+    capacity > 0 ? Math.min(100, Math.round((yesCount / capacity) * 100)) : 0;
   const isFull = yesCount >= capacity;
 
   let progressColor = 'bg-emerald-500';
@@ -27,7 +24,9 @@ export function CapacityProgress({
     <div className={`space-y-1.5 ${className}`}>
       {showText && (
         <div className="flex justify-between text-xs font-medium text-muted-foreground">
-          <span>Capacity: {yesCount} / {capacity}</span>
+          <span>
+            Capacity: {yesCount} / {capacity}
+          </span>
           <span className={isFull ? 'text-rose-500 font-semibold' : 'text-foreground'}>
             {isFull ? 'Waitlist Active' : `${capacity - yesCount} spots left`}
           </span>

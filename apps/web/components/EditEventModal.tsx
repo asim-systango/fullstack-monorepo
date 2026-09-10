@@ -19,13 +19,8 @@ interface EditEventModalProps {
   defaultStatus?: 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
 }
 
-export function EditEventModal({
-  event,
-  open,
-  onClose,
-  onSuccess,
-  defaultStatus,
-}: EditEventModalProps) {
+export function EditEventModal(props: Readonly<EditEventModalProps>) {
+  const { event, open, onClose, onSuccess, defaultStatus } = props;
   const updateMutation = useUpdateEvent();
   const toast = useToast();
 
@@ -34,23 +29,30 @@ export function EditEventModal({
   const targetStatus = defaultStatus || event.status;
   const isPublishing = targetStatus === 'PUBLISHED' && event.status === 'DRAFT';
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: Record<string, unknown>) => {
     updateMutation.mutate(
-      { id: event.id, input: values },
+      { id: event.id, input: values as unknown as Partial<CreateEventInput> },
       {
         onSuccess: () => {
+          const title = typeof values.title === 'string' ? values.title : event.title;
           toast.success(
-            isPublishing ? `Event "${values.title || event.title}" published successfully!` : `Event updated successfully!`,
+            isPublishing
+              ? `Event "${title}" published successfully!`
+              : `Event updated successfully!`,
             isPublishing ? 'Event Published' : 'Event Saved',
           );
           onClose();
           onSuccess?.();
         },
-        onError: (err: any) => {
-          toast.error(
-            err?.response?.data?.message || err?.message || 'Failed to save event details.',
-            'Save Error',
-          );
+        onError: (err: unknown) => {
+          const message =
+            err &&
+            typeof err === 'object' &&
+            'message' in err &&
+            typeof (err as { message: string }).message === 'string'
+              ? (err as { message: string }).message
+              : 'Failed to save event details.';
+          toast.error(message, 'Save Error');
         },
       },
     );

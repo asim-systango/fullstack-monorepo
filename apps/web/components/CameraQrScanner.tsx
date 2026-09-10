@@ -9,7 +9,8 @@ interface CameraQrScannerProps {
   autoStart?: boolean;
 }
 
-export function CameraQrScanner({ onScanSuccess, autoStart = false }: CameraQrScannerProps) {
+export function CameraQrScanner(props: Readonly<CameraQrScannerProps>) {
+  const { onScanSuccess, autoStart = false } = props;
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
@@ -87,11 +88,16 @@ export function CameraQrScanner({ onScanSuccess, autoStart = false }: CameraQrSc
       }
 
       setIsScanning(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error starting live camera stream:', err);
-      setCameraError(
-        err?.message || 'Unable to start camera stream. Please check camera permissions in your browser settings.',
-      );
+      const errorMessage =
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as { message: string }).message === 'string'
+          ? (err as { message: string }).message
+          : 'Unable to start camera stream. Please check camera permissions in your browser settings.';
+      setCameraError(errorMessage);
       setIsScanning(false);
     }
   };
@@ -161,7 +167,8 @@ export function CameraQrScanner({ onScanSuccess, autoStart = false }: CameraQrSc
           <div>
             <h4 className="text-sm font-bold text-foreground">Camera Check-In Scanner</h4>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Click the button below to open your camera and scan attendee QR passes automatically.
+              Click the button below to open your camera and scan attendee QR passes
+              automatically.
             </p>
           </div>
           <Button
@@ -194,7 +201,12 @@ export function CameraQrScanner({ onScanSuccess, autoStart = false }: CameraQrSc
         <Alert tone="danger" title="Camera Access Info">
           <p className="mt-1 text-xs">{cameraError}</p>
           <div className="mt-2">
-            <Button variant="primary" size="sm" onClick={startScanner} className="text-xs">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={startScanner}
+              className="text-xs"
+            >
               Retry Camera Permission
             </Button>
           </div>

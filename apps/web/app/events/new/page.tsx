@@ -25,7 +25,7 @@ export default function NewEventPage() {
 
   const isOrganizer = user?.role === 'admin' || user?.role === 'staff';
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: CreateEventInput) => {
     createMutation.mutate(values, {
       onSuccess: (newEvent) => {
         router.push(`/events/${newEvent.id}`);
@@ -45,7 +45,8 @@ export default function NewEventPage() {
 
         {!isOrganizer ? (
           <Alert tone="danger" title="Access Restricted">
-            Only Admin or Staff organizers can publish new events. Please log in as staff@demo.local.
+            Only Admin or Staff organizers can publish new events. Please log in as
+            staff@demo.local.
           </Alert>
         ) : (
           <Card className="border border-border/80 bg-card shadow-sm">

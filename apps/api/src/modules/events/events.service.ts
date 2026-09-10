@@ -11,7 +11,10 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { QueryEventsDto } from './dto/query-events.dto';
 import { Rsvp, RsvpStatus } from '../rsvps/entities/rsvp.entity';
-import { WaitlistEntry, WaitlistStatus } from '../waitlist/entities/waitlist-entry.entity';
+import {
+  WaitlistEntry,
+  WaitlistStatus,
+} from '../waitlist/entities/waitlist-entry.entity';
 import { Ticket, TicketStatus } from '../tickets/entities/ticket.entity';
 import type { JwtUser } from '../../common/auth';
 
@@ -70,13 +73,21 @@ export class EventsService {
     } = queryDto;
 
     const isAdmin = user?.role === 'admin';
-    const isOrganizerOwner = user && (user.role === 'admin' || user.role === 'staff') && organizerId && organizerId === user.id;
+    const isOrganizerOwner =
+      user &&
+      (user.role === 'admin' || user.role === 'staff') &&
+      organizerId &&
+      organizerId === user.id;
 
     // Security check: Only admins or the event organizer owner can query DRAFT events or use includeAllStatuses/includeDeleted
     const canAccessInternalStatuses = Boolean(isAdmin || isOrganizerOwner);
 
-    const effectiveIncludeAllStatuses = canAccessInternalStatuses ? Boolean(includeAllStatuses) : false;
-    const effectiveIncludeDeleted = canAccessInternalStatuses ? Boolean(includeDeleted) : false;
+    const effectiveIncludeAllStatuses = canAccessInternalStatuses
+      ? Boolean(includeAllStatuses)
+      : false;
+    const effectiveIncludeDeleted = canAccessInternalStatuses
+      ? Boolean(includeDeleted)
+      : false;
 
     let effectiveStatus = status;
     if (!canAccessInternalStatuses && status === EventStatus.DRAFT) {
@@ -117,7 +128,9 @@ export class EventsService {
       qb.andWhere('event.status = :status', { status: effectiveStatus });
     } else if (!effectiveIncludeAllStatuses) {
       // Default to PUBLISHED for public catalog queries
-      qb.andWhere('event.status = :defaultStatus', { defaultStatus: EventStatus.PUBLISHED });
+      qb.andWhere('event.status = :defaultStatus', {
+        defaultStatus: EventStatus.PUBLISHED,
+      });
     }
 
     if (startDate) {
@@ -127,9 +140,11 @@ export class EventsService {
     if (endDate) {
       const end = new Date(endDate);
       if (!isNaN(end.getTime())) {
-        if (typeof endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test((endDate as string).trim())) {
-          end.setUTCHours(23, 59, 59, 999);
-        } else if (end.getUTCHours() === 0 && end.getUTCMinutes() === 0) {
+        const isDateOnlyString =
+          typeof endDate === 'string' &&
+          /^\d{4}-\d{2}-\d{2}$/.test((endDate as string).trim());
+        const isMidnight = end.getUTCHours() === 0 && end.getUTCMinutes() === 0;
+        if (isDateOnlyString || isMidnight) {
           end.setUTCHours(23, 59, 59, 999);
         }
         qb.andWhere('event.endDate <= :endDate', { endDate: end });
@@ -144,7 +159,9 @@ export class EventsService {
         subQuery
           .select('COALESCE(SUM(1 + r.guestCount), 0)', 'yesCount')
           .from(Rsvp, 'r')
-          .where('r.eventId = event.id AND r.status = :yesStatus', { yesStatus: RsvpStatus.YES }),
+          .where('r.eventId = event.id AND r.status = :yesStatus', {
+            yesStatus: RsvpStatus.YES,
+          }),
       'yesCount',
     );
 
@@ -159,9 +176,7 @@ export class EventsService {
       'waitlistCount',
     );
 
-    qb.orderBy('event.startDate', 'ASC')
-      .offset(skip)
-      .limit(sanitizedLimit);
+    qb.orderBy('event.startDate', 'ASC').offset(skip).limit(sanitizedLimit);
 
     const { entities, raw } = await qb.getRawAndEntities();
     const total = await qb.getCount();
@@ -169,7 +184,10 @@ export class EventsService {
     const items = entities.map((event, index) => {
       const rawRow = raw[index] || {};
       const yesCount = parseInt(rawRow.yesCount ?? rawRow.yescount ?? '0', 10);
-      const waitlistCount = parseInt(rawRow.waitlistCount ?? rawRow.waitlistcount ?? '0', 10);
+      const waitlistCount = parseInt(
+        rawRow.waitlistCount ?? rawRow.waitlistcount ?? '0',
+        10,
+      );
       return this.calculateEventMetrics(event, yesCount, waitlistCount);
     });
 
@@ -265,7 +283,11 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
-  async cancel(id: string, userId: string, role: string): Promise<{ success: boolean; message: string }> {
+  async cancel(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<{ success: boolean; message: string }> {
     const event = await this.eventsRepository.findOne({ where: { id } });
     if (!event || event.deletedAt) {
       throw new NotFoundException(`Event with ID "${id}" not found.`);
@@ -314,7 +336,12 @@ export class EventsService {
     }
   }
 
-  async update(id: string, updateEventDto: UpdateEventDto, userId: string, role: string): Promise<Event> {
+  async update(
+    id: string,
+    updateEventDto: UpdateEventDto,
+    userId: string,
+    role: string,
+  ): Promise<Event> {
     const event = await this.eventsRepository.findOne({ where: { id } });
     if (!event || event.deletedAt) {
       throw new NotFoundException(`Event with ID "${id}" not found.`);
@@ -344,7 +371,11 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
-  async remove(id: string, userId: string, role: string): Promise<{ success: boolean; message: string }> {
+  async remove(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<{ success: boolean; message: string }> {
     const event = await this.eventsRepository.findOne({ where: { id } });
     if (!event || event.deletedAt) {
       throw new NotFoundException(`Event with ID "${id}" not found.`);
@@ -359,13 +390,18 @@ export class EventsService {
   }
 
   async getAnalytics(id: string, userId: string, role: string) {
-    const event = await this.eventsRepository.findOne({ where: { id }, withDeleted: true });
+    const event = await this.eventsRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
     if (!event) {
       throw new NotFoundException(`Event with ID "${id}" not found.`);
     }
 
     if (role !== 'admin' && role !== 'staff' && event.organizerId !== userId) {
-      throw new ForbiddenException('You are not authorized to view analytics for this event.');
+      throw new ForbiddenException(
+        'You are not authorized to view analytics for this event.',
+      );
     }
 
     const yesResult = await this.rsvpsRepository
@@ -374,12 +410,24 @@ export class EventsService {
       .where('r.eventId = :id AND r.status = :status', { id, status: RsvpStatus.YES })
       .getRawOne();
     const yesCount = parseInt(yesResult?.yesCount ?? yesResult?.yescount ?? '0', 10);
-    const noCount = await this.rsvpsRepository.count({ where: { eventId: id, status: RsvpStatus.NO } });
-    const maybeCount = await this.rsvpsRepository.count({ where: { eventId: id, status: RsvpStatus.MAYBE } });
-    const waitlistCount = await this.waitlistRepository.count({ where: { eventId: id, status: WaitlistStatus.WAITING } });
-    const ticketsIssued = await this.ticketsRepository.count({ where: { eventId: id, status: TicketStatus.ISSUED } });
-    const ticketsUsed = await this.ticketsRepository.count({ where: { eventId: id, status: TicketStatus.USED } });
-    const ticketsCancelled = await this.ticketsRepository.count({ where: { eventId: id, status: TicketStatus.CANCELLED } });
+    const noCount = await this.rsvpsRepository.count({
+      where: { eventId: id, status: RsvpStatus.NO },
+    });
+    const maybeCount = await this.rsvpsRepository.count({
+      where: { eventId: id, status: RsvpStatus.MAYBE },
+    });
+    const waitlistCount = await this.waitlistRepository.count({
+      where: { eventId: id, status: WaitlistStatus.WAITING },
+    });
+    const ticketsIssued = await this.ticketsRepository.count({
+      where: { eventId: id, status: TicketStatus.ISSUED },
+    });
+    const ticketsUsed = await this.ticketsRepository.count({
+      where: { eventId: id, status: TicketStatus.USED },
+    });
+    const ticketsCancelled = await this.ticketsRepository.count({
+      where: { eventId: id, status: TicketStatus.CANCELLED },
+    });
 
     const activeTicketsTotal = ticketsIssued + ticketsUsed;
     const totalTicketsGenerated = activeTicketsTotal + ticketsCancelled;
@@ -400,8 +448,12 @@ export class EventsService {
         used: ticketsUsed,
         cancelled: ticketsCancelled,
         totalGenerated: totalTicketsGenerated,
-        occupancyRate: event.capacity > 0 ? Math.round((yesCount / event.capacity) * 100) : 0,
-        checkInRate: activeTicketsTotal > 0 ? Math.round((ticketsUsed / activeTicketsTotal) * 100) : 0,
+        occupancyRate:
+          event.capacity > 0 ? Math.round((yesCount / event.capacity) * 100) : 0,
+        checkInRate:
+          activeTicketsTotal > 0
+            ? Math.round((ticketsUsed / activeTicketsTotal) * 100)
+            : 0,
       },
     };
   }

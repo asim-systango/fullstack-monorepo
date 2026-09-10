@@ -31,7 +31,257 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 
-export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function EventStatusBadge({
+  status,
+  isCompleted,
+}: Readonly<{ status: string; isCompleted?: boolean }>) {
+  if (status === 'DRAFT') {
+    return (
+      <Badge
+        tone="neutral"
+        className="text-xs font-bold uppercase flex items-center gap-1"
+      >
+        <FileText className="h-3 w-3" />
+        <span>Draft</span>
+      </Badge>
+    );
+  }
+  if (status === 'CANCELLED') {
+    return (
+      <Badge
+        tone="danger"
+        className="text-xs font-bold uppercase flex items-center gap-1"
+      >
+        <Ban className="h-3 w-3" />
+        <span>Cancelled</span>
+      </Badge>
+    );
+  }
+  if (isCompleted) {
+    return (
+      <Badge
+        tone="neutral"
+        className="text-xs font-bold uppercase flex items-center gap-1"
+      >
+        <Flag className="h-3 w-3" />
+        <span>Completed</span>
+      </Badge>
+    );
+  }
+  return (
+    <Badge tone="success" className="text-xs font-medium flex items-center gap-1">
+      <Rocket className="h-3 w-3" />
+      <span>Live</span>
+    </Badge>
+  );
+}
+
+function RsvpClosedNotice({ status }: Readonly<{ status: string }>) {
+  if (status === 'DRAFT') {
+    return (
+      <>
+        <Lock className="h-3.5 w-3.5" />
+        <span>RSVPs are closed while event is in draft mode.</span>
+      </>
+    );
+  }
+  if (status === 'CANCELLED') {
+    return (
+      <>
+        <Ban className="h-3.5 w-3.5 text-danger" />
+        <span>RSVPs are closed for cancelled events.</span>
+      </>
+    );
+  }
+  return (
+    <>
+      <Flag className="h-3.5 w-3.5" />
+      <span>Registration closed (Event ended).</span>
+    </>
+  );
+}
+
+function UserRsvpNotice({
+  rsvp,
+  waitlist,
+}: Readonly<{
+  rsvp?: { status: string; ticket?: unknown };
+  waitlist?: { position: number };
+}>) {
+  if (rsvp?.status === 'YES' && rsvp.ticket) {
+    return (
+      <Alert
+        tone="success"
+        title={
+          <span className="flex items-center gap-1.5">
+            <Check className="h-4 w-4" />
+            <span>RSVP CONFIRMED</span>
+          </span>
+        }
+      >
+        <p className="mt-1 text-xs">You have a confirmed ticket for this event!</p>
+        <Link href="/tickets">
+          <Button
+            variant="primary"
+            size="sm"
+            className="w-full text-xs mt-2 font-semibold"
+          >
+            View Ticket Pass
+          </Button>
+        </Link>
+      </Alert>
+    );
+  }
+  if (waitlist) {
+    return (
+      <Alert
+        tone="info"
+        title={
+          <span className="flex items-center gap-1.5">
+            <Hourglass className="h-4 w-4" />
+            <span>WAITLISTED (Position #{waitlist.position})</span>
+          </span>
+        }
+      >
+        <p className="mt-1 text-xs">
+          This event is full. You are on the waitlist. You will automatically receive a
+          ticket if a spot opens up!
+        </p>
+      </Alert>
+    );
+  }
+  return null;
+}
+
+function RegistrationSection({
+  user,
+  isLoading,
+  isDisabled,
+  status,
+  userRsvp,
+  userWaitlist,
+  selectedGuests,
+  setSelectedGuests,
+  isPending,
+  isFull,
+  onRsvpAction,
+}: Readonly<{
+  user: unknown;
+  isLoading: boolean;
+  isDisabled: boolean;
+  status: string;
+  userRsvp?: { status: string; ticket?: unknown; guestCount?: number };
+  userWaitlist?: { position: number };
+  selectedGuests: number;
+  setSelectedGuests: (count: number) => void;
+  isPending: boolean;
+  isFull: boolean;
+  onRsvpAction: (status: 'YES' | 'NO' | 'MAYBE') => void;
+}>) {
+  if (!user) {
+    return (
+      <Alert tone="info" title="Login Required">
+        Please{' '}
+        <Link href="/login" className="font-bold underline">
+          log in
+        </Link>{' '}
+        to RSVP for this event.
+      </Alert>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <span className="text-xs text-muted-foreground animate-pulse">
+        Checking your registration status...
+      </span>
+    );
+  }
+
+  if (isDisabled) {
+    return (
+      <div className="rounded-xl border border-border/80 bg-secondary/30 p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+        <RsvpClosedNotice status={status} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <UserRsvpNotice rsvp={userRsvp} waitlist={userWaitlist} />
+
+      <div className="space-y-1 bg-muted/40 p-2.5 rounded-lg border border-border/60">
+        <label
+          htmlFor="guestCountSelect"
+          className="text-xs font-semibold text-foreground flex items-center justify-between"
+        >
+          <span>Bringing Guests? (+1)</span>
+          <span className="text-[10px] text-muted-foreground font-normal">
+            Max 5 guests
+          </span>
+        </label>
+        <select
+          id="guestCountSelect"
+          value={
+            userRsvp?.guestCount !== undefined && userRsvp?.status === 'YES'
+              ? userRsvp.guestCount
+              : selectedGuests
+          }
+          onChange={(e) => setSelectedGuests(Number(e.target.value))}
+          className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+        >
+          <option value={0}>No Guests (1 Ticket for Me)</option>
+          <option value={1}>+1 Guest (2 Spots Total)</option>
+          <option value={2}>+2 Guests (3 Spots Total)</option>
+          <option value={3}>+3 Guests (4 Spots Total)</option>
+          <option value={4}>+4 Guests (5 Spots Total)</option>
+          <option value={5}>+5 Guests (6 Spots Total)</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <span className="text-xs font-semibold text-foreground">
+          Select Your RSVP Status:
+        </span>
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            variant={
+              userRsvp?.status === 'YES' && !userWaitlist ? 'primary' : 'secondary'
+            }
+            size="sm"
+            disabled={isPending}
+            onClick={() => onRsvpAction('YES')}
+            className="text-xs font-bold"
+          >
+            Yes {isFull && !userRsvp ? '(Waitlist)' : ''}
+          </Button>
+          <Button
+            variant={userRsvp?.status === 'MAYBE' ? 'primary' : 'secondary'}
+            size="sm"
+            disabled={isPending}
+            onClick={() => onRsvpAction('MAYBE')}
+            className="text-xs font-semibold"
+          >
+            Maybe
+          </Button>
+          <Button
+            variant={userRsvp?.status === 'NO' ? 'danger' : 'secondary'}
+            size="sm"
+            disabled={isPending}
+            onClick={() => onRsvpAction('NO')}
+            className="text-xs font-semibold"
+          >
+            No
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function EventDetailPage({
+  params,
+}: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = use(params);
   const { user } = useAuth();
   const toast = useToast();
@@ -43,7 +293,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const cancelEventMutation = useCancelEvent();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [modalDefaultStatus, setModalDefaultStatus] = useState<'DRAFT' | 'PUBLISHED' | 'CANCELLED' | undefined>(undefined);
+  const [modalDefaultStatus, setModalDefaultStatus] = useState<
+    'DRAFT' | 'PUBLISHED' | 'CANCELLED' | undefined
+  >(undefined);
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
@@ -76,8 +328,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             toast.success(data.message, 'RSVP Updated');
           }
         },
-        onError: (err: any) => {
-          toast.error(err?.response?.data?.message || err?.message || 'Failed to update RSVP.', 'RSVP Error');
+        onError: (err: {
+          response?: { data?: { message?: string } };
+          message?: string;
+        }) => {
+          toast.error(
+            err?.response?.data?.message || err?.message || 'Failed to update RSVP.',
+            'RSVP Error',
+          );
         },
       },
     );
@@ -93,6 +351,26 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     setIsEditModalOpen(true);
   };
 
+  const executeCancel = () => {
+    setConfirmState((prev) => ({ ...prev, loading: true }));
+    cancelEventMutation.mutate(id, {
+      onSuccess: () => {
+        toast.info('Event has been cancelled.', 'Cancelled');
+        setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
+      },
+      onError: (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        toast.error(
+          err?.response?.data?.message || err?.message || 'Failed to cancel event.',
+          'Error',
+        );
+        setConfirmState((prev) => ({ ...prev, loading: false }));
+      },
+    });
+  };
+
   const handleCancel = () => {
     setConfirmState({
       open: true,
@@ -101,19 +379,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       confirmText: 'Yes, Cancel Event',
       variant: 'danger',
       loading: false,
-      action: () => {
-        setConfirmState((prev) => ({ ...prev, loading: true }));
-        cancelEventMutation.mutate(id, {
-          onSuccess: () => {
-            toast.info('Event has been cancelled.', 'Cancelled');
-            setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
-          },
-          onError: (err: any) => {
-            toast.error(err?.response?.data?.message || err?.message || 'Failed to cancel event.', 'Error');
-            setConfirmState((prev) => ({ ...prev, loading: false }));
-          },
-        });
-      },
+      action: executeCancel,
     });
   };
 
@@ -134,9 +400,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         <ShellHeader />
         <main className="mx-auto max-w-4xl px-4 py-12 text-center space-y-4">
           <h2 className="text-xl font-bold">Event Not Found</h2>
-          <p className="text-xs text-muted-foreground">This event is no longer available.</p>
+          <p className="text-xs text-muted-foreground">
+            This event is no longer available.
+          </p>
           <Link href="/events">
-            <Button variant="secondary" size="sm">Back to Events</Button>
+            <Button variant="secondary" size="sm">
+              Back to Events
+            </Button>
           </Link>
         </main>
       </div>
@@ -166,14 +436,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const isOrganizer = user && (user.role === 'admin' || user.id === event.organizerId);
   const userRsvp = rsvpData?.rsvp;
   const userWaitlist = rsvpData?.waitlist;
-  const isRsvpDisabled = event.status === 'DRAFT' || event.status === 'CANCELLED' || event.isCompleted;
+  const isRsvpDisabled =
+    event.status === 'DRAFT' || event.status === 'CANCELLED' || event.isCompleted;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <ShellHeader />
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-6">
-        <Link href="/events" className="text-xs font-semibold text-muted-foreground hover:text-foreground">
+        <Link
+          href="/events"
+          className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+        >
           ← Back to All Events
         </Link>
 
@@ -189,7 +463,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             }
           >
             <div className="flex items-center justify-between gap-4 flex-wrap mt-1">
-              <p className="text-xs">This event is currently in draft mode and not published to the public catalog.</p>
+              <p className="text-xs">
+                This event is currently in draft mode and not published to the public
+                catalog.
+              </p>
               {isOrganizer && (
                 <Button
                   variant="primary"
@@ -216,7 +493,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               </span>
             }
           >
-            <p className="mt-1 text-xs">This event has been cancelled by the organizer. Registration and issued ticket passes are invalidated.</p>
+            <p className="mt-1 text-xs">
+              This event has been cancelled by the organizer. Registration and issued
+              ticket passes are invalidated.
+            </p>
           </Alert>
         )}
 
@@ -230,7 +510,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               </span>
             }
           >
-            <p className="mt-1 text-xs">This event has already taken place. Registration is closed.</p>
+            <p className="mt-1 text-xs">
+              This event has already taken place. Registration is closed.
+            </p>
           </Alert>
         )}
 
@@ -241,27 +523,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               <Badge tone="accent" className="text-xs font-semibold">
                 {event.category || 'General'}
               </Badge>
-              {event.status === 'DRAFT' ? (
-                <Badge tone="neutral" className="text-xs font-bold uppercase flex items-center gap-1">
-                  <FileText className="h-3 w-3" />
-                  <span>Draft</span>
-                </Badge>
-              ) : event.status === 'CANCELLED' ? (
-                <Badge tone="danger" className="text-xs font-bold uppercase flex items-center gap-1">
-                  <Ban className="h-3 w-3" />
-                  <span>Cancelled</span>
-                </Badge>
-              ) : event.isCompleted ? (
-                <Badge tone="neutral" className="text-xs font-bold uppercase flex items-center gap-1">
-                  <Flag className="h-3 w-3" />
-                  <span>Completed</span>
-                </Badge>
-              ) : (
-                <Badge tone="success" className="text-xs font-medium flex items-center gap-1">
-                  <Rocket className="h-3 w-3" />
-                  <span>Live</span>
-                </Badge>
-              )}
+              <EventStatusBadge status={event.status} isCompleted={event.isCompleted} />
 
               {event.isFull && !event.isCompleted && event.status === 'PUBLISHED' && (
                 <Badge tone="danger" className="text-xs font-bold">
@@ -303,16 +565,43 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
           <div className="flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 font-medium text-foreground/90">
-              <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="h-4 w-4 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
-              <span>{formattedStart} {startDate ? `– ${formattedEnd}` : ''}</span>
+              <span>
+                {formattedStart} {startDate ? `– ${formattedEnd}` : ''}
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                className="h-4 w-4 text-muted-foreground"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               <span>{event.location || 'Location TBD'}</span>
             </div>
@@ -343,121 +632,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 <CapacityProgress capacity={event.capacity} yesCount={event.yesCount} />
 
                 {/* RSVP Action Status */}
-                {!user ? (
-                  <Alert tone="info" title="Login Required">
-                    Please <Link href="/login" className="font-bold underline">log in</Link> to RSVP for this event.
-                  </Alert>
-                ) : isRsvpLoading ? (
-                  <span className="text-xs text-muted-foreground animate-pulse">Checking your registration status...</span>
-                ) : isRsvpDisabled ? (
-                  <div className="rounded-xl border border-border/80 bg-secondary/30 p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-                    {event.status === 'DRAFT' ? (
-                      <>
-                        <Lock className="h-3.5 w-3.5" />
-                        <span>RSVPs are closed while event is in draft mode.</span>
-                      </>
-                    ) : event.status === 'CANCELLED' ? (
-                      <>
-                        <Ban className="h-3.5 w-3.5 text-danger" />
-                        <span>RSVPs are closed for cancelled events.</span>
-                      </>
-                    ) : (
-                      <>
-                        <Flag className="h-3.5 w-3.5" />
-                        <span>Registration closed (Event ended).</span>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Status Badge */}
-                    {userRsvp?.status === 'YES' && userRsvp.ticket ? (
-                      <Alert
-                        tone="success"
-                        title={
-                          <span className="flex items-center gap-1.5">
-                            <Check className="h-4 w-4" />
-                            <span>RSVP CONFIRMED</span>
-                          </span>
-                        }
-                      >
-                        <p className="mt-1 text-xs">You have a confirmed ticket for this event!</p>
-                        <Link href="/tickets">
-                          <Button variant="primary" size="sm" className="w-full text-xs mt-2 font-semibold">
-                            View Ticket Pass
-                          </Button>
-                        </Link>
-                      </Alert>
-                    ) : userWaitlist ? (
-                      <Alert
-                        tone="info"
-                        title={
-                          <span className="flex items-center gap-1.5">
-                            <Hourglass className="h-4 w-4" />
-                            <span>WAITLISTED (Position #{userWaitlist.position})</span>
-                          </span>
-                        }
-                      >
-                        <p className="mt-1 text-xs">This event is full. You are on the waitlist. You will automatically receive a ticket if a spot opens up!</p>
-                      </Alert>
-                    ) : null}
-
-                    {/* Guest Count (+1) Selector */}
-                    <div className="space-y-1 bg-muted/40 p-2.5 rounded-lg border border-border/60">
-                      <label htmlFor="guestCountSelect" className="text-xs font-semibold text-foreground flex items-center justify-between">
-                        <span>Bringing Guests? (+1)</span>
-                        <span className="text-[10px] text-muted-foreground font-normal">Max 5 guests</span>
-                      </label>
-                      <select
-                        id="guestCountSelect"
-                        value={userRsvp?.guestCount !== undefined && userRsvp?.status === 'YES' ? userRsvp.guestCount : selectedGuests}
-                        onChange={(e) => setSelectedGuests(Number(e.target.value))}
-                        className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
-                      >
-                        <option value={0}>No Guests (1 Ticket for Me)</option>
-                        <option value={1}>+1 Guest (2 Spots Total)</option>
-                        <option value={2}>+2 Guests (3 Spots Total)</option>
-                        <option value={3}>+3 Guests (4 Spots Total)</option>
-                        <option value={4}>+4 Guests (5 Spots Total)</option>
-                        <option value={5}>+5 Guests (6 Spots Total)</option>
-                      </select>
-                    </div>
-
-                    {/* RSVP Buttons */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-semibold text-foreground">Select Your RSVP Status:</span>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          variant={userRsvp?.status === 'YES' && !userWaitlist ? 'primary' : 'secondary'}
-                          size="sm"
-                          disabled={submitRsvpMutation.isPending}
-                          onClick={() => handleRsvpAction('YES')}
-                          className="text-xs font-bold"
-                        >
-                          Yes {event.isFull && !userRsvp ? '(Waitlist)' : ''}
-                        </Button>
-                        <Button
-                          variant={userRsvp?.status === 'MAYBE' ? 'primary' : 'secondary'}
-                          size="sm"
-                          disabled={submitRsvpMutation.isPending}
-                          onClick={() => handleRsvpAction('MAYBE')}
-                          className="text-xs font-semibold"
-                        >
-                          Maybe
-                        </Button>
-                        <Button
-                          variant={userRsvp?.status === 'NO' ? 'danger' : 'secondary'}
-                          size="sm"
-                          disabled={submitRsvpMutation.isPending}
-                          onClick={() => handleRsvpAction('NO')}
-                          className="text-xs font-semibold"
-                        >
-                          No
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <RegistrationSection
+                  user={user}
+                  isLoading={isRsvpLoading}
+                  isDisabled={Boolean(isRsvpDisabled)}
+                  status={event.status}
+                  userRsvp={userRsvp}
+                  userWaitlist={userWaitlist}
+                  selectedGuests={selectedGuests}
+                  setSelectedGuests={setSelectedGuests}
+                  isPending={submitRsvpMutation.isPending}
+                  isFull={Boolean(event.isFull)}
+                  onRsvpAction={handleRsvpAction}
+                />
               </CardBody>
             </Card>
           </div>

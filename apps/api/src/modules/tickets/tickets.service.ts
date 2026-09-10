@@ -58,11 +58,14 @@ export class TicketsService {
     }
 
     if (ticket.status === TicketStatus.CANCELLED) {
-      throw new BadRequestException('This ticket has been cancelled and cannot be used for check-in.');
+      throw new BadRequestException(
+        'This ticket has been cancelled and cannot be used for check-in.',
+      );
     }
 
     if (ticket.status === TicketStatus.USED) {
-      const existingCheckIn = ticket.checkIns && ticket.checkIns.length > 0 ? ticket.checkIns[0] : null;
+      const existingCheckIn =
+        ticket.checkIns && ticket.checkIns.length > 0 ? ticket.checkIns[0] : null;
       throw new BadRequestException({
         message: 'Ticket already used!',
         scannedAt: existingCheckIn ? existingCheckIn.scannedAt : ticket.updatedAt,
@@ -74,20 +77,25 @@ export class TicketsService {
     // Validate Event Lifecycle & Check-In Time Window (Start - 1 hour to End Date)
     const event = ticket.event;
     if (event?.status === EventStatus.CANCELLED) {
-      throw new BadRequestException('Check-in failed: The event has been cancelled by the organizer.');
+      throw new BadRequestException(
+        'Check-in failed: The event has been cancelled by the organizer.',
+      );
     }
 
     if (event?.status === EventStatus.DRAFT) {
-      throw new BadRequestException('Check-in failed: The event is still in draft mode and not published.');
+      throw new BadRequestException(
+        'Check-in failed: The event is still in draft mode and not published.',
+      );
     }
 
     const now = new Date();
     const startDate = event?.startDate ? new Date(event.startDate) : null;
-    const endDate = event?.endDate
-      ? new Date(event.endDate)
-      : startDate
-        ? new Date(startDate.getTime() + 24 * 60 * 60 * 1000)
-        : null;
+    let endDate: Date | null = null;
+    if (event?.endDate) {
+      endDate = new Date(event.endDate);
+    } else if (startDate) {
+      endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+    }
 
     if (startDate) {
       // Check-in opens 2 hours before event start time
