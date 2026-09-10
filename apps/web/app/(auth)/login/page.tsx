@@ -15,7 +15,7 @@ import {
   TextInput,
   StatusMessage,
 } from '@shared/ui/components';
-import { ApiClientError } from '@shared/api-client';
+import { toUserMessage } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
@@ -38,7 +38,7 @@ export default function LoginPage() {
       await refresh();
       router.push('/');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      setError(toUserMessage(err, 'Login failed'));
     } finally {
       setPending(false);
     }

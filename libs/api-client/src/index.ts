@@ -25,13 +25,42 @@ function toApiError(error: AxiosError): ApiClientError {
   const data = error.response?.data;
   const parsed = apiErrorSchema.safeParse(data);
   if (parsed.success) {
+    if (parsed.data.statusCode >= 500) {
+      return new ApiClientError({
+        ...parsed.data,
+        message: 'Something went wrong. Please try again.',
+      });
+    }
     return new ApiClientError(parsed.data);
   }
+  const status = error.response?.status ?? 500;
   return new ApiClientError({
-    statusCode: error.response?.status ?? 500,
-    error: 'UnknownError',
-    message: error.message || 'Request failed',
+    statusCode: status,
+    error: status >= 500 ? 'ServerError' : 'UnknownError',
+    message: status >= 500 ? 'Something went wrong. Please try again.' : 'Request failed. Please try again.',
   });
+}
+
+export function toUserMessage(
+  err: unknown,
+  fallback = 'Something went wrong. Please try again.',
+): string {
+  if (err instanceof ApiClientError) {
+    if (err.statusCode >= 500) {
+      return 'Something went wrong. Please try again.';
+    }
+    if (typeof err.message === 'string' && err.message.toLowerCase().includes('status code')) {
+      return 'Something went wrong. Please try again.';
+    }
+    return err.message || fallback;
+  }
+  if (err instanceof Error) {
+    if (err.message.toLowerCase().includes('status code') || err.message.toLowerCase().includes('network error')) {
+      return 'Something went wrong. Please try again.';
+    }
+    return err.message;
+  }
+  return fallback;
 }
 
 /** Unwrap Nest `{ data: T }` success envelope. */

@@ -53,3 +53,6 @@ export {
   type TableHeaderCellProps,
   type TableCellProps,
 } from './table';
+export { ConfirmModal, type ConfirmModalProps } from './confirm-modal';
+export { ToastProvider, useToast, type ToastMessage } from './toast';
+

@@ -4,9 +4,9 @@ import { cn } from '../cn';
 export type AlertTone = 'neutral' | 'info' | 'success' | 'danger';
 
 export type AlertProps = Readonly<
-  HTMLAttributes<HTMLElement> & {
+  Omit<HTMLAttributes<HTMLElement>, 'title'> & {
     tone?: AlertTone;
-    title?: string;
+    title?: ReactNode;
     children?: ReactNode;
   }
 >;

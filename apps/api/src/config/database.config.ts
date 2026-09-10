@@ -1,4 +1,5 @@
 import { loadApiEnv } from '@shared/env/api';
+import { resolve } from 'path';
 
 /** Database connection settings for Nest TypeORM. */
 export function databaseConfig() {
@@ -8,6 +9,7 @@ export function databaseConfig() {
     url: env.DATABASE_URL,
     autoLoadEntities: true,
     synchronize: false,
-    migrationsRun: false,
+    migrationsRun: true,
+    migrations: [resolve(__dirname, '../database/migrations/*.{ts,js}')],
   };
 }
