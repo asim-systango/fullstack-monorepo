@@ -6,6 +6,7 @@ import { Badge, Button, Card, CardBody, LoadingState } from '@shared/ui/componen
 import { EventCard } from '@/components/EventCard';
 import { useEvents, type EventItem } from '@/hooks/useEvents';
 import { useAuth } from '@/components/auth/auth-provider';
+import { ArrowRight } from 'lucide-react';
 
 function HeroActionButton({ user }: Readonly<{ user: { role?: string } | null }>) {
   if (!user) {
@@ -111,8 +112,13 @@ export default function HomePage() {
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link href="/events">
-                <Button variant="primary" size="md" className="font-bold text-sm">
-                  Explore Events →
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="font-bold text-sm inline-flex items-center gap-1.5"
+                >
+                  <span>Explore Events</span>
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
 
@@ -167,9 +173,10 @@ export default function HomePage() {
             </div>
             <Link
               href="/events"
-              className="text-xs font-bold text-primary hover:underline"
+              className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
             >
-              View All Events ({eventsData?.meta.total || 0}) →
+              <span>View All Events ({eventsData?.meta.total || 0})</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 

@@ -28,6 +28,7 @@ import {
   Lock,
   Check,
   Hourglass,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 
@@ -446,9 +447,10 @@ export default function EventDetailPage({
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-6">
         <Link
           href="/events"
-          className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         >
-          ← Back to All Events
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          <span>Back to All Events</span>
         </Link>
 
         {/* State Banners */}

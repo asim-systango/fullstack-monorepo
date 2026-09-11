@@ -38,6 +38,7 @@ import {
   Users,
   Clock,
   BarChart3,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 
@@ -615,8 +616,13 @@ export default function OrganizerDashboardPage() {
           }
           actions={
             <Link href="/events/new">
-              <Button variant="primary" size="sm" className="font-semibold text-xs">
-                + Create New Event
+              <Button
+                variant="primary"
+                size="sm"
+                className="font-semibold text-xs inline-flex items-center gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Create New Event</span>
               </Button>
             </Link>
           }

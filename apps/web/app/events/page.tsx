@@ -18,6 +18,7 @@ import { useDeleteEvent, useEvents, type EventItem } from '@/hooks/useEvents';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { resetFilters, setPage } from '@/lib/store/eventsFilterSlice';
 import { useAuth } from '@/components/auth/auth-provider';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function EventsContentList(
   props: Readonly<{
@@ -190,8 +191,13 @@ export default function EventsPage() {
           actions={
             isOrganizer ? (
               <Link href="/events/new">
-                <Button variant="primary" size="sm" className="font-semibold text-xs">
-                  + Create Event
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="font-semibold text-xs inline-flex items-center gap-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Create Event</span>
                 </Button>
               </Link>
             ) : undefined
@@ -226,18 +232,20 @@ export default function EventsPage() {
                 size="sm"
                 disabled={filterState.page <= 1}
                 onClick={() => dispatch(setPage(filterState.page - 1))}
-                className="text-xs"
+                className="text-xs inline-flex items-center gap-1"
               >
-                Previous
+                <ChevronLeft className="h-3.5 w-3.5" />
+                <span>Previous</span>
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 disabled={filterState.page >= eventsData.meta.totalPages}
                 onClick={() => dispatch(setPage(filterState.page + 1))}
-                className="text-xs"
+                className="text-xs inline-flex items-center gap-1"
               >
-                Next
+                <span>Next</span>
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
