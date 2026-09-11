@@ -9,7 +9,7 @@ import {
   useToast,
 } from '@shared/ui/components';
 import { EventForm } from '@/components/EventForm';
-import { useUpdateEvent, type EventItem } from '@/hooks/useEvents';
+import { useUpdateEvent, type EventItem, type CreateEventInput } from '@/hooks/useEvents';
 
 interface EditEventModalProps {
   event: EventItem | null;
@@ -29,9 +29,9 @@ export function EditEventModal(props: Readonly<EditEventModalProps>) {
   const targetStatus = defaultStatus || event.status;
   const isPublishing = targetStatus === 'PUBLISHED' && event.status === 'DRAFT';
 
-  const handleSubmit = (values: Record<string, unknown>) => {
+  const handleSubmit = (values: CreateEventInput) => {
     updateMutation.mutate(
-      { id: event.id, input: values as unknown as Partial<CreateEventInput> },
+      { id: event.id, input: values },
       {
         onSuccess: () => {
           const title = typeof values.title === 'string' ? values.title : event.title;

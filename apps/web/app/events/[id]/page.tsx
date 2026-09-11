@@ -106,8 +106,8 @@ function UserRsvpNotice({
   rsvp,
   waitlist,
 }: Readonly<{
-  rsvp?: { status: string; ticket?: unknown };
-  waitlist?: { position: number };
+  rsvp?: { status: string; ticket?: unknown } | null;
+  waitlist?: { position: number } | null;
 }>) {
   if (rsvp?.status === 'YES' && rsvp.ticket) {
     return (
@@ -171,8 +171,8 @@ function RegistrationSection({
   isLoading: boolean;
   isDisabled: boolean;
   status: string;
-  userRsvp?: { status: string; ticket?: unknown; guestCount?: number };
-  userWaitlist?: { position: number };
+  userRsvp?: { status: string; ticket?: unknown; guestCount?: number } | null;
+  userWaitlist?: { position: number } | null;
   selectedGuests: number;
   setSelectedGuests: (count: number) => void;
   isPending: boolean;

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ShellHeader } from '@/components/auth';
 import { Alert, Card, CardBody, LoadingState, PageHeader } from '@shared/ui/components';
 import { EventForm } from '@/components/EventForm';
-import { useCreateEvent } from '@/hooks/useEvents';
+import { useCreateEvent, type CreateEventInput } from '@/hooks/useEvents';
 import { useAuth } from '@/components/auth/auth-provider';
 
 export default function NewEventPage() {

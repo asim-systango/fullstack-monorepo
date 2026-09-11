@@ -25,7 +25,7 @@ function EventsContentList(
     isLoading: boolean;
     isError: boolean;
     items?: EventItem[];
-    viewMode: 'grid' | 'list';
+    viewMode: 'grid' | 'table';
     isOrganizer: boolean;
     onRefetch: () => void;
     onResetFilters: () => void;
