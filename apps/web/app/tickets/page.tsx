@@ -50,12 +50,17 @@ function TicketListContent(
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
-        <span>Failed to load wallet items. Please try again.</span>
-        <Button variant="secondary" size="sm" onClick={onRetry}>
-          Retry
-        </Button>
-      </div>
+      <Alert tone="danger" title="Error Loading Ticket Wallet">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-1">
+          <span>
+            Failed to load ticket wallet items. Please check your connection and try
+            again.
+          </span>
+          <Button variant="secondary" size="sm" onClick={onRetry} className="shrink-0">
+            Retry
+          </Button>
+        </div>
+      </Alert>
     );
   }
 
@@ -92,6 +97,10 @@ function TicketListContent(
   );
 }
 
+const ACTIVE_TAB_BTN_CLASS = 'bg-primary text-primary-foreground';
+const INACTIVE_TAB_BTN_CLASS =
+  'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground';
+
 export default function TicketsPage() {
   const { user, loading: isAuthLoading } = useAuth();
   const {
@@ -100,7 +109,7 @@ export default function TicketsPage() {
     isError: isTicketsError,
     refetch: refetchTickets,
     isFetching: isTicketsFetching,
-  } = useMyTickets();
+  } = useMyTickets(Boolean(user));
 
   const {
     data: waitlists,
@@ -108,7 +117,7 @@ export default function TicketsPage() {
     isError: isWaitlistError,
     refetch: refetchWaitlist,
     isFetching: isWaitlistFetching,
-  } = useMyWaitlist();
+  } = useMyWaitlist(Boolean(user));
 
   const [filter, setFilter] = useState<
     'ALL' | 'ISSUED' | 'WAITLIST' | 'USED' | 'CANCELLED'
@@ -132,7 +141,7 @@ export default function TicketsPage() {
         <main className="mx-auto max-w-4xl px-4 py-12 text-center space-y-4">
           <Alert tone="info" title="Login Required">
             Please{' '}
-            <Link href="/login" className="font-bold underline">
+            <Link href="/login?next=/tickets" className="font-bold underline">
               log in
             </Link>{' '}
             to access your ticket wallet.
@@ -196,7 +205,7 @@ export default function TicketsPage() {
             onClick={handleSyncAll}
             loading={isSyncing}
             loadingText="Syncing..."
-            className="self-start sm:self-auto text-xs"
+            className="text-xs font-semibold shrink-0"
           >
             <RotateCw className="mr-1.5 h-3.5 w-3.5" />
             <span>Sync Passes</span>
@@ -204,16 +213,14 @@ export default function TicketsPage() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-2 border-b border-border/60 pb-3 text-xs flex-wrap">
+        <div className="flex items-center gap-2 border-b border-border/60 pb-4 text-xs overflow-x-auto">
           <span className="font-semibold text-muted-foreground">Filter Pass Type:</span>
 
           <button
             type="button"
             onClick={() => handleTabChange('ALL')}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
-              filter === 'ALL'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+              filter === 'ALL' ? ACTIVE_TAB_BTN_CLASS : INACTIVE_TAB_BTN_CLASS
             }`}
           >
             All Passes ({totalPasses})
@@ -223,9 +230,7 @@ export default function TicketsPage() {
             type="button"
             onClick={() => handleTabChange('ISSUED')}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
-              filter === 'ISSUED'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+              filter === 'ISSUED' ? ACTIVE_TAB_BTN_CLASS : INACTIVE_TAB_BTN_CLASS
             }`}
           >
             Confirmed ({issuedCount})
@@ -235,9 +240,7 @@ export default function TicketsPage() {
             type="button"
             onClick={() => handleTabChange('WAITLIST')}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
-              filter === 'WAITLIST'
-                ? 'bg-amber-600 text-white'
-                : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+              filter === 'WAITLIST' ? ACTIVE_TAB_BTN_CLASS : INACTIVE_TAB_BTN_CLASS
             }`}
           >
             Waitlist Queue ({waitlistCount})
@@ -247,9 +250,7 @@ export default function TicketsPage() {
             type="button"
             onClick={() => handleTabChange('USED')}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
-              filter === 'USED'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+              filter === 'USED' ? ACTIVE_TAB_BTN_CLASS : INACTIVE_TAB_BTN_CLASS
             }`}
           >
             Checked-In ({usedCount})
@@ -260,8 +261,8 @@ export default function TicketsPage() {
             onClick={() => handleTabChange('CANCELLED')}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
               filter === 'CANCELLED'
-                ? 'bg-rose-600 text-white'
-                : 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20'
+                ? 'bg-destructive text-destructive-foreground'
+                : INACTIVE_TAB_BTN_CLASS
             }`}
           >
             Cancelled ({cancelledCount})

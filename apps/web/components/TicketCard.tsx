@@ -1,9 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Badge, Button, Card, CardBody, Dialog } from '@shared/ui/components';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  ConfirmModal,
+  Dialog,
+  useToast,
+} from '@shared/ui/components';
 import { QrCodeDisplay } from './QrCodeDisplay';
 import type { TicketItem } from '@/hooks/useTickets';
+import { useSubmitRsvp } from '@/hooks/useRsvp';
 
 interface TicketCardProps {
   ticket: TicketItem;
@@ -12,6 +21,9 @@ interface TicketCardProps {
 export function TicketCard(props: Readonly<TicketCardProps>) {
   const { ticket } = props;
   const [isOpen, setIsOpen] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const submitRsvpMutation = useSubmitRsvp();
+  const toast = useToast();
 
   const event = ticket.event;
   const startDate = event ? new Date(event.startDate) : null;
@@ -29,6 +41,32 @@ export function TicketCard(props: Readonly<TicketCardProps>) {
         minute: '2-digit',
       })
     : '';
+
+  const handleExecuteCancel = () => {
+    submitRsvpMutation.mutate(
+      {
+        eventId: ticket.eventId,
+        status: 'NO',
+        guestCount: 0,
+      },
+      {
+        onSuccess: () => {
+          setShowConfirmCancel(false);
+          toast.info('Your pass has been cancelled and released.', 'Pass Cancelled');
+        },
+        onError: (err: {
+          response?: { data?: { message?: string } };
+          message?: string;
+        }) => {
+          setShowConfirmCancel(false);
+          toast.error(
+            err?.response?.data?.message || err?.message || 'Failed to cancel pass.',
+            'Error',
+          );
+        },
+      },
+    );
+  };
 
   let statusBadge = (
     <Badge tone="success" className="font-semibold text-xs">
@@ -50,6 +88,8 @@ export function TicketCard(props: Readonly<TicketCardProps>) {
     );
   }
 
+  const guestCount = ticket.rsvp?.guestCount || 0;
+
   return (
     <>
       <Card className="relative overflow-hidden border border-border/80 bg-card shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
@@ -60,9 +100,16 @@ export function TicketCard(props: Readonly<TicketCardProps>) {
         <CardBody className="space-y-4 p-5">
           <div className="flex items-start justify-between gap-2 border-b border-dashed border-border/60 pb-3">
             <div>
-              <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                EVENT PASS • TICKET #{ticket.id.slice(0, 8)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                  EVENT PASS • TICKET #{ticket.id.slice(0, 8)}
+                </span>
+                {guestCount > 0 && (
+                  <Badge tone="accent" className="text-[10px] font-bold py-0 px-1.5">
+                    +{guestCount} Guest{guestCount > 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </div>
               <h3 className="text-base font-bold text-foreground">
                 {event ? event.title : 'Event Admission'}
               </h3>
@@ -86,7 +133,7 @@ export function TicketCard(props: Readonly<TicketCardProps>) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-dashed border-border/60 pt-3">
+          <div className="flex items-center justify-between border-t border-dashed border-border/60 pt-3 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary/10 p-1.5 text-primary flex items-center justify-center">
                 <svg
@@ -110,17 +157,42 @@ export function TicketCard(props: Readonly<TicketCardProps>) {
               </div>
             </div>
 
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsOpen(true)}
-              className="text-xs font-semibold"
-            >
-              View QR Code
-            </Button>
+            <div className="flex items-center gap-2">
+              {ticket.status === 'ISSUED' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={submitRsvpMutation.isPending}
+                  onClick={() => setShowConfirmCancel(true)}
+                  className="text-xs text-destructive hover:bg-destructive/10 font-semibold"
+                >
+                  Cancel Pass
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsOpen(true)}
+                className="text-xs font-semibold"
+              >
+                View QR Code
+              </Button>
+            </div>
           </div>
         </CardBody>
       </Card>
+
+      {/* Cancel Pass Confirm Modal */}
+      <ConfirmModal
+        open={showConfirmCancel}
+        onOpenChange={setShowConfirmCancel}
+        title="Cancel Ticket Pass"
+        description={`Are you sure you want to cancel your RSVP and release your ticket pass for "${event?.title || 'this event'}"?`}
+        confirmText="Release Pass"
+        variant="danger"
+        loading={submitRsvpMutation.isPending}
+        onConfirm={handleExecuteCancel}
+      />
 
       {/* Ticket Details & QR Dialog */}
       <Dialog

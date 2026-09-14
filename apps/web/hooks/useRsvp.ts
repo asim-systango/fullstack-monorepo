@@ -42,7 +42,7 @@ export interface RsvpActionResult {
   };
 }
 
-export function useEventRsvp(eventId: string) {
+export function useEventRsvp(eventId: string, enabled = true) {
   return useQuery<MyRsvpStatusResponse>({
     queryKey: ['my-rsvp', eventId],
     queryFn: async () => {
@@ -51,7 +51,7 @@ export function useEventRsvp(eventId: string) {
       );
       return data.data;
     },
-    enabled: Boolean(eventId),
+    enabled: Boolean(eventId) && enabled,
   });
 }
 

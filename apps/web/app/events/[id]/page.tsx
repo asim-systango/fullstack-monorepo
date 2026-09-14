@@ -154,7 +154,10 @@ function UserRsvpNotice({
   return null;
 }
 
+type RsvpStatusAction = 'YES' | 'NO' | 'MAYBE';
+
 function RegistrationSection({
+  eventId,
   user,
   isLoading,
   isDisabled,
@@ -167,6 +170,7 @@ function RegistrationSection({
   isFull,
   onRsvpAction,
 }: Readonly<{
+  eventId: string;
   user: unknown;
   isLoading: boolean;
   isDisabled: boolean;
@@ -177,13 +181,13 @@ function RegistrationSection({
   setSelectedGuests: (count: number) => void;
   isPending: boolean;
   isFull: boolean;
-  onRsvpAction: (status: 'YES' | 'NO' | 'MAYBE') => void;
+  onRsvpAction: (status: RsvpStatusAction) => void;
 }>) {
   if (!user) {
     return (
       <Alert tone="info" title="Login Required">
         Please{' '}
-        <Link href="/login" className="font-bold underline">
+        <Link href={`/login?next=/events/${eventId}`} className="font-bold underline">
           log in
         </Link>{' '}
         to RSVP for this event.
@@ -288,7 +292,7 @@ export default function EventDetailPage({
   const toast = useToast();
 
   const { data: event, isLoading: isEventLoading, isError } = useEventDetail(id);
-  const { data: rsvpData, isLoading: isRsvpLoading } = useEventRsvp(id);
+  const { data: rsvpData, isLoading: isRsvpLoading } = useEventRsvp(id, Boolean(user));
   const submitRsvpMutation = useSubmitRsvp();
   const publishEventMutation = usePublishEvent();
   const cancelEventMutation = useCancelEvent();
@@ -318,11 +322,12 @@ export default function EventDetailPage({
 
   const [selectedGuests, setSelectedGuests] = useState<number>(0);
 
-  const handleRsvpAction = (status: 'YES' | 'NO' | 'MAYBE') => {
+  const executeRsvpAction = (status: RsvpStatusAction) => {
     submitRsvpMutation.mutate(
       { eventId: id, status, guestCount: status === 'YES' ? selectedGuests : 0 },
       {
         onSuccess: (data) => {
+          setConfirmState((prev) => ({ ...prev, open: false }));
           if (data.status === 'WAITLISTED') {
             toast.info(data.message, 'Waitlisted');
           } else {
@@ -333,6 +338,7 @@ export default function EventDetailPage({
           response?: { data?: { message?: string } };
           message?: string;
         }) => {
+          setConfirmState((prev) => ({ ...prev, open: false, loading: false }));
           toast.error(
             err?.response?.data?.message || err?.message || 'Failed to update RSVP.',
             'RSVP Error',
@@ -342,9 +348,44 @@ export default function EventDetailPage({
     );
   };
 
+  const handleRsvpAction = (status: RsvpStatusAction) => {
+    const userRsvpObj = rsvpData?.rsvp;
+    const userWaitlistObj = rsvpData?.waitlist;
+    const holdsSpot = userRsvpObj?.status === 'YES' || Boolean(userWaitlistObj);
+
+    if ((status === 'NO' || status === 'MAYBE') && holdsSpot) {
+      const isLeavingWaitlist = Boolean(userWaitlistObj);
+      setConfirmState({
+        open: true,
+        title: isLeavingWaitlist ? 'Leave Waitlist' : 'Release Ticket Pass',
+        description: isLeavingWaitlist
+          ? `Are you sure you want to leave the waitlist for "${event?.title || 'this event'}"?`
+          : `Are you sure you want to set status to ${status}? Your confirmed ticket pass for "${event?.title || 'this event'}" will be released.`,
+        confirmText: isLeavingWaitlist ? 'Leave Waitlist' : `Set Status to ${status}`,
+        variant: 'danger',
+        loading: false,
+        action: () => executeRsvpAction(status),
+      });
+      return;
+    }
+    executeRsvpAction(status);
+  };
+
   const handlePublish = () => {
-    setModalDefaultStatus('PUBLISHED');
-    setIsEditModalOpen(true);
+    publishEventMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success('Event published successfully!', 'Published');
+      },
+      onError: (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        toast.error(
+          err?.response?.data?.message || err?.message || 'Failed to publish event.',
+          'Error',
+        );
+      },
+    });
   };
 
   const handleOpenEdit = () => {
@@ -635,6 +676,7 @@ export default function EventDetailPage({
 
                 {/* RSVP Action Status */}
                 <RegistrationSection
+                  eventId={id}
                   user={user}
                   isLoading={isRsvpLoading}
                   isDisabled={Boolean(isRsvpDisabled)}

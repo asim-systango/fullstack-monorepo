@@ -104,7 +104,7 @@ export function useEvents(params: QueryEventsParams) {
   });
 }
 
-export function useMyOrganizedEvents(params: QueryEventsParams = {}) {
+export function useMyOrganizedEvents(params: QueryEventsParams = {}, enabled = true) {
   const cleanParams: Record<string, string | number> = {};
   if (params.q) cleanParams.q = params.q;
   if (params.category && params.category !== ALL_CATEGORY)
@@ -124,6 +124,7 @@ export function useMyOrganizedEvents(params: QueryEventsParams = {}) {
       );
       return data.data;
     },
+    enabled,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,

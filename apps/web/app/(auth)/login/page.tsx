@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
 import {
   Button,
@@ -23,6 +23,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const { refresh } = useAuth();
   const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
   const [password, setPassword] = useState(isProd ? '' : 'password123');
@@ -36,7 +38,7 @@ export default function LoginPage() {
     try {
       await authApi.login({ email, password });
       await refresh();
-      router.push('/');
+      router.push(next && next.startsWith('/') ? next : '/');
     } catch (err) {
       setError(toUserMessage(err, 'Login failed'));
     } finally {

@@ -184,8 +184,8 @@ export function CameraQrScanner(props: Readonly<CameraQrScannerProps>) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full rounded-full animate-ping bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+              <span className="absolute inline-flex h-full w-full rounded-full animate-ping bg-primary/75 opacity-75"></span>
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-primary"></span>
             </span>
             <span className="text-xs font-bold text-foreground">
               Camera Active (Point at QR Code to Scan)
@@ -214,7 +214,7 @@ export function CameraQrScanner(props: Readonly<CameraQrScannerProps>) {
       )}
 
       {lastScanned && (
-        <div className="rounded-lg bg-emerald-500/10 p-2.5 text-center text-xs font-mono text-emerald-600 border border-emerald-500/30">
+        <div className="rounded-lg bg-primary/10 p-2.5 text-center text-xs font-mono text-primary border border-primary/30">
           ✓ Scanned: <strong>{lastScanned}</strong>
         </div>
       )}

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { ShellHeader } from '@/components/auth';
 import { Alert, LoadingState, PageHeader } from '@shared/ui/components';
 import { ScannerWidget } from '@/components/ScannerWidget';
@@ -33,7 +34,11 @@ export default function CheckInPage() {
 
         {!isStaff ? (
           <Alert tone="danger" title="Access Restricted">
-            The check-in tool is reserved for Staff and Admin event staff. Please log in as staff@demo.local.
+            The check-in tool is reserved for Staff and Admin event staff. Please{' '}
+            <Link href="/login?next=/check-in" className="font-bold underline">
+              log in
+            </Link>{' '}
+            as staff@demo.local.
           </Alert>
         ) : (
           <ScannerWidget />

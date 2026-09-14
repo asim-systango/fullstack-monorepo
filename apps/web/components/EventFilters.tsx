@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import {
   resetFilters,
@@ -12,13 +13,43 @@ import {
 import { Button, Select, TextInput } from '@shared/ui/components';
 import { Calendar } from 'lucide-react';
 
-const CATEGORIES = ['ALL', 'Technology', 'Workshop', 'Design', 'Security', 'Business', 'General'];
+const CATEGORIES = [
+  'ALL',
+  'Technology',
+  'Workshop',
+  'Design',
+  'Security',
+  'Business',
+  'General',
+];
 
-export function EventFilters() {
+interface EventFiltersProps {
+  isOrganizer?: boolean;
+}
+
+export function EventFilters({ isOrganizer = false }: Readonly<EventFiltersProps>) {
   const dispatch = useAppDispatch();
   const { q, category, status, startDate, endDate, viewMode } = useAppSelector(
     (state) => state.eventsFilter,
   );
+
+  const [searchTerm, setSearchTerm] = useState(q);
+
+  // Sync internal search term when Redux state is reset
+  useEffect(() => {
+    setSearchTerm(q);
+  }, [q]);
+
+  // Debounce search input by 300ms before dispatching to Redux store
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== q) {
+        dispatch(setSearchQuery(searchTerm));
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, q, dispatch]);
 
   const hasActiveFilters = Boolean(
     q || category !== 'ALL' || status !== 'ALL' || startDate || endDate,
@@ -31,8 +62,8 @@ export function EventFilters() {
         <div className="relative flex-1">
           <TextInput
             placeholder="Search events by title, description, or location..."
-            value={q}
-            onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 text-sm"
           />
           <svg
@@ -52,17 +83,28 @@ export function EventFilters() {
 
         {/* Filters & Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Status selector */}
-          <Select
-            value={status}
-            onChange={(e) => dispatch(setStatusFilter(e.target.value))}
-            className="w-40 sm:w-44 text-xs font-semibold"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="DRAFT">Draft</option>
-            <option value="CANCELLED">Cancelled</option>
-          </Select>
+          {/* Status selector (Shown for Organizers or simple Published selector) */}
+          {isOrganizer ? (
+            <Select
+              value={status}
+              onChange={(e) => dispatch(setStatusFilter(e.target.value))}
+              className="w-40 sm:w-44 text-xs font-semibold"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="DRAFT">Draft</option>
+              <option value="CANCELLED">Cancelled</option>
+            </Select>
+          ) : (
+            <Select
+              value={status}
+              onChange={(e) => dispatch(setStatusFilter(e.target.value))}
+              className="w-36 text-xs font-semibold"
+            >
+              <option value="ALL">All Events</option>
+              <option value="PUBLISHED">Published Only</option>
+            </Select>
+          )}
 
           {/* View mode toggle */}
           <div className="flex items-center rounded-lg border border-border/60 bg-secondary/30 p-0.5">
@@ -76,8 +118,18 @@ export function EventFilters() {
               }`}
               title="Grid View"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
               </svg>
             </button>
             <button
@@ -90,8 +142,18 @@ export function EventFilters() {
               }`}
               title="Table View"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                />
               </svg>
             </button>
           </div>
@@ -100,7 +162,10 @@ export function EventFilters() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => dispatch(resetFilters())}
+              onClick={() => {
+                setSearchTerm('');
+                dispatch(resetFilters());
+              }}
               className="text-xs font-semibold"
             >
               Reset Filters
@@ -111,7 +176,7 @@ export function EventFilters() {
 
       {/* Date Range & Category Row */}
       <div className="flex flex-col gap-3 border-t border-border/40 pt-3 text-xs sm:flex-row sm:items-center sm:justify-between flex-wrap">
-        {/* Date Range Inputs */}
+        {/* Date Range Inputs (using plain YYYY-MM-DD strings without timezone shifts) */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="flex items-center gap-1 font-semibold text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
@@ -125,7 +190,7 @@ export function EventFilters() {
               onChange={(e) =>
                 dispatch(
                   setDateRange({
-                    startDate: e.target.value ? new Date(e.target.value).toISOString() : '',
+                    startDate: e.target.value ? e.target.value : '',
                     endDate,
                   }),
                 )
@@ -142,7 +207,7 @@ export function EventFilters() {
                 dispatch(
                   setDateRange({
                     startDate,
-                    endDate: e.target.value ? new Date(e.target.value + 'T23:59:59').toISOString() : '',
+                    endDate: e.target.value ? e.target.value : '',
                   }),
                 )
               }
@@ -153,7 +218,9 @@ export function EventFilters() {
 
         {/* Category Pills */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs font-semibold text-muted-foreground">Category:</span>
+          <span className="mr-1 text-xs font-semibold text-muted-foreground">
+            Category:
+          </span>
           {CATEGORIES.map((cat) => (
             <button
               key={cat}

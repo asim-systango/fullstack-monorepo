@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ShellHeader } from '@/components/auth';
 import {
+  Alert,
   Badge,
   Button,
   Card,
@@ -49,12 +50,14 @@ function EventsContentList(
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
-        <span>Failed to load events. Please try again.</span>
-        <Button variant="secondary" size="sm" onClick={onRefetch}>
-          Retry
-        </Button>
-      </div>
+      <Alert tone="danger" title="Error Loading Events">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-1">
+          <span>Failed to load events. Please check your connection and try again.</span>
+          <Button variant="secondary" size="sm" onClick={onRefetch} className="shrink-0">
+            Retry
+          </Button>
+        </div>
+      </Alert>
     );
   }
 

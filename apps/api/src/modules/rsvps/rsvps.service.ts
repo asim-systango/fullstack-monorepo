@@ -1,14 +1,13 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource, LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Rsvp, RsvpStatus } from './entities/rsvp.entity';
 import { Event, EventStatus } from '../events/entities/event.entity';
 import { Ticket, TicketStatus } from '../tickets/entities/ticket.entity';
-import { WaitlistEntry, WaitlistStatus } from '../waitlist/entities/waitlist-entry.entity';
+import {
+  WaitlistEntry,
+  WaitlistStatus,
+} from '../waitlist/entities/waitlist-entry.entity';
 import { CreateRsvpDto } from './dto/create-rsvp.dto';
 
 @Injectable()
@@ -34,19 +33,17 @@ export class RsvpsService {
       throw new NotFoundException(`Event with ID "${eventId}" is not available.`);
     }
 
-    if (event.status === EventStatus.DRAFT) {
-      throw new BadRequestException('Cannot RSVP to a draft event. This event is not yet published to the public.');
-    }
-
-    if (event.status === EventStatus.CANCELLED) {
-      throw new BadRequestException('Cannot RSVP to a cancelled event.');
-    }
-
-    if (event.endDate && new Date(event.endDate) < new Date()) {
-      throw new BadRequestException('Cannot RSVP to a completed event.');
-    }
-
     const targetStatus = dto.status;
+
+    if (targetStatus === RsvpStatus.YES) {
+      if (event.status === EventStatus.CANCELLED) {
+        throw new BadRequestException('Cannot RSVP to a cancelled event.');
+      }
+
+      if (event.endDate && new Date(event.endDate) < new Date()) {
+        throw new BadRequestException('Cannot RSVP to a completed event.');
+      }
+    }
 
     // Use a transaction for atomic capacity enforcement and waitlist promotion
     const queryRunner = this.dataSource.createQueryRunner();
@@ -79,7 +76,10 @@ export class RsvpsService {
           userId,
         })
         .getRawOne();
-      const occupiedSpots = parseInt(occupiedResult?.occupiedSpots ?? occupiedResult?.occupiedspots ?? '0', 10);
+      const occupiedSpots = parseInt(
+        occupiedResult?.occupiedSpots ?? occupiedResult?.occupiedspots ?? '0',
+        10,
+      );
 
       const requestedGuestCount = Math.min(5, Math.max(0, dto.guestCount || 0));
       const requestedSpots = 1 + requestedGuestCount;
@@ -189,9 +189,10 @@ export class RsvpsService {
         await queryRunner.commitTransaction();
         return {
           status: 'SUCCESS',
-          message: requestedGuestCount > 0
-            ? `RSVP confirmed for 1 + ${requestedGuestCount} guest(s)! Ticket pass issued.`
-            : 'RSVP confirmed! Ticket issued.',
+          message:
+            requestedGuestCount > 0
+              ? `RSVP confirmed for 1 + ${requestedGuestCount} guest(s)! Ticket pass issued.`
+              : 'RSVP confirmed! Ticket issued.',
           rsvp: existingRsvp,
           ticket,
         };

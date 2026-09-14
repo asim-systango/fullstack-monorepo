@@ -1,14 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Badge, Button } from '@shared/ui/components';
 
 function AuthNav() {
   const { user, loading, logout } = useAuth();
+  const pathname = usePathname();
+  const loginHref =
+    pathname && pathname !== '/' && pathname !== '/login' && pathname !== '/register'
+      ? `/login?next=${encodeURIComponent(pathname)}`
+      : '/login';
 
   if (loading) {
-    return <span className="text-xs text-muted-foreground animate-pulse">Loading...</span>;
+    return (
+      <span className="text-xs text-muted-foreground animate-pulse">Loading...</span>
+    );
   }
 
   if (user) {
@@ -16,9 +24,16 @@ function AuthNav() {
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex flex-col text-right text-xs">
           <span className="font-semibold text-foreground">{user.name || user.email}</span>
-          <span className="text-[10px] font-mono text-muted-foreground uppercase">{user.role}</span>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase">
+            {user.role}
+          </span>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => void logout()} className="text-xs">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void logout()}
+          className="text-xs"
+        >
           Log out
         </Button>
       </div>
@@ -27,7 +42,10 @@ function AuthNav() {
 
   return (
     <div className="flex items-center gap-2">
-      <Link href="/login" className="text-xs font-semibold text-muted-foreground hover:text-foreground">
+      <Link
+        href={loginHref}
+        className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+      >
         Log in
       </Link>
       <Link href="/register">
@@ -79,7 +97,10 @@ export function ShellHeader({
 
           {user && (user.role === 'admin' || user.role === 'staff') && (
             <>
-              <Link href="/organizer" className="hover:text-foreground transition-colors text-primary font-bold">
+              <Link
+                href="/organizer"
+                className="hover:text-foreground transition-colors text-primary font-bold"
+              >
                 Organizer Dashboard
               </Link>
               <Link href="/check-in" className="hover:text-foreground transition-colors">

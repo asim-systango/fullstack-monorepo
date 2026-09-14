@@ -32,14 +32,14 @@ export function ScannerWidget() {
           'Check-In Successful',
         );
       },
-      onError: (err: unknown) => {
+      onError: (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
         const errorMsg =
-          err &&
-          typeof err === 'object' &&
-          'message' in err &&
-          typeof (err as { message: string }).message === 'string'
-            ? (err as { message: string }).message
-            : 'Ticket is invalid or has already been used.';
+          err?.response?.data?.message ||
+          err?.message ||
+          'Ticket is invalid or has already been used.';
         toast.error(errorMsg, 'Check-In Failed');
       },
     });

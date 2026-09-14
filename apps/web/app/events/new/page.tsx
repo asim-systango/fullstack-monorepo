@@ -61,6 +61,7 @@ export default function NewEventPage() {
                 onSubmit={handleSubmit}
                 pending={createMutation.isPending}
                 submitText="Publish Event"
+                error={createMutation.error}
               />
             </CardBody>
           </Card>

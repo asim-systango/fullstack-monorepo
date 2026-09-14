@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { FileText, Ban, Flag } from 'lucide-react';
 import {
@@ -9,6 +10,7 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
+  ConfirmModal,
 } from '@shared/ui/components';
 import { CapacityProgress } from './CapacityProgress';
 import type { EventItem } from '@/hooks/useEvents';
@@ -99,6 +101,7 @@ function EventButtonContent(props: Readonly<{ event: EventItem }>) {
 
 export function EventCard(props: Readonly<EventCardProps>) {
   const { event, onDelete, isOrganizer = false } = props;
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const startDate = event.startDate ? new Date(event.startDate) : null;
   const formattedDate = startDate
     ? startDate.toLocaleDateString('en-US', {
@@ -192,17 +195,31 @@ export function EventCard(props: Readonly<EventCardProps>) {
           </Link>
 
           {isOrganizer && onDelete && (
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                onDelete(event.id);
-              }}
-              className="text-xs shrink-0"
-            >
-              Delete
-            </Button>
+            <>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowConfirmDelete(true);
+                }}
+                className="text-xs shrink-0"
+              >
+                Delete
+              </Button>
+              <ConfirmModal
+                open={showConfirmDelete}
+                onOpenChange={(open) => setShowConfirmDelete(open)}
+                title="Delete Event"
+                description={`Are you sure you want to delete "${event.title}"? This action cannot be undone.`}
+                confirmText="Delete Event"
+                variant="danger"
+                onConfirm={() => {
+                  setShowConfirmDelete(false);
+                  onDelete(event.id);
+                }}
+              />
+            </>
           )}
         </div>
       </CardBody>

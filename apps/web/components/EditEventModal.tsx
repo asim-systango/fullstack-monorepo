@@ -88,6 +88,7 @@ export function EditEventModal(props: Readonly<EditEventModalProps>) {
           pending={updateMutation.isPending}
           disableStatus={isPublishing}
           submitText={isPublishing ? 'Save & Publish Event' : 'Save & Update Event'}
+          error={updateMutation.error}
         />
       </DialogBody>
     </Dialog>

@@ -11,6 +11,7 @@ import {
   CardBody,
   ConfirmModal,
   Dialog,
+  EmptyState,
   LoadingState,
   PageHeader,
   Table,
@@ -42,6 +43,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 
+const INACTIVE_FILTER_TAB_CLASS =
+  'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground';
+
 function AnalyticsContent({
   isLoading,
   isError,
@@ -53,7 +57,7 @@ function AnalyticsContent({
   analytics?: {
     title: string;
     capacity: number;
-    rsvps: { yes: number };
+    rsvps: { yes: number; no: number; maybe: number; total: number };
     waitlistCount: number;
     tickets: { issued: number; used: number; occupancyRate: number };
   };
@@ -85,11 +89,23 @@ function AnalyticsContent({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
           <span className="text-muted-foreground block font-medium">YES RSVPs</span>
           <span className="text-xl font-bold text-emerald-600">
             {analytics.rsvps.yes}
+          </span>
+        </div>
+        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
+          <span className="text-muted-foreground block font-medium">MAYBE RSVPs</span>
+          <span className="text-xl font-bold text-blue-600">
+            {analytics.rsvps.maybe ?? 0}
+          </span>
+        </div>
+        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
+          <span className="text-muted-foreground block font-medium">NO RSVPs</span>
+          <span className="text-xl font-bold text-destructive">
+            {analytics.rsvps.no ?? 0}
           </span>
         </div>
         <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-xs">
@@ -172,7 +188,7 @@ function OrganizerEventBadge({
     return (
       <Badge
         tone="danger"
-        className="text-[10px] font-bold uppercase bg-rose-950/80 text-rose-300 border-rose-800 flex items-center gap-1"
+        className="text-[10px] font-bold uppercase flex items-center gap-1"
       >
         <Trash2 className="h-3 w-3" />
         <span>Deleted</span>
@@ -276,18 +292,37 @@ function OrganizerEventListContent({
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600 flex flex-col items-center gap-3">
-        <span>Failed to load organizer events. Please try again.</span>
-        <Button variant="secondary" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
+      <Alert tone="danger" title="Error Loading Organizer Dashboard">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-1">
+          <span>
+            Failed to load organizer events. Please check connection and try again.
+          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => refetch()}
+            className="shrink-0"
+          >
+            Retry
+          </Button>
+        </div>
+      </Alert>
     );
   }
 
   if (filteredItems.length === 0) {
     return (
-      <Alert tone="info">No events found under status filter "{statusFilter}".</Alert>
+      <EmptyState
+        title="No events found"
+        description={`No events found under status filter "${statusFilter}".`}
+        action={
+          <Link href="/events/new">
+            <Button variant="primary" size="sm">
+              + Create New Event
+            </Button>
+          </Link>
+        }
+      />
     );
   }
 
@@ -434,7 +469,7 @@ export default function OrganizerDashboardPage() {
     isLoading,
     isError,
     refetch,
-  } = useMyOrganizedEvents({ page: 1, limit: 100 });
+  } = useMyOrganizedEvents({ page: 1, limit: 100 }, Boolean(user));
 
   const deleteMutation = useDeleteEvent();
   const publishMutation = usePublishEvent();
@@ -482,8 +517,11 @@ export default function OrganizerDashboardPage() {
         <ShellHeader />
         <main className="mx-auto max-w-4xl px-4 py-12 text-center space-y-4">
           <Alert tone="danger" title="Access Restricted">
-            Organizer dashboard is available only to Staff and Admin accounts. Please log
-            in as staff@demo.local.
+            Organizer dashboard is available only to Staff and Admin accounts. Please{' '}
+            <Link href="/login?next=/organizer" className="font-bold underline">
+              log in
+            </Link>{' '}
+            as staff@demo.local.
           </Alert>
         </main>
       </div>
@@ -523,8 +561,21 @@ export default function OrganizerDashboardPage() {
     totalCapacity > 0 ? Math.round((totalYesRsvps / totalCapacity) * 100) : 0;
 
   const handlePublish = (eventItem: EventItem) => {
-    setEditingDefaultStatus('PUBLISHED');
-    setEditingEvent(eventItem);
+    publishMutation.mutate(eventItem.id, {
+      onSuccess: () => {
+        toast.success(`Event "${eventItem.title}" published successfully!`, 'Published');
+        refetch();
+      },
+      onError: (err: {
+        response?: { data?: { message?: string } };
+        message?: string;
+      }) => {
+        toast.error(
+          err?.response?.data?.message || err?.message || 'Failed to publish event.',
+          'Error',
+        );
+      },
+    });
   };
 
   const handleEdit = (eventItem: EventItem) => {
@@ -681,7 +732,7 @@ export default function OrganizerDashboardPage() {
                 className={`rounded-full px-3 py-1 font-semibold transition-all ${
                   statusFilter === 'ALL'
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    : INACTIVE_FILTER_TAB_CLASS
                 }`}
               >
                 All ({totalEvents})
@@ -691,8 +742,8 @@ export default function OrganizerDashboardPage() {
                 onClick={() => setStatusFilter('PUBLISHED')}
                 className={`rounded-full px-3 py-1 font-semibold transition-all inline-flex items-center gap-1 ${
                   statusFilter === 'PUBLISHED'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                    ? 'bg-primary text-primary-foreground'
+                    : INACTIVE_FILTER_TAB_CLASS
                 }`}
               >
                 <Rocket className="h-3 w-3" />
@@ -703,8 +754,8 @@ export default function OrganizerDashboardPage() {
                 onClick={() => setStatusFilter('DRAFT')}
                 className={`rounded-full px-3 py-1 font-semibold transition-all inline-flex items-center gap-1 ${
                   statusFilter === 'DRAFT'
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20'
+                    ? 'bg-primary text-primary-foreground'
+                    : INACTIVE_FILTER_TAB_CLASS
                 }`}
               >
                 <FileText className="h-3 w-3" />
@@ -715,8 +766,8 @@ export default function OrganizerDashboardPage() {
                 onClick={() => setStatusFilter('COMPLETED')}
                 className={`rounded-full px-3 py-1 font-semibold transition-all inline-flex items-center gap-1 ${
                   statusFilter === 'COMPLETED'
-                    ? 'bg-slate-700 text-white'
-                    : 'bg-slate-500/10 text-slate-600 hover:bg-slate-500/20'
+                    ? 'bg-primary text-primary-foreground'
+                    : INACTIVE_FILTER_TAB_CLASS
                 }`}
               >
                 <Flag className="h-3 w-3" />
@@ -727,8 +778,8 @@ export default function OrganizerDashboardPage() {
                 onClick={() => setStatusFilter('CANCELLED')}
                 className={`rounded-full px-3 py-1 font-semibold transition-all inline-flex items-center gap-1 ${
                   statusFilter === 'CANCELLED'
-                    ? 'bg-rose-600 text-white'
-                    : 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20'
+                    ? 'bg-destructive text-destructive-foreground'
+                    : INACTIVE_FILTER_TAB_CLASS
                 }`}
               >
                 <Ban className="h-3 w-3" />
@@ -740,8 +791,8 @@ export default function OrganizerDashboardPage() {
                   onClick={() => setStatusFilter('DELETED')}
                   className={`rounded-full px-3 py-1 font-semibold transition-all inline-flex items-center gap-1 ${
                     statusFilter === 'DELETED'
-                      ? 'bg-rose-950 text-rose-200 border border-rose-500/50'
-                      : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                      ? 'bg-destructive text-destructive-foreground'
+                      : INACTIVE_FILTER_TAB_CLASS
                   }`}
                 >
                   <Trash2 className="h-3 w-3" />

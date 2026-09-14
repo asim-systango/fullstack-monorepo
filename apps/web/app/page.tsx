@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { ShellHeader } from '@/components/auth';
-import { Badge, Button, Card, CardBody, LoadingState } from '@shared/ui/components';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  EmptyState,
+  LoadingState,
+} from '@shared/ui/components';
 import { EventCard } from '@/components/EventCard';
 import { useEvents, type EventItem } from '@/hooks/useEvents';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -53,17 +61,25 @@ function HomeFeaturedEvents({
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-xs text-rose-600">
-        Failed to load events. Make sure Postgres and API services are running.
-      </div>
+      <Alert tone="danger" title="Failed to Load Events">
+        Failed to load featured events. Make sure Postgres and API services are running.
+      </Alert>
     );
   }
 
   if (!events || events.length === 0) {
     return (
-      <div className="rounded-xl border border-border p-8 text-center text-xs text-muted-foreground">
-        No events found. Be the first to create one!
-      </div>
+      <EmptyState
+        title="No upcoming events"
+        description="Be the first organizer to create an event on the platform!"
+        action={
+          <Link href="/events/new">
+            <Button variant="primary" size="sm">
+              + Host New Event
+            </Button>
+          </Link>
+        }
+      />
     );
   }
 

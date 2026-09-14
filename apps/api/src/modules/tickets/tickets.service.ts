@@ -23,7 +23,7 @@ export class TicketsService {
   async getMyTickets(userId: string) {
     return this.ticketsRepository.find({
       where: { userId },
-      relations: ['event', 'checkIns'],
+      relations: ['event', 'checkIns', 'rsvp'],
       order: { createdAt: 'DESC' },
     });
   }

@@ -26,7 +26,7 @@ function QrContent(
   }
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center text-center p-2 text-xs text-rose-500">
+      <div className="flex flex-col items-center justify-center text-center p-2 text-xs text-destructive">
         Failed to render QR Code
       </div>
     );

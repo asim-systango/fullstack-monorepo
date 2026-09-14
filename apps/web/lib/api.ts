@@ -6,9 +6,8 @@ const baseURL = resolveApiBaseUrl();
 export const apiClient = createApiClient({
   baseURL,
   onUnauthorized: () => {
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.assign('/login');
-    }
+    // Intentionally empty. Route protection and authentication state
+    // are handled gracefully by components and useAuth provider.
   },
 });
 

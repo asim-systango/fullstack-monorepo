@@ -24,6 +24,11 @@ export interface TicketItem {
     scannedAt: string;
     scannedByUserId: string;
   }>;
+  rsvp?: {
+    id: string;
+    status: string;
+    guestCount?: number;
+  };
 }
 
 export interface CheckInResponse {
@@ -47,13 +52,14 @@ export interface CheckInResponse {
   };
 }
 
-export function useMyTickets() {
+export function useMyTickets(enabled = true) {
   return useQuery<TicketItem[]>({
     queryKey: ['my-tickets'],
     queryFn: async () => {
       const { data } = await apiClient.get<{ data: TicketItem[] }>('/tickets');
       return data.data;
     },
+    enabled,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -97,13 +103,14 @@ export interface WaitlistEntryItem {
   };
 }
 
-export function useMyWaitlist() {
+export function useMyWaitlist(enabled = true) {
   return useQuery<WaitlistEntryItem[]>({
     queryKey: ['my-waitlist'],
     queryFn: async () => {
       const { data } = await apiClient.get<{ data: WaitlistEntryItem[] }>('/my-waitlist');
       return data.data;
     },
+    enabled,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,

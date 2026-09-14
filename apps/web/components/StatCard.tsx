@@ -13,9 +13,9 @@ interface StatCardProps {
 
 export function StatCard(props: Readonly<StatCardProps>) {
   const { title, value, subtitle, icon, trend, trendType = 'positive' } = props;
-  let trendColor = 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20';
+  let trendColor = 'text-primary bg-primary/10 border-primary/20';
   if (trendType === 'negative') {
-    trendColor = 'text-rose-600 bg-rose-500/10 border-rose-500/20';
+    trendColor = 'text-destructive bg-destructive/10 border-destructive/20';
   } else if (trendType === 'neutral') {
     trendColor = 'text-muted-foreground bg-secondary border-border/50';
   }

@@ -11,6 +11,7 @@ interface EventFormProps {
   pending?: boolean;
   submitText?: string;
   disableStatus?: boolean;
+  error?: unknown;
 }
 
 const CATEGORIES = [
@@ -22,6 +23,32 @@ const CATEGORIES = [
   'General',
 ];
 
+function getFieldError(error: unknown, fieldName: string): string | undefined {
+  if (!error) return undefined;
+  const errObj = error as {
+    response?: {
+      data?: {
+        message?: string | string[];
+        details?: Record<string, string>;
+      };
+    };
+  };
+  const details = errObj.response?.data?.details;
+  if (details && details[fieldName]) return details[fieldName];
+  const messages = errObj.response?.data?.message;
+  if (Array.isArray(messages)) {
+    const match = messages.find((m) => m.toLowerCase().includes(fieldName.toLowerCase()));
+    if (match) return match;
+  }
+  if (
+    typeof messages === 'string' &&
+    messages.toLowerCase().includes(fieldName.toLowerCase())
+  ) {
+    return messages;
+  }
+  return undefined;
+}
+
 export function EventForm(props: Readonly<EventFormProps>) {
   const {
     initialValues,
@@ -29,6 +56,7 @@ export function EventForm(props: Readonly<EventFormProps>) {
     pending = false,
     submitText = 'Save Event',
     disableStatus = false,
+    error,
   } = props;
   const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED' | 'CANCELLED'>(
     initialValues?.status || 'PUBLISHED',
@@ -130,7 +158,13 @@ export function EventForm(props: Readonly<EventFormProps>) {
         )}
       </div>
 
-      <Field label="Event Title" htmlFor="title" required disabled={pending}>
+      <Field
+        label="Event Title"
+        htmlFor="title"
+        required
+        disabled={pending}
+        error={getFieldError(error, 'title')}
+      >
         <TextInput
           id="title"
           name="title"
@@ -141,7 +175,13 @@ export function EventForm(props: Readonly<EventFormProps>) {
         />
       </Field>
 
-      <Field label="Description" htmlFor="description" required disabled={pending}>
+      <Field
+        label="Description"
+        htmlFor="description"
+        required
+        disabled={pending}
+        error={getFieldError(error, 'description')}
+      >
         <TextArea
           id="description"
           name="description"
@@ -154,7 +194,13 @@ export function EventForm(props: Readonly<EventFormProps>) {
       </Field>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field label="Location / Venue" htmlFor="location" required disabled={pending}>
+        <Field
+          label="Location / Venue"
+          htmlFor="location"
+          required
+          disabled={pending}
+          error={getFieldError(error, 'location')}
+        >
           <TextInput
             id="location"
             name="location"
@@ -188,6 +234,7 @@ export function EventForm(props: Readonly<EventFormProps>) {
           required={status === 'PUBLISHED'}
           optional={status === 'DRAFT'}
           disabled={pending}
+          error={getFieldError(error, 'startDate')}
         >
           <TextInput
             id="startDate"
@@ -205,6 +252,7 @@ export function EventForm(props: Readonly<EventFormProps>) {
           required={status === 'PUBLISHED'}
           optional={status === 'DRAFT'}
           disabled={pending}
+          error={getFieldError(error, 'endDate')}
         >
           <TextInput
             id="endDate"
@@ -216,7 +264,13 @@ export function EventForm(props: Readonly<EventFormProps>) {
           />
         </Field>
 
-        <Field label="Seat Capacity" htmlFor="capacity" required disabled={pending}>
+        <Field
+          label="Seat Capacity"
+          htmlFor="capacity"
+          required
+          disabled={pending}
+          error={getFieldError(error, 'capacity')}
+        >
           <TextInput
             id="capacity"
             name="capacity"
