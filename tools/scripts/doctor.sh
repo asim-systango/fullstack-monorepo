@@ -214,7 +214,7 @@ fi
 printf '\nSummary: %s passed, %s failed\n' "$ok" "$fail"
 if [ "$fail" -gt 0 ]; then
   printf 'Fix FAIL lines (start from the first broken hop), then re-run: pnpm doctor\n'
-  printf 'Typical bring-up: pnpm docker:db && pnpm migration:run && pnpm seed && pnpm dev\n'
+  printf 'Typical bring-up: pnpm docker:db && pnpm migration:run && pnpm migration:run:api && pnpm seed && pnpm dev\n'
   exit 1
 fi
 printf 'Stack looks good. Open http://localhost:%s\n' "$WEB_PORT"

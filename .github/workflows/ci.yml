@@ -35,3 +35,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm lint:sonar
       - run: pnpm test:coverage
+      - run: pnpm build
+        env:
+          NODE_ENV: production
+          API_GATEWAY_URL: http://localhost:3001
+          NEXT_PUBLIC_API_URL: /api

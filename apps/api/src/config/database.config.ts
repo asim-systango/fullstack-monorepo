@@ -11,5 +11,6 @@ export function databaseConfig() {
     synchronize: false,
     migrationsRun: true,
     migrations: [resolve(__dirname, '../database/migrations/*.{ts,js}')],
+    migrationsTableName: 'migrations_api',
   };
 }

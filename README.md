@@ -41,10 +41,10 @@ Then open **http://localhost:3000**.
 
 Needs **Node ≥ 20**, **pnpm 10.18.1**, and **Docker**.
 
-| Check        | Command / URL                                                                              |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready` |
-| Demo logins  | `admin@demo.local` / `user@demo.local` / `staff@demo.local` — password `password123`       |
+| Check        | Command / URL                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| Smoke / hops | `pnpm doctor` (api → gateway → Next rewrite) or `curl -sS http://localhost:3000/api/ready`  |
+| Demo users   | Run `pnpm seed` — one account per gateway role (`admin`, `staff`, `user`) for local testing |
 
 ## Where you write code
 
@@ -107,7 +107,26 @@ If a port is taken, change that app’s `PORT` and keep these in sync: `API_UPST
 
 ## Projects (17)
 
-Pick one project brief below. Full Must / Should / Stretch live in each brief.
+Pick **one** project brief and read it **fully before coding**. Recommended order within the brief:
+
+1. **Problem** → **Application flow** → **Roles in detail**
+2. **Backend & Frontend expectations** (modules, key endpoints, enums, constraints, screens)
+3. **User journeys** ← manual test script while building
+4. **Edge cases / FAQ** + **DoD / Demo script**
+
+Each brief includes:
+
+- **Problem** — real-world context, actors, pain points, and scope
+- **Application flow** — step-by-step end-to-end behaviour
+- **Roles in detail** — what admin / staff / user can and cannot do in your domain
+- **User journeys** — detailed manual test script (6+ steps per scenario)
+- **What is expected** — Must / Should / Stretch explained in plain language
+- **Frontend expectations** — domain screens, UI layout, states, and behaviour
+- **Backend expectations** — domain modules, endpoints, database constraints, enums, state machines, and service-layer rules
+- **Edge cases and FAQ** — failures, decisions, and pre-answered questions ([shared FAQ](docs/projects/README.md#faq--read-before-you-ask))
+- **Suggested demo script** — starting point for your PR
+
+Shared setup, role mapping, FE/BE standards, and grading: [docs/projects/README.md](docs/projects/README.md).
 
 | Slug                    | What you build                                         | Brief                                             |
 | ----------------------- | ------------------------------------------------------ | ------------------------------------------------- |

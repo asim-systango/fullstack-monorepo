@@ -26,10 +26,14 @@ Hard rules for every project.
 | 5   | Should features + polish                                                                                         |
 | 6   | Buffer: Stretch, demo, fill `docs/architecture.md`                                                               |
 
-## Seed users
+## Demo users (local only)
 
-| Email              | Password      | Role                           |
-| ------------------ | ------------- | ------------------------------ |
-| `admin@demo.local` | `password123` | admin                          |
-| `user@demo.local`  | `password123` | user                           |
-| `staff@demo.local` | `password123` | staff (rename for your domain) |
+Run `pnpm seed` after migrations to create **three local demo users** — one per gateway role:
+
+| Gateway role | Use in your domain (see your brief)                            |
+| ------------ | -------------------------------------------------------------- |
+| `admin`      | Platform administrator                                         |
+| `user`       | Default end-user persona                                       |
+| `staff`      | Elevated domain persona (rename conceptually for your project) |
+
+Do not commit real credentials to docs or PRs. Use separate role accounts when recording your demo.

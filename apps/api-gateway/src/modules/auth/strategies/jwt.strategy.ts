@@ -20,12 +20,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ]),
       ignoreExpiration: false,
       secretOrKey: env.JWT_SECRET,
+      algorithms: ['HS256'],
     });
   }
 
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findById(payload.sub);
     if (!user) throw new UnauthorizedException();
-    return user;
+    return this.usersService.toPublic(user);
   }
 }

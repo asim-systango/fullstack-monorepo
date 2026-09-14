@@ -15,6 +15,7 @@ describe('AllExceptionsFilter.catch', () => {
     const host = {
       switchToHttp: () => ({
         getResponse: () => ({ status }),
+        getRequest: () => ({}),
       }),
     } as unknown as ArgumentsHost;
     return { host, status, json };
