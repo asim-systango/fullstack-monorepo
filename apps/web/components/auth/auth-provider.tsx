@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import type { User } from '@shared/api-client';
 import { authApi } from '@/lib/api';
 
@@ -22,6 +23,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +45,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const logout = useCallback(async () => {
     await authApi.logout();
     setUser(null);
-  }, []);
+    router.push('/');
+  }, [router]);
 
   const value = useMemo(
     () => ({ user, loading, refresh, logout }),

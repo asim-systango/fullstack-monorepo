@@ -52,7 +52,7 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         name: dto.name,
-        role: 'user',
+        role: dto.role,
       });
       return this.usersService.toPublic(user);
     } catch (err) {
@@ -91,7 +91,7 @@ export class AuthService {
       maxAge: jwtExpiryToMs(this.env.JWT_EXPIRES_IN),
     });
 
-    return this.usersService.toPublic(user);
+    return this.usersService.toPublic(user, token);
   }
 
   logout(res: Response) {
