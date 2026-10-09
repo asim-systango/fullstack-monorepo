@@ -48,8 +48,8 @@ export function ShellHeader({
         <p className="ui-shell-subtitle">{subtitle}</p>
       </div>
       <nav className="ui-shell-nav">
-        <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        <Link href="/projects">Projects</Link>
+        <Link href="/dashboard">Dashboard</Link>
         <AuthNav />
       </nav>
     </header>
