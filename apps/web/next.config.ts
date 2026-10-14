@@ -52,7 +52,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@shared/ui', '@shared/api-client', '@shared/types'],
+  transpilePackages: ['@shared/types'],
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

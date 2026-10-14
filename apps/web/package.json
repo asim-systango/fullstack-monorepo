@@ -11,16 +11,16 @@
     "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/web/lib"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.6.1",
-    "@shared/api-client": "workspace:*",
-    "@shared/env": "workspace:*",
-    "@shared/ui": "workspace:*",
+    "@shared/types": "workspace:*",
     "@tanstack/react-query": "^5.69.0",
     "@tanstack/react-query-devtools": "^5.69.0",
+    "axios": "^1.19.0",
+    "clsx": "^2.1.1",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-redux": "^9.2.0"
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

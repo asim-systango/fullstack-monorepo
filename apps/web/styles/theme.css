@@ -1,0 +1,73 @@
+/**
+ * LinkedIn-inspired design tokens for Tailwind v4.
+ * Prefer these utilities (bg-canvas, text-primary, bg-brand, font-sans, …)
+ * over inventing one-off colors in components.
+ */
+@theme {
+  /* Brand */
+  --color-brand: #0a66c2;
+  --color-brand-hover: #004182;
+  --color-brand-pressed: #002e60;
+  --color-brand-soft: #e8f3ff;
+  --color-brand-muted: #70b5f9;
+
+  /* Surfaces */
+  --color-canvas: #f4f2ee;
+  --color-surface: #fff;
+  --color-surface-hover: #f3f2ef;
+  --color-elevated: #fff;
+
+  /* Borders / dividers */
+  --color-border: #e0dfdc;
+  --color-border-strong: #cfcfcf;
+  --color-divider: #e8e6e2;
+
+  /* Text */
+  --color-primary: #191919;
+  --color-secondary: #666;
+  --color-tertiary: #8c8c8c;
+  --color-inverse: #fff;
+  --color-link: #0a66c2;
+
+  /* Feedback */
+  --color-success: #057642;
+  --color-success-soft: #ddf6e8;
+  --color-warning: #915907;
+  --color-warning-soft: #fcf0d5;
+  --color-danger: #cc1016;
+  --color-danger-soft: #fce8e8;
+
+  /* Layout */
+  --color-nav: #fff;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-pill: 9999px;
+  --shadow-card: 0 0 0 1px rgb(0, 0, 0, 0.08);
+  --shadow-raised: 0 4px 12px rgb(0, 0, 0, 0.1);
+  --container-feed: 1128px;
+  --max-width-feed: 1128px;
+  --spacing-nav: 3.25rem;
+
+  /* Typography — LinkedIn system stack */
+  --font-sans:
+    -apple-system, system-ui, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --font-mono:
+    ui-monospace, sfmono-regular, menlo, monaco, consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --leading-tight: 1.25;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+}

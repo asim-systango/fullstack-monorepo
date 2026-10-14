@@ -1,81 +1,35 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { QueryFailedError } from 'typeorm';
-import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../common/env';
-import { UsersService } from '../users';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { randomBytes } from 'crypto';
 import type { Response } from 'express';
-
-export { AUTH_COOKIE_NAME };
-
-function jwtExpiryToMs(value: string) {
-  const trimmed = value.trim();
-  const match = /^(\d+)([smhd])?$/.exec(trimmed);
-  if (!match) return 7 * 24 * 60 * 60 * 1000;
-
-  const amount = Number(match[1]);
-  const unit = match[2] ?? 's';
-  const multipliers: Record<string, number> = {
-    s: 1000,
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-  };
-  return amount * (multipliers[unit] ?? 1000);
-}
-
-function isUniqueViolation(err: unknown): boolean {
-  if (!(err instanceof QueryFailedError)) return false;
-  const driverError = err.driverError as { code?: string } | undefined;
-  return driverError?.code === '23505';
-}
+import { UsersService } from '../users/users.service';
+import { UserRole } from '../users/user-role.enum';
+import { LoginDTO } from './dto/login.dto';
+import { RegisterDTO } from './dto/register.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreateStaffDto } from '../admin/dto/create-staff.dto';
+import { AUTH_COOKIE_NAME } from '@shared/env/constants';
+import { getAuthCookieOptions } from './auth.constants';
 
 @Injectable()
 export class AuthService {
-  private readonly env = loadGatewayEnv();
-
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto) {
-    const existing = await this.usersService.findByEmail(dto.email);
-    if (existing) {
-      throw new ConflictException('Unable to create account with those details');
+  // Login
+  async login(dto: LoginDTO, res: Response) {
+    const user = await this.usersService.findByEmail(dto.email);
+
+    const hashToCheck =
+      user?.password_hash ?? (await bcrypt.hash('dummy-password-for-timing', 12));
+    const passwordValid = await bcrypt.compare(dto.password, hashToCheck);
+
+    if (!user || !passwordValid) {
+      throw new UnauthorizedException('Invalid email or password');
     }
-
-    const passwordHash = await bcrypt.hash(dto.password, 12);
-    try {
-      const user = await this.usersService.create({
-        email: dto.email,
-        passwordHash,
-        name: dto.name,
-        role: 'user',
-      });
-      return this.usersService.toPublic(user);
-    } catch (err) {
-      if (isUniqueViolation(err)) {
-        throw new ConflictException('Unable to create account with those details');
-      }
-      throw err;
-    }
-  }
-
-  async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
-    // Always bcrypt.compare (including missing users) to avoid timing-based email enumeration.
-    const hash =
-      user?.passwordHash ??
-      '$2b$12$N/6IAT14.CPmctktUygdXuFR/ryV4IYaHdV7ilF3IfY2Cpsj/X3q.';
-    const ok = await bcrypt.compare(password, hash);
-    return user && ok ? user : null;
-  }
-
-  async login(dto: LoginDto, res: Response) {
-    const user = await this.validateUser(dto.email, dto.password);
-    if (!user) throw new UnauthorizedException('Invalid email or password');
 
     const token = await this.jwtService.signAsync({
       sub: user.id,
@@ -83,21 +37,84 @@ export class AuthService {
       role: user.role,
     });
 
-    res.cookie(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: this.env.COOKIE_SECURE,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: jwtExpiryToMs(this.env.JWT_EXPIRES_IN),
+    res.cookie(
+      AUTH_COOKIE_NAME,
+      token,
+      getAuthCookieOptions(process.env.COOKIE_SECURE === 'true', 7 * 24 * 60 * 60 * 1000),
+    );
+
+    return this.usersService.toPublic(user);
+  }
+
+  // Register
+  async register(dto: RegisterDTO) {
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('An account with this email already exists');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    const user = await this.usersService.create({
+      email: dto.email,
+      passwordHash: passwordHash,
+      name: dto.name,
     });
 
     return this.usersService.toPublic(user);
   }
 
+  /**
+   * Admin-only staff provisioning. Temp password is returned in plaintext once;
+   * only the bcrypt hash is persisted (never log the plaintext).
+   */
+  async createStaff(dto: CreateStaffDto) {
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('An account with this email already exists');
+    }
+
+    const tempPassword = randomBytes(18).toString('base64url');
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+    const user = await this.usersService.create({
+      email: dto.email,
+      passwordHash,
+      name: dto.name,
+      role: UserRole.STAFF,
+      mustChangePassword: true,
+    });
+
+    return {
+      ...this.usersService.toPublic(user),
+      tempPassword,
+    };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const passwordValid = await bcrypt.compare(dto.currentPassword, user.password_hash);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid current password');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    const updated = await this.usersService.updatePassword(userId, passwordHash, false);
+    if (!updated) {
+      throw new UnauthorizedException();
+    }
+
+    return this.usersService.toPublic(updated);
+  }
+
   logout(res: Response) {
     res.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
-      secure: this.env.COOKIE_SECURE,
+      secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'lax',
       path: '/',
     });

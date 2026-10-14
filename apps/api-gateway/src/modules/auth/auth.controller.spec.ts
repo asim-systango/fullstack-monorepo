@@ -3,13 +3,15 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import type { Response } from 'express';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UserRole } from '../users';
 
 describe('AuthController', () => {
   const publicUser = {
     id: '11111111-1111-1111-1111-111111111111',
     email: 'user@example.com',
     name: 'Demo',
-    role: 'user' as const,
+    role: UserRole.USER,
+    mustChangePassword: false,
   };
 
   const authService = {
