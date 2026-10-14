@@ -7,7 +7,7 @@ cp .env.example .env
 pnpm dev:api    # from repo root
 ```
 
-**Scripts (via root):** `pnpm dev:api` · `build:api` · `start:api` · `typecheck:api` · `test:api` · `migration:run:api` · `migration:generate` · `migration:revert:api`
+**Scripts (via root):** `pnpm dev:api` · `build:api` · `start:api` · `typecheck:api` · `test:api` · `migration:run:api` · `migration:generate` · `migration:revert:api` · `seed:api`
 
 **Your work:** modules under `src/modules/` (`*.entity.ts` + `TypeOrmModule.forFeature`).
 
@@ -18,3 +18,29 @@ pnpm dev:api    # from repo root
 - Smoke: hop 1 `http://localhost:3002/ready` or full path `http://localhost:3000/api/ready` (`pnpm doctor`)
 - Swagger: `http://localhost:3002/docs`
 - Note: browser `/api/health` is the **gateway** health check; domain liveness for proxies is `/ready`
+
+## Stretch integrations (optional)
+
+Must browse / cart / place-order / kitchen status works with **no extra keys**. Leave the blocks below commented for a reviewer cold run.
+
+### Razorpay sandbox (Stretch)
+
+Real checkout is Stretch. Unpaid `placed` orders stay visible and the kitchen can fulfill them.
+
+1. Create test keys at [Razorpay Dashboard → API Keys](https://dashboard.razorpay.com/app/keys).
+2. Add to `apps/api/.env`:
+   ```
+   RAZORPAY_KEY_ID=rzp_test_...
+   RAZORPAY_KEY_SECRET=...
+   ```
+3. Restart `pnpm dev:api`. Order detail → **Pay now (optional · Stretch)**.
+
+Without both keys, that button uses **mock mode** (demo dialog, no real charge).
+Test card: `4111 1111 1111 1111`, any future expiry, any CVV.
+
+**TLS / corporate proxy:** if checkout returns 500 with certificate errors, add
+`RAZORPAY_TLS_INSECURE=true` to `.env` for local dev only.
+
+### Cloudinary uploads (Stretch)
+
+Menu and restaurant CRUD work with emoji / `/seed/` images. Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` only if you want signed photo uploads.

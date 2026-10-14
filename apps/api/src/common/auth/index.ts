@@ -1,4 +1,3 @@
-/** Re-exports `@shared/http/auth` for app imports (`./common/auth`). */
 export {
   CurrentUser,
   IS_PUBLIC_KEY,

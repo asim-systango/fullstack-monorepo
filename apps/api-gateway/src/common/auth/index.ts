@@ -1,4 +1,3 @@
-/** Re-exports `@shared/http/auth` for app imports (`./common/auth`). */
 export {
   CurrentUser,
   IS_PUBLIC_KEY,
@@ -10,3 +9,5 @@ export {
   type AuthPrincipal,
   type UserRole,
 } from '@shared/http/auth';
+
+export type { JwtUser } from './jwt-user';
