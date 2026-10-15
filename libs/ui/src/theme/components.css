@@ -195,6 +195,10 @@
     @apply bg-success text-success-foreground;
   }
 
+  .ui-badge-warning {
+    @apply bg-warning text-warning-foreground;
+  }
+
   .ui-badge-danger {
     @apply bg-destructive text-destructive-foreground;
   }

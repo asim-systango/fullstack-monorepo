@@ -100,6 +100,7 @@ export default function UiShowcasePage() {
           <Badge>Neutral</Badge>
           <Badge tone="accent">Accent</Badge>
           <Badge tone="success">Success</Badge>
+          <Badge tone="warning">Warning</Badge>
           <Badge tone="danger">Danger</Badge>
         </div>
       </section>
@@ -290,7 +291,7 @@ export default function UiShowcasePage() {
             <TableRow>
               <TableCell>Grace</TableCell>
               <TableCell>
-                <Badge tone="accent">Pending</Badge>
+                <Badge tone="warning">Pending</Badge>
               </TableCell>
               <TableCell>
                 <span className="font-mono text-xs">staff</span>

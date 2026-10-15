@@ -18,8 +18,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'Leave',
+  description: 'Apply for leave, approve requests and track balances',
 };
 
 export default function RootLayout({

@@ -1,0 +1,75 @@
+'use client';
+
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { leaveApi } from './api';
+import { isYmd } from './dates';
+import type { MyRequestsQuery } from './types';
+
+export const leaveKeys = {
+  all: ['leave'] as const,
+  types: () => [...leaveKeys.all, 'types'] as const,
+  myBalances: () => [...leaveKeys.all, 'balances', 'me'] as const,
+  myRequests: (query: MyRequestsQuery) =>
+    [...leaveKeys.all, 'requests', 'me', query] as const,
+  request: (id: string) => [...leaveKeys.all, 'request', id] as const,
+  quote: (startDate: string, endDate: string) =>
+    [...leaveKeys.all, 'quote', startDate, endDate] as const,
+};
+
+export function useLeaveTypes() {
+  return useQuery({
+    queryKey: leaveKeys.types(),
+    queryFn: leaveApi.leaveTypes,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useMyBalances() {
+  return useQuery({ queryKey: leaveKeys.myBalances(), queryFn: leaveApi.myBalances });
+}
+
+export function useMyRequests(query: MyRequestsQuery) {
+  return useQuery({
+    queryKey: leaveKeys.myRequests(query),
+    queryFn: () => leaveApi.myRequests(query),
+    // keep the old page on screen while the next one loads
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useLeaveRequest(id: string) {
+  return useQuery({
+    queryKey: leaveKeys.request(id),
+    queryFn: () => leaveApi.request(id),
+  });
+}
+
+export function useQuote(startDate: string, endDate: string) {
+  const enabled = isYmd(startDate) && isYmd(endDate) && endDate >= startDate;
+  return useQuery({
+    queryKey: leaveKeys.quote(startDate, endDate),
+    queryFn: () => leaveApi.quote(startDate, endDate),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
+// small app: after any change, refetch everything leave related (lists, details, balances)
+export function useLeaveMutation<TVariables, TData>(
+  mutationFn: (variables: TVariables) => Promise<TData>,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: leaveKeys.all }),
+  });
+}
+
+export const useApplyLeave = () => useLeaveMutation(leaveApi.apply);
+export const useCancelRequest = () => useLeaveMutation(leaveApi.cancel);
+export const useRemoveRequest = () => useLeaveMutation(leaveApi.remove);
