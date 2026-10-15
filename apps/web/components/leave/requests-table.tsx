@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import {
+  Badge,
   Table,
   TableBody,
   TableCell,
@@ -48,7 +49,10 @@ function RequestRow({
         </TableCell>
       ) : null}
       <TableCell>
-        <StatusBadge status={row.status} />
+        <div className="flex flex-wrap items-center gap-1">
+          <StatusBadge status={row.status} />
+          {row.deletedAt ? <Badge>Deleted</Badge> : null}
+        </div>
       </TableCell>
       {renderActions ? (
         <TableCell>

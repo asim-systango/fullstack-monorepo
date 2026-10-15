@@ -1,8 +1,14 @@
+import type { UserRole } from '../../common/auth';
 import type { Employee } from '../employees';
 import type { LeaveRequest } from './leave-request.entity';
 import type { LeaveStatus } from './leave-status';
 
-export type PersonRef = { id: string; name: string; email: string };
+export type PersonRef = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole | null;
+};
 
 export type LeaveRequestView = {
   id: string;
@@ -23,7 +29,12 @@ export type LeaveRequestView = {
 
 function toPerson(id: string, people: Map<string, Employee>): PersonRef {
   const person = people.get(id);
-  return { id, name: person?.name ?? 'Unknown user', email: person?.email ?? '' };
+  return {
+    id,
+    name: person?.name ?? 'Unknown user',
+    email: person?.email ?? '',
+    role: person?.role ?? null,
+  };
 }
 
 // names come from the gateway's users table, the request only stores ids

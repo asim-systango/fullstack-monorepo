@@ -16,6 +16,7 @@ type Toast = { id: number; tone: ToastTone; message: string };
 type ShowToast = (message: string, tone?: ToastTone) => void;
 
 const TOAST_MS = 4000;
+const MAX_TOASTS = 3;
 const ToastContext = createContext<ShowToast>(() => undefined);
 
 function withoutToast(list: Toast[], id: number) {
@@ -35,7 +36,8 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
     (message, tone = 'success') => {
       lastId.current += 1;
       const id = lastId.current;
-      setToasts((list) => [...list, { id, tone, message }]);
+      // keep only the newest few so a burst of actions doesn't fill the screen
+      setToasts((list) => [...list, { id, tone, message }].slice(-MAX_TOASTS));
       window.setTimeout(() => dismiss(id), TOAST_MS);
     },
     [dismiss],

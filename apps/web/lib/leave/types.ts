@@ -25,7 +25,9 @@ export type Balance = {
   configured: boolean;
 };
 
-export type PersonRef = { id: string; name: string; email: string };
+export type Role = 'admin' | 'staff' | 'user';
+
+export type PersonRef = { id: string; name: string; email: string; role: Role | null };
 
 export type LeaveRequest = {
   id: string;
@@ -54,6 +56,24 @@ export type Quote = {
 };
 
 export type MyRequestsQuery = { page: number; limit: number; status?: LeaveStatus };
+
+export type TeamRequestsQuery = MyRequestsQuery & {
+  leaveTypeId?: string;
+  from?: string;
+  to?: string;
+  includeDeleted?: 'true';
+};
+
+export type Employee = { id: string; name: string; email: string; role: Role };
+
+export type LeaveTypeInput = { name: string; defaultDays: number };
+
+export type BalanceInput = {
+  userId: string;
+  leaveTypeId: string;
+  year: number;
+  totalDays: number;
+};
 
 export type NewLeaveRequest = {
   leaveTypeId: string;

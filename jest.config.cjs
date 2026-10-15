@@ -61,6 +61,7 @@ module.exports = {
     'apps/web/lib/api-base-url.ts',
     'apps/web/lib/auth/routing.ts',
     'apps/web/lib/leave/dates.ts',
+    'apps/web/lib/leave/decisions.ts',
     'apps/web/lib/leave/errors.ts',
     'apps/web/lib/leave/format.ts',
     'apps/web/lib/store/leave-draft-slice.ts',

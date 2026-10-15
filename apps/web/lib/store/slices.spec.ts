@@ -1,5 +1,13 @@
 import { clearDraft, leaveDraftReducer, updateDraft } from './leave-draft-slice';
-import { requestFiltersReducer, setMyPage, setMyStatus } from './request-filters-slice';
+import {
+  clearTeamFilters,
+  requestFiltersReducer,
+  setMyPage,
+  setMyStatus,
+  setTeamFilter,
+  setTeamPage,
+  toTeamQuery,
+} from './request-filters-slice';
 
 describe('leaveDraft slice', () => {
   const empty = leaveDraftReducer(undefined, { type: 'init' });
@@ -38,5 +46,43 @@ describe('requestFilters slice', () => {
     const onPage3 = requestFiltersReducer(start, setMyPage(3));
     const filtered = requestFiltersReducer(onPage3, setMyStatus('pending'));
     expect(filtered.mine).toEqual({ status: 'pending', page: 1 });
+  });
+
+  it('starts the manager list on pending requests', () => {
+    expect(start.team.status).toBe('pending');
+  });
+
+  it('resets the team page when a filter changes', () => {
+    const onPage2 = requestFiltersReducer(start, setTeamPage(2));
+    const filtered = requestFiltersReducer(
+      onPage2,
+      setTeamFilter({ from: '2026-10-01' }),
+    );
+    expect(filtered.team.page).toBe(1);
+    expect(filtered.team.from).toBe('2026-10-01');
+  });
+
+  it('clears every team filter', () => {
+    const filtered = requestFiltersReducer(
+      start,
+      setTeamFilter({ leaveTypeId: 'x', to: '2026-10-31' }),
+    );
+    const cleared = requestFiltersReducer(filtered, clearTeamFilters());
+    expect(cleared.team).toEqual({ ...start.team, status: '' });
+  });
+
+  it('turns filters into api params, dropping empty ones', () => {
+    expect(toTeamQuery(start.team, 20)).toEqual({
+      page: 1,
+      limit: 20,
+      status: 'pending',
+      leaveTypeId: undefined,
+      from: undefined,
+      to: undefined,
+      includeDeleted: undefined,
+    });
+    expect(toTeamQuery({ ...start.team, includeDeleted: true }, 20).includeDeleted).toBe(
+      'true',
+    );
   });
 });
