@@ -14,6 +14,13 @@ function AuthNav() {
   if (user) {
     return (
       <>
+        {user.role === 'user' ? <Link href="/resumes">Resumes</Link> : null}
+        {user.role === 'admin' ? (
+          <>
+            <Link href="/admin/templates">Templates</Link>
+            <Link href="/admin/resumes">All resumes</Link>
+          </>
+        ) : null}
         <span className="font-mono text-xs text-muted-foreground">
           {user.name} · {user.role}
         </span>
@@ -39,10 +46,10 @@ function AuthNav() {
 
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Resume Builder',
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
-    <header className="ui-shell-header">
+    <header className="ui-shell-header print:hidden">
       <div>
         <h1 className="ui-shell-title">{title}</h1>
         <p className="ui-shell-subtitle">{subtitle}</p>
