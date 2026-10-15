@@ -78,8 +78,21 @@ export class RolesGuard implements CanActivate {
       .getRequest<Request & { user?: AuthPrincipal }>();
     const user = request.user;
     if (!user) throw new UnauthorizedException();
-    if (!roles.includes(user.role)) {
-      throw new ForbiddenException('Insufficient permissions');
+
+    const normalizeRole = (r: string): string => {
+      const upper = (r || '').toUpperCase();
+      if (upper === 'STAFF') return 'DOCTOR';
+      if (upper === 'USER') return 'PATIENT';
+      return upper;
+    };
+
+    const userRole = normalizeRole(user.role);
+    const allowedRoles = roles.map((r) => normalizeRole(r));
+
+    if (!allowedRoles.includes(userRole)) {
+      throw new ForbiddenException(
+        `User with role '${user.role}' is forbidden from accessing this resource`,
+      );
     }
     return true;
   }

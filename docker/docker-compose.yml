@@ -1,4 +1,4 @@
-# Shared Postgres for the monorepo apps.
+# Shared infrastructure for the monorepo apps.
 # App images are optional stubs (Dockerfile.gateway / Dockerfile.api / Dockerfile.web)
 # — not started by this compose file.
 #
@@ -27,3 +27,27 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - '${PGADMIN_PORT:-5050}:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@hospital.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s

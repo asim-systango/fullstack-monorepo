@@ -47,15 +47,27 @@ function enhanceFieldControl(child: ReactNode, opts: EnhanceOpts): ReactNode {
   let result: ReactNode = child;
   if (isValidElement(child)) {
     const el = child as ReactElement<Record<string, unknown>>;
-    result = cloneElement(el, {
+    const isHostElement = typeof el.type === 'string';
+    const isInvalid = (el.props.invalid as boolean | undefined) ?? Boolean(opts.error);
+
+    const extraProps: Record<string, unknown> = {
       id: el.props.id ?? opts.htmlFor,
       name: el.props.name ?? opts.name,
       required: el.props.required ?? opts.required,
       disabled: el.props.disabled ?? opts.disabled,
-      invalid: el.props.invalid ?? Boolean(opts.error),
       'aria-describedby':
         (el.props['aria-describedby'] as string | undefined) ?? opts.describedBy,
-    });
+    };
+
+    if (isHostElement) {
+      if (isInvalid) {
+        extraProps['aria-invalid'] = true;
+      }
+    } else {
+      extraProps.invalid = isInvalid;
+    }
+
+    result = cloneElement(el, extraProps);
   }
   return result;
 }

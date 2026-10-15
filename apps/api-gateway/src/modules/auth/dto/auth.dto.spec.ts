@@ -5,8 +5,9 @@ describe('RegisterDto', () => {
   it('accepts a valid payload', async () => {
     const dto = Object.assign(new RegisterDto(), {
       email: 'user@example.com',
-      password: 'password123',
-      name: 'Demo',
+      password: 'Password123!',
+      firstName: 'Demo',
+      lastName: 'User',
     });
     await expect(validate(dto)).resolves.toHaveLength(0);
   });
@@ -15,12 +16,13 @@ describe('RegisterDto', () => {
     const dto = Object.assign(new RegisterDto(), {
       email: 'not-an-email',
       password: 'short',
-      name: '',
+      firstName: '',
+      lastName: '',
     });
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors.map((e) => e.property).sort()).toEqual(
-      expect.arrayContaining(['email', 'password', 'name']),
+      expect.arrayContaining(['email', 'firstName', 'lastName', 'password']),
     );
   });
 });
@@ -29,7 +31,7 @@ describe('LoginDto', () => {
   it('accepts a valid payload', async () => {
     const dto = Object.assign(new LoginDto(), {
       email: 'user@example.com',
-      password: 'x',
+      password: 'Password123!',
     });
     await expect(validate(dto)).resolves.toHaveLength(0);
   });

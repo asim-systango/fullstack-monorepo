@@ -8,6 +8,7 @@ export function databaseConfig() {
     url: env.DATABASE_URL,
     autoLoadEntities: true,
     synchronize: false,
-    migrationsRun: false,
+    migrationsRun: true,
+    migrations: [__dirname + '/../database/migrations/*.{js,ts}'],
   };
 }

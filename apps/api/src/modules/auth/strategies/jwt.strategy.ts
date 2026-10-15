@@ -6,7 +6,14 @@ import type { JwtUser, UserRole } from '../../../common/auth';
 
 type JwtPayload = { sub: string; email: string; role: string };
 
-const ROLES: readonly UserRole[] = ['admin', 'user', 'staff'];
+const ROLES: readonly UserRole[] = [
+  'ADMIN',
+  'DOCTOR',
+  'PATIENT',
+  'admin',
+  'user',
+  'staff',
+];
 
 function isUserRole(value: string): value is UserRole {
   return (ROLES as readonly string[]).includes(value);

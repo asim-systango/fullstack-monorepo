@@ -27,7 +27,11 @@ export function TextInput({
       required={required}
       aria-invalid={ariaInvalid ?? (invalid || undefined)}
       aria-describedby={ariaDescribedBy}
-      className={cn('ui-input', invalid && 'ui-control-invalid', className)}
+      className={cn(
+        'w-full rounded-lg border border-input bg-card px-3.5 py-2 text-sm text-foreground shadow-xs transition-all duration-150 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 read-only:bg-muted',
+        invalid && 'border-destructive focus-visible:ring-destructive',
+        className,
+      )}
       {...props}
     />
   );
