@@ -34,9 +34,12 @@ const uiSlice = createSlice({
 
 export const { setFilterDraft, applyFilter } = uiSlice.actions;
 
+import eventsFilterReducer from './eventsFilterSlice';
+
 export const store = configureStore({
   reducer: {
     ui: uiSlice.reducer,
+    eventsFilter: eventsFilterReducer,
   },
 });
 

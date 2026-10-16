@@ -1,4 +1,5 @@
 import { loadApiEnv } from '@shared/env/api';
+import { resolve } from 'path';
 
 /** Database connection settings for Nest TypeORM. */
 export function databaseConfig() {
@@ -8,9 +9,8 @@ export function databaseConfig() {
     url: env.DATABASE_URL,
     autoLoadEntities: true,
     synchronize: false,
-    migrationsRun: false,
-    // Must match apps/api/src/database/data-source.ts — this app and the gateway
-    // share one DATABASE_URL and must not share a migration ledger.
+    migrationsRun: true,
+    migrations: [resolve(__dirname, '../database/migrations/*.{ts,js}')],
     migrationsTableName: 'migrations_api',
   };
 }

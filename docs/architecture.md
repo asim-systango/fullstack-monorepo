@@ -58,9 +58,36 @@ Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Domain notes
 
-_Describe your ERD and key invariants here._
+### ERD & Entities (`apps/api/src/modules/`)
+- `Event`: `id`, `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `organizerId`, `status` (`DRAFT`, `PUBLISHED`, `CANCELLED`), `category`, `deletedAt` (Soft Delete).
+- `Rsvp`: `id`, `eventId`, `userId`, `status` (`YES`, `NO`, `MAYBE`), unique constraint on `(eventId, userId)`.
+- `Ticket`: `id`, `rsvpId`, `eventId`, `userId`, `qrPayload` (unique token hash), `status` (`ISSUED`, `USED`, `CANCELLED`).
+- `WaitlistEntry`: `id`, `eventId`, `userId`, `position`, `status` (`WAITING`, `PROMOTED`, `CANCELLED`).
+- `CheckIn`: `id`, `ticketId`, `scannedByUserId`, `scannedAt`.
+
+### Key Hard Invariant & Transaction
+- **Capacity Enforcement**: Capacity is strictly checked inside a database row-lock transaction (`pessimistic_write`). When capacity is reached (`yesCount >= capacity`), new `YES` RSVPs are added to `WaitlistEntry` with status `WAITING` and position calculated.
+- **Cancellation Promotion Transaction**: When a user cancels a `YES` RSVP, a single TypeORM transaction:
+  1. Updates the user's RSVP to `NO`/cancelled and marks their ticket as `CANCELLED`.
+  2. Queries the oldest `WAITING` waitlist entry (`ORDER BY position ASC, createdAt ASC`).
+  3. Promotes the waitlist entry to `PROMOTED`.
+  4. Automatically creates a `YES` RSVP and issues a new `Ticket` with a unique `qrPayload` for the promoted waitlist user.
 
 ## Demo script
 
-1. Register / login
-2. …
+1. **Role Login & Navigation**:
+   - Log in as `admin@demo.local` (Admin) or `staff@demo.local` (Staff / Organizer) with password `password123`.
+   - Access `/organizer` (Organizer Dashboard) to view event metrics (Total Events, Confirmed Attendees, Waitlist Queue, Occupancy Rate).
+2. **Event Creation & Catalog Filtering**:
+   - Go to `/events/new` and publish a new event with capacity `2`.
+   - Go to `/events` and use the search bar, category tabs, and Grid/Table view toggles to filter events (backed by Redux Toolkit).
+3. **Capacity Limit & Automatic Waitlisting**:
+   - Log in as `user@demo.local` (Attendee) and navigate to the event with capacity `2`.
+   - RSVP `YES` -> Capacity is full (2/2) -> System automatically adds user to the **Waitlist** at Position #1.
+4. **Cancellation & Transactional Waitlist Promotion**:
+   - Log in as `staff@demo.local` (one of the registered attendees) and cancel the RSVP (`YES` -> `NO`).
+   - The transaction runs: `staff@demo.local` ticket is cancelled, and `user@demo.local` is automatically promoted from the waitlist and issued a ticket pass!
+5. **Staff QR Check-In Scanner & Soft-Delete**:
+   - As `staff@demo.local`, navigate to `/check-in` (Staff Ticket Check-In Tool).
+   - Enter/scan the promoted ticket's `qrPayload` -> Ticket is verified and marked `USED` with timestamp recorded. Scanning again shows "Ticket already used".
+   - Delete an event on `/organizer` -> Event is soft-deleted (`deletedAt` set in database).

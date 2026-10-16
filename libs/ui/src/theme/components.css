@@ -112,9 +112,23 @@
     @apply mt-1 mb-0 text-xs text-destructive;
   }
 
-  .ui-input,
-  .ui-select {
+  .ui-input {
     @apply w-full rounded-md border border-input bg-card px-2.5 py-2 text-sm text-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply placeholder:text-muted-foreground read-only:bg-muted;
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .ui-select {
+    @apply w-full rounded-md border border-input bg-card pl-3 pr-8 py-2 text-sm font-medium text-foreground cursor-pointer appearance-none shadow-xs;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     transition-property: color, background-color, border-color, box-shadow;
@@ -122,8 +136,8 @@
     transition-timing-function: var(--ease-standard);
   }
 
-  .ui-input {
-    @apply placeholder:text-muted-foreground read-only:bg-muted;
+  .ui-select option {
+    @apply bg-card text-foreground py-1;
   }
 
   .ui-textarea {
@@ -363,12 +377,7 @@
 
   /* —— Dialog / Modal —— */
   .ui-dialog {
-    @apply m-0 max-h-none max-w-none border-0 bg-transparent p-4 text-foreground;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: grid;
-    place-items: center;
+    @apply border-0 bg-transparent p-4 text-foreground fixed inset-0 m-auto z-50 max-h-[90vh] w-full max-w-2xl overflow-visible;
   }
 
   .ui-dialog:not([open]) {
@@ -380,15 +389,11 @@
   }
 
   .ui-dialog-backdrop {
-    @apply m-0 cursor-default border-0 bg-transparent p-0;
-    grid-area: 1 / 1;
-    width: 100%;
-    height: 100%;
+    @apply fixed inset-0 m-0 cursor-default border-0 bg-transparent p-0;
   }
 
   .ui-dialog-panel {
-    @apply relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-md;
-    grid-area: 1 / 1;
+    @apply relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-xl border border-border bg-card p-6 text-card-foreground shadow-2xl;
   }
 
   .ui-dialog-close {

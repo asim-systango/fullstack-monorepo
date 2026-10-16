@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
 import {
   Button,
@@ -15,7 +15,7 @@ import {
   TextInput,
   StatusMessage,
 } from '@shared/ui/components';
-import { ApiClientError } from '@shared/api-client';
+import { toUserMessage } from '@shared/api-client';
 import { ShellHeader, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
@@ -23,6 +23,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const { refresh } = useAuth();
   const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
   const [password, setPassword] = useState(isProd ? '' : 'password123');
@@ -36,9 +38,9 @@ export default function LoginPage() {
     try {
       await authApi.login({ email, password });
       await refresh();
-      router.push('/');
+      router.push(next && next.startsWith('/') ? next : '/');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      setError(toUserMessage(err, 'Login failed'));
     } finally {
       setPending(false);
     }
