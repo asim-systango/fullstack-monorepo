@@ -5,6 +5,9 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
+import { PublicModule } from './modules/public';
+import { ResumesModule } from './modules/resumes';
+import { TemplatesModule } from './modules/templates';
 
 const db = databaseConfig();
 
@@ -20,6 +23,9 @@ const db = databaseConfig();
     }),
     AuthModule,
     HealthModule,
+    TemplatesModule,
+    ResumesModule,
+    PublicModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

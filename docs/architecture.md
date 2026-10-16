@@ -58,9 +58,44 @@ Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Domain notes
 
-_Describe your ERD and key invariants here._
+**Resume Builder** (`kishan-kantariya/resume-builder`)
+
+### ERD
+
+- `Template` (name, key, isActive) — seeded Classic / Modern / Compact; admin toggles active
+- `Resume` (ownerId → gateway user UUID, title, templateId, contact fields, summary, status, slug, deletedAt)
+- `Section` (resumeId, type, title, position ≥ 0) — CASCADE delete with resume
+- `SectionItem` (sectionId, heading, subheading, dates, description, position ≥ 0) — CASCADE with section
+
+### Roles
+
+| Domain    | Gateway | Screens                              |
+| --------- | ------- | ------------------------------------ |
+| Candidate | `user`  | `/resumes`, editor                   |
+| Admin     | `admin` | `/admin/templates`, `/admin/resumes` |
+| Coach     | `staff` | Should — not implemented             |
+
+### Invariants / transactions
+
+- **Publish:** requires `fullName`, `email`, and ≥1 item in an Experience or Education section; unique slug from full name (`asha-sharma`, then `-2`, …)
+- **Duplicate:** one DB transaction copies resume + all sections + items as a draft titled `"… (copy)"`
+- **Save (PUT):** replaces sections/items inside a transaction
+- Soft-delete on resumes; public `GET /public/resumes/:slug` only for published, non-deleted
+
+### FE ownership
+
+- TanStack Query: lists, detail, mutations
+- RTK `resumeDraft`: editor form + live preview (same draft)
+- Templates are React components keyed by `Template.key`
+
+### Seeds
+
+- Gateway: `pnpm seed` (admin/user/staff@demo.local / `password123`)
+- Domain: `pnpm seed:api` after `pnpm migration:run:api` (3 templates + 3 resumes with sections/items)
 
 ## Demo script
 
-1. Register / login
-2. …
+1. **Roles (30s):** Log in as `user@demo.local` → `/resumes`. Log in as `admin@demo.local` → `/admin/templates`. Candidate hitting `/admin/templates` sees Access denied.
+2. **Happy path (2m):** New resume → fill contact + Experience items → preview updates live → reorder with Move up/down → switch template → Save → Publish → open `/r/<slug>` logged out.
+3. **Invariant (30s):** Publish empty draft → Alert lists missing fields (400).
+4. **Lists (1m):** Filter by status/template/q; Duplicate; soft-delete disappears from list.
