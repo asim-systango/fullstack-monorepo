@@ -24,6 +24,7 @@ module.exports = {
             '@shared/http': ['libs/http/src/index.ts'],
             '@shared/http/*': ['libs/http/src/*/index.ts'],
             '@shared/types': ['libs/shared-types/src/index.ts'],
+            '@shared/api-client': ['libs/api-client/src/index.ts'],
             '@shared/ui': ['libs/ui/src/index.ts'],
             '@shared/ui/*': ['libs/ui/src/*'],
           },

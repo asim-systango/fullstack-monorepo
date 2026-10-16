@@ -1,4 +1,4 @@
-import type { User } from '@shared/types';
+import type { User } from '@shared/api-client';
 
 /** Post-login landing path by gateway role. */
 export function roleHome(role: User['role']): string {

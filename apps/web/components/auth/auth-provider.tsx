@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '@shared/api-client';
 import { authApi } from '@/lib/api';
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const previousUserId = useRef<string | null>(null);
@@ -57,9 +59,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [user, queryClient, dispatch]);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
-  }, []);
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+      router.replace('/login');
+    }
+  }, [router]);
 
   const value = useMemo(
     () => ({ user, loading, refresh, logout }),
