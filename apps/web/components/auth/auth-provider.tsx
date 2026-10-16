@@ -6,11 +6,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '@shared/api-client';
 import { authApi } from '@/lib/api';
+import { clearResumeDraft, resetFilters, useAppDispatch } from '@/lib/store';
 
 type AuthContextValue = {
   user: User | null;
@@ -24,6 +27,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
+  const previousUserId = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -39,6 +45,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const nextUserId = user?.id ?? null;
+    if (previousUserId.current && previousUserId.current !== nextUserId) {
+      queryClient.removeQueries({ queryKey: ['resumes'] });
+      dispatch(resetFilters());
+      dispatch(clearResumeDraft());
+    }
+    previousUserId.current = nextUserId;
+  }, [user, queryClient, dispatch]);
 
   const logout = useCallback(async () => {
     await authApi.logout();

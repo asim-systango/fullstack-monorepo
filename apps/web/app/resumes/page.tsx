@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { RequireAuth, ShellHeader } from '@/components/auth';
+import { RequireAuth, ShellHeader, useAuth } from '@/components/auth';
 import { ResumeFilters } from '@/components/resumes/resume-filters';
 import { resumesApi, templatesApi } from '@/lib/resumes-api';
 import { resetFilters, useAppDispatch, useAppSelector } from '@/lib/store';
@@ -38,6 +38,7 @@ export default function ResumesListPage() {
 }
 
 function ResumesList() {
+  const { user } = useAuth();
   const dispatch = useAppDispatch();
   const applied = useAppSelector((s) => s.ui.appliedFilter);
   const queryClient = useQueryClient();
@@ -57,6 +58,7 @@ function ResumesList() {
     queryKey: [
       'resumes',
       'own',
+      user?.id,
       {
         status: applied.status || undefined,
         templateId: applied.templateId || undefined,
@@ -64,6 +66,7 @@ function ResumesList() {
         page,
       },
     ],
+    enabled: Boolean(user),
     queryFn: () =>
       resumesApi.listOwn({
         status: applied.status || undefined,
