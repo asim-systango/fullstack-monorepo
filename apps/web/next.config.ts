@@ -2,9 +2,9 @@ import type { NextConfig } from 'next';
 
 /**
  * Browser calls same-origin `/api/*` on :3000.
- * Next rewrites those to the Nest API gateway (default :3001).
+ * Next rewrites those to Nest `apps/api` (default :3002).
  */
-const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3001').replace(
+const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3002').replace(
   /\/$/,
   '',
 );

@@ -1,0 +1,25 @@
+/* Shared Bookly brand tokens — used by auth shell and member shell. */
+:root {
+  --bookly-navy: #002b49;
+  --bookly-navy-deep: #001a2e;
+  --bookly-navy-mid: #0a3d5c;
+  --bookly-teal: #00a88e;
+  --bookly-teal-soft: #5eead4;
+  --bookly-teal-muted: #1a9e8a;
+  --bookly-paper: #f7faf9;
+  --bookly-paper-warm: #f7f6f2;
+  --bookly-input-bg: #f3f2ee;
+  --bookly-muted: #5c6b73;
+  --bookly-border: color-mix(in srgb, var(--bookly-navy) 12%, transparent);
+  --bookly-focus-ring: color-mix(in srgb, var(--bookly-teal-muted) 28%, transparent);
+  --bookly-auth-glow: 0 0 80px 24px
+    color-mix(in srgb, var(--bookly-teal-muted) 14%, transparent);
+  --bookly-auth-card-shadow:
+    0 4px 12px color-mix(in srgb, var(--bookly-navy) 10%, transparent),
+    0 28px 64px color-mix(in srgb, var(--bookly-navy) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, #fff 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--bookly-teal-muted) 28%, transparent);
+  --bookly-card-shadow:
+    0 1px 2px color-mix(in srgb, var(--bookly-navy) 6%, transparent),
+    0 8px 24px color-mix(in srgb, var(--bookly-navy) 5%, transparent);
+}

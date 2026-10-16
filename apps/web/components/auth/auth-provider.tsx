@@ -1,53 +1,63 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { User } from '@shared/api-client';
-import { authApi } from '@/lib/api';
+import { toUserMessage } from '@/lib/auth/errors';
+import { useAuthMeQuery, useLogout } from '@/lib/auth/hooks';
+import { queryKeys } from '@/lib/query-keys';
 
-type AuthContextValue = {
+export type AuthState = {
   user: User | null;
-  loading: boolean;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+};
+
+type AuthContextValue = AuthState & {
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
+  setSessionUser: (user: User | null) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const meQuery = useAuthMeQuery();
+  const logoutMutation = useLogout();
+
+  const user = meQuery.data ?? null;
+  const initialLoading =
+    meQuery.isPending || (meQuery.isFetching && meQuery.data === undefined);
+  const error = meQuery.isError ? toUserMessage(meQuery.error) : null;
 
   const refresh = useCallback(async () => {
-    try {
-      const me = await authApi.me();
-      setUser(me);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
+  }, [queryClient]);
 
   const logout = useCallback(async () => {
-    await authApi.logout();
-    setUser(null);
-  }, []);
+    await logoutMutation.mutateAsync();
+  }, [logoutMutation]);
+
+  const setSessionUser = useCallback(
+    (next: User | null) => {
+      queryClient.setQueryData(queryKeys.auth.me, next);
+    },
+    [queryClient],
+  );
 
   const value = useMemo(
-    () => ({ user, loading, refresh, logout }),
-    [user, loading, refresh, logout],
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      isLoading: initialLoading,
+      error,
+      refresh,
+      logout,
+      setSessionUser,
+    }),
+    [user, initialLoading, error, refresh, logout, setSessionUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -10,6 +10,9 @@ export function isGatewayOwnedPath(path: string): boolean {
     path === '/health' ||
     path.startsWith('/health/') ||
     path.startsWith('/auth') ||
+    path.startsWith('/users') ||
+    // Block browser→gateway→/internal/*; gateway calls upstream server-side only.
+    path.startsWith('/internal') ||
     path.startsWith('/docs') ||
     path.startsWith('/swagger')
   );

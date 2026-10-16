@@ -10,6 +10,7 @@ export function appConfig(): Pick<
   | 'JWT_SECRET'
   | 'JWT_EXPIRES_IN'
   | 'API_UPSTREAM_URL'
+  | 'INTERNAL_SERVICE_TOKEN'
 > {
   const env = loadGatewayEnv();
   return {
@@ -20,5 +21,6 @@ export function appConfig(): Pick<
     JWT_SECRET: env.JWT_SECRET,
     JWT_EXPIRES_IN: env.JWT_EXPIRES_IN,
     API_UPSTREAM_URL: env.API_UPSTREAM_URL,
+    INTERNAL_SERVICE_TOKEN: env.INTERNAL_SERVICE_TOKEN,
   };
 }

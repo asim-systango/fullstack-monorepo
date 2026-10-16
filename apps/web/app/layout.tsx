@@ -18,8 +18,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'Bookly',
+  description:
+    'Bookly is a library management system for catalog search, loans, reservations, the staff desk, and administration.',
 };
 
 export default function RootLayout({

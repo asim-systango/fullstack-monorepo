@@ -7,14 +7,14 @@ import {
 } from './proxy-hop';
 
 describe('isGatewayOwnedPath', () => {
-  it.each(['/health', '/health/live', '/auth/login', '/docs', '/docs/json', '/swagger'])(
+  it.each(['/health', '/health/live', '/auth/login', '/docs', '/docs/json', '/swagger', '/users'])(
     'treats %s as gateway-owned',
     (path) => {
       expect(isGatewayOwnedPath(path)).toBe(true);
     },
   );
 
-  it.each(['/ready', '/users', '/api/ready', '/'])('proxies %s to upstream', (path) => {
+  it.each(['/ready', '/api/ready', '/'])('proxies %s to upstream', (path) => {
     expect(isGatewayOwnedPath(path)).toBe(false);
   });
 });

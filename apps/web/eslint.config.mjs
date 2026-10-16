@@ -14,7 +14,7 @@ const compat = new FlatCompat({
 /** @type {import('eslint').Linter.Config[]} */
 const config = [
   {
-    ignores: ['eslint.config.mjs', '.next/**', 'next-env.d.ts'],
+    ignores: ['eslint.config.mjs', '.next/**', '.next-build/**', 'next-env.d.ts'],
   },
   ...base,
   ...compat.extends('next/core-web-vitals'),

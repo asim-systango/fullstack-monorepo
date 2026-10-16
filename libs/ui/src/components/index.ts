@@ -25,6 +25,7 @@ export {
   type SkeletonProps,
 } from './spinner';
 export { EmptyState, type EmptyStateProps } from './empty-state';
+export { MetricCard, type MetricCardProps, type MetricCardTone } from './metric-card';
 export { Page, PageHeader, type PageProps, type PageHeaderProps } from './page';
 export { Separator, type SeparatorProps } from './separator';
 export {

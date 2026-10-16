@@ -10,6 +10,7 @@ describe('JwtStrategy (gateway)', () => {
       email: user.email,
       name: user.name,
       role: user.role,
+      emailVerified: user.emailVerifiedAt != null,
     })),
   };
 
@@ -25,6 +26,7 @@ describe('JwtStrategy (gateway)', () => {
       COOKIE_SECURE: 'false',
       CORS_ORIGIN: 'http://localhost:3000',
       API_UPSTREAM_URL: 'http://localhost:3002',
+      INTERNAL_SERVICE_TOKEN: 'test-internal-token-16',
     });
     strategy = new JwtStrategy(usersService as unknown as UsersService);
   });
@@ -61,6 +63,7 @@ describe('JwtStrategy (gateway)', () => {
       email: user.email,
       name: user.name,
       role: user.role,
+      emailVerified: false,
     });
   });
 

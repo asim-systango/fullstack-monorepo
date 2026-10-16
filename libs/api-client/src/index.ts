@@ -3,10 +3,88 @@ import axios, {
   type AxiosInstance,
   type CreateAxiosDefaults,
 } from 'axios';
-import { z } from 'zod';
-import { apiErrorSchema, userSchema, type ApiErrorBody, type User } from '@shared/types';
+import { apiErrorSchema, type ApiErrorBody } from '@shared/types';
 
-export { apiErrorSchema, userSchema, type ApiErrorBody, type User };
+export {
+  apiErrorSchema,
+  userSchema,
+  authTokensSchema,
+  type ApiErrorBody,
+  type User,
+  type AuthTokens,
+} from '@shared/types';
+
+// Re-export Bookly domain types for app consumers
+export type {
+  Book,
+  BookDetail,
+  BookViewerActions,
+  BookCopy,
+  BookCopyStatus,
+  CreateBookInput,
+  UpdateBookInput,
+  CreateBookCopyInput,
+  UpdateBookCopyInput,
+  ListBooksParams,
+  ListBookCopiesParams,
+  Loan,
+  LoanWithRelations,
+  OverdueLoan,
+  ListLoansParams,
+  LookupLoanParams,
+  CheckoutLoanInput,
+  LoanFilterStatus,
+  Reservation,
+  ReservationWithBook,
+  CreateReservationInput,
+  ListReservationsParams,
+  ReservationStatus,
+  CheckoutRequest,
+  CheckoutRequestStatus,
+  CreateCheckoutRequestInput,
+  IssueCheckoutRequestInput,
+  ListCheckoutRequestsParams,
+  RejectCheckoutRequestInput,
+  Fine,
+  FineWithLoan,
+  ListFinesParams,
+  WaiveFineInput,
+  FineStatus,
+  MemberProfile,
+  MemberListItem,
+  MemberDetail,
+  MemberSearchHit,
+  MemberLoanSummary,
+  ListMembersParams,
+  SearchMembersParams,
+  SuspendMemberInput,
+  MemberStatus,
+  AppSetting,
+  UpdateSettingInput,
+  PublicDashboard,
+  MemberDashboard,
+  LibrarianDashboard,
+  AdminDashboard,
+  Paginated,
+  PaginationParams,
+} from '@shared/types';
+
+export { unwrapData } from './unwrap';
+export { buildQueryParams } from './query-params';
+export { createAuthApi } from './auth';
+export { createHealthApi } from './health';
+export {
+  createBooksApi,
+  createBookCopiesApi,
+  createLoansApi,
+  createReservationsApi,
+  createCheckoutRequestsApi,
+  createFinesApi,
+  createMembersApi,
+  createSettingsApi,
+  createDashboardApi,
+  createUsersApi,
+} from './bookly';
 
 export class ApiClientError extends Error {
   readonly statusCode: number;
@@ -34,23 +112,28 @@ function toApiError(error: AxiosError): ApiClientError {
   });
 }
 
-/** Unwrap Nest `{ data: T }` success envelope. */
-export function unwrapData<T>(payload: unknown): T {
-  if (
-    payload !== null &&
-    typeof payload === 'object' &&
-    'data' in payload &&
-    Object.keys(payload as object).length === 1
-  ) {
-    return (payload as { data: T }).data;
-  }
-  return payload as T;
-}
-
 export type CreateApiClientOptions = CreateAxiosDefaults & {
   withCredentials?: boolean;
   onUnauthorized?: () => void;
 };
+
+/** Public or credential-check auth routes — a 401 is not a session expiry. */
+const SKIP_UNAUTHORIZED_REDIRECT = [
+  '/auth/me',
+  '/auth/login',
+  '/auth/register',
+  '/auth/verify-otp',
+  '/auth/resend-otp',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/change-password',
+] as const;
+
+function shouldSkipUnauthorizedRedirect(url: string): boolean {
+  return SKIP_UNAUTHORIZED_REDIRECT.some((path) => url.includes(path));
+}
 
 export function createApiClient(options: CreateApiClientOptions = {}): AxiosInstance {
   const { onUnauthorized, ...axiosConfig } = options;
@@ -67,11 +150,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): AxiosInst
       const apiError = toApiError(error);
       if (apiError.statusCode === 401) {
         const url = error.config?.url ?? '';
-        if (
-          !url.includes('/auth/me') &&
-          !url.includes('/auth/login') &&
-          !url.includes('/auth/register')
-        ) {
+        if (!shouldSkipUnauthorizedRedirect(url)) {
           onUnauthorized?.();
         }
       }
@@ -80,38 +159,4 @@ export function createApiClient(options: CreateApiClientOptions = {}): AxiosInst
   );
 
   return client;
-}
-
-export function createAuthApi(client: AxiosInstance) {
-  return {
-    async login(input: { email: string; password: string }): Promise<User> {
-      const { data } = await client.post('/auth/login', input);
-      return userSchema.parse(unwrapData(data));
-    },
-    async register(input: {
-      email: string;
-      password: string;
-      name: string;
-    }): Promise<User> {
-      const { data } = await client.post('/auth/register', input);
-      return userSchema.parse(unwrapData(data));
-    },
-    async me(): Promise<User> {
-      const { data } = await client.get('/auth/me');
-      return userSchema.parse(unwrapData(data));
-    },
-    async logout(): Promise<void> {
-      await client.post('/auth/logout');
-    },
-  };
-}
-
-export function createHealthApi(client: AxiosInstance) {
-  return {
-    async check(): Promise<{ status: string }> {
-      const { data } = await client.get('/health');
-      const parsed = z.object({ status: z.string() }).parse(unwrapData(data));
-      return { status: parsed.status };
-    },
-  };
 }

@@ -10,6 +10,7 @@ describe('AuthController', () => {
     email: 'user@example.com',
     name: 'Demo',
     role: 'user' as const,
+    emailVerified: true,
   };
 
   const authService = {
@@ -86,6 +87,6 @@ describe('AuthController', () => {
     const res = { clearCookie: jest.fn() } as unknown as Response;
     authService.logout.mockReturnValue({ ok: true });
     expect(controller.logout(res)).toEqual({ ok: true });
-    expect(authService.logout).toHaveBeenCalledWith(res);
+    expect(authService.logout).toHaveBeenCalledWith(res, undefined);
   });
 });

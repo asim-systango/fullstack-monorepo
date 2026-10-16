@@ -19,12 +19,25 @@ export const gatewayEnvSchema = z
         "must be digits with an optional s/m/h/d suffix (e.g. '900s', '15m', '7d')",
       )
       .default('7d'),
+    REFRESH_TOKEN_EXPIRES_IN: z
+      .string()
+      .regex(
+        /^\d+[smhd]?$/,
+        "must be digits with an optional s/m/h/d suffix (e.g. '30d')",
+      )
+      .default('30d'),
     COOKIE_SECURE: z
       .enum(['true', 'false'])
       .default('false')
       .transform((v) => v === 'true'),
     CORS_ORIGIN: z.string().default('http://localhost:3000'),
     API_UPSTREAM_URL: z.string().url().default('http://localhost:3002'),
+    INTERNAL_SERVICE_TOKEN: z.string().min(16),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && !env.COOKIE_SECURE) {

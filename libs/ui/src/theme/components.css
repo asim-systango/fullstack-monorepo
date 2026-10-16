@@ -80,12 +80,20 @@
   }
 
   /* —— Form —— */
+  .ui-form {
+    @apply flex flex-col gap-3.5;
+  }
+
+  .ui-form > .ui-field {
+    @apply mb-0 w-full min-w-0;
+  }
+
   .ui-form-pending {
     @apply opacity-95;
   }
 
   .ui-field {
-    @apply mb-3 block;
+    @apply mb-3 block w-full min-w-0;
   }
 
   .ui-field-disabled {
@@ -264,7 +272,7 @@
   }
 
   .ui-loading-block {
-    @apply justify-center rounded-lg border border-border bg-card px-6 py-10;
+    @apply justify-center bg-transparent px-4 py-8;
   }
 
   .ui-loading-label {
@@ -305,6 +313,18 @@
 
   .ui-empty-action {
     @apply mt-4 flex justify-center;
+  }
+
+  .ui-metric-label {
+    @apply m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+  }
+
+  .ui-metric-value {
+    @apply mt-2 mb-0 text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .ui-metric-hint {
+    @apply mt-1 mb-0 text-sm text-muted-foreground;
   }
 
   /* —— Layout —— */
