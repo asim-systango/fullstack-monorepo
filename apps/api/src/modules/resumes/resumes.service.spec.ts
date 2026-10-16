@@ -377,5 +377,234 @@ describe('ResumesService', () => {
         limit: 10,
       });
     });
+
+    it('uses default page/limit when omitted', async () => {
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+      };
+      resumes.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.listOwn(OWNER, {});
+
+      expect(qb.skip).toHaveBeenCalledWith(0);
+      expect(qb.take).toHaveBeenCalledWith(20);
+      expect(result).toEqual({ items: [], total: 0, page: 1, limit: 20 });
+    });
+  });
+
+  describe('listAll', () => {
+    it('attaches ownerName from the users table', async () => {
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[makeResume()], 1]),
+      };
+      resumes.createQueryBuilder.mockReturnValue(qb);
+      dataSource.query.mockResolvedValue([{ id: OWNER, name: 'Demo User' }]);
+
+      const result = await service.listAll({});
+
+      expect(dataSource.query).toHaveBeenCalled();
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({ ownerName: 'Demo User' }),
+      );
+    });
+
+    it('returns null ownerName when user row is missing', async () => {
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[makeResume()], 1]),
+      };
+      resumes.createQueryBuilder.mockReturnValue(qb);
+      dataSource.query.mockResolvedValue([]);
+
+      const result = await service.listAll({ status: 'published' });
+
+      expect(result.items[0]).toEqual(expect.objectContaining({ ownerName: null }));
+    });
+
+    it('skips the users query when the list is empty', async () => {
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+      };
+      resumes.createQueryBuilder.mockReturnValue(qb);
+
+      await service.listAll({});
+
+      expect(dataSource.query).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    function mockUpdateRepos(opts: { resume?: Resume | null; updated?: Resume | null }) {
+      const existing = opts.resume === undefined ? makeResume() : opts.resume;
+      const updated =
+        opts.updated === undefined
+          ? makeResume({
+              title: 'Updated',
+              fullName: 'Asha Sharma',
+              email: 'asha@example.com',
+            })
+          : opts.updated;
+
+      const resumeRepo = {
+        findOne: jest.fn().mockResolvedValueOnce(existing).mockResolvedValueOnce(updated),
+        save: jest.fn(async (row: Resume) => row),
+      };
+      const sectionRepo = {
+        delete: jest.fn(),
+        create: jest.fn((row: Partial<Section>) => row),
+        save: jest.fn(async (row: Partial<Section>) => ({
+          id: 'sec-new',
+          ...row,
+        })),
+      };
+      const itemRepo = {
+        create: jest.fn((row: Partial<SectionItem>) => row),
+        save: jest.fn(async (row: Partial<SectionItem>) => row),
+      };
+
+      dataSource.transaction.mockImplementation(async (cb: (m: unknown) => unknown) =>
+        cb({
+          getRepository: (entity: unknown) => {
+            if (entity === Resume) return resumeRepo;
+            if (entity === Section) return sectionRepo;
+            if (entity === SectionItem) return itemRepo;
+            throw new Error('unexpected entity');
+          },
+        }),
+      );
+
+      return { resumeRepo, sectionRepo, itemRepo };
+    }
+
+    it('saves fields and replaces sections/items', async () => {
+      const { resumeRepo, sectionRepo, itemRepo } = mockUpdateRepos({});
+
+      const result = await service.update(RESUME_ID, OWNER, {
+        title: '  Updated title  ',
+        fullName: ' Asha ',
+        email: ' asha@example.com ',
+        phone: '1',
+        location: 'BLR',
+        summary: 'Summary',
+        sections: [
+          {
+            type: 'education',
+            title: ' Education ',
+            position: 0,
+            items: [
+              {
+                heading: ' B.E. ',
+                subheading: ' Uni ',
+                startDate: '2014',
+                endDate: '2018',
+                description: 'CS',
+                position: 0,
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(resumeRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Updated title',
+          fullName: 'Asha',
+          email: 'asha@example.com',
+          phone: '1',
+          location: 'BLR',
+          summary: 'Summary',
+        }),
+      );
+      expect(sectionRepo.delete).toHaveBeenCalledWith({ resumeId: RESUME_ID });
+      expect(sectionRepo.save).toHaveBeenCalled();
+      expect(itemRepo.save).toHaveBeenCalled();
+      expect(result.title).toBe('Updated');
+    });
+
+    it('switches to an active template', async () => {
+      const nextTemplateId = '55555555-5555-5555-5555-555555555555';
+      templates.findById.mockResolvedValue(
+        makeTemplate({ id: nextTemplateId, isActive: true }),
+      );
+      mockUpdateRepos({});
+
+      await service.update(RESUME_ID, OWNER, { templateId: nextTemplateId });
+
+      expect(templates.findById).toHaveBeenCalledWith(nextTemplateId);
+    });
+
+    it('rejects switching to an inactive template', async () => {
+      const nextTemplateId = '55555555-5555-5555-5555-555555555555';
+      templates.findById.mockResolvedValue(
+        makeTemplate({ id: nextTemplateId, isActive: false }),
+      );
+      mockUpdateRepos({});
+
+      await expect(
+        service.update(RESUME_ID, OWNER, { templateId: nextTemplateId }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('does not re-fetch template when templateId is unchanged', async () => {
+      mockUpdateRepos({});
+
+      await service.update(RESUME_ID, OWNER, { templateId: TEMPLATE_ID });
+
+      expect(templates.findById).not.toHaveBeenCalled();
+    });
+
+    it('404s when the resume is missing', async () => {
+      mockUpdateRepos({ resume: null });
+
+      await expect(
+        service.update(RESUME_ID, OWNER, { title: 'X' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('allows sections without items', async () => {
+      const { itemRepo } = mockUpdateRepos({});
+
+      await service.update(RESUME_ID, OWNER, {
+        sections: [{ type: 'skills', title: 'Skills', position: 0 }],
+      });
+
+      expect(itemRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('collectPublishGaps education path', () => {
+    it('accepts an education item without experience', () => {
+      const gaps = service.collectPublishGaps(
+        makeResume({
+          sections: [
+            makeSection({
+              type: 'education',
+              title: 'Education',
+              items: [makeItem({ heading: 'B.E.' })],
+            }),
+          ],
+        }),
+      );
+      expect(gaps).toEqual([]);
+    });
   });
 });
