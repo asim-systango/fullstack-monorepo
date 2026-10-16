@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -117,6 +118,7 @@ function AdminResumesList() {
               <TableHeaderCell>Status</TableHeaderCell>
               <TableHeaderCell>Template</TableHeaderCell>
               <TableHeaderCell>Slug</TableHeaderCell>
+              <TableHeaderCell>Open</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -135,6 +137,20 @@ function AdminResumesList() {
                     : '—'}
                 </TableCell>
                 <TableCell className="font-mono text-xs">{resume.slug ?? '—'}</TableCell>
+                <TableCell>
+                  {resume.slug ? (
+                    <Link
+                      href={`/r/${resume.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ui-button ui-button-sm ui-button-ghost no-underline hover:no-underline"
+                    >
+                      Open
+                    </Link>
+                  ) : (
+                    '—'
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
