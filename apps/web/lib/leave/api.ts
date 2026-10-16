@@ -4,6 +4,8 @@ import type {
   Balance,
   BalanceInput,
   Employee,
+  Holiday,
+  HolidayInput,
   LeaveRequest,
   LeaveType,
   LeaveTypeInput,
@@ -12,6 +14,7 @@ import type {
   Paginated,
   Quote,
   TeamRequestsQuery,
+  WhosAway,
 } from './types';
 
 const REQUESTS = '/leave-requests';
@@ -64,6 +67,7 @@ export const leaveApi = {
   reject: ({ id, comment }: Decision) =>
     post<LeaveRequest>(`${REQUESTS}/${id}/reject`, { comment }),
   employees: () => get<Employee[]>('/employees'),
+  away: (from: string) => get<WhosAway>(`${REQUESTS}/away`, { from }),
 
   // admin
   createLeaveType: (body: LeaveTypeInput) => post<LeaveType>(LEAVE_TYPES, body),
@@ -74,4 +78,8 @@ export const leaveApi = {
   employeeBalances: (userId: string, year: number) =>
     get<Balance[]>('/balances', { userId, year }),
   setBalance: (body: BalanceInput) => put<Balance>('/balances', body),
+  holidays: (year: number) => get<Holiday[]>('/holidays', { year }),
+  createHoliday: (body: HolidayInput) => post<Holiday>('/holidays', body),
+  deleteHoliday: (id: string) =>
+    remove<{ id: string; deleted: boolean }>(`/holidays/${id}`),
 };

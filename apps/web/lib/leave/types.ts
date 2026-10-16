@@ -75,6 +75,26 @@ export type BalanceInput = {
   totalDays: number;
 };
 
+export type Holiday = { id: string; date: string; name: string };
+
+export type HolidayInput = { date: string; name: string };
+
+export type AwayPerson = {
+  requestId: string;
+  userId: string;
+  name: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+};
+
+export type WhosAway = {
+  from: string;
+  to: string;
+  days: Array<{ date: string; people: AwayPerson[] }>;
+  holidays: Array<{ date: string; name: string }>;
+};
+
 export type NewLeaveRequest = {
   leaveTypeId: string;
   startDate: string;

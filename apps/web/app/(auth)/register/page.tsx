@@ -51,7 +51,7 @@ export default function RegisterPage() {
         <CardHeader>
           <CardTitle>Create account</CardTitle>
           <CardDescription>
-            Ink primary CTA · accent only on links and focus.
+            New accounts start as employees. HR sets your leave balance after you join.
           </CardDescription>
         </CardHeader>
         <Form pending={pending} onSubmit={onSubmit}>

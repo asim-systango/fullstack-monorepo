@@ -208,18 +208,24 @@ export class LeaveRequestsService {
         relations: { leaveType: true },
         order: { startDate: 'ASC' },
       }),
-      this.holidays.datesBetween(from, to),
+      this.holidays.inRange(from, to),
     ]);
     const people = await this.employees.byIds(requests.map((r) => r.userId));
+    const holidayDates = new Set(holidays.map((h) => h.date));
 
     // only working days, nobody is "away" on a weekend
-    const days = workingDates(from, to, holidays).map((date) => ({
+    const days = workingDates(from, to, holidayDates).map((date) => ({
       date,
       people: requests
         .filter((r) => r.startDate <= date && r.endDate >= date)
         .map((r) => awayEntry(r, people)),
     }));
-    return { from, to, days };
+    return {
+      from,
+      to,
+      days,
+      holidays: holidays.map((h) => ({ date: h.date, name: h.name })),
+    };
   }
 
   // both approve and reject: same locks and checks, only approve touches the balance

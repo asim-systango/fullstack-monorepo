@@ -24,6 +24,8 @@ export const leaveKeys = {
   employees: () => [...leaveKeys.all, 'employees'] as const,
   employeeBalances: (userId: string, year: number) =>
     [...leaveKeys.all, 'balances', userId, year] as const,
+  away: (from: string) => [...leaveKeys.all, 'away', from] as const,
+  holidays: (year: number) => [...leaveKeys.all, 'holidays', year] as const,
 };
 
 export function useLeaveTypes() {
@@ -119,3 +121,17 @@ export const useCreateLeaveType = () => useLeaveMutation(leaveApi.createLeaveTyp
 export const useUpdateLeaveType = () => useLeaveMutation(leaveApi.updateLeaveType);
 export const useArchiveLeaveType = () => useLeaveMutation(leaveApi.archiveLeaveType);
 export const useSetBalance = () => useLeaveMutation(leaveApi.setBalance);
+
+export function useWhosAway(from: string) {
+  return useQuery({ queryKey: leaveKeys.away(from), queryFn: () => leaveApi.away(from) });
+}
+
+export function useHolidays(year: number) {
+  return useQuery({
+    queryKey: leaveKeys.holidays(year),
+    queryFn: () => leaveApi.holidays(year),
+  });
+}
+
+export const useCreateHoliday = () => useLeaveMutation(leaveApi.createHoliday);
+export const useDeleteHoliday = () => useLeaveMutation(leaveApi.deleteHoliday);

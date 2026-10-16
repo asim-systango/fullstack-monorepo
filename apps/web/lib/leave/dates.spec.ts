@@ -3,6 +3,7 @@ import {
   formatDate,
   formatDay,
   formatRange,
+  isWeekend,
   isYmd,
   todayLocal,
   weekdayShort,
@@ -27,6 +28,12 @@ describe('web date helpers', () => {
     expect(formatDay('2026-10-16')).toBe('Fri 16 Oct');
     expect(formatDate('2026-10-16')).toBe('16 Oct 2026');
     expect(endOfYear('2026-10-16')).toBe('2026-12-31');
+  });
+
+  it('spots weekends', () => {
+    expect(isWeekend('2026-10-17')).toBe(true);
+    expect(isWeekend('2026-10-18')).toBe(true);
+    expect(isWeekend('2026-10-16')).toBe(false);
   });
 
   it('formats ranges', () => {

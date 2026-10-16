@@ -42,6 +42,11 @@ export function todayLocal(now: Date = new Date()): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
+export function isWeekend(value: string): boolean {
+  const day = parseYmd(value).getUTCDay();
+  return day === 0 || day === 6;
+}
+
 export function endOfYear(value: string): string {
   return `${value.slice(0, 4)}-12-31`;
 }
