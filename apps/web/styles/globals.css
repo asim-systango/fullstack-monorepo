@@ -1,6 +1,7 @@
 /* All @import rules must come first (css:S8778 / CSS spec). */
 @import 'tailwindcss';
 @import '@shared/ui/theme.css';
+@import './splitter-theme.css';
 @import './base.css';
 
 /* Tailwind v4: scan shared UI so utility classes there are generated. */

@@ -1,11 +1,16 @@
 import { loadApiEnv, type ApiEnv } from '@shared/env/api';
 
 /** App config from `@shared/env/api`. */
-export function appConfig(): Pick<ApiEnv, 'NODE_ENV' | 'PORT' | 'JWT_SECRET'> {
+export function appConfig(): Pick<
+  ApiEnv,
+  'NODE_ENV' | 'PORT' | 'JWT_SECRET' | 'CORS_ORIGIN' | 'COOKIE_SECURE'
+> {
   const env = loadApiEnv();
   return {
     NODE_ENV: env.NODE_ENV,
     PORT: env.PORT,
     JWT_SECRET: env.JWT_SECRET,
+    CORS_ORIGIN: env.CORS_ORIGIN,
+    COOKIE_SECURE: env.COOKIE_SECURE,
   };
 }

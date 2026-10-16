@@ -1,37 +1,33 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { loadApiEnv } from '../../../common/env';
-import type { JwtUser, UserRole } from '../../../common/auth';
+import { Request } from 'express';
+import { AUTH_COOKIE_NAME, loadApiEnv } from '../../../common/env';
+import { UsersService } from '../../users';
 
 type JwtPayload = { sub: string; email: string; role: string };
 
-const ROLES: readonly UserRole[] = ['admin', 'user', 'staff'];
-
-function isUserRole(value: string): value is UserRole {
-  return (ROLES as readonly string[]).includes(value);
-}
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly usersService: UsersService) {
     const env = loadApiEnv();
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => {
+          const cookies = req?.cookies as Record<string, string> | undefined;
+          return cookies?.[AUTH_COOKIE_NAME] ?? null;
+        },
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: env.JWT_SECRET,
       algorithms: ['HS256'],
     });
   }
 
-  validate(payload: JwtPayload): JwtUser {
-    if (!payload.sub || !payload.email || !isUserRole(payload.role)) {
-      throw new UnauthorizedException('Invalid token claims');
-    }
-    return {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
-    };
+  async validate(payload: JwtPayload) {
+    const user = await this.usersService.findById(payload.sub);
+    if (!user) throw new UnauthorizedException();
+    return this.usersService.toPublic(user);
   }
 }

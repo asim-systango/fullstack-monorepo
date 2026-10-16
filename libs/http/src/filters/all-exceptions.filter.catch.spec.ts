@@ -100,4 +100,18 @@ describe('AllExceptionsFilter.catch', () => {
       Object.assign(process.env, { NODE_ENV: prev });
     }
   });
+
+  it('does not write JSON when headers were already sent', () => {
+    const json = jest.fn();
+    const status = jest.fn().mockReturnValue({ json });
+    const host = {
+      switchToHttp: () => ({
+        getResponse: () => ({ status, headersSent: true }),
+        getRequest: () => ({}),
+      }),
+    } as unknown as ArgumentsHost;
+
+    filter.catch(new HttpException('nope', HttpStatus.UNAUTHORIZED), host);
+    expect(status).not.toHaveBeenCalled();
+  });
 });

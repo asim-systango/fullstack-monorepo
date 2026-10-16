@@ -5,11 +5,15 @@ dist
 *.tsbuildinfo
 .env
 .env.local
+.env.*.local
 data/
 coverage
 .DS_Store
 *.log
+*.pem
 __pycache__/
 *.pyc
+.idea/
+.context/
 .vscode/*
 !.vscode/extensions.json

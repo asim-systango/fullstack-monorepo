@@ -155,6 +155,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ...(correlationId ? { correlationId } : {}),
     };
 
+    if (res.headersSent) return;
     res.status(status).json(payload);
   }
 }

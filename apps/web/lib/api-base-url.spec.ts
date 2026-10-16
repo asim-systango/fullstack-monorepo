@@ -6,7 +6,7 @@ describe('resolveApiBaseUrl', () => {
   });
 
   it('strips a trailing slash', () => {
-    expect(resolveApiBaseUrl('http://localhost:3001/')).toBe('http://localhost:3001');
+    expect(resolveApiBaseUrl('http://localhost:3002/')).toBe('http://localhost:3002');
   });
 
   it('keeps paths without a trailing slash', () => {
