@@ -11,12 +11,11 @@ import {
   CardTitle,
   Field,
   Form,
-  Page,
   TextInput,
   StatusMessage,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
+import { AuthLayout, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
@@ -45,13 +44,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <Page>
-      <ShellHeader title="Register" subtitle="Create an account to continue" />
-      <Card className="max-w-md">
+    <AuthLayout
+      headline="Join the workspace in under a minute."
+      lede="New accounts start as members. Use a seeded lead account to create projects."
+    >
+      <Card>
         <CardHeader>
-          <CardTitle>Create account</CardTitle>
+          <CardTitle className="text-2xl tracking-tight">Create account</CardTitle>
           <CardDescription>
-            Ink primary CTA · accent only on links and focus.
+            You’ll land on TaskFlow ready to open projects.
           </CardDescription>
         </CardHeader>
         <Form pending={pending} onSubmit={onSubmit}>
@@ -92,14 +93,19 @@ export default function RegisterPage() {
             />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" loading={pending} loadingText="Creating…">
+          <Button
+            type="submit"
+            loading={pending}
+            loadingText="Creating…"
+            className="w-full"
+          >
             Create account
           </Button>
         </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-5 text-sm text-muted-foreground">
           Already registered? <Link href="/login">Log in</Link>
         </p>
       </Card>
-    </Page>
+    </AuthLayout>
   );
 }

@@ -18,8 +18,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'TaskFlow',
+  description: 'Project management — boards, issues, and team workflows',
 };
 
 export default function RootLayout({

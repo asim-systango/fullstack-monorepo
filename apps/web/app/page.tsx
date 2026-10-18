@@ -1,31 +1,63 @@
-import { ShellHeader } from '@/components/auth';
-import { Page } from '@shared/ui/components';
+'use client';
+
 import Link from 'next/link';
+import { LoadingState } from '@shared/ui/components';
+import { ShellHeader, useAuth } from '@/components/auth';
+import { TaskFlowPage } from '@/components/taskflow-page';
 
 export default function HomePage() {
+  const { user, loading } = useAuth();
+
   return (
-    <Page>
-      <ShellHeader title="App starter" />
-      <p className="text-foreground">
-        Shared boilerplate: auth shell, TanStack Query + RTK providers, cookie JWT client.
-        Build your assigned domain against the Nest domain API — see{' '}
-        <code>docs/projects/</code>.
-      </p>
-      <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-        <li>
-          Gateway owns cookie JWT auth; domain API owns persistence (Bearer via gateway).
-        </li>
-        <li>TanStack Query owns server lists/mutations.</li>
-        <li>RTK owns drafts / filters / selection only.</li>
-        <li>
-          Prefer <Link href="/ui">@shared/ui/components</Link> (theme via{' '}
-          <code>@shared/ui/theme.css</code>) over one-off styles.
-        </li>
-      </ul>
-      <p className="mt-4">
-        <Link href="/login">Log in</Link> with seed users, then add your feature routes
-        under <code>apps/web/app</code>.
-      </p>
-    </Page>
+    <TaskFlowPage wide>
+      <ShellHeader subtitle="Ship work together" />
+      <section className="tf-hero tf-enter">
+        <p className="tf-auth-kicker m-0 text-white/60">Project management</p>
+        <h1 className="tf-hero-brand">TaskFlow</h1>
+        <p className="tf-hero-copy">
+          Boards, issues, and membership in one workspace — for leads who plan and members
+          who ship.
+        </p>
+        {loading ? <LoadingState label="Loading session…" /> : null}
+        {!loading && user ? (
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/projects"
+              className="ui-button ui-button-md ui-button-primary no-underline hover:no-underline"
+            >
+              Open projects
+            </Link>
+            <Link
+              href="/dashboard"
+              className="ui-button ui-button-md ui-button-secondary no-underline hover:no-underline"
+            >
+              My open issues
+            </Link>
+          </div>
+        ) : null}
+        {!loading && !user ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/login"
+                className="ui-button ui-button-md ui-button-primary no-underline hover:no-underline"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="ui-button ui-button-md ui-button-secondary no-underline hover:no-underline"
+              >
+                Register
+              </Link>
+            </div>
+            <p className="m-0 text-sm text-white/55">
+              Demo · <code>staff@demo.local</code> / <code>user@demo.local</code> ·{' '}
+              <code>password123</code>
+            </p>
+          </div>
+        ) : null}
+      </section>
+    </TaskFlowPage>
   );
 }

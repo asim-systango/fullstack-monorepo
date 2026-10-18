@@ -11,12 +11,11 @@ import {
   CardTitle,
   Field,
   Form,
-  Page,
   TextInput,
   StatusMessage,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
-import { ShellHeader, useAuth } from '@/components/auth';
+import { AuthLayout, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -45,13 +44,15 @@ export default function LoginPage() {
   }
 
   return (
-    <Page>
-      <ShellHeader title="Log in" subtitle="Sign in with your demo account" />
-      <Card className="max-w-md">
+    <AuthLayout
+      headline="Pick up where the board left off."
+      lede="Sign in to move issues, leave comments, and keep the team aligned."
+    >
+      <Card>
         <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
+          <CardTitle className="text-2xl tracking-tight">Welcome back</CardTitle>
           <CardDescription>
-            Primary actions use ink. Links and focus rings use accent blue.
+            Use a demo account or your own — leads and members see different tools.
           </CardDescription>
         </CardHeader>
         <Form pending={pending} onSubmit={onSubmit}>
@@ -76,14 +77,25 @@ export default function LoginPage() {
             />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-          <Button type="submit" loading={pending} loadingText="Signing in…">
+          <Button
+            type="submit"
+            loading={pending}
+            loadingText="Signing in…"
+            className="w-full"
+          >
             Sign in
           </Button>
         </Form>
-        <p className="mt-4 text-sm text-muted-foreground">
-          No account? <Link href="/register">Register</Link>
+        <p className="mt-5 text-sm text-muted-foreground">
+          No account? <Link href="/register">Create one</Link>
         </p>
+        {!isProd ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Try <code>staff@demo.local</code> or <code>user@demo.local</code> ·{' '}
+            <code>password123</code>
+          </p>
+        ) : null}
       </Card>
-    </Page>
+    </AuthLayout>
   );
 }
