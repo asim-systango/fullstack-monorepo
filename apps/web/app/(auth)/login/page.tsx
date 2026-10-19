@@ -20,6 +20,17 @@ import { authApi } from '@/lib/api';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+function loginErrorMessage(err: unknown): string {
+  if (err instanceof ApiClientError) {
+    if (err.statusCode === 401) return err.message;
+    if (err.statusCode >= 500 || err.message.includes('status code')) {
+      return 'Server unavailable — start the API with `pnpm dev` and try again.';
+    }
+    return err.message;
+  }
+  return 'Login failed';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { refresh } = useAuth();
@@ -35,9 +46,9 @@ export default function LoginPage() {
     try {
       await authApi.login({ email, password });
       await refresh();
-      router.push('/');
+      router.push('/projects');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      setError(loginErrorMessage(err));
     } finally {
       setPending(false);
     }
@@ -52,10 +63,10 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl tracking-tight">Welcome back</CardTitle>
           <CardDescription>
-            Use a demo account or your own — leads and members see different tools.
+            Demo roles: staff (lead), user (member), admin (platform view).
           </CardDescription>
         </CardHeader>
-        <Form pending={pending} onSubmit={onSubmit}>
+        <Form pending={pending} noValidate onSubmit={onSubmit}>
           <Field label="Email" htmlFor="login-email" required disabled={pending}>
             <TextInput
               id="login-email"
@@ -64,6 +75,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              required={false}
             />
           </Field>
           <Field label="Password" htmlFor="login-password" required disabled={pending}>
@@ -74,6 +86,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
+              required={false}
             />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
@@ -91,8 +104,8 @@ export default function LoginPage() {
         </p>
         {!isProd ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Try <code>staff@demo.local</code> or <code>user@demo.local</code> ·{' '}
-            <code>password123</code>
+            Try <code>staff@demo.local</code>, <code>user@demo.local</code>, or{' '}
+            <code>admin@demo.local</code> · <code>password123</code>
           </p>
         ) : null}
       </Card>

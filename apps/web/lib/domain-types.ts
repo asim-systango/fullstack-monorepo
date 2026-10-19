@@ -17,6 +17,9 @@ export type ProjectMember = {
   userId: string;
   role: ProjectMemberRole;
   createdAt: string;
+  /** Populated by API for display — prefer over raw userId in UI. */
+  name?: string | null;
+  email?: string | null;
 };
 
 export type Label = {

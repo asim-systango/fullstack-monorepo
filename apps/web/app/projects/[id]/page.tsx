@@ -16,20 +16,33 @@ import {
   Field,
   Form,
   PageHeader,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
   TextInput,
 } from '@shared/ui/components';
 import { RequireAuth, ShellHeader, useAuth } from '@/components/auth';
 import { TaskFlowPage } from '@/components/taskflow-page';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { PageFetchSkeleton } from '@/components/content-skeletons';
 import { projectsApi } from '@/lib/domain-api';
+import type { ProjectMember } from '@/lib/domain-types';
 import { ApiClientError } from '@shared/api-client';
+
+function memberInitials(member: ProjectMember) {
+  const source = member.name?.trim() || member.email?.trim() || member.userId;
+  const parts = source.split(/[\s@.]+/).filter(Boolean);
+  const letters = (parts[0]?.[0] ?? '?') + (parts[1]?.[0] ?? '');
+  return letters.toUpperCase();
+}
+
+function memberPrimary(member: ProjectMember) {
+  return (
+    member.name?.trim() || member.email?.trim() || `User ${member.userId.slice(0, 8)}`
+  );
+}
+
+function memberSecondary(member: ProjectMember) {
+  if (member.name?.trim() && member.email?.trim()) return member.email;
+  return null;
+}
 
 function ProjectDetailContent() {
   const params = useParams<{ id: string }>();
@@ -80,9 +93,8 @@ function ProjectDetailContent() {
   if (projectQuery.isLoading) {
     return (
       <>
-        <PageHeader title="Project" description="Loading…" />
-        <Skeleton size="lg" className="mb-4 h-24" />
-        <Skeleton size="lg" className="h-48" />
+        <PageHeader title="Project" description="Loading workspace…" />
+        <PageFetchSkeleton label="Loading members…" />
       </>
     );
   }
@@ -119,7 +131,7 @@ function ProjectDetailContent() {
         }
       />
 
-      <Card className="tf-enter tf-panel">
+      <Card className="tf-enter tf-panel tf-members-panel">
         <CardHeader>
           <CardTitle>Members</CardTitle>
         </CardHeader>
@@ -129,63 +141,65 @@ function ProjectDetailContent() {
           {members.length === 0 ? (
             <EmptyState title="No members" description="Invite someone by email." />
           ) : (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>User ID</TableHeaderCell>
-                  <TableHeaderCell>Role</TableHeaderCell>
-                  <TableHeaderCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {members.map((m) => (
-                  <TableRow key={m.id}>
-                    <TableCell className="font-mono text-xs">
-                      {m.userId === user?.id
-                        ? `${m.userId.slice(0, 8)}… (you)`
-                        : m.userId}
-                    </TableCell>
-                    <TableCell>
-                      <Badge tone={m.role === 'lead' ? 'accent' : 'neutral'}>
-                        {m.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isLead && m.userId !== user?.id ? (
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => setRemoveUserId(m.userId)}
-                        >
-                          Remove
-                        </Button>
+            <ul className="tf-member-list">
+              {members.map((m) => (
+                <li key={m.id} className="tf-member-row">
+                  <span className="tf-member-avatar" aria-hidden>
+                    {memberInitials(m)}
+                  </span>
+                  <div className="tf-member-copy">
+                    <p className="tf-member-name">
+                      {memberPrimary(m)}
+                      {m.userId === user?.id ? (
+                        <span className="tf-member-you">you</span>
                       ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </p>
+                    {memberSecondary(m) ? (
+                      <p className="tf-member-email">{memberSecondary(m)}</p>
+                    ) : null}
+                  </div>
+                  <Badge tone={m.role === 'lead' ? 'accent' : 'neutral'}>{m.role}</Badge>
+                  {isLead && m.userId !== user?.id ? (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setRemoveUserId(m.userId)}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           )}
 
           {isLead ? (
-            <Form onSubmit={onAdd} className="flex flex-wrap items-end gap-2">
-              <Field label="Invite by email" htmlFor="invite-email">
-                <TextInput
-                  id="invite-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@demo.local"
-                  required
-                />
-              </Field>
-              <Button type="submit" loading={addMember.isPending}>
-                Add member
-              </Button>
-            </Form>
+            <div className="tf-invite-box">
+              <p className="tf-invite-title">Invite a member</p>
+              <p className="tf-invite-help">
+                They must already have an account (e.g. <code>user@demo.local</code>).
+              </p>
+              <Form onSubmit={onAdd} className="tf-invite-form">
+                <Field label="Email" htmlFor="invite-email">
+                  <TextInput
+                    id="invite-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="colleague@demo.local"
+                    required
+                  />
+                </Field>
+                <Button type="submit" loading={addMember.isPending}>
+                  Add member
+                </Button>
+              </Form>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Only project leads can invite or remove members.
+              You&apos;re a member on this project. Log in as the project{' '}
+              <strong>lead</strong> (<code>staff@demo.local</code>) to invite or remove
+              people.
             </p>
           )}
         </CardBody>

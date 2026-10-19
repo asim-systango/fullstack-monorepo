@@ -21,10 +21,14 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiOkResponse({ description: 'Public user profile (envelope `{ data }`)' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  @ApiOperation({
+    summary: 'Register a new user',
+    description:
+      'Creates the account and sets httpOnly `access_token` cookie (signed in).',
+  })
+  @ApiOkResponse({ description: 'Public user profile; Set-Cookie applied' })
+  register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    return this.authService.register(dto, res);
   }
 
   @Public()

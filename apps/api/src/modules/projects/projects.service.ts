@@ -68,7 +68,7 @@ export class ProjectsService {
     const qb = this.projects
       .createQueryBuilder('p')
       .where('p.id IN (:...projectIds)', { projectIds })
-      .orderBy('p.created_at', 'DESC')
+      .orderBy('p.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -90,7 +90,33 @@ export class ProjectsService {
       where: { projectId },
       order: { createdAt: 'ASC' },
     });
-    return { ...project, members };
+    const profiles = await this.loadUserProfiles(members.map((m) => m.userId));
+    return {
+      ...project,
+      members: members.map((m) => {
+        const profile = profiles.get(m.userId);
+        return {
+          ...m,
+          name: profile?.name ?? null,
+          email: profile?.email ?? null,
+        };
+      }),
+    };
+  }
+
+  private async loadUserProfiles(userIds: string[]) {
+    const unique = [...new Set(userIds.filter(Boolean))];
+    const map = new Map<string, { name: string; email: string }>();
+    if (unique.length === 0) {
+      return map;
+    }
+    const rows = await this.dataSource.query<
+      { id: string; name: string; email: string }[]
+    >(`SELECT id, name, email FROM users WHERE id = ANY($1::uuid[])`, [unique]);
+    for (const row of rows) {
+      map.set(row.id, { name: row.name, email: row.email });
+    }
+    return map;
   }
 
   async update(user: JwtUser, projectId: string, dto: UpdateProjectDto) {

@@ -3,22 +3,12 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Alert,
-  Button,
-  EmptyState,
-  PageHeader,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from '@shared/ui/components';
+import { Alert, Button, EmptyState, PageHeader } from '@shared/ui/components';
 import { RequireAuth, ShellHeader } from '@/components/auth';
 import { TaskFlowPage } from '@/components/taskflow-page';
 import { IssueStatusBadge } from '@/components/issue-status-badge';
+import { PageFetchSkeleton } from '@/components/content-skeletons';
+import { EmptySparkArt, IssuesInboxArt } from '@/components/tf-illustrations';
 import { issuesApi, projectsApi } from '@/lib/domain-api';
 import { useIssueSocket } from '@/hooks/use-issue-socket';
 
@@ -43,20 +33,31 @@ function DashboardContent() {
     return map;
   }, [projectsQuery.data]);
 
+  const todoCount = mineQuery.data?.items.filter((i) => i.status === 'todo').length ?? 0;
+  const progressCount =
+    mineQuery.data?.items.filter((i) => i.status === 'in_progress').length ?? 0;
+
   return (
     <>
-      <PageHeader
-        title="My open issues"
-        description="Todo and in-progress work assigned to you"
-      />
-
-      {mineQuery.isLoading ? (
-        <div className="space-y-2" aria-hidden>
-          <Skeleton size="line" />
-          <Skeleton size="md" />
-          <Skeleton size="md" />
+      <div className="tf-domain-hero tf-enter">
+        <div className="tf-domain-hero-copy">
+          <PageHeader
+            title="My open issues"
+            description="Todo and in-progress work assigned to you — live updates when the board moves."
+          />
+          {mineQuery.data ? (
+            <div className="tf-stat-row">
+              <span className="tf-stat-pill">{todoCount} todo</span>
+              <span className="tf-stat-pill tf-stat-pill-accent">
+                {progressCount} in progress
+              </span>
+            </div>
+          ) : null}
         </div>
-      ) : null}
+        <IssuesInboxArt />
+      </div>
+
+      {mineQuery.isLoading ? <PageFetchSkeleton label="Loading your issues…" /> : null}
 
       {mineQuery.isError ? (
         <Alert tone="danger">
@@ -73,49 +74,55 @@ function DashboardContent() {
       ) : null}
 
       {mineQuery.data && mineQuery.data.items.length === 0 ? (
-        <EmptyState
-          title="Inbox zero"
-          description="No open issues assigned to you."
-          action={
-            <Link
-              href="/projects"
-              className="ui-button ui-button-sm ui-button-primary no-underline hover:no-underline"
-            >
-              Browse projects
-            </Link>
-          }
-        />
+        <div className="tf-empty-stage tf-enter">
+          <EmptySparkArt />
+          <EmptyState
+            title="Inbox zero"
+            description="No open issues assigned to you. Grab something from a project board."
+            action={
+              <Link
+                href="/projects"
+                className="ui-button ui-button-sm ui-button-primary no-underline hover:no-underline"
+              >
+                Browse projects
+              </Link>
+            }
+          />
+        </div>
       ) : null}
 
       {mineQuery.data && mineQuery.data.items.length > 0 ? (
-        <div className="tf-enter tf-panel overflow-x-auto">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Title</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Project</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {mineQuery.data.items.map((issue) => (
-                <TableRow key={issue.id}>
-                  <TableCell>
-                    <Link href={`/issues/${issue.id}`}>{issue.title}</Link>
-                  </TableCell>
-                  <TableCell>
-                    <IssueStatusBadge status={issue.status} />
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/projects/${issue.projectId}`}>
-                      {projectLabel.get(issue.projectId) ?? 'Project'}
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <ul className="tf-issue-stack">
+          {mineQuery.data.items.map((issue, index) => (
+            <li
+              key={issue.id}
+              className={`tf-issue-row tf-card-lift tf-enter tf-enter-delay-${Math.min(index, 3) || 1}`}
+              data-status={issue.status}
+            >
+              <div className="tf-issue-row-main">
+                <Link href={`/issues/${issue.id}`} className="tf-issue-title">
+                  {issue.title}
+                </Link>
+                <div className="tf-issue-meta">
+                  <IssueStatusBadge status={issue.status} />
+                  <Link
+                    href={`/projects/${issue.projectId}`}
+                    className="tf-issue-project"
+                  >
+                    {projectLabel.get(issue.projectId) ?? 'Project'}
+                  </Link>
+                </div>
+              </div>
+              <Link
+                href={`/issues/${issue.id}`}
+                className="tf-issue-go"
+                aria-label={`Open ${issue.title}`}
+              >
+                Open →
+              </Link>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </>
   );

@@ -16,12 +16,12 @@ import {
   Field,
   Form,
   PageHeader,
-  Skeleton,
   TextArea,
 } from '@shared/ui/components';
 import { RequireAuth, ShellHeader } from '@/components/auth';
 import { TaskFlowPage } from '@/components/taskflow-page';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { PageFetchSkeleton } from '@/components/content-skeletons';
 import { IssueStatusBadge } from '@/components/issue-status-badge';
 import { issuesApi } from '@/lib/domain-api';
 import { ALLOWED_TRANSITIONS, STATUS_LABEL } from '@/lib/status';
@@ -92,11 +92,7 @@ function IssueDetailContent() {
     return (
       <>
         <PageHeader title="Issue" description="Loading…" />
-        <div className="space-y-3" aria-hidden>
-          <Skeleton size="lg" className="h-10 w-2/3" />
-          <Skeleton size="lg" className="h-32" />
-          <Skeleton size="lg" className="h-40" />
-        </div>
+        <PageFetchSkeleton label="Loading issue…" />
       </>
     );
   }

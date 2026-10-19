@@ -17,7 +17,6 @@ import {
   Form,
   PageHeader,
   Select,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -30,6 +29,7 @@ import {
 import { RequireAuth, ShellHeader } from '@/components/auth';
 import { TaskFlowPage } from '@/components/taskflow-page';
 import { IssueStatusBadge } from '@/components/issue-status-badge';
+import { PageFetchSkeleton, TagsSkeleton } from '@/components/content-skeletons';
 import { issuesApi, labelsApi } from '@/lib/domain-api';
 import {
   clearCreateIssueDraft,
@@ -210,14 +210,9 @@ function IssuesContent() {
         </Card>
       ) : null}
 
-      {issuesQuery.isLoading ? (
-        <div className="space-y-2" aria-hidden>
-          <Skeleton size="line" />
-          <Skeleton size="md" />
-          <Skeleton size="md" />
-          <Skeleton size="md" />
-        </div>
-      ) : null}
+      {labelsQuery.isLoading ? <TagsSkeleton count={5} /> : null}
+
+      {issuesQuery.isLoading ? <PageFetchSkeleton label="Loading issues…" /> : null}
 
       {issuesQuery.isError ? (
         <Alert tone="danger">

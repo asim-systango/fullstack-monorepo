@@ -103,15 +103,15 @@ export class IssuesService {
       .createQueryBuilder('issue')
       .leftJoinAndSelect('issue.issueLabels', 'il')
       .leftJoinAndSelect('il.label', 'label')
-      .where('issue.deleted_at IS NULL');
+      .where('issue.deletedAt IS NULL');
 
     if (query.projectId) {
-      qb.andWhere('issue.project_id = :projectId', { projectId: query.projectId });
+      qb.andWhere('issue.projectId = :projectId', { projectId: query.projectId });
     } else {
       // Dashboard: only projects the user can see
       if (user.role !== 'admin') {
         qb.andWhere(
-          `issue.project_id IN (SELECT pm.project_id FROM project_members pm WHERE pm.user_id = :uid)`,
+          `issue.projectId IN (SELECT pm.project_id FROM project_members pm WHERE pm.user_id = :uid)`,
           { uid: user.id },
         );
       }
@@ -121,7 +121,7 @@ export class IssuesService {
       qb.andWhere('issue.status = :status', { status: query.status });
     }
     if (query.assigneeId) {
-      qb.andWhere('issue.assignee_id = :assigneeId', { assigneeId: query.assigneeId });
+      qb.andWhere('issue.assigneeId = :assigneeId', { assigneeId: query.assigneeId });
     }
     if (query.openOnly) {
       qb.andWhere(`issue.status IN ('todo', 'in_progress')`);
@@ -139,7 +139,7 @@ export class IssuesService {
       });
     }
 
-    qb.orderBy('issue.updated_at', 'DESC')
+    qb.orderBy('issue.updatedAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -315,7 +315,7 @@ export class IssuesService {
     }
     const count = await this.labels
       .createQueryBuilder('l')
-      .where('l.project_id = :projectId', { projectId })
+      .where('l.projectId = :projectId', { projectId })
       .andWhere('l.id IN (:...labelIds)', { labelIds })
       .getCount();
     if (count !== labelIds.length) {
