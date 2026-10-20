@@ -1,42 +1,71 @@
 import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+import type { OrderStatus } from '@/lib/types/food-delivery';
 
-/**
- * Ownership rule:
- * - RTK owns unfinished drafts, selection, and filter chrome only.
- * - TanStack Query owns server lists and mutations.
- * Never put Nest entity arrays into this store.
- *
- * Extend this slice (or add slices) for your domain drafts.
- */
-type UiState = {
-  filterDraft: string;
-  appliedFilter: string;
+type FiltersState = {
+  restaurantCuisineDraft: string;
+  restaurantSearchDraft: string;
+  restaurantCuisineApplied: string;
+  restaurantSearchApplied: string;
+  orderStatusDraft: OrderStatus | '';
+  orderStatusApplied: OrderStatus | '';
 };
 
-const initialState: UiState = {
-  filterDraft: '',
-  appliedFilter: '',
+const initialState: FiltersState = {
+  restaurantCuisineDraft: '',
+  restaurantSearchDraft: '',
+  restaurantCuisineApplied: '',
+  restaurantSearchApplied: '',
+  orderStatusDraft: '',
+  orderStatusApplied: '',
 };
 
-const uiSlice = createSlice({
-  name: 'ui',
+const filtersSlice = createSlice({
+  name: 'filters',
   initialState,
   reducers: {
-    setFilterDraft(state, action: PayloadAction<string>) {
-      state.filterDraft = action.payload;
+    setRestaurantCuisineDraft(state, action: PayloadAction<string>) {
+      state.restaurantCuisineDraft = action.payload;
     },
-    applyFilter(state) {
-      state.appliedFilter = state.filterDraft.trim();
+    setRestaurantSearchDraft(state, action: PayloadAction<string>) {
+      state.restaurantSearchDraft = action.payload;
+    },
+    applyRestaurantFilters(state) {
+      state.restaurantCuisineApplied = state.restaurantCuisineDraft.trim();
+      state.restaurantSearchApplied = state.restaurantSearchDraft.trim();
+    },
+    clearRestaurantFilters(state) {
+      state.restaurantCuisineDraft = '';
+      state.restaurantSearchDraft = '';
+      state.restaurantCuisineApplied = '';
+      state.restaurantSearchApplied = '';
+    },
+    setOrderStatusDraft(state, action: PayloadAction<OrderStatus | ''>) {
+      state.orderStatusDraft = action.payload;
+    },
+    applyOrderStatusFilter(state) {
+      state.orderStatusApplied = state.orderStatusDraft;
+    },
+    clearOrderStatusFilter(state) {
+      state.orderStatusDraft = '';
+      state.orderStatusApplied = '';
     },
   },
 });
 
-export const { setFilterDraft, applyFilter } = uiSlice.actions;
+export const {
+  setRestaurantCuisineDraft,
+  setRestaurantSearchDraft,
+  applyRestaurantFilters,
+  clearRestaurantFilters,
+  setOrderStatusDraft,
+  applyOrderStatusFilter,
+  clearOrderStatusFilter,
+} = filtersSlice.actions;
 
 export const store = configureStore({
   reducer: {
-    ui: uiSlice.reducer,
+    filters: filtersSlice.reducer,
   },
 });
 

@@ -5,7 +5,6 @@ import { Public } from '../../common/auth';
 @ApiTags('ready')
 @Controller('ready')
 export class ReadyController {
-  /** Public liveness for proxy checks (gateway owns GET /health). */
   @Public()
   @Get()
   @Header('Cache-Control', 'no-store')

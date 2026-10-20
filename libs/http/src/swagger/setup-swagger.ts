@@ -7,17 +7,11 @@ export type SetupSwaggerOptions = {
   title: string;
   description: string;
   version?: string;
-  /** Mount path (default `docs` → `/docs`). */
   path?: string;
-  auth: SwaggerAuthMode;
-  /** Cookie name when `auth` is `cookie` (default `access_token`). */
+  auth: SwaggerAuthMode | SwaggerAuthMode[];
   cookieName?: string;
 };
 
-/**
- * OpenAPI UI for local/dev Nest apps. Skipped when `enabled` is false
- * (typically production).
- */
 export function setupSwagger(
   app: INestApplication,
   options: SetupSwaggerOptions,
@@ -25,14 +19,17 @@ export function setupSwagger(
 ): void {
   if (!enabled) return;
 
+  const modes = Array.isArray(options.auth) ? options.auth : [options.auth];
+
   const builder = new DocumentBuilder()
     .setTitle(options.title)
     .setDescription(options.description)
     .setVersion(options.version ?? '1.0');
 
-  if (options.auth === 'cookie') {
+  if (modes.includes('cookie')) {
     builder.addCookieAuth(options.cookieName ?? 'access_token');
-  } else {
+  }
+  if (modes.includes('bearer')) {
     builder.addBearerAuth();
   }
 
@@ -40,6 +37,7 @@ export function setupSwagger(
   SwaggerModule.setup(options.path ?? 'docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
+      withCredentials: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
     },

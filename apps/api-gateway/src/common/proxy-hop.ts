@@ -4,7 +4,6 @@ import type { ServerResponse } from 'node:http';
 import type { Socket } from 'node:net';
 import type { Request, Response } from 'express';
 
-/** Paths handled by the gateway itself (not proxied to apps/api). */
 export function isGatewayOwnedPath(path: string): boolean {
   return (
     path === '/health' ||
@@ -20,10 +19,6 @@ type ProxyOutgoing = {
   removeHeader(name: string): void;
 };
 
-/**
- * Cookie JWT → `Authorization: Bearer` for upstream, then strip Cookie
- * so the domain API never sees browser cookies.
- */
 type ProxyRequest = Pick<Request, 'cookies' | 'headers'> & { correlationId?: string };
 
 export function applyAuthCookieToProxyRequest(
@@ -48,14 +43,6 @@ export function applyAuthCookieToProxyRequest(
   }
 }
 
-/**
- * Map upstream proxy failures to the shared API error envelope.
- *
- * `http-proxy-middleware` types the error handler's response as
- * `ServerResponse | net.Socket` — on a protocol upgrade it is a raw socket with no
- * `.status()`. Calling it there would throw *inside* the error handler and take the
- * process down, so destroy the socket instead of pretending it is a Response.
- */
 export type ProxyErrorTarget = ServerResponse | Socket;
 
 function isExpressResponse(res: ProxyErrorTarget): res is Response {

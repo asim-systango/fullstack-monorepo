@@ -6,7 +6,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 const env = loadApiEnv();
 
-/** Internal JWT validation only — no login/cookie endpoints (those live on api-gateway). */
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),

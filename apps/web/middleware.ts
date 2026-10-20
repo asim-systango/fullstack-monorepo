@@ -2,17 +2,42 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { AUTH_COOKIE_NAME } from '@shared/env/constants';
 
+const PROTECTED_PREFIXES = ['/cart', '/orders', '/restaurant', '/admin'];
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
+  const mockMode = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
-  if ((pathname === '/login' || pathname === '/register') && hasSession) {
-    return NextResponse.redirect(new URL('/', request.url));
+  if (!mockMode && (pathname === '/login' || pathname === '/register') && hasSession) {
+    return NextResponse.redirect(new URL('/restaurants', request.url));
+  }
+
+  if (!mockMode && isProtectedPath(pathname) && !hasSession) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('returnTo', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/login', '/register'],
+  matcher: [
+    '/login',
+    '/register',
+    '/cart',
+    '/cart/:path*',
+    '/orders',
+    '/orders/:path*',
+    '/restaurant/:path*',
+    '/admin',
+    '/admin/:path*',
+  ],
 };

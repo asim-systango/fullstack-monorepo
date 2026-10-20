@@ -1,0 +1,35 @@
+import { createHash } from 'node:crypto';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { cloudinaryConfig } from '../../config/cloudinary.config';
+import type { CloudinaryUploadFolder } from './dto/cloudinary-signature-query.dto';
+
+const FOLDER_PREFIX = 'tastygo';
+
+@Injectable()
+export class UploadsService {
+  createCloudinarySignature(folder: CloudinaryUploadFolder) {
+    const config = cloudinaryConfig();
+    if (!config.enabled) {
+      throw new ServiceUnavailableException(
+        'Cloudinary uploads are Stretch and not configured. Menus still work with emoji or seed images. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to enable.',
+      );
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const uploadFolder = `${FOLDER_PREFIX}/${folder}`;
+    const paramsToSign = `folder=${uploadFolder}&timestamp=${timestamp}`;
+    // Cloudinary signed uploads require SHA-1 of sorted params + API secret.
+    // eslint-disable-next-line sonarjs/hashing -- protocol-mandated signature, not a password hash
+    const signature = createHash('sha1')
+      .update(paramsToSign + config.apiSecret)
+      .digest('hex');
+
+    return {
+      cloudName: config.cloudName,
+      apiKey: config.apiKey,
+      timestamp,
+      signature,
+      folder: uploadFolder,
+    };
+  }
+}

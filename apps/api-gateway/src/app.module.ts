@@ -10,10 +10,6 @@ import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
 
-/**
- * Browser-facing BFF — cookie JWT auth, users, health.
- * Domain CRUD lives in apps/api and is reached via the reverse proxy in main.ts.
- */
 @Module({
   imports: [
     ThrottlerModule.forRoot([

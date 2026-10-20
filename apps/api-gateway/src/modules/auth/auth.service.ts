@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../common/env';
-import { UsersService } from '../users';
+import { UsersService, type User } from '../users';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import type { Response } from 'express';
 
@@ -40,43 +40,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto) {
-    const existing = await this.usersService.findByEmail(dto.email);
-    if (existing) {
-      throw new ConflictException('Unable to create account with those details');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, 12);
-    try {
-      const user = await this.usersService.create({
-        email: dto.email,
-        passwordHash,
-        name: dto.name,
-        role: 'user',
-      });
-      return this.usersService.toPublic(user);
-    } catch (err) {
-      if (isUniqueViolation(err)) {
-        throw new ConflictException('Unable to create account with those details');
-      }
-      throw err;
-    }
-  }
-
-  async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
-    // Always bcrypt.compare (including missing users) to avoid timing-based email enumeration.
-    const hash =
-      user?.passwordHash ??
-      '$2b$12$N/6IAT14.CPmctktUygdXuFR/ryV4IYaHdV7ilF3IfY2Cpsj/X3q.';
-    const ok = await bcrypt.compare(password, hash);
-    return user && ok ? user : null;
-  }
-
-  async login(dto: LoginDto, res: Response) {
-    const user = await this.validateUser(dto.email, dto.password);
-    if (!user) throw new UnauthorizedException('Invalid email or password');
-
+  private async issueSession(user: User, res: Response) {
     const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
@@ -90,7 +54,47 @@ export class AuthService {
       path: '/',
       maxAge: jwtExpiryToMs(this.env.JWT_EXPIRES_IN),
     });
+  }
 
+  async register(dto: RegisterDto, res: Response) {
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('Unable to create account with those details');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    try {
+      const user = await this.usersService.create({
+        email: dto.email,
+        passwordHash,
+        name: dto.name,
+        role: 'user',
+      });
+
+      await this.issueSession(user, res);
+      return this.usersService.toPublic(user);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Unable to create account with those details');
+      }
+      throw err;
+    }
+  }
+
+  async validateUser(email: string, password: string) {
+    const user = await this.usersService.findByEmail(email);
+    const hash =
+      user?.passwordHash ??
+      '$2b$12$N/6IAT14.CPmctktUygdXuFR/ryV4IYaHdV7ilF3IfY2Cpsj/X3q.';
+    const ok = await bcrypt.compare(password, hash);
+    return user && ok ? user : null;
+  }
+
+  async login(dto: LoginDto, res: Response) {
+    const user = await this.validateUser(dto.email, dto.password);
+    if (!user) throw new UnauthorizedException('Invalid email or password');
+
+    await this.issueSession(user, res);
     return this.usersService.toPublic(user);
   }
 
@@ -102,5 +106,9 @@ export class AuthService {
       path: '/',
     });
     return { ok: true };
+  }
+
+  async saveDeliveryAddress(userId: string, deliveryAddress: string) {
+    return this.usersService.saveDeliveryAddress(userId, deliveryAddress);
   }
 }
