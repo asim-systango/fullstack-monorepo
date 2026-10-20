@@ -1,31 +1,63 @@
-import { ShellHeader } from '@/components/auth';
-import { Page } from '@shared/ui/components';
+'use client';
+
 import Link from 'next/link';
+import { ShellHeader, useAuth } from '@/components/auth';
+import { Button, Card, Page } from '@shared/ui/components';
 
 export default function HomePage() {
+  const { user } = useAuth();
+
   return (
     <Page>
-      <ShellHeader title="App starter" />
-      <p className="text-foreground">
-        Shared boilerplate: auth shell, TanStack Query + RTK providers, cookie JWT client.
-        Build your assigned domain against the Nest domain API — see{' '}
-        <code>docs/projects/</code>.
-      </p>
-      <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-        <li>
-          Gateway owns cookie JWT auth; domain API owns persistence (Bearer via gateway).
-        </li>
-        <li>TanStack Query owns server lists/mutations.</li>
-        <li>RTK owns drafts / filters / selection only.</li>
-        <li>
-          Prefer <Link href="/ui">@shared/ui/components</Link> (theme via{' '}
-          <code>@shared/ui/theme.css</code>) over one-off styles.
-        </li>
-      </ul>
-      <p className="mt-4">
-        <Link href="/login">Log in</Link> with seed users, then add your feature routes
-        under <code>apps/web/app</code>.
-      </p>
+      <ShellHeader title="Support Desk Portal" subtitle="Customer & Support Agent Hub" />
+      <div className="max-w-3xl space-y-6 mt-6">
+        <Card className="p-6 space-y-4">
+          <h2 className="text-2xl font-bold text-foreground">Welcome to Support Desk</h2>
+          <p className="text-foreground">
+            Get fast, reliable support for your account and services. Submit new tickets,
+            track existing issues, and get help from our dedicated support team.
+          </p>
+
+          {user ? (
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Link href="/tickets">
+                <Button variant="primary">Go to My Tickets</Button>
+              </Link>
+              {(user.role === 'staff' || user.role === 'admin') && (
+                <Link href="/agent">
+                  <Button variant="secondary">Go to Agent Inbox</Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-4 pt-2">
+              <Link href="/login">
+                <Button variant="primary">Log In</Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="secondary">Register Account</Button>
+              </Link>
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-6 space-y-3">
+          <h3 className="text-lg font-semibold text-foreground">System Architecture</h3>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+            <li>
+              <strong>Gateway & Domain API:</strong> Cookie-based JWT authentication
+              through reverse proxy, backed by NestJS domain API.
+            </li>
+            <li>
+              <strong>State Management:</strong> Server state managed via TanStack Query;
+              client draft states managed via Redux Toolkit (RTK).
+            </li>
+            <li>
+              <strong>Design System:</strong> Shared UI design system (`@shared/ui`).
+            </li>
+          </ul>
+        </Card>
+      </div>
     </Page>
   );
 }
