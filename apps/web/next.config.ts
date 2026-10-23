@@ -25,7 +25,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://fastly.picsum.photos",
   "font-src 'self' data:",
   "connect-src 'self'",
   "base-uri 'self'",

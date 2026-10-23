@@ -10,6 +10,7 @@ describe('AuthController', () => {
     email: 'user@example.com',
     name: 'Demo',
     role: 'user' as const,
+    warehouseId: null,
   };
 
   const authService = {

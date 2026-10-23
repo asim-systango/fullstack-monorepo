@@ -6,4 +6,5 @@ export type JwtUser = {
   email: string;
   role: UserRole;
   name?: string;
+  warehouseId?: string | null;
 };

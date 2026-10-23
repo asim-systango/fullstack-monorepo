@@ -5,7 +5,12 @@ import { Request } from 'express';
 import { AUTH_COOKIE_NAME, loadGatewayEnv } from '../../../common/env';
 import { UsersService } from '../../users';
 
-type JwtPayload = { sub: string; email: string; role: string };
+type JwtPayload = {
+  sub: string;
+  email: string;
+  role: string;
+  warehouseId?: string | null;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

@@ -53,3 +53,4 @@ export {
   type TableHeaderCellProps,
   type TableCellProps,
 } from './table';
+export { Pagination, type PaginationProps } from './pagination';

@@ -81,6 +81,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      warehouseId: user.warehouseId ?? null,
     });
 
     res.cookie(AUTH_COOKIE_NAME, token, {

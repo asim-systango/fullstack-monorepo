@@ -39,6 +39,7 @@ export class UsersService {
       email: user.email,
       name: user.name,
       role: user.role,
+      warehouseId: user.warehouseId ?? null,
     };
   }
 }
