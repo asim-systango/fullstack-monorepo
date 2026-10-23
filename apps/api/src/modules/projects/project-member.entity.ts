@@ -30,6 +30,13 @@ export class ProjectMember {
   @Column({ type: 'varchar', length: 20, default: 'member' })
   role!: ProjectMemberRole;
 
+  /** Snapshot from gateway user at invite/create time (no live users-table reads). */
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  name!: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

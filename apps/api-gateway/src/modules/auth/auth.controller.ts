@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  UnauthorizedException,
+  Res,
+} from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiOkResponse,
@@ -7,7 +16,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { AUTH_COOKIE_NAME } from '../../common/env';
 import { CurrentUser, Public } from '../../common/auth';
 import { PublicUser } from '../users';
 import { AuthService } from './auth.service';
@@ -59,5 +69,20 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Missing or invalid cookie' })
   me(@CurrentUser() user: PublicUser) {
     return user;
+  }
+
+  @ApiCookieAuth('access_token')
+  @Get('ws-ticket')
+  @ApiOperation({
+    summary:
+      'Return the session JWT for Socket.IO auth (httpOnly cookie cannot be read by JS)',
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid cookie' })
+  wsTicket(@Req() req: Request) {
+    const token = (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME];
+    if (!token) {
+      throw new UnauthorizedException('Missing auth cookie');
+    }
+    return { token };
   }
 }

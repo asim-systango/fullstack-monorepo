@@ -4,6 +4,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -19,6 +20,8 @@ export type IssueStatus = 'todo' | 'in_progress' | 'done';
 
 @Entity({ name: 'issues' })
 @Check(`"status" IN ('todo', 'in_progress', 'done')`)
+@Index('IDX_issues_project_status', ['projectId', 'status'])
+@Index('IDX_issues_deleted_at', ['deletedAt'])
 export class Issue {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

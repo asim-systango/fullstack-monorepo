@@ -33,11 +33,6 @@ export class ListIssuesQueryDto {
   @IsUUID()
   assigneeId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter open issues assigned to this user' })
-  @IsOptional()
-  @IsUUID()
-  mineForUserId?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

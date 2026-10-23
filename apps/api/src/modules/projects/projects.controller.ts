@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -26,8 +27,12 @@ export class ProjectsController {
   @Post()
   @Roles('staff', 'admin')
   @ApiOperation({ summary: 'Create a project (staff = project lead)' })
-  create(@CurrentUser() user: JwtUser, @Body() dto: CreateProjectDto) {
-    return this.projectsService.create(user, dto);
+  create(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: CreateProjectDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    return this.projectsService.create(user, dto, authorization);
   }
 
   @Get()
@@ -44,7 +49,7 @@ export class ProjectsController {
   }
 
   @Patch(':id')
-  @Roles('staff', 'admin')
+  @Roles('staff', 'user', 'admin')
   update(
     @CurrentUser() user: JwtUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -54,7 +59,7 @@ export class ProjectsController {
   }
 
   @Delete(':id')
-  @Roles('staff', 'admin')
+  @Roles('staff', 'user', 'admin')
   remove(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.projectsService.remove(user, id);
   }
@@ -66,17 +71,18 @@ export class ProjectsController {
   }
 
   @Post(':id/members')
-  @Roles('staff', 'admin')
+  @Roles('staff', 'user', 'admin')
   addMember(
     @CurrentUser() user: JwtUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddMemberDto,
+    @Headers('authorization') authorization?: string,
   ) {
-    return this.projectsService.addMember(user, id, dto);
+    return this.projectsService.addMember(user, id, dto, authorization);
   }
 
   @Delete(':id/members/:userId')
-  @Roles('staff', 'admin')
+  @Roles('staff', 'user', 'admin')
   removeMember(
     @CurrentUser() user: JwtUser,
     @Param('id', ParseUUIDPipe) id: string,

@@ -1,4 +1,8 @@
-import { isAllowedStatusTransition, allowedNextStatuses } from './issue-status';
+import {
+  assertStatusTransition,
+  isAllowedStatusTransition,
+  allowedNextStatuses,
+} from './issue-status';
 
 describe('issue status transitions', () => {
   it('allows todo → in_progress only', () => {
@@ -15,5 +19,20 @@ describe('issue status transitions', () => {
   it('allows done → in_progress only', () => {
     expect(isAllowedStatusTransition('done', 'in_progress')).toBe(true);
     expect(isAllowedStatusTransition('done', 'todo')).toBe(false);
+  });
+
+  it('assertStatusTransition throws on illegal jump todo → done', () => {
+    expect(() => assertStatusTransition('todo', 'done')).toThrow(
+      /Invalid status transition/,
+    );
+    try {
+      assertStatusTransition('todo', 'done');
+    } catch (err) {
+      expect(err).toMatchObject({ isStatusError: true });
+    }
+  });
+
+  it('assertStatusTransition no-ops when status is unchanged', () => {
+    expect(() => assertStatusTransition('todo', 'todo')).not.toThrow();
   });
 });

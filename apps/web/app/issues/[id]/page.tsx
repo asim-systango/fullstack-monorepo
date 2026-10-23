@@ -38,13 +38,12 @@ function IssueDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pulsed, setPulsed] = useState(false);
-  useIssueSocket(true);
-
   const issueQuery = useQuery({
     queryKey: ['issue', issueId],
     queryFn: () => issuesApi.get(issueId),
     enabled: Boolean(issueId),
   });
+  useIssueSocket(true, issueQuery.data?.projectId);
 
   const statusMutation = useMutation({
     mutationFn: (status: IssueStatus) => issuesApi.updateStatus(issueId, status),

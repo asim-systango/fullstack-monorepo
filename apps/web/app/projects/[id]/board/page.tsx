@@ -180,7 +180,7 @@ function BoardContent() {
   const [dragFrom, setDragFrom] = useState<IssueStatus | null>(null);
   const [dropTarget, setDropTarget] = useState<IssueStatus | null>(null);
   const [dndError, setDndError] = useState<string | null>(null);
-  useIssueSocket(true);
+  useIssueSocket(true, projectId);
 
   const issuesQuery = useQuery({
     queryKey: ['project-issues', projectId, { board: true }],

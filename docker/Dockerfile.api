@@ -1,27 +1,25 @@
 # syntax=docker/dockerfile:1
-# Multi-stage production image for the Nest domain API (Bearer JWT + TaskFlow modules).
+# Stub multi-stage build for the Nest domain API (not used by docker compose).
+# Cookie auth lives in Dockerfile.gateway — this image is Bearer JWT + domain modules.
 FROM node:20-alpine AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.18.1 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json turbo.json ./
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
-COPY apps/api-gateway/package.json ./apps/api-gateway/
-COPY apps/web/package.json ./apps/web/
 COPY libs ./libs
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY apps/api ./apps/api
-# Re-link workspace deps after COPY replaced apps/api (including any node_modules).
-RUN pnpm install --frozen-lockfile --offline || pnpm install --frozen-lockfile
-RUN pnpm --filter @app/api build
+RUN pnpm --filter @shared/env build \
+  && pnpm --filter @shared/http build \
+  && pnpm --filter @app/api build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.18.1 --activate
+RUN corepack enable
 ENV NODE_ENV=production
 COPY --from=build --chown=node:node /app /app
 USER node
 WORKDIR /app/apps/api
-EXPOSE 3002
 CMD ["pnpm", "start"]

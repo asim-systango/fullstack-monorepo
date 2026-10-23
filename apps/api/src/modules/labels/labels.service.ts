@@ -1,10 +1,18 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import type { JwtUser } from '../../common/auth';
 import { ProjectsService } from '../projects/projects.service';
 import { Label } from './label.entity';
 import { CreateLabelDto } from './dto/create-label.dto';
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    err instanceof QueryFailedError &&
+    (err as QueryFailedError & { driverError?: { code?: string } }).driverError?.code ===
+      '23505'
+  );
+}
 
 @Injectable()
 export class LabelsService {
@@ -22,13 +30,20 @@ export class LabelsService {
     if (existing) {
       throw new ConflictException('Label name already exists on this project');
     }
-    return this.labels.save(
-      this.labels.create({
-        projectId,
-        name: dto.name.trim().toLowerCase(),
-        color: dto.color ?? '#64748b',
-      }),
-    );
+    try {
+      return await this.labels.save(
+        this.labels.create({
+          projectId,
+          name: dto.name.trim().toLowerCase(),
+          color: dto.color ?? '#64748b',
+        }),
+      );
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Label name already exists on this project');
+      }
+      throw err;
+    }
   }
 
   async list(user: JwtUser, projectId: string) {

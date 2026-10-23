@@ -51,7 +51,7 @@ function IssuesContent() {
   const draft = useAppSelector((s) => s.ui.createIssueDraft);
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  useIssueSocket(true);
+  useIssueSocket(true, projectId);
 
   const listParams = useMemo(
     () => ({

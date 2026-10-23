@@ -1,11 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, ILike, In, Repository } from 'typeorm';
+import { DataSource, ILike, In, QueryFailedError, Repository } from 'typeorm';
 import type { JwtUser } from '../../common/auth';
 import { Project } from './project.entity';
 import { ProjectMember } from './project-member.entity';
@@ -13,6 +14,18 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { ListProjectsQueryDto } from './dto/list-projects-query.dto';
+import { GatewayUsersClient } from './gateway-users.client';
+import { Issue } from '../issues/issue.entity';
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    err instanceof QueryFailedError &&
+    typeof (err as QueryFailedError & { driverError?: { code?: string } }).driverError
+      ?.code === 'string' &&
+    (err as QueryFailedError & { driverError: { code: string } }).driverError.code ===
+      '23505'
+  );
+}
 
 @Injectable()
 export class ProjectsService {
@@ -22,9 +35,11 @@ export class ProjectsService {
     @InjectRepository(ProjectMember)
     private readonly members: Repository<ProjectMember>,
     private readonly dataSource: DataSource,
+    private readonly gatewayUsers: GatewayUsersClient,
   ) {}
 
-  async create(user: JwtUser, dto: CreateProjectDto) {
+  async create(user: JwtUser, dto: CreateProjectDto, authorization?: string) {
+    const profile = await this.gatewayUsers.findById(user.id, authorization);
     return this.dataSource.transaction(async (manager) => {
       const project = manager.create(Project, {
         name: dto.name.trim(),
@@ -37,6 +52,8 @@ export class ProjectsService {
           projectId: saved.id,
           userId: user.id,
           role: 'lead',
+          name: profile.name,
+          email: profile.email,
         }),
       );
       return saved;
@@ -68,6 +85,7 @@ export class ProjectsService {
     const qb = this.projects
       .createQueryBuilder('p')
       .where('p.id IN (:...projectIds)', { projectIds })
+      .andWhere('p.deletedAt IS NULL')
       .orderBy('p.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -81,50 +99,29 @@ export class ProjectsService {
   }
 
   async getOne(user: JwtUser, projectId: string) {
+    await this.assertProjectActive(projectId);
+    await this.assertCanView(user, projectId);
     const project = await this.projects.findOne({ where: { id: projectId } });
     if (!project) {
       throw new NotFoundException('Project not found');
     }
-    await this.assertCanView(user, projectId);
     const members = await this.members.find({
       where: { projectId },
       order: { createdAt: 'ASC' },
     });
-    const profiles = await this.loadUserProfiles(members.map((m) => m.userId));
     return {
       ...project,
-      members: members.map((m) => {
-        const profile = profiles.get(m.userId);
-        return {
-          ...m,
-          name: profile?.name ?? null,
-          email: profile?.email ?? null,
-        };
-      }),
+      members: members.map((m) => ({
+        ...m,
+        name: m.name ?? null,
+        email: m.email ?? null,
+      })),
     };
-  }
-
-  private async loadUserProfiles(userIds: string[]) {
-    const unique = [...new Set(userIds.filter(Boolean))];
-    const map = new Map<string, { name: string; email: string }>();
-    if (unique.length === 0) {
-      return map;
-    }
-    const rows = await this.dataSource.query<
-      { id: string; name: string; email: string }[]
-    >(`SELECT id, name, email FROM users WHERE id = ANY($1::uuid[])`, [unique]);
-    for (const row of rows) {
-      map.set(row.id, { name: row.name, email: row.email });
-    }
-    return map;
   }
 
   async update(user: JwtUser, projectId: string, dto: UpdateProjectDto) {
     await this.assertLead(user, projectId);
-    const project = await this.projects.findOne({ where: { id: projectId } });
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
+    const project = await this.requireActiveProject(projectId);
     if (dto.name !== undefined) {
       project.name = dto.name.trim();
     }
@@ -133,48 +130,54 @@ export class ProjectsService {
 
   async remove(user: JwtUser, projectId: string) {
     await this.assertLead(user, projectId);
-    const project = await this.projects.findOne({ where: { id: projectId } });
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-    await this.projects.remove(project);
+    const project = await this.requireActiveProject(projectId);
+    await this.projects.softRemove(project);
     return { id: projectId };
   }
 
-  async addMember(user: JwtUser, projectId: string, dto: AddMemberDto) {
+  async addMember(
+    user: JwtUser,
+    projectId: string,
+    dto: AddMemberDto,
+    authorization?: string,
+  ) {
     await this.assertLead(user, projectId);
-    const project = await this.projects.findOne({ where: { id: projectId } });
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
+    await this.requireActiveProject(projectId);
 
-    const rows = await this.dataSource.query<{ id: string }[]>(
-      `SELECT id FROM users WHERE email = $1 LIMIT 1`,
-      [dto.email.trim().toLowerCase()],
-    );
-    const target = rows[0];
-    if (!target) {
-      throw new NotFoundException('No user found with that email');
+    const target = await this.gatewayUsers.findByEmail(dto.email, authorization);
+    const role = dto.role ?? 'member';
+    if (role === 'lead' && target.role !== 'staff' && target.role !== 'admin') {
+      throw new BadRequestException('Only staff or admin users can be project leads');
     }
 
     const existing = await this.members.findOne({
       where: { projectId, userId: target.id },
     });
     if (existing) {
-      throw new BadRequestException('User is already a project member');
+      throw new ConflictException('User is already a project member');
     }
 
-    return this.members.save(
-      this.members.create({
-        projectId,
-        userId: target.id,
-        role: dto.role ?? 'member',
-      }),
-    );
+    try {
+      return await this.members.save(
+        this.members.create({
+          projectId,
+          userId: target.id,
+          role,
+          name: target.name,
+          email: target.email,
+        }),
+      );
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('User is already a project member');
+      }
+      throw err;
+    }
   }
 
   async removeMember(user: JwtUser, projectId: string, memberUserId: string) {
     await this.assertLead(user, projectId);
+    await this.requireActiveProject(projectId);
     const member = await this.members.findOne({
       where: { projectId, userId: memberUserId },
     });
@@ -191,7 +194,15 @@ export class ProjectsService {
       }
     }
 
-    await this.members.remove(member);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(
+        Issue,
+        { projectId, assigneeId: memberUserId },
+        { assigneeId: null },
+      );
+      await manager.remove(member);
+    });
+
     return { projectId, userId: memberUserId };
   }
 
@@ -204,6 +215,7 @@ export class ProjectsService {
   }
 
   async assertMember(userId: string, projectId: string): Promise<ProjectMember> {
+    await this.assertProjectActive(projectId);
     const member = await this.members.findOne({ where: { projectId, userId } });
     if (!member) {
       throw new ForbiddenException('Only project members can perform this action');
@@ -212,6 +224,7 @@ export class ProjectsService {
   }
 
   async assertCanView(user: JwtUser, projectId: string): Promise<void> {
+    await this.assertProjectActive(projectId);
     if (user.role === 'admin') {
       return;
     }
@@ -219,6 +232,7 @@ export class ProjectsService {
   }
 
   async assertLead(user: JwtUser, projectId: string): Promise<ProjectMember> {
+    await this.assertProjectActive(projectId);
     if (user.role === 'admin') {
       const existing = await this.members.findOne({
         where: { projectId, userId: user.id },
@@ -231,6 +245,8 @@ export class ProjectsService {
         projectId,
         userId: user.id,
         role: 'lead',
+        name: null,
+        email: null,
         createdAt: new Date(),
       } as ProjectMember;
     }
@@ -264,5 +280,26 @@ export class ProjectsService {
       where: { userId, projectId: In(projectIds) },
     });
     return new Map(rows.map((r) => [r.projectId, r]));
+  }
+
+  private async assertProjectActive(projectId: string): Promise<void> {
+    const project = await this.projects.findOne({
+      where: { id: projectId },
+      withDeleted: true,
+    });
+    if (!project || project.deletedAt) {
+      throw new NotFoundException('Project not found');
+    }
+  }
+
+  private async requireActiveProject(projectId: string): Promise<Project> {
+    const project = await this.projects.findOne({
+      where: { id: projectId },
+      withDeleted: true,
+    });
+    if (!project || project.deletedAt) {
+      throw new NotFoundException('Project not found');
+    }
+    return project;
   }
 }

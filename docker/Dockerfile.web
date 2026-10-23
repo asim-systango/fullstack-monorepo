@@ -1,34 +1,28 @@
 # syntax=docker/dockerfile:1
-# Multi-stage production image for the Next.js web app (prefer Vercel in prod).
+# Stub multi-stage build for the Next web app (not used by docker compose).
+# Browser calls same-origin /api; Next rewrites to the gateway (API_GATEWAY_URL).
 FROM node:20-alpine AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.18.1 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json turbo.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/api-gateway/package.json ./apps/api-gateway/
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/web/package.json ./apps/web/
 COPY libs ./libs
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY apps/web ./apps/web
-RUN pnpm install --frozen-lockfile --offline || pnpm install --frozen-lockfile
+# Baked into the client bundle / next.config rewrites at build time.
 ARG NEXT_PUBLIC_API_URL=/api
 ARG API_GATEWAY_URL=http://api-gateway:3001
-ARG NEXT_PUBLIC_WS_URL=http://localhost:3002
-ARG NEXT_PUBLIC_CSP_CONNECT_SRC=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV API_GATEWAY_URL=$API_GATEWAY_URL
-ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
-ENV NEXT_PUBLIC_CSP_CONNECT_SRC=$NEXT_PUBLIC_CSP_CONNECT_SRC
 RUN pnpm --filter @app/web build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.18.1 --activate
+RUN corepack enable
 ENV NODE_ENV=production
 COPY --from=build --chown=node:node /app /app
 USER node
 WORKDIR /app/apps/web
-EXPOSE 3000
 CMD ["pnpm", "start"]

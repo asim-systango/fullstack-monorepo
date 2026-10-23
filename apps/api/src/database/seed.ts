@@ -9,13 +9,14 @@ import { ActivityLog } from '../modules/issues/activity-log.entity';
 import { Label } from '../modules/labels/label.entity';
 import { IssueLabel } from '../modules/labels/issue-label.entity';
 
-type SeedUser = { id: string; email: string; role: string };
+type SeedUser = { id: string; email: string; name: string; role: string };
 
 async function seed() {
   await dataSource.initialize();
 
+  // Bootstrap-only read of gateway users (runtime invite/list uses GatewayUsersClient HTTP).
   const users = (await dataSource.query(
-    `SELECT id, email, role FROM users WHERE email = ANY($1)`,
+    `SELECT id, email, name, role FROM users WHERE email = ANY($1)`,
     [['staff@demo.local', 'user@demo.local', 'admin@demo.local']],
   )) as SeedUser[];
 
@@ -57,21 +58,29 @@ async function seed() {
         projectId: p1.id,
         userId: staff.id,
         role: 'lead',
+        name: staff.name,
+        email: staff.email,
       }),
       manager.create(ProjectMember, {
         projectId: p1.id,
         userId: member.id,
         role: 'member',
+        name: member.name,
+        email: member.email,
       }),
       manager.create(ProjectMember, {
         projectId: p1.id,
         userId: admin.id,
         role: 'member',
+        name: admin.name,
+        email: admin.email,
       }),
       manager.create(ProjectMember, {
         projectId: p2.id,
         userId: staff.id,
         role: 'lead',
+        name: staff.name,
+        email: staff.email,
       }),
     ]);
 
