@@ -2,25 +2,28 @@
 
 import Link from 'next/link';
 import { useAuth } from './auth-provider';
-import { Button } from '@shared/ui/components';
+import { UserRole } from '@/lib/auth/roles';
+import { Badge, Button } from '@shared/ui';
 
 function AuthNav() {
   const { user, loading, logout } = useAuth();
 
   if (loading) {
-    return <span className="text-sm text-muted-foreground">…</span>;
+    return <span className="text-sm text-zinc-500">…</span>;
   }
 
   if (user) {
+    const userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
     return (
-      <>
-        <span className="font-mono text-xs text-muted-foreground">
-          {user.name} · {user.role}
-        </span>
+      <div className="flex items-center space-x-3">
+        <span className="text-xs text-zinc-350 font-medium">{userName}</span>
+        <Badge tone={user.role === UserRole.SUPER_ADMIN ? 'accent' : 'neutral'}>
+          {user.role || 'Member'}
+        </Badge>
         <Button variant="ghost" size="sm" onClick={() => void logout()}>
           Log out
         </Button>
-      </>
+      </div>
     );
   }
 
@@ -39,7 +42,7 @@ function AuthNav() {
 
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Systango CRM Platform',
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <header className="ui-shell-header">
@@ -49,7 +52,7 @@ export function ShellHeader({
       </div>
       <nav className="ui-shell-nav">
         <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        <Link href="/dashboard">Dashboard</Link>
         <AuthNav />
       </nav>
     </header>

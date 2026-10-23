@@ -1,18 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
-import { UsersService, type User } from '../../users';
 
 describe('JwtStrategy (gateway)', () => {
-  const usersService = {
-    findById: jest.fn(),
-    toPublic: jest.fn((user: User) => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    })),
-  };
-
   const originalEnv = { ...process.env };
   let strategy: JwtStrategy;
 
@@ -26,7 +15,7 @@ describe('JwtStrategy (gateway)', () => {
       CORS_ORIGIN: 'http://localhost:3000',
       API_UPSTREAM_URL: 'http://localhost:3002',
     });
-    strategy = new JwtStrategy(usersService as unknown as UsersService);
+    strategy = new JwtStrategy();
   });
 
   afterAll(() => {
@@ -36,43 +25,25 @@ describe('JwtStrategy (gateway)', () => {
     Object.assign(process.env, originalEnv);
   });
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('returns the public user when the subject exists', async () => {
-    const user = {
-      id: '11111111-1111-1111-1111-111111111111',
+  it('returns the parsed user representation when the payload has sub', async () => {
+    const payload = {
+      sub: '11111111-1111-1111-1111-111111111111',
       email: 'user@example.com',
-      name: 'Demo',
+      organizationId: 'org-123',
       role: 'user',
-      passwordHash: 'hash',
-    } as User;
-    usersService.findById.mockResolvedValue(user);
+    };
 
-    await expect(
-      strategy.validate({
-        sub: user.id,
-        email: user.email,
-        role: 'user',
-      }),
-    ).resolves.toEqual({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
+    await expect(strategy.validate(payload)).resolves.toEqual({
+      id: payload.sub,
+      email: payload.email,
+      organizationId: payload.organizationId,
+      role: payload.role,
     });
   });
 
-  it('throws UnauthorizedException when the subject is missing', async () => {
-    usersService.findById.mockResolvedValue(null);
-
-    await expect(
-      strategy.validate({
-        sub: 'missing',
-        email: 'x@example.com',
-        role: 'user',
-      }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+  it('throws UnauthorizedException when payload or sub is missing', async () => {
+    await expect(strategy.validate({} as any)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 });

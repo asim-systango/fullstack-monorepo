@@ -1,8 +1,8 @@
 import { resolveApiBaseUrl } from './api-base-url';
 
 describe('resolveApiBaseUrl', () => {
-  it('defaults to /api', () => {
-    expect(resolveApiBaseUrl(undefined)).toBe('/api');
+  it('defaults to /api/v1', () => {
+    expect(resolveApiBaseUrl(undefined)).toBe('/api/v1');
   });
 
   it('strips a trailing slash', () => {

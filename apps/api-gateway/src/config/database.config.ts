@@ -9,5 +9,6 @@ export function databaseConfig() {
     autoLoadEntities: true,
     synchronize: false,
     migrationsRun: false,
+    ssl: env.DATABASE_URL.includes('supabase') ? { rejectUnauthorized: false } : undefined,
   };
 }

@@ -34,15 +34,16 @@ function toApiError(error: AxiosError): ApiClientError {
   });
 }
 
-/** Unwrap Nest `{ data: T }` success envelope. */
 export function unwrapData<T>(payload: unknown): T {
   if (
     payload !== null &&
     typeof payload === 'object' &&
-    'data' in payload &&
-    Object.keys(payload as object).length === 1
+    'data' in payload
   ) {
-    return (payload as { data: T }).data;
+    // Only return payload if data is explicitly undefined, else return payload.data
+    // This correctly unwraps API envelope { message: string, data: T }
+    const p = payload as { data: T; message?: string; statusCode?: number };
+    return p.data;
   }
   return payload as T;
 }

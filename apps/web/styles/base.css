@@ -1,5 +1,10 @@
 /* App-level base styles only — tokens live in @shared/ui/theme. */
 
+:root {
+  --font-ibm-plex-sans: 'IBM Plex Sans', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-ibm-plex-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
 @layer base {
   * {
     @apply border-border;

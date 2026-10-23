@@ -6,12 +6,11 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
-import { UsersModule } from './modules/users';
 
 const db = databaseConfig();
 
 /**
- * Browser-facing BFF — cookie JWT auth, users, health.
+ * Browser-facing BFF — cookie JWT auth, health.
  * Domain CRUD lives in apps/api and is reached via the reverse proxy in main.ts.
  */
 @Module({
@@ -26,7 +25,6 @@ const db = databaseConfig();
     TypeOrmModule.forRoot({
       ...db,
     }),
-    UsersModule,
     AuthModule,
     HealthModule,
   ],

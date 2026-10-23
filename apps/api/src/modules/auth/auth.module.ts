@@ -1,19 +1,28 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { loadApiEnv } from '../../common/env';
+import { DatabaseModule } from '../../database/database.module';
+import { MailModule } from '../mail/mail.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
-const env = loadApiEnv();
-
-/** Internal JWT validation only — no login/cookie endpoints (those live on api-gateway). */
 @Module({
   imports: [
+    DatabaseModule,
+    MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: env.JWT_SECRET,
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET || 'dev-jwt-secret-min-16chars',
+        signOptions: {
+          expiresIn: (process.env.JWT_EXPIRY || '7d') as unknown as number,
+        },
+      }),
     }),
   ],
-  providers: [JwtStrategy],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

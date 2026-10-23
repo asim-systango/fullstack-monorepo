@@ -1,29 +1,33 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard, RolesGuard } from './common/auth';
-import { databaseConfig } from './config';
-import { AuthModule } from './modules/auth';
-import { HealthModule } from './modules/health';
+import { DatabaseModule } from './database/database.module';
+import { MailModule } from './modules/mail/mail.module';
+import { OrganizationModule } from './modules/organizations/organization.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { FormsModule } from './modules/forms/forms.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { UsersModule } from './modules/users/users.module';
+import { ContactsModule } from './modules/contacts/contacts.module';
+import { LeadsModule } from './modules/leads/leads.module';
+import { DealsModule } from './modules/deals/deals.module';
 
-const db = databaseConfig();
+import { ActivitiesModule } from './modules/activities/activities.module';
 
 /**
- * Internal domain API — Bearer JWT only (cookie auth lives on api-gateway).
- * Add your domain modules here (do not put product CRUD in Next).
- * Entities registered via TypeOrmModule.forFeature are auto-loaded.
+ * Internal domain API — DatabaseModule, MailModule, OrganizationModule, AuthModule, FormsModule, DashboardModule.
  */
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      ...db,
-    }),
+    DatabaseModule,
+    MailModule,
+    OrganizationModule,
     AuthModule,
-    HealthModule,
-  ],
-  providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
+    FormsModule,
+    DashboardModule,
+    UsersModule,
+    ContactsModule,
+    LeadsModule,
+    DealsModule,
+    ActivitiesModule,
   ],
 })
 export class AppModule {}

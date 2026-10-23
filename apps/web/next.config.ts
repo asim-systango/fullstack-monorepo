@@ -2,7 +2,9 @@ import type { NextConfig } from 'next';
 
 /**
  * Browser calls same-origin `/api/*` on :3000.
- * Next rewrites those to the Nest API gateway (default :3001).
+ * Next rewrites those to the Nest API gateway (default :3001), removing the
+ * browser-only `/api` prefix. Gateway-owned routes are `/auth/*`, `/health/*`,
+ * and similar paths.
  */
 const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3001').replace(
   /\/$/,
@@ -27,7 +29,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' http://localhost:3001 http://localhost:3002 http://127.0.0.1:3001 http://127.0.0.1:3002",
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
@@ -42,11 +44,11 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
   ...(isProd
     ? [
-        {
-          key: 'Strict-Transport-Security',
-          value: 'max-age=15552000; includeSubDomains',
-        },
-      ]
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=15552000; includeSubDomains',
+      },
+    ]
     : []),
 ];
 
@@ -60,7 +62,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${gatewayOrigin}/:path*`,
+        destination: `${gatewayOrigin}/api/:path*`,
       },
     ];
   },
