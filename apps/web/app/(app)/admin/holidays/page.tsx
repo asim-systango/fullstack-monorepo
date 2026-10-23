@@ -105,7 +105,7 @@ export default function HolidaysPage() {
   return (
     <AppPage
       title="Public holidays"
-      description="These dates are skipped when counting working days. Requests already made keep their day count."
+      description="These dates are skipped when counting working days. Pending requests are recounted when approved, decided ones keep their day count."
     >
       <HolidayForm />
 
@@ -130,7 +130,7 @@ export default function HolidaysPage() {
       <ConfirmDialog
         open={toDelete !== null}
         title={`Remove ${toDelete?.name ?? 'this holiday'}?`}
-        description="New requests over this date will count it as a working day again."
+        description="New and pending requests over this date will count it as a working day again."
         confirmLabel="Remove"
         danger
         pending={remove.isPending}

@@ -115,8 +115,10 @@ service check, only the database sees both writes. Its error (`23P01`) is turned
 `POST /leave-requests/:id/approve` runs in one `dataSource.transaction`:
 
 1. lock the request (`pessimistic_write`, no joins) → 404 missing · 403 own or wrong level · 400 not pending
-2. lock the balance row → 400 if `usedDays + days > totalDays`
-3. `usedDays += days`, and the request gets `status = approved`, `managerId`, `managerComment`, `decidedAt`
+2. recount the working days, in case a holiday was added since applying → 400 if none are left, `days` updated if
+   it changed
+3. lock the balance row → 400 if `usedDays + days > totalDays`
+4. `usedDays += days`, and the request gets `status = approved`, `managerId`, `managerComment`, `decidedAt`
 
 If any step fails nothing is saved. Lock order is always request → balance, so two transactions can't deadlock.
 When two managers approve the same request at once, one gets 200 and the other waits, then sees `approved` and gets 400.
@@ -154,7 +156,8 @@ When two managers approve the same request at once, one gets 200 and the other w
   table with read-only SQL (both apps share one database). There is no `User` entity, no foreign key and no copied
   user column. If the services ever get separate databases, only that module changes.
 - **Dates** are Postgres `date` columns sent as `YYYY-MM-DD`, and all date math is UTC on strings. `days` is
-  captured when the request is made, so later holiday changes don't rewrite existing requests.
+  captured when the request is made and **recounted when a pending request is approved**, so a holiday added in
+  between is never charged. Approved, rejected and cancelled requests keep their stored `days`.
 - **Whole days only** (half days are Stretch).
 - The gateway seed gained two employees (`asha@`, `rohan@demo.local`) because the brief needs balances for three.
 

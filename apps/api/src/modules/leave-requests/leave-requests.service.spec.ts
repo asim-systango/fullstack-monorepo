@@ -30,6 +30,7 @@ function setup(options: {
   request: LeaveRequest;
   requesterRole: string;
   balance?: Partial<LeaveBalance>;
+  holidays?: string[];
 }) {
   // a fake EntityManager: the first findOne locks the request, the second locks the balance
   const manager = {
@@ -53,11 +54,14 @@ function setup(options: {
       .mockResolvedValue({ id: options.request.userId, role: options.requesterRole }),
     byIds: jest.fn().mockResolvedValue(new Map()),
   };
+  const holidays = {
+    datesBetween: jest.fn().mockResolvedValue(new Set(options.holidays ?? [])),
+  };
   const service = new LeaveRequestsService(
     requests as never,
     dataSource as never,
     {} as never,
-    {} as never,
+    holidays as never,
     employees as never,
   );
   return { service, manager, dataSource };
@@ -135,7 +139,8 @@ describe('LeaveRequestsService approve / reject', () => {
 
   it('stops before writing anything when the balance is too small', async () => {
     const { service, manager: m } = setup({
-      request: makeRequest({ days: 5 }),
+      // Mon 26 → Fri 30 Oct = 5 working days
+      request: makeRequest({ endDate: '2026-10-30', days: 5 }),
       requesterRole: 'user',
       balance: { id: 'balance-1', totalDays: 12, usedDays: 10, year: 2026 },
     });
@@ -145,6 +150,40 @@ describe('LeaveRequestsService approve / reject', () => {
     );
     expect(m.increment).not.toHaveBeenCalled();
     expect(m.update).not.toHaveBeenCalled();
+  });
+
+  it('recounts a pending request when a holiday was added after applying', async () => {
+    const { service, manager: m } = setup({
+      // Mon 21 → Thu 24 Dec was 4 days, then 23 Dec became a holiday
+      request: makeRequest({ startDate: '2026-12-21', endDate: '2026-12-24', days: 4 }),
+      requesterRole: 'user',
+      balance: { id: 'balance-1', totalDays: 12, usedDays: 3, year: 2026 },
+      holidays: ['2026-12-23'],
+    });
+
+    await service.approve(manager, 'request-1', {});
+
+    expect(m.update).toHaveBeenCalledWith(LeaveRequest, 'request-1', { days: 3 });
+    expect(m.increment).toHaveBeenCalledWith(
+      LeaveBalance,
+      { id: 'balance-1' },
+      'usedDays',
+      3,
+    );
+  });
+
+  it('refuses to approve when holidays now cover every day of the request', async () => {
+    const { service, manager: m } = setup({
+      request: makeRequest(),
+      requesterRole: 'user',
+      balance: { id: 'balance-1', totalDays: 12, usedDays: 3, year: 2026 },
+      holidays: ['2026-10-26', '2026-10-27'],
+    });
+
+    await expect(service.approve(manager, 'request-1', {})).rejects.toThrow(
+      /No working days left/,
+    );
+    expect(m.increment).not.toHaveBeenCalled();
   });
 
   it('rejects without touching the balance', async () => {

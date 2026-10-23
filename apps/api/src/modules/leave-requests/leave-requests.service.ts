@@ -241,7 +241,10 @@ export class LeaveRequestsService {
       assertCanDecide(actor, request.userId, requester?.role);
       assertPending(request.status, outcome);
 
-      if (outcome === 'approved') await this.chargeBalance(m, request);
+      if (outcome === 'approved') {
+        await this.recountDays(m, request);
+        await this.chargeBalance(m, request);
+      }
 
       await m.update(LeaveRequest, request.id, {
         status: outcome,
@@ -251,6 +254,21 @@ export class LeaveRequestsService {
       });
     });
     return this.viewById(id);
+  }
+
+  // a holiday may have been added since the request was made, so count again before charging
+  private async recountDays(m: EntityManager, request: LeaveRequest) {
+    const holidays = await this.holidays.datesBetween(request.startDate, request.endDate);
+    const days = countWorkingDays(request.startDate, request.endDate, holidays);
+    if (days < 1) {
+      throw new BadRequestException(
+        'No working days left in this request, ask the employee to cancel it',
+      );
+    }
+    if (days !== request.days) {
+      await m.update(LeaveRequest, request.id, { days });
+      request.days = days;
+    }
   }
 
   // runs inside the approve transaction, if anything fails the status change is rolled back too
