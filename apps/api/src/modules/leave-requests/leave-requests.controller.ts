@@ -108,7 +108,10 @@ export class LeaveRequestsController {
 
   @Delete(':id')
   @Roles('user', 'staff', 'admin')
-  @ApiOperation({ summary: 'Soft delete a cancelled or rejected request' })
+  @ApiOperation({
+    summary:
+      'Soft delete a cancelled request (owner) or a cancelled/rejected one (admin)',
+  })
   remove(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.leaveRequests.remove(user, id);
   }

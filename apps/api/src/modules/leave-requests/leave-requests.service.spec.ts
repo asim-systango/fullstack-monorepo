@@ -47,7 +47,10 @@ function setup(options: {
       work(manager),
     ),
   };
-  const requests = { findOne: jest.fn().mockResolvedValue(options.request) };
+  const requests = {
+    findOne: jest.fn().mockResolvedValue(options.request),
+    softDelete: jest.fn().mockResolvedValue(undefined),
+  };
   const employees = {
     findById: jest
       .fn()
@@ -64,7 +67,7 @@ function setup(options: {
     holidays as never,
     employees as never,
   );
-  return { service, manager, dataSource };
+  return { service, manager, dataSource, requests };
 }
 
 describe('LeaveRequestsService approve / reject', () => {
@@ -200,5 +203,60 @@ describe('LeaveRequestsService approve / reject', () => {
       'request-1',
       expect.objectContaining({ status: 'rejected', managerComment: 'Release week' }),
     );
+  });
+});
+
+describe('LeaveRequestsService remove', () => {
+  it('lets an employee remove their own cancelled request', async () => {
+    const { service, requests } = setup({
+      request: makeRequest({ status: 'cancelled' }),
+      requesterRole: 'user',
+    });
+
+    await expect(service.remove(employee, 'request-1')).resolves.toEqual({
+      id: 'request-1',
+      deleted: true,
+    });
+    expect(requests.softDelete).toHaveBeenCalledWith('request-1');
+  });
+
+  it("does not let an employee remove a manager's rejection", async () => {
+    const { service, requests } = setup({
+      request: makeRequest({ status: 'rejected' }),
+      requesterRole: 'user',
+    });
+
+    await expect(service.remove(employee, 'request-1')).rejects.toThrow(
+      /Only an admin can remove a rejected request/,
+    );
+    expect(requests.softDelete).not.toHaveBeenCalled();
+  });
+
+  it('lets an admin remove a rejected request', async () => {
+    const { service, requests } = setup({
+      request: makeRequest({ status: 'rejected' }),
+      requesterRole: 'user',
+    });
+
+    await service.remove(admin, 'request-1');
+
+    expect(requests.softDelete).toHaveBeenCalledWith('request-1');
+  });
+
+  it("refuses someone else's request and an open one", async () => {
+    const cancelled = setup({
+      request: makeRequest({ status: 'cancelled', userId: 'employee-2' }),
+      requesterRole: 'user',
+    });
+    await expect(cancelled.service.remove(employee, 'request-1')).rejects.toThrow(
+      ForbiddenException,
+    );
+
+    const pending = setup({ request: makeRequest(), requesterRole: 'user' });
+    await expect(pending.service.remove(employee, 'request-1')).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(cancelled.requests.softDelete).not.toHaveBeenCalled();
+    expect(pending.requests.softDelete).not.toHaveBeenCalled();
   });
 });

@@ -185,11 +185,16 @@ export class LeaveRequestsService {
   async remove(user: JwtUser, id: string) {
     const request = await this.requests.findOne({ where: { id } });
     if (!request) throw notFound();
-    if (user.role !== 'admin' && request.userId !== user.id) {
+    const isAdmin = user.role === 'admin';
+    if (!isAdmin && request.userId !== user.id) {
       throw new ForbiddenException('You can only remove your own requests');
     }
     if (!REMOVABLE_STATUSES.includes(request.status)) {
       throw new BadRequestException('Only cancelled or rejected requests can be removed');
+    }
+    // a rejection is the manager's record, only an admin can hide it
+    if (request.status === 'rejected' && !isAdmin) {
+      throw new ForbiddenException('Only an admin can remove a rejected request');
     }
     await this.requests.softDelete(id);
     return { id, deleted: true };

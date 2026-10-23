@@ -36,10 +36,9 @@ export function RequestDetail({ request }: Readonly<{ request: LeaveRequest }>) 
   const [dialog, setDialog] = useState<'cancel' | 'remove' | null>(null);
 
   const isOwner = user?.id === request.employee.id;
-  // approved requests can't be cancelled, and only closed ones can be removed
+  // approved requests can't be cancelled, and a rejection stays unless an admin removes it
   const canCancel = isOwner && request.status === 'pending';
-  const canRemove =
-    isOwner && (request.status === 'cancelled' || request.status === 'rejected');
+  const canRemove = isOwner && request.status === 'cancelled';
 
   function confirmCancel() {
     cancel.mutate(request.id, {

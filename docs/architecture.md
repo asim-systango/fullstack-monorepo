@@ -128,9 +128,9 @@ When two managers approve the same request at once, one gets 200 and the other w
 - `GET /leave-requests` (staff, admin) and `GET /leave-requests/me` (user, staff): `page` (default 1), `limit`
   (default 20, max 100), filters `status`, `leaveTypeId`, `from`, `to` (requests overlapping the range), `userId`.
   Response `{ data: { items, total, page, limit } }`. Invalid paging → 400, empty filter strings are ignored.
-- Soft delete on `LeaveRequest` (`@DeleteDateColumn`): `DELETE /leave-requests/:id`, only for **cancelled or
-  rejected** requests (owner or admin), so balances are never affected. Default lists hide deleted rows, admins can
-  pass `includeDeleted=true` ("Show deleted" on `/admin/requests`).
+- Soft delete on `LeaveRequest` (`@DeleteDateColumn`): `DELETE /leave-requests/:id`. The owner can remove their own
+  **cancelled** request, an admin can remove any **cancelled or rejected** one. These never touched a balance.
+  Default lists hide deleted rows, admins can pass `includeDeleted=true` ("Show deleted" on `/admin/requests`).
 - Deleting a leave type archives it (a plain `deletedAt` column rather than `@DeleteDateColumn`, so old requests
   still join their type). It is refused with 409 while the type has pending requests.
 
@@ -158,6 +158,9 @@ When two managers approve the same request at once, one gets 200 and the other w
 - **Dates** are Postgres `date` columns sent as `YYYY-MM-DD`, and all date math is UTC on strings. `days` is
   captured when the request is made and **recounted when a pending request is approved**, so a holiday added in
   between is never charged. Approved, rejected and cancelled requests keep their stored `days`.
+- **Who can remove a request:** cancelling was the employee's own action, so they may remove a cancelled request
+  from their history. A rejection is the manager's decision and stays on record: removing it as the employee gets
+  403, only an admin can remove it.
 - **Whole days only** (half days are Stretch).
 - The gateway seed gained two employees (`asha@`, `rohan@demo.local`) because the brief needs balances for three.
 
