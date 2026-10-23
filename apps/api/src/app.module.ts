@@ -4,7 +4,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
+import { BalancesModule } from './modules/balances';
+import { EmployeesModule } from './modules/employees';
 import { HealthModule } from './modules/health';
+import { HolidaysModule } from './modules/holidays';
+import { LeaveRequestsModule } from './modules/leave-requests';
+import { LeaveTypesModule } from './modules/leave-types';
 
 const db = databaseConfig();
 
@@ -20,6 +25,11 @@ const db = databaseConfig();
     }),
     AuthModule,
     HealthModule,
+    EmployeesModule,
+    LeaveTypesModule,
+    HolidaysModule,
+    BalancesModule,
+    LeaveRequestsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -13,6 +13,9 @@ async function seed() {
     { email: 'admin@demo.local', name: 'Demo Admin', role: 'admin' },
     { email: 'user@demo.local', name: 'Demo User', role: 'user' },
     { email: 'staff@demo.local', name: 'Demo Staff', role: 'staff' },
+    // extra employees for leave management
+    { email: 'asha@demo.local', name: 'Asha Verma', role: 'user' },
+    { email: 'rohan@demo.local', name: 'Rohan Mehta', role: 'user' },
   ];
 
   for (const row of seeds) {
