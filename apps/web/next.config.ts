@@ -11,6 +11,18 @@ const gatewayOrigin = (process.env.API_GATEWAY_URL ?? 'http://localhost:3001').r
 
 const isProd = process.env.NODE_ENV === 'production';
 
+/** Extra connect-src hosts for Socket.io (space-separated). Set in Vercel prod. */
+const extraConnectSrc = (process.env.NEXT_PUBLIC_CSP_CONNECT_SRC ?? '').trim();
+
+const connectSrc = [
+  "'self'",
+  'http://localhost:3002',
+  'ws://localhost:3002',
+  'http://127.0.0.1:3002',
+  'ws://127.0.0.1:3002',
+  ...(extraConnectSrc ? extraConnectSrc.split(/\s+/) : []),
+].join(' ');
+
 /**
  * Browser-facing security headers. The Nest apps set their own via
  * `@shared/http/middleware`, but those serve JSON — this is the only tier that
@@ -27,7 +39,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  `connect-src ${connectSrc}`,
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",

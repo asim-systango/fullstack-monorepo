@@ -12,6 +12,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/database/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/database/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/database/data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
     "test": "jest --config ../../jest.config.cjs --testPathPattern=apps/api/src"
   },
   "dependencies": {
@@ -20,8 +21,10 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.12",
+    "@nestjs/platform-socket.io": "^11.2.7",
     "@nestjs/swagger": "^11.1.1",
     "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/websockets": "^11.2.7",
     "@shared/env": "workspace:*",
     "@shared/http": "workspace:*",
     "class-transformer": "^0.5.1",
@@ -33,6 +36,7 @@
     "pg": "^8.14.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "socket.io": "^4.8.4",
     "typeorm": "^0.3.21"
   },
   "devDependencies": {

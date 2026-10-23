@@ -3,9 +3,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Provider as ReduxProvider } from 'react-redux';
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 import { store } from '@/lib/store';
 import { AuthProvider } from '@/components/auth';
+import { NavigationLoader } from '@/components/navigation-loader';
+import { BootSplash } from '@/components/boot-splash';
 
 export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(
@@ -24,7 +26,13 @@ export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <ReduxProvider store={store}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <BootSplash />
+          <Suspense fallback={null}>
+            <NavigationLoader />
+          </Suspense>
+          {children}
+        </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ReduxProvider>

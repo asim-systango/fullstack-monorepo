@@ -7,16 +7,25 @@ import {
 } from './proxy-hop';
 
 describe('isGatewayOwnedPath', () => {
-  it.each(['/health', '/health/live', '/auth/login', '/docs', '/docs/json', '/swagger'])(
-    'treats %s as gateway-owned',
+  it.each([
+    '/health',
+    '/health/live',
+    '/auth/login',
+    '/users',
+    '/users/by-email',
+    '/docs',
+    '/docs/json',
+    '/swagger',
+  ])('treats %s as gateway-owned', (path) => {
+    expect(isGatewayOwnedPath(path)).toBe(true);
+  });
+
+  it.each(['/ready', '/api/ready', '/', '/projects'])(
+    'proxies %s to upstream',
     (path) => {
-      expect(isGatewayOwnedPath(path)).toBe(true);
+      expect(isGatewayOwnedPath(path)).toBe(false);
     },
   );
-
-  it.each(['/ready', '/users', '/api/ready', '/'])('proxies %s to upstream', (path) => {
-    expect(isGatewayOwnedPath(path)).toBe(false);
-  });
 });
 
 describe('applyAuthCookieToProxyRequest (cookie → Bearer hop)', () => {

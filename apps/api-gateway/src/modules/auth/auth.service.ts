@@ -40,7 +40,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, res: Response) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
       throw new ConflictException('Unable to create account with those details');
@@ -54,6 +54,7 @@ export class AuthService {
         name: dto.name,
         role: 'user',
       });
+      await this.setAuthCookie(res, user);
       return this.usersService.toPublic(user);
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -77,6 +78,14 @@ export class AuthService {
     const user = await this.validateUser(dto.email, dto.password);
     if (!user) throw new UnauthorizedException('Invalid email or password');
 
+    await this.setAuthCookie(res, user);
+    return this.usersService.toPublic(user);
+  }
+
+  private async setAuthCookie(
+    res: Response,
+    user: { id: string; email: string; role: string },
+  ) {
     const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
@@ -90,8 +99,6 @@ export class AuthService {
       path: '/',
       maxAge: jwtExpiryToMs(this.env.JWT_EXPIRES_IN),
     });
-
-    return this.usersService.toPublic(user);
   }
 
   logout(res: Response) {

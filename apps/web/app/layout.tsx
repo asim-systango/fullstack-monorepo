@@ -18,9 +18,64 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'TaskFlow',
+  description: 'Project management — boards, issues, and team workflows',
 };
+
+/** SSR splash so hard refresh shows the brand spinner before JS hydrates. */
+function BootSplashMarkup() {
+  return (
+    <output id="tf-boot-splash" className="tf-boot-overlay" aria-busy="true">
+      <div className="tf-brand-splash">
+        <div className="tf-brand-loader tf-brand-loader-lg">
+          <div className="tf-brand-loader-orb">
+            <svg
+              className="tf-brand-loader-svg"
+              viewBox="0 0 128 128"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
+              <circle
+                cx="64"
+                cy="64"
+                r="54"
+                stroke="currentColor"
+                strokeOpacity="0.12"
+                strokeWidth="5"
+              />
+              <g className="tf-brand-loader-spin">
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="54"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray="90 250"
+                />
+                <circle cx="64" cy="10" r="5" fill="currentColor" />
+              </g>
+              <rect x="40" y="40" width="48" height="48" rx="14" fill="#0f172a" />
+              <text
+                x="64"
+                y="70"
+                textAnchor="middle"
+                className="tf-brand-loader-mark"
+                fontSize="22"
+                fontWeight="700"
+                fill="#f8fafc"
+              >
+                Tf
+              </text>
+            </svg>
+          </div>
+          <p className="tf-brand-loader-label">Loading TaskFlow…</p>
+        </div>
+      </div>
+    </output>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -32,6 +87,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
+        <BootSplashMarkup />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
