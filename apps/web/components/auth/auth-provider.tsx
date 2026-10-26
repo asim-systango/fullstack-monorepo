@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { User } from '@shared/api-client';
+import { ApiClientError, type User } from '@shared/api-client';
 import { authApi } from '@/lib/api';
 
 type AuthContextValue = {
@@ -29,8 +29,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       const me = await authApi.me();
       setUser(me);
-    } catch {
+    } catch (err) {
       setUser(null);
+      // cookie is there but its user is gone (e.g. db reset), clear it or / and /login bounce forever
+      if (err instanceof ApiClientError && err.statusCode === 401) {
+        await authApi.logout().catch(() => undefined);
+      }
     } finally {
       setLoading(false);
     }
@@ -43,6 +47,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const logout = useCallback(async () => {
     await authApi.logout();
     setUser(null);
+    // full reload so the query cache and redux store from this user are gone
+    window.location.assign('/login');
   }, []);
 
   const value = useMemo(

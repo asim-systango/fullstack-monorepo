@@ -6,9 +6,11 @@ const baseURL = resolveApiBaseUrl();
 export const apiClient = createApiClient({
   baseURL,
   onUnauthorized: () => {
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.assign('/login');
-    }
+    if (typeof window === 'undefined') return;
+    const { pathname, search } = window.location;
+    if (pathname.startsWith('/login')) return;
+    // come back to the same page after logging in again
+    window.location.assign(`/login?next=${encodeURIComponent(pathname + search)}`);
   },
 });
 

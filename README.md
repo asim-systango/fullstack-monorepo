@@ -33,6 +33,8 @@ cp apps/web/.env.local.example apps/web/.env.local
 pnpm docker:db
 pnpm migration:run
 pnpm seed
+pnpm migration:run:api
+pnpm seed:api
 pnpm dev
 pnpm doctor
 ```
@@ -83,6 +85,7 @@ pnpm dev:web
 | `pnpm migration:generate`          | Generate a domain migration                                     |
 | `pnpm migration:revert` / `:api`   | Revert latest gateway / domain migration                        |
 | `pnpm seed`                        | Seed demo users                                                 |
+| `pnpm seed:api`                    | Seed leave demo data (run after `pnpm seed`)                    |
 | `pnpm typecheck` / `lint` / `test` | Local checks                                                    |
 | `pnpm test:coverage`               | Jest + coverage thresholds (CI gate)                            |
 | `pnpm test:gateway` / `test:api`   | Per-app Jest                                                    |
