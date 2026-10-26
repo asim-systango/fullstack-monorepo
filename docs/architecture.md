@@ -162,9 +162,17 @@ When two managers approve the same request at once, one gets 200 and the other w
 - **Employee directory:** `apps/api/src/modules/employees` reads `id, name, email, role` from the gateway's `users`
   table with read-only SQL (both apps share one database). There is no `User` entity, no foreign key and no copied
   user column. If the services ever get separate databases, only that module changes.
-- **Dates** are Postgres `date` columns sent as `YYYY-MM-DD`, and all date math is UTC on strings. `days` is
-  captured when the request is made and **recounted when a pending request is approved**, so a holiday added in
-  between is never charged. Approved, rejected and cancelled requests keep their stored `days`.
+- **Dates** are Postgres `date` columns sent as `YYYY-MM-DD`, and all date math is UTC on strings. "Today" is the
+  date in India (`todayIst`, UTC + 5:30), so the default balance year and the who's-away window change at midnight
+  IST, not at 05:30.
+- **Holidays and `days`:** `days` is captured when the request is made and **recounted when a pending request is
+  approved**, so a holiday added in between is never charged. Removing a holiday works the same way: a pending
+  request over that date is charged one more day on approve. The balance check still runs, so this can't overspend;
+  at worst a later approval gets 400 "Not enough days". Approved, rejected and cancelled requests keep their stored
+  `days`.
+- **Past dates are allowed:** an employee can apply for any dates in a year that has a balance, including days that
+  have already gone. Sick leave is often recorded after the fact, and it still goes through the manager. Overlap,
+  balance and same-year rules apply as usual.
 - **Who can remove a request:** cancelling was the employee's own action, so they may remove a cancelled request
   from their history. A rejection is the manager's decision and stays on record: removing it as the employee gets
   403, only an admin can remove it.
