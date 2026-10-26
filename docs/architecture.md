@@ -136,7 +136,10 @@ When two managers approve the same request at once, one gets 200 and the other w
   **cancelled** request, an admin can remove any **cancelled or rejected** one. These never touched a balance.
   Default lists hide deleted rows, admins can pass `includeDeleted=true` ("Show deleted" on `/admin/requests`).
 - Deleting a leave type archives it (a plain `deletedAt` column rather than `@DeleteDateColumn`, so old requests
-  still join their type). It is refused with 409 while the type has pending requests.
+  still join their type). It is refused with 409 while the type has pending requests. Archive locks the type row
+  (`FOR UPDATE`) before counting them, and apply holds a shared lock on it (`FOR SHARE`) while it saves, so a new
+  request can't slip in between the count and the archive. Whichever comes second waits: a late apply gets 400
+  "Please pick a valid leave type", a late archive sees the new request and gets 409.
 
 ### Documented exceptions
 

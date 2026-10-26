@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import { rethrowDbError } from '../../common/database';
 import { LeaveRequest } from '../leave-requests/leave-request.entity';
 import { CreateLeaveTypeDto } from './dto/create-leave-type.dto';
@@ -11,7 +11,6 @@ import { LeaveType } from './leave-type.entity';
 export class LeaveTypesService {
   constructor(
     @InjectRepository(LeaveType) private readonly types: Repository<LeaveType>,
-    @InjectRepository(LeaveRequest) private readonly requests: Repository<LeaveRequest>,
   ) {}
 
   // deletedAt is a plain column here, so we filter archived types ourselves
@@ -21,6 +20,15 @@ export class LeaveTypesService {
 
   findActiveById(id: string) {
     return this.types.findOne({ where: { id, deletedAt: IsNull() } });
+  }
+
+  // inside a transaction: apply shares the lock (read), archive takes it alone (write)
+  lockActiveById(
+    m: EntityManager,
+    id: string,
+    mode: 'pessimistic_read' | 'pessimistic_write',
+  ) {
+    return m.findOne(LeaveType, { where: { id, deletedAt: IsNull() }, lock: { mode } });
   }
 
   async getActiveOrThrow(id: string) {
@@ -52,19 +60,22 @@ export class LeaveTypesService {
   }
 
   // "delete" = archive, old requests and balances still point at this type
-  async archive(id: string) {
-    const type = await this.getActiveOrThrow(id);
-    const pending = await this.requests.count({
-      where: { leaveTypeId: id, status: 'pending' },
+  archive(id: string) {
+    return this.types.manager.transaction(async (m) => {
+      // waits for applies still saving on this type, and blocks new ones until we're done
+      const type = await this.lockActiveById(m, id, 'pessimistic_write');
+      if (!type) throw new NotFoundException('Leave type not found');
+      const pending = await m.count(LeaveRequest, {
+        where: { leaveTypeId: id, status: 'pending' },
+      });
+      if (pending > 0) {
+        throw new ConflictException(
+          `${type.name} still has ${pending} pending request(s). Approve, reject or cancel them first.`,
+        );
+      }
+      await m.update(LeaveType, id, { deletedAt: new Date() });
+      return { id, archived: true };
     });
-    if (pending > 0) {
-      throw new ConflictException(
-        `${type.name} still has ${pending} pending request(s). Approve, reject or cancel them first.`,
-      );
-    }
-    type.deletedAt = new Date();
-    await this.types.save(type);
-    return { id, archived: true };
   }
 
   private async assertNameFree(name: string) {

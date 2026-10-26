@@ -31,6 +31,7 @@ function setup(options: {
   requesterRole: string;
   balance?: Partial<LeaveBalance>;
   holidays?: string[];
+  leaveType?: { id: string; name: string } | null;
 }) {
   // a fake EntityManager: the first findOne locks the request, the second locks the balance
   const manager = {
@@ -60,14 +61,17 @@ function setup(options: {
   const holidays = {
     datesBetween: jest.fn().mockResolvedValue(new Set(options.holidays ?? [])),
   };
+  const leaveTypes = {
+    lockActiveById: jest.fn().mockResolvedValue(options.leaveType ?? null),
+  };
   const service = new LeaveRequestsService(
     requests as never,
     dataSource as never,
-    {} as never,
+    leaveTypes as never,
     holidays as never,
     employees as never,
   );
-  return { service, manager, dataSource, requests };
+  return { service, manager, dataSource, requests, leaveTypes };
 }
 
 describe('LeaveRequestsService approve / reject', () => {
@@ -203,6 +207,37 @@ describe('LeaveRequestsService approve / reject', () => {
       'request-1',
       expect.objectContaining({ status: 'rejected', managerComment: 'Release week' }),
     );
+  });
+});
+
+describe('LeaveRequestsService apply', () => {
+  it('refuses a leave type that was archived before the request was saved', async () => {
+    const {
+      service,
+      manager: m,
+      leaveTypes,
+    } = setup({
+      request: makeRequest(),
+      requesterRole: 'user',
+      leaveType: null,
+    });
+
+    await expect(
+      service.apply(employee, {
+        leaveTypeId: 'casual',
+        startDate: '2026-10-26',
+        endDate: '2026-10-27',
+        reason: 'Wedding',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    // checked inside the transaction with a shared lock, before the balance is touched
+    expect(leaveTypes.lockActiveById).toHaveBeenCalledWith(
+      m,
+      'casual',
+      'pessimistic_read',
+    );
+    expect(m.findOne).not.toHaveBeenCalled();
   });
 });
 

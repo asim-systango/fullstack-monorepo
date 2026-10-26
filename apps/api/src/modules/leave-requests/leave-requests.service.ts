@@ -79,9 +79,6 @@ export class LeaveRequestsService {
 
   async apply(user: JwtUser, dto: CreateLeaveRequestDto) {
     assertDateRange(dto.startDate, dto.endDate);
-    const type = await this.leaveTypes.findActiveById(dto.leaveTypeId);
-    if (!type) throw fieldError('leaveTypeId', 'Please pick a valid leave type');
-
     const holidays = await this.holidays.datesBetween(dto.startDate, dto.endDate);
     const days = countWorkingDays(dto.startDate, dto.endDate, holidays);
     if (days < 1) throw fieldError('endDate', 'No working days in this range');
@@ -89,7 +86,15 @@ export class LeaveRequestsService {
 
     const id = await this.dataSource
       .transaction(async (m) => {
-        // lock the balance row first, so two requests sent at the same time can't both pass
+        // shared lock on the type, so it can't be archived while this request is being saved
+        const type = await this.leaveTypes.lockActiveById(
+          m,
+          dto.leaveTypeId,
+          'pessimistic_read',
+        );
+        if (!type) throw fieldError('leaveTypeId', 'Please pick a valid leave type');
+
+        // then lock the balance row, so two requests sent at the same time can't both pass
         const balance = await m.findOne(LeaveBalance, {
           where: { userId: user.id, leaveTypeId: type.id, year },
           lock: LOCK,
