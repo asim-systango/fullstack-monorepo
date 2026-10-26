@@ -65,7 +65,7 @@ Approving takes the days off the employee's balance in the same transaction.
 
 | Gateway role | Domain role | Can                                                                                                    | Home                 |
 | ------------ | ----------- | ------------------------------------------------------------------------------------------------------ | -------------------- |
-| `user`       | Employee    | Apply, see own balances and requests, cancel own pending, remove own cancelled/rejected                | `/leave`             |
+| `user`       | Employee    | Apply, see own balances and requests, cancel own pending, remove own cancelled                         | `/leave`             |
 | `staff`      | Manager     | Approve / reject **employee** requests, see all requests with filters, who's away, apply for own leave | `/manager/requests`  |
 | `admin`      | Admin       | Leave types, balances, holidays, all requests (incl. deleted), approve / reject **manager** requests   | `/admin/leave-types` |
 
@@ -109,6 +109,10 @@ have left (`totalDays − usedDays − pending days`, per leave type and year).
 
 The exclusion constraint is what makes the overlap rule race-proof: two simultaneous submits can both pass the
 service check, only the database sees both writes. Its error (`23P01`) is turned into a 409.
+
+An admin editing a balance can't break the second rule either. `PUT /balances` locks the same balance row and
+refuses (**400**) a total below `usedDays + pending days`, otherwise a request that was valid when sent would no
+longer fit and its approval would fail.
 
 ### Required transaction: approve
 

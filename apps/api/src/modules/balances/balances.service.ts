@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 import { rethrowDbError } from '../../common/database';
 import { todayUtc, yearOf } from '../../common/dates';
 import { EmployeesService } from '../employees';
@@ -60,9 +60,17 @@ export class BalancesService {
           await m.save(m.create(LeaveBalance, { ...dto, usedDays: 0 }));
           return;
         }
-        if (dto.totalDays < existing.usedDays) {
+        // pending days are already promised, so the new total has to cover them too
+        const pending =
+          (await m.sum(LeaveRequest, 'days', {
+            userId: dto.userId,
+            leaveTypeId: dto.leaveTypeId,
+            status: 'pending',
+            startDate: Between(`${dto.year}-01-01`, `${dto.year}-12-31`),
+          })) ?? 0;
+        if (dto.totalDays < existing.usedDays + pending) {
           throw new BadRequestException(
-            `Total days can't be less than the ${existing.usedDays} day(s) already used`,
+            `Total days can't be less than ${existing.usedDays} used + ${pending} pending. Reject or cancel pending requests first.`,
           );
         }
         existing.totalDays = dto.totalDays;
