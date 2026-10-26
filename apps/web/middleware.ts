@@ -10,9 +10,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
+  const needsAuth =
+    pathname === '/resumes' ||
+    pathname.startsWith('/resumes/') ||
+    pathname === '/admin' ||
+    pathname.startsWith('/admin/');
+
+  if (needsAuth && !hasSession) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/login', '/register'],
+  matcher: ['/login', '/register', '/resumes/:path*', '/admin/:path*'],
 };
