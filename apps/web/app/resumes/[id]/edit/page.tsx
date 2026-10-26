@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
@@ -17,16 +17,24 @@ import { ApiClientError } from '@shared/api-client';
 import { RequireAuth, ShellHeader } from '@/components/auth';
 import { ResumeEditorForm } from '@/components/resumes/resume-editor-form';
 import { ResumePreview } from '@/components/resume-templates';
-import { draftToUpdateInput } from '@/lib/resume-types';
+import { draftToUpdateInput, resumeToDraft, type ResumeDraft } from '@/lib/resume-types';
 import { resumesApi, templatesApi } from '@/lib/resumes-api';
 import {
   clearResumeDraft,
   loadFromServer,
+  updateFields,
   useAppDispatch,
   useAppSelector,
 } from '@/lib/store';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+/** Only the editor instance that is still on screen may clear the shared draft. */
+let activeEditorMount = 0;
+
+function toSnapshot(draft: ResumeDraft): string {
+  return JSON.stringify(draftToUpdateInput(draft));
+}
 
 export default function EditResumePage() {
   return (
@@ -47,6 +55,8 @@ function EditResumeEditor() {
   const queryClient = useQueryClient();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+  const inFlightSnapshot = useRef<string | null>(null);
   const [publishDetails, setPublishDetails] = useState<
     Array<{ field: string; message: string }>
   >([]);
@@ -65,31 +75,49 @@ function EditResumeEditor() {
   });
 
   useEffect(() => {
-    if (resumeQuery.data) {
-      dispatch(loadFromServer(resumeQuery.data));
-    }
-  }, [dispatch, resumeQuery.data]);
+    if (!resumeQuery.data || resumeQuery.data.id !== id) return;
+    if (draft?.id === id) return;
+    dispatch(loadFromServer(resumeQuery.data));
+    setSavedSnapshot(toSnapshot(resumeToDraft(resumeQuery.data)));
+  }, [dispatch, draft, id, resumeQuery.data]);
 
   useEffect(() => {
+    const token = ++activeEditorMount;
     return () => {
-      dispatch(clearResumeDraft());
+      if (activeEditorMount === token) {
+        dispatch(clearResumeDraft());
+      }
     };
   }, [dispatch]);
 
+  const isDirty =
+    draft !== null && savedSnapshot !== null && toSnapshot(draft) !== savedSnapshot;
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
+
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (!draft) throw new Error('No draft');
-      return resumesApi.update(id, draftToUpdateInput(draft));
-    },
-    onMutate: () => {
+    mutationFn: (sent: ResumeDraft) => resumesApi.update(id, draftToUpdateInput(sent)),
+    onMutate: (sent) => {
+      inFlightSnapshot.current = toSnapshot(sent);
       setSaveStatus('saving');
       setSaveError(null);
     },
-    onSuccess: (resume) => {
-      dispatch(loadFromServer(resume));
+    onSettled: () => {
+      inFlightSnapshot.current = null;
+    },
+    onSuccess: (resume, sent) => {
+      setSavedSnapshot(toSnapshot(sent));
+      dispatch(updateFields({ status: resume.status, slug: resume.slug }));
       setSaveStatus('saved');
       void queryClient.invalidateQueries({ queryKey: ['resumes'] });
-      void queryClient.setQueryData(['resumes', id], resume);
+      queryClient.setQueryData(['resumes', id], resume);
     },
     onError: (err) => {
       setSaveStatus('error');
@@ -98,21 +126,20 @@ function EditResumeEditor() {
   });
 
   const publishMutation = useMutation({
-    mutationFn: async () => {
-      if (draft) {
-        await resumesApi.update(id, draftToUpdateInput(draft));
-      }
+    mutationFn: async (sent: ResumeDraft) => {
+      await resumesApi.update(id, draftToUpdateInput(sent));
       return resumesApi.publish(id);
     },
     onMutate: () => {
       setPublishDetails([]);
       setPublishMessage(null);
     },
-    onSuccess: (resume) => {
-      dispatch(loadFromServer(resume));
+    onSuccess: (resume, sent) => {
+      setSavedSnapshot(toSnapshot(sent));
+      dispatch(updateFields({ status: resume.status, slug: resume.slug }));
       setSaveStatus('saved');
       void queryClient.invalidateQueries({ queryKey: ['resumes'] });
-      void queryClient.setQueryData(['resumes', id], resume);
+      queryClient.setQueryData(['resumes', id], resume);
     },
     onError: (err) => {
       if (err instanceof ApiClientError) {
@@ -127,9 +154,9 @@ function EditResumeEditor() {
   const unpublishMutation = useMutation({
     mutationFn: () => resumesApi.unpublish(id),
     onSuccess: (resume) => {
-      dispatch(loadFromServer(resume));
+      dispatch(updateFields({ status: resume.status, slug: resume.slug }));
       void queryClient.invalidateQueries({ queryKey: ['resumes'] });
-      void queryClient.setQueryData(['resumes', id], resume);
+      queryClient.setQueryData(['resumes', id], resume);
     },
     onError: (err) => {
       setPublishMessage(err instanceof ApiClientError ? err.message : 'Unpublish failed');
@@ -140,21 +167,43 @@ function EditResumeEditor() {
     return <LoadingState label="Loading editor…" />;
   }
 
-  if (resumeQuery.isError) {
+  if (resumeQuery.isError || templatesQuery.isError) {
+    const err = resumeQuery.error ?? templatesQuery.error;
+    if (err instanceof ApiClientError && err.statusCode === 404) {
+      return (
+        <Alert tone="danger" title="Resume not found">
+          It may have been deleted, or it isn&apos;t yours.
+        </Alert>
+      );
+    }
     return (
-      <Alert tone="danger" title="Resume not found">
-        {resumeQuery.error instanceof ApiClientError
-          ? resumeQuery.error.message
-          : 'Could not load this resume'}
+      <Alert tone="danger" title="Could not load the editor">
+        {err instanceof ApiClientError ? err.message : 'Something went wrong.'}{' '}
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            void resumeQuery.refetch();
+            void templatesQuery.refetch();
+          }}
+        >
+          Retry
+        </Button>
       </Alert>
     );
   }
 
-  if (!draft) {
+  if (!draft || draft.id !== id) {
     return <LoadingState label="Preparing draft…" />;
   }
 
   const publicPath = draft.slug ? `/r/${draft.slug}` : null;
+  const typedDuringSave =
+    saveStatus === 'saving' &&
+    inFlightSnapshot.current !== null &&
+    toSnapshot(draft) !== inFlightSnapshot.current;
+  const showUnsaved = (isDirty && saveStatus !== 'saving') || typedDuringSave;
 
   return (
     <>
@@ -178,7 +227,7 @@ function EditResumeEditor() {
           type="button"
           loading={saveMutation.isPending}
           loadingText="Saving…"
-          onClick={() => saveMutation.mutate()}
+          onClick={() => draft && saveMutation.mutate(draft)}
         >
           Save
         </Button>
@@ -198,7 +247,7 @@ function EditResumeEditor() {
             variant="secondary"
             loading={publishMutation.isPending}
             loadingText="Publishing…"
-            onClick={() => publishMutation.mutate()}
+            onClick={() => draft && publishMutation.mutate(draft)}
           >
             Publish
           </Button>
@@ -206,7 +255,10 @@ function EditResumeEditor() {
         {saveStatus === 'saving' ? (
           <StatusMessage tone="neutral">Saving…</StatusMessage>
         ) : null}
-        {saveStatus === 'saved' ? (
+        {showUnsaved ? (
+          <StatusMessage tone="neutral">Unsaved changes</StatusMessage>
+        ) : null}
+        {!isDirty && saveStatus === 'saved' ? (
           <StatusMessage tone="success">Saved</StatusMessage>
         ) : null}
         {saveStatus === 'error' && saveError ? (

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Badge,
+  Button,
   Checkbox,
   LoadingState,
   Page,
@@ -55,7 +56,15 @@ function TemplatesTable() {
       <Alert tone="danger" title="Could not load templates">
         {templatesQuery.error instanceof ApiClientError
           ? templatesQuery.error.message
-          : 'Request failed'}
+          : 'Request failed'}{' '}
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => void templatesQuery.refetch()}
+        >
+          Retry
+        </Button>
       </Alert>
     );
   }

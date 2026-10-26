@@ -12,13 +12,111 @@ import {
   LoadingState,
   Page,
   PageHeader,
-  Select,
   TextInput,
   StatusMessage,
 } from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
+import { cn } from '@shared/ui';
 import { RequireAuth, ShellHeader } from '@/components/auth';
+import { ResumePreview } from '@/components/resume-templates';
+import type { ResumeViewModel } from '@/components/resume-templates';
 import { resumesApi, templatesApi } from '@/lib/resumes-api';
+import type { Template } from '@/lib/resume-types';
+
+type TemplatePickerProps = {
+  id?: string;
+  name?: string;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  'aria-describedby'?: string;
+  templates: Template[];
+  value: string;
+  onChange: (templateId: string) => void;
+};
+
+function TemplatePicker({
+  id,
+  required,
+  disabled,
+  invalid,
+  'aria-describedby': describedBy,
+  templates,
+  value,
+  onChange,
+}: Readonly<TemplatePickerProps>) {
+  return (
+    <div
+      id={id}
+      role="radiogroup"
+      aria-label="Template"
+      aria-required={required || undefined}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+      className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+    >
+      {templates.map((template) => {
+        const selected = value === template.id;
+        return (
+          <label
+            key={template.id}
+            className={cn(
+              'cursor-pointer rounded-md border bg-card p-2',
+              selected ? 'border-primary ring-2 ring-primary' : 'border-border',
+              disabled && 'cursor-not-allowed opacity-60',
+            )}
+          >
+            <input
+              type="radio"
+              name="resume-template"
+              value={template.id}
+              checked={selected}
+              disabled={disabled}
+              required={required}
+              onChange={() => onChange(template.id)}
+              className="sr-only"
+            />
+            <div className="pointer-events-none h-40 overflow-hidden rounded-sm bg-background">
+              <div className="w-[285%] origin-top-left scale-[0.35]">
+                <ResumePreview resume={{ ...SAMPLE_RESUME, templateKey: template.key }} />
+              </div>
+            </div>
+            <span className="mt-2 block text-sm font-medium">{template.name}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+const SAMPLE_RESUME: ResumeViewModel = {
+  title: 'Software engineer',
+  fullName: 'Alex Rivera',
+  email: 'alex@example.com',
+  phone: '',
+  location: '',
+  summary: 'Product engineer who ships clear, readable resumes.',
+  templateKey: 'classic',
+  sections: [
+    {
+      id: 'sample-experience',
+      type: 'experience',
+      title: 'Experience',
+      position: 0,
+      items: [
+        {
+          id: 'sample-role',
+          heading: 'Software engineer',
+          subheading: 'Example Co',
+          startDate: '2022',
+          endDate: '2024',
+          description: 'Built product features used by customers every day.',
+          position: 0,
+        },
+      ],
+    },
+  ],
+};
 
 export default function NewResumePage() {
   return (
@@ -75,7 +173,15 @@ function NewResumeForm() {
       <Alert tone="danger" title="Could not load templates">
         {templatesQuery.error instanceof ApiClientError
           ? templatesQuery.error.message
-          : 'Request failed'}
+          : 'Request failed'}{' '}
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => void templatesQuery.refetch()}
+        >
+          Retry
+        </Button>
       </Alert>
     );
   }
@@ -100,7 +206,7 @@ function NewResumeForm() {
         <Form
           pending={createMutation.isPending}
           onSubmit={onSubmit}
-          className="max-w-md space-y-4"
+          className="max-w-4xl space-y-4"
         >
           <Field
             label="Title"
@@ -115,27 +221,13 @@ function NewResumeForm() {
               placeholder="Software engineer resume"
             />
           </Field>
-          <Field
-            label="Template"
-            htmlFor="new-template"
-            required
-            disabled={createMutation.isPending}
-          >
-            <Select
-              id="new-template"
+          <Field label="Template" required disabled={createMutation.isPending}>
+            <TemplatePicker
+              templates={activeTemplates}
               value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              required
-            >
-              <option value="" disabled>
-                Select a template
-              </option>
-              {activeTemplates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.key})
-                </option>
-              ))}
-            </Select>
+              disabled={createMutation.isPending}
+              onChange={setTemplateId}
+            />
           </Field>
           {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
           <Button

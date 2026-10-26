@@ -90,6 +90,9 @@ function ResumesList() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => resumesApi.remove(id),
     onSuccess: () => {
+      if (page > 1 && listQuery.data?.items.length === 1) {
+        setPage((p) => p - 1);
+      }
       void queryClient.invalidateQueries({ queryKey: ['resumes'] });
     },
     onError: (err) => {
@@ -99,6 +102,11 @@ function ResumesList() {
 
   const total = listQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  useEffect(() => {
+    if (!listQuery.data) return;
+    if (page > totalPages) setPage(totalPages);
+  }, [listQuery.data, page, totalPages]);
 
   let resumesBody: ReactNode;
   if (listQuery.isLoading) {
@@ -110,7 +118,15 @@ function ResumesList() {
         : 'Request failed';
     resumesBody = (
       <Alert tone="danger" title="Could not load resumes">
-        {message}
+        {message}{' '}
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => void listQuery.refetch()}
+        >
+          Retry
+        </Button>
       </Alert>
     );
   } else if (!listQuery.data?.items.length) {

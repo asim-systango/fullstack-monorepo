@@ -85,7 +85,15 @@ function AdminResumesList() {
         : 'Request failed';
     resumesBody = (
       <Alert tone="danger" title="Could not load resumes">
-        {message}
+        {message}{' '}
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => void listQuery.refetch()}
+        >
+          Retry
+        </Button>
       </Alert>
     );
   } else if (!listQuery.data?.items.length) {

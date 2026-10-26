@@ -1,11 +1,13 @@
 /*
   Font stacks + fluid type.
-  IBM Plex is self-hosted via @fontsource in apps/web (no next/font/google at build).
+  --font-ibm-plex-sans / --font-ibm-plex-mono are set by next/font on <html>.
 */
 
 @theme inline {
-  --font-sans: 'IBM Plex Sans', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  --font-sans:
+    var(--font-ibm-plex-sans), 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    var(--font-ibm-plex-mono), ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
   --text-page-title: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
   --text-section-title: clamp(1.125rem, 1rem + 0.5vw, 1.35rem);
 }
