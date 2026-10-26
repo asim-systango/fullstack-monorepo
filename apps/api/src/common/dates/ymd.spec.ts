@@ -6,7 +6,7 @@ import {
   mondayOf,
   parseYmd,
   toYmd,
-  todayUtc,
+  todayIst,
   yearOf,
 } from './ymd';
 
@@ -42,8 +42,19 @@ describe('ymd date helpers', () => {
     expect(yearOf('2026-10-16')).toBe(2026);
   });
 
-  it('formats today in UTC', () => {
-    expect(todayUtc(new Date('2026-10-14T23:30:00Z'))).toBe('2026-10-14');
+  it('gives the date in India, not in UTC', () => {
+    // 23:30 UTC on the 14th is already 05:00 IST on the 15th
+    expect(todayIst(new Date('2026-10-14T23:30:00Z'))).toBe('2026-10-15');
+    expect(todayIst(new Date('2026-10-14T06:00:00Z'))).toBe('2026-10-14');
+  });
+
+  it('turns the year at midnight IST', () => {
+    expect(todayIst(new Date('2026-12-31T18:29:59Z'))).toBe('2026-12-31');
+    expect(todayIst(new Date('2026-12-31T18:30:00Z'))).toBe('2027-01-01');
+  });
+
+  it('uses the current time when none is given', () => {
+    expect(isYmd(todayIst())).toBe(true);
   });
 
   it('detects weekends', () => {

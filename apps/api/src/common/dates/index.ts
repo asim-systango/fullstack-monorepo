@@ -6,6 +6,6 @@ export {
   mondayOf,
   parseYmd,
   toYmd,
-  todayUtc,
+  todayIst,
   yearOf,
 } from './ymd';

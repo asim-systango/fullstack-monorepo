@@ -2,7 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { rethrowDbError } from '../../common/database';
-import { todayUtc, yearOf } from '../../common/dates';
+import { todayIst, yearOf } from '../../common/dates';
 import { CreateHolidayDto } from './dto/create-holiday.dto';
 import { Holiday } from './holiday.entity';
 
@@ -12,7 +12,7 @@ export class HolidaysService {
     @InjectRepository(Holiday) private readonly holidays: Repository<Holiday>,
   ) {}
 
-  list(year: number = yearOf(todayUtc())) {
+  list(year: number = yearOf(todayIst())) {
     return this.inRange(`${year}-01-01`, `${year}-12-31`);
   }
 

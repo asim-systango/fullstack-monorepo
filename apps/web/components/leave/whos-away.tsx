@@ -42,7 +42,7 @@ function peopleLabel(count: number) {
 
 // approved leave for the next 14 days, one row per working day
 export function WhosAway() {
-  // the manager's own "today", not the server's UTC date
+  // the manager's own "today" from the browser
   const today = todayLocal();
   const away = useWhosAway(today);
 

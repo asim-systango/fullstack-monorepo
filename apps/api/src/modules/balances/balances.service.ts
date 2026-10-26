@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { rethrowDbError } from '../../common/database';
-import { todayUtc, yearOf } from '../../common/dates';
+import { todayIst, yearOf } from '../../common/dates';
 import { EmployeesService } from '../employees';
 import { LeaveRequest } from '../leave-requests/leave-request.entity';
 import { LeaveTypesService } from '../leave-types/leave-types.service';
@@ -22,7 +22,7 @@ export type BalanceView = {
 };
 
 function currentYear() {
-  return yearOf(todayUtc());
+  return yearOf(todayIst());
 }
 
 @Injectable()

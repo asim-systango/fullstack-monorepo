@@ -64,7 +64,7 @@ export class ListLeaveRequestsQueryDto extends MyLeaveRequestsQueryDto {
 export class AwayQueryDto {
   @ApiPropertyOptional({
     example: '2026-10-15',
-    description: 'First day, defaults to today',
+    description: 'First day, defaults to today (IST)',
   })
   @EmptyToUndefined()
   @IsOptional()

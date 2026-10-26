@@ -17,7 +17,7 @@ import {
 } from 'typeorm';
 import type { JwtUser } from '../../common/auth';
 import { rethrowDbError } from '../../common/database';
-import { addDays, todayUtc, yearOf } from '../../common/dates';
+import { addDays, todayIst, yearOf } from '../../common/dates';
 import { pageParams, type Paginated } from '../../common/pagination';
 import { LeaveBalance } from '../balances/leave-balance.entity';
 import { EmployeesService, type Employee } from '../employees';
@@ -206,7 +206,7 @@ export class LeaveRequestsService {
   }
 
   async away(query: AwayQueryDto) {
-    const from = query.from ?? todayUtc();
+    const from = query.from ?? todayIst();
     const to = addDays(from, AWAY_DAYS - 1);
     const [requests, holidays] = await Promise.all([
       this.requests.find({

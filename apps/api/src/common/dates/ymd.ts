@@ -32,8 +32,12 @@ export function yearOf(value: string): number {
   return Number(value.slice(0, 4));
 }
 
-export function todayUtc(now: Date = new Date()): string {
-  return toYmd(now);
+// India has no daylight saving, so IST is always UTC + 5:30
+const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
+// the office runs on Indian time, so "today" changes at midnight IST, not UTC
+export function todayIst(now: Date = new Date()): string {
+  return toYmd(new Date(now.getTime() + IST_OFFSET_MS));
 }
 
 export function isWeekend(value: string): boolean {

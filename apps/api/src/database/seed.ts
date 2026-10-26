@@ -2,7 +2,7 @@ import '../load-env';
 import 'reflect-metadata';
 import type { EntityManager } from 'typeorm';
 import dataSource from './data-source';
-import { addDays, mondayOf, parseYmd, todayUtc, yearOf } from '../common/dates';
+import { addDays, mondayOf, parseYmd, todayIst, yearOf } from '../common/dates';
 import { LeaveBalance } from '../modules/balances/leave-balance.entity';
 import { Holiday } from '../modules/holidays/holiday.entity';
 import { LeaveRequest } from '../modules/leave-requests/leave-request.entity';
@@ -200,7 +200,7 @@ async function seedDomain(m: EntityManager, people: Record<PersonKey, Person>) {
     'TRUNCATE TABLE "leave_requests", "leave_balances", "holidays", "leave_types"',
   );
 
-  const monday = mondayOf(todayUtc());
+  const monday = mondayOf(todayIst());
   const thisYear = yearOf(monday);
   const years = [thisYear, thisYear + 1];
 
