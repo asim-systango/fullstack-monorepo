@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
@@ -76,5 +76,13 @@ export class AuctionsService {
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total, page, limit };
+  }
+
+  async findAuctionById(id: string) {
+    const auction = await this.auctionsRepository.findOne({ where: { id } });
+    if (!auction) {
+      throw new NotFoundException('This auction is no longer available');
+    }
+    return auction;
   }
 }
