@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
 import { CreateAuctionDto } from './dto/create-auction.dto';
+import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
 
 function toMoneyString(value: number): string {
   return value.toFixed(2);
@@ -38,5 +39,42 @@ export class AuctionsService {
     });
 
     return this.auctionsRepository.save(auction);
+  }
+
+  async findAll(query: GetAuctionQueryDto) {
+    const page = query.page;
+    const limit = query.limit;
+    const qb = this.auctionsRepository.createQueryBuilder('auction');
+    if (query.search?.trim()) {
+      const term = `%${query.search.trim()}%`;
+      qb.andWhere('(auction.title ILIKE :search OR auction.description ILIKE :search)', {
+        search: term,
+      });
+    }
+    if (query.category?.trim()) {
+      qb.andWhere('auction.category = :category', {
+        category: query.category.trim()?.toLowerCase(),
+      });
+    }
+    if (query.status) {
+      qb.andWhere('auction.status = :status', { status: query.status });
+    }
+    if (query.minPrice != null) {
+      qb.andWhere('auction.currentPrice >= :minPrice', {
+        minPrice: query.minPrice,
+      });
+    }
+    if (query.maxPrice != null) {
+      qb.andWhere('auction.currentPrice <= :maxPrice', {
+        maxPrice: query.maxPrice,
+      });
+    }
+
+    qb.orderBy('auction.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { items, total, page, limit };
   }
 }

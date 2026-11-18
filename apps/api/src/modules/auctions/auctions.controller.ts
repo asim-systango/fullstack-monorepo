@@ -1,8 +1,9 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, Roles, type JwtUser } from '../../common/auth';
+import { CurrentUser, Public, Roles, type JwtUser } from '../../common/auth';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
+import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
 
 @ApiTags('auctions')
 @ApiBearerAuth()
@@ -15,5 +16,12 @@ export class AuctionsController {
   @ApiOperation({ summary: 'Create an auction (seller / staff only)' })
   create(@CurrentUser() user: JwtUser, @Body() dto: CreateAuctionDto) {
     return this.auctionsService.create(dto, user.id);
+  }
+
+  @Public()
+  @Get()
+  @ApiOperation({ summary: 'Get all auctions' })
+  findAll(@Query() query: GetAuctionQueryDto) {
+    return this.auctionsService.findAll(query);
   }
 }
