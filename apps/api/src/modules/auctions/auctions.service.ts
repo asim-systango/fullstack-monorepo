@@ -56,6 +56,8 @@ export class AuctionsService {
     const page = query.page;
     const limit = query.limit;
     const qb = this.auctionsRepository.createQueryBuilder('auction');
+    // QueryBuilder does not auto-apply soft-delete filters
+    qb.andWhere('auction.deletedAt IS NULL');
     if (query.search?.trim()) {
       const term = `%${query.search.trim()}%`;
       qb.andWhere('(auction.title ILIKE :search OR auction.description ILIKE :search)', {
@@ -149,14 +151,24 @@ export class AuctionsService {
     };
   }
 
+  async softDeleteAuction(id: string, user: JwtUser) {
+    const auction = await this.findAuctionById(id);
+
+    if (user.role !== 'admin' && auction.sellerId !== user.id) {
+      throw new ForbiddenException('You are not authorized to delete this auction');
+    }
+
+    await this.auctionsRepository.softDelete(id);
+
+    return {
+      message: 'Auction deleted successfully',
+    };
+  }
+
   async closeAuction(id: string, user: JwtUser) {
     const auction = await this.findAuctionById(id);
 
-    if (!auction) {
-      throw new NotFoundException('This auction is no longer available');
-    }
-
-    if (user.role === 'staff' && auction.sellerId !== user.id) {
+    if (user.role !== 'admin' && auction.sellerId !== user.id) {
       throw new ForbiddenException('You are not authorized to close this auction');
     }
 
@@ -182,6 +194,22 @@ export class AuctionsService {
 
     return {
       message: 'Auction Closed Successfully',
+      data: savedAuction,
+    };
+  }
+
+  async cancelAuction(id: string) {
+    const auction = await this.findAuctionById(id);
+
+    if (auction.status !== 'open') {
+      throw new BadRequestException('Only open auctions can be cancelled');
+    }
+
+    auction.status = 'cancelled';
+    const savedAuction = await this.auctionsRepository.save(auction);
+
+    return {
+      message: 'Auction cancelled successfully',
       data: savedAuction,
     };
   }

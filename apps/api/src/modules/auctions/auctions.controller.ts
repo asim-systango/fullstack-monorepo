@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -54,9 +55,26 @@ export class AuctionsController {
   }
 
   @Roles('staff', 'admin')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Soft-delete an auction (owner or admin)' })
+  softDeleteAuction(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.auctionsService.softDeleteAuction(id, user);
+  }
+
+  @Roles('staff', 'admin')
   @Post(':id/close')
   @ApiOperation({ summary: 'Close an auction' })
   closeAuction(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.auctionsService.closeAuction(id, user);
+  }
+
+  @Roles('admin')
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancel an open auction (admin only)' })
+  cancelAuction(@Param('id', ParseUUIDPipe) id: string) {
+    return this.auctionsService.cancelAuction(id);
   }
 }
