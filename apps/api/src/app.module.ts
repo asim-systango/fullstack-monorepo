@@ -6,6 +6,7 @@ import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
 import { AuctionModule } from './modules/auctions/auction.module';
+import { BidModule } from './modules/bid/bid.module';
 
 const db = databaseConfig();
 
@@ -22,6 +23,7 @@ const db = databaseConfig();
     AuthModule,
     HealthModule,
     AuctionModule,
+    BidModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
