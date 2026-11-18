@@ -3,9 +3,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { User } from '../users/user.entity';
 
 export type AuctionStatus = 'open' | 'closed' | 'cancelled';
 
@@ -56,6 +59,10 @@ export class Auction {
     default: 'open',
   })
   status!: AuctionStatus;
+
+  @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT', onUpdate: 'CASCADE' })
+  @JoinColumn({ name: 'seller_id' })
+  seller!: User;
 
   @Column({ name: 'seller_id', type: 'uuid' })
   sellerId!: string;
