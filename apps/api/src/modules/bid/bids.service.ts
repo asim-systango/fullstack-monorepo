@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Auction } from '../auctions/auctions.entity';
 import { Bid } from './bid.entity';
 import { CreateBidDto } from './dto/create-bid.dto';
@@ -23,6 +23,12 @@ export class BidsService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
+
+    @InjectRepository(Auction)
+    private readonly auctionsRepository: Repository<Auction>,
+
+    @InjectRepository(Bid)
+    private readonly bidRepository: Repository<Bid>,
   ) {}
 
   async placeBid(auctionId: string, bidderId: string, dto: CreateBidDto) {
@@ -76,6 +82,19 @@ export class BidsService {
         message: 'Bid created successfully!',
         Bid: savedBid,
       };
+    });
+  }
+
+  async listBids(auctionId: string) {
+    const auction = await this.auctionsRepository.findOne({
+      where: { id: auctionId },
+    });
+    if (!auction) {
+      throw new NotFoundException('This auction is no longer available');
+    }
+    return this.bidRepository.find({
+      where: { auctionId },
+      order: { bidAmount: 'DESC', createdAt: 'DESC' },
     });
   }
 }

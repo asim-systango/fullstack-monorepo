@@ -1,6 +1,6 @@
-import { Body, Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, Roles, type JwtUser } from '../../common/auth';
+import { CurrentUser, Public, Roles, type JwtUser } from '../../common/auth';
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
 
@@ -9,6 +9,13 @@ import { CreateBidDto } from './dto/create-bid.dto';
 @Controller('auctions/:id/bids')
 export class BidsController {
   constructor(private readonly bidsService: BidsService) {}
+
+  @Public()
+  @Get()
+  @ApiOperation({ summary: 'List bids for an auction (highest first)' })
+  listBids(@Param('id', ParseUUIDPipe) id: string) {
+    return this.bidsService.listBids(id);
+  }
 
   @Roles('user')
   @Post()
