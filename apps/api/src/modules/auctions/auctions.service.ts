@@ -11,6 +11,7 @@ import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
 import { Bid } from '../bid/bid.entity';
+import { JwtUser } from '../../common/auth';
 
 function toMoneyString(value: number): string {
   return value.toFixed(2);
@@ -144,6 +145,43 @@ export class AuctionsService {
 
     return {
       message: 'Auction updated successfully',
+      data: savedAuction,
+    };
+  }
+
+  async closeAuction(id: string, user: JwtUser) {
+    const auction = await this.findAuctionById(id);
+
+    if (!auction) {
+      throw new NotFoundException('This auction is no longer available');
+    }
+
+    if (user.role === 'staff' && auction.sellerId !== user.id) {
+      throw new ForbiddenException('You are not authorized to close this auction');
+    }
+
+    if (auction.status !== 'open') {
+      throw new BadRequestException('This auction is already closed or cancelled.');
+    }
+
+    auction.status = 'closed';
+
+    const bid = await this.bidRepository.findOne({
+      where: {
+        auctionId: auction.id,
+      },
+      order: {
+        bidAmount: 'DESC',
+        createdAt: 'DESC',
+      },
+    });
+
+    auction.winnerId = bid?.bidderId ?? null;
+
+    const savedAuction = await this.auctionsRepository.save(auction);
+
+    return {
+      message: 'Auction Closed Successfully',
       data: savedAuction,
     };
   }

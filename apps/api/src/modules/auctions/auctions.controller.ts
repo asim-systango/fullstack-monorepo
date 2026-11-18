@@ -52,4 +52,11 @@ export class AuctionsController {
   ) {
     return this.auctionsService.updateAuction(id, dto, user.id);
   }
+
+  @Roles('staff', 'admin')
+  @Post(':id/close')
+  @ApiOperation({ summary: 'Close an auction' })
+  closeAuction(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.auctionsService.closeAuction(id, user);
+  }
 }
