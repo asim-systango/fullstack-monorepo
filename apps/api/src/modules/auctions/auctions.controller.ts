@@ -1,9 +1,19 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public, Roles, type JwtUser } from '../../common/auth';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
+import { UpdateAuctionDto } from './dto/update-auction.dto';
 
 @ApiTags('auctions')
 @ApiBearerAuth()
@@ -30,5 +40,16 @@ export class AuctionsController {
   @ApiOperation({ summary: 'Get auction by ID' })
   findAuctionById(@Param('id', ParseUUIDPipe) id: string) {
     return this.auctionsService.findAuctionById(id);
+  }
+
+  @Roles('staff')
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update auction by ID (staff only)' })
+  updateAuctionById(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAuctionDto,
+  ) {
+    return this.auctionsService.updateAuction(id, dto, user.id);
   }
 }

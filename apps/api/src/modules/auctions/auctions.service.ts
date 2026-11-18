@@ -1,9 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
+import { UpdateAuctionDto } from './dto/update-auction.dto';
+import { Bid } from '../bid/bid.entity';
 
 function toMoneyString(value: number): string {
   return value.toFixed(2);
@@ -14,6 +21,9 @@ export class AuctionsService {
   constructor(
     @InjectRepository(Auction)
     private readonly auctionsRepository: Repository<Auction>,
+
+    @InjectRepository(Bid)
+    private readonly bidRepository: Repository<Bid>,
   ) {}
 
   async create(dto: CreateAuctionDto, sellerId: string): Promise<Auction> {
@@ -84,5 +94,57 @@ export class AuctionsService {
       throw new NotFoundException('This auction is no longer available');
     }
     return auction;
+  }
+
+  async updateAuction(id: string, dto: UpdateAuctionDto, userId: string) {
+    const auction = await this.findAuctionById(id);
+
+    if (auction.sellerId !== userId) {
+      throw new ForbiddenException('You are not authorized to update this auction');
+    }
+
+    if (auction.status !== 'open') {
+      throw new BadRequestException('Only open auctions can be updated');
+    }
+
+    const bidCount = await this.bidRepository.count({
+      where: { auctionId: id },
+    });
+    if (bidCount > 0) {
+      throw new BadRequestException('This auction already has bids');
+    }
+
+    if (dto.title !== undefined) {
+      auction.title = dto.title;
+    }
+    if (dto.description !== undefined) {
+      auction.description =
+        dto.description == null || !dto.description.trim()
+          ? null
+          : dto.description.trim();
+    }
+    if (dto.category !== undefined) {
+      auction.category = dto.category;
+    }
+    if (dto.startingPrice !== undefined) {
+      auction.startingPrice = toMoneyString(dto.startingPrice);
+      auction.currentPrice = auction.startingPrice;
+    }
+    if (dto.minIncrement !== undefined) {
+      auction.minIncrement = toMoneyString(dto.minIncrement);
+    }
+    if (dto.endsAt !== undefined) {
+      const endsAt = new Date(dto.endsAt);
+      if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date()) {
+        throw new BadRequestException('End time must be in the future');
+      }
+      auction.endsAt = endsAt;
+    }
+    const savedAuction = await this.auctionsRepository.save(auction);
+
+    return {
+      message: 'Auction updated successfully',
+      data: savedAuction,
+    };
   }
 }
