@@ -55,11 +55,24 @@ const uiSlice = createSlice({
     resetFilterDraft(state) {
       state.filterDraft = { ...state.appliedFilter };
     },
+    hydrateFiltersFromUrl(state, action: PayloadAction<Partial<AuctionFilterDraft>>) {
+      const next: AuctionFilterDraft = {
+        ...emptyFilters,
+        ...action.payload,
+      };
+      state.filterDraft = next;
+      state.appliedFilter = { ...next };
+    },
   },
 });
 
-export const { setFilterField, applyFilter, clearFilters, resetFilterDraft } =
-  uiSlice.actions;
+export const {
+  setFilterField,
+  applyFilter,
+  clearFilters,
+  resetFilterDraft,
+  hydrateFiltersFromUrl,
+} = uiSlice.actions;
 
 export const store = configureStore({
   reducer: {

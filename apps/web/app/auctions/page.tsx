@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 import {
   Alert,
   Button,
@@ -9,24 +10,57 @@ import {
   LoadingState,
   Page,
   PageHeader,
-  Skeleton,
 } from '@shared/ui/components';
 import { ShellHeader } from '@/components/auth';
-import { AuctionCard, AuctionFilters } from '@/components/auctions';
+import { AuctionCard, AuctionCardSkeleton, AuctionFilters } from '@/components/auctions';
 import { auctionsApi, auctionQueryKeys } from '@/lib/api';
+import type { AuctionStatus } from '@/lib/schemas/auction';
 import {
   clearFilters,
   filtersToListParams,
+  hydrateFiltersFromUrl,
   useAppDispatch,
   useAppSelector,
 } from '@/lib/store';
 
-export default function AuctionsPage() {
+function parseStatus(value: string | null): '' | AuctionStatus {
+  if (value === 'open' || value === 'closed' || value === 'cancelled') {
+    return value;
+  }
+  return '';
+}
+
+function AuctionsPageContent() {
   const dispatch = useAppDispatch();
+  const searchParams = useSearchParams();
   const applied = useAppSelector((s) => s.ui.appliedFilter);
   const [page, setPage] = useState(1);
   const limit = 12;
   const params = filtersToListParams(applied, page, limit);
+
+  useEffect(() => {
+    const q = searchParams.get('q') ?? '';
+    const category = searchParams.get('category') ?? '';
+    const statusParam = searchParams.get('status');
+    const status = statusParam === null ? 'open' : parseStatus(statusParam);
+    const minPrice = searchParams.get('minPrice') ?? '';
+    const maxPrice = searchParams.get('maxPrice') ?? '';
+
+    if (!q && !category && statusParam === null && !minPrice && !maxPrice) {
+      return;
+    }
+
+    dispatch(
+      hydrateFiltersFromUrl({
+        q,
+        category,
+        status: status || 'open',
+        minPrice,
+        maxPrice,
+      }),
+    );
+    setPage(1);
+  }, [dispatch, searchParams]);
 
   useEffect(() => {
     setPage(1);
@@ -40,8 +74,7 @@ export default function AuctionsPage() {
   const totalPages = query.data ? Math.max(1, Math.ceil(query.data.total / limit)) : 1;
 
   return (
-    <Page>
-      <ShellHeader title="Auctions" subtitle="Browse open and closed lots" />
+    <>
       <PageHeader
         title="Auction listings"
         description="Filter by category, status, and price. Empty filters show a clear empty state."
@@ -56,7 +89,7 @@ export default function AuctionsPage() {
           <LoadingState label="Loading auctions…" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full" />
+              <AuctionCardSkeleton key={i} />
             ))}
           </div>
         </div>
@@ -118,6 +151,17 @@ export default function AuctionsPage() {
           </div>
         </>
       ) : null}
+    </>
+  );
+}
+
+export default function AuctionsPage() {
+  return (
+    <Page>
+      <ShellHeader title="Auctions" subtitle="Browse open and closed lots" />
+      <Suspense fallback={<LoadingState label="Loading auctions…" />}>
+        <AuctionsPageContent />
+      </Suspense>
     </Page>
   );
 }

@@ -330,7 +330,7 @@
   }
 
   .ui-shell-header {
-    @apply mb-7 flex items-center justify-between gap-4 border-b border-border pb-4;
+    @apply mb-7 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4;
   }
 
   .ui-shell-title {

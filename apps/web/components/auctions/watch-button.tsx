@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiClientError } from '@shared/api-client';
 import { Button, StatusMessage } from '@shared/ui/components';
@@ -7,12 +9,18 @@ import { useAuth } from '@/components/auth';
 import { watchlistApi, watchlistQueryKeys } from '@/lib/api';
 import { useState } from 'react';
 
-export function WatchButton({ auctionId }: Readonly<{ auctionId: string }>) {
-  const { user } = useAuth();
+export function WatchButton({
+  auctionId,
+  compact = false,
+}: Readonly<{ auctionId: string; compact?: boolean }>) {
+  const { user, loading } = useAuth();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   const canWatch = user?.role === 'user' || user?.role === 'staff';
+  const nextPath = pathname || `/auctions/${auctionId}`;
+  const loginHref = `/login?next=${encodeURIComponent(nextPath)}`;
 
   const watchlistQuery = useQuery({
     queryKey: watchlistQueryKeys.me(),
@@ -49,6 +57,25 @@ export function WatchButton({ auctionId }: Readonly<{ auctionId: string }>) {
     },
   });
 
+  if (loading) {
+    return null;
+  }
+
+  if (!user) {
+    return (
+      <Link
+        href={loginHref}
+        className={
+          compact
+            ? 'text-sm text-accent underline-offset-4 hover:underline'
+            : 'ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline'
+        }
+      >
+        Sign in to watch
+      </Link>
+    );
+  }
+
   if (!canWatch) {
     return null;
   }
@@ -56,22 +83,24 @@ export function WatchButton({ auctionId }: Readonly<{ auctionId: string }>) {
   const pending = addMutation.isPending || removeMutation.isPending;
 
   return (
-    <div className="space-y-2">
+    <div className={compact ? 'space-y-1' : 'space-y-2'}>
       {watching ? (
         <Button
           variant="secondary"
+          size="sm"
           loading={pending}
           onClick={() => removeMutation.mutate()}
         >
-          Remove from watchlist
+          {compact ? 'Watching' : 'Remove from watchlist'}
         </Button>
       ) : (
         <Button
           variant="secondary"
+          size="sm"
           loading={pending}
           onClick={() => addMutation.mutate()}
         >
-          Add to watchlist
+          {compact ? 'Watch' : 'Add to watchlist'}
         </Button>
       )}
       {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}

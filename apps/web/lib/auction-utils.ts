@@ -45,6 +45,31 @@ export function formatEndsAt(endsAt: string | Date): string {
   }).format(new Date(endsAt));
 }
 
+/** Live countdown label; never negative. */
+export function formatRemainingTime(endsAt: string | Date, now = new Date()): string {
+  const ms = new Date(endsAt).getTime() - now.getTime();
+  if (ms <= 0) return 'Ended';
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
+export function categoryLabel(category: string): string {
+  return category
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 export function statusBadgeTone(
   status: string,
 ): 'neutral' | 'accent' | 'success' | 'danger' {
@@ -82,11 +107,22 @@ export function dedupeMyBids(bids: MyBid[]): MyBid[] {
   );
 }
 
+/** Categories used in create/edit forms and filters (includes seed-backed values). */
 export const AUCTION_CATEGORIES = [
   'electronics',
   'fashion',
   'home',
   'books',
+  'sports',
   'art',
   'other',
+] as const;
+
+/** Homepage browse tiles — aligned with domain seed categories. */
+export const BROWSE_CATEGORIES = [
+  { slug: 'electronics', label: 'Electronics', blurb: 'Gadgets and devices' },
+  { slug: 'fashion', label: 'Fashion & Accessories', blurb: 'Style and wearables' },
+  { slug: 'home', label: 'Home & Living', blurb: 'Furniture and decor' },
+  { slug: 'books', label: 'Books', blurb: 'Reads and collectible editions' },
+  { slug: 'sports', label: 'Sports & Fitness', blurb: 'Gear and equipment' },
 ] as const;
