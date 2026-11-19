@@ -36,7 +36,10 @@ export class BidsService {
       const auctionRepo = manager.getRepository(Auction);
       const bidRepo = manager.getRepository(Bid);
 
-      const auction = await auctionRepo.findOne({ where: { id: auctionId } });
+      const auction = await auctionRepo.findOne({
+        where: { id: auctionId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!auction) {
         throw new NotFoundException('This auction is no longer available');
       }

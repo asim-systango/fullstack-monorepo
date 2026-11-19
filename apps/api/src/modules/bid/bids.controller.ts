@@ -35,9 +35,9 @@ export class BidsController {
 export class MyBidsController {
   constructor(private readonly bidsService: BidsService) {}
 
-  @Roles('user', 'staff')
+  @Roles('user')
   @Get('me')
-  @ApiOperation({ summary: 'Get my bids' })
+  @ApiOperation({ summary: 'Get my bids (one row per auction with status badge)' })
   getMyBids(@CurrentUser() user: JwtUser) {
     return this.bidsService.myBids(user.id);
   }
