@@ -5,8 +5,8 @@ import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
-import { AuctionModule } from './modules/auctions/auction.module';
-import { BidModule } from './modules/bid/bid.module';
+import { AuctionsModule } from './modules/auctions/auctions.module';
+import { BidsModule } from './modules/bids/bids.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 
 const db = databaseConfig();
@@ -23,8 +23,8 @@ const db = databaseConfig();
     }),
     AuthModule,
     HealthModule,
-    AuctionModule,
-    BidModule,
+    AuctionsModule,
+    BidsModule,
     WatchlistModule,
   ],
   providers: [

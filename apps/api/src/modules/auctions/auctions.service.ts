@@ -10,7 +10,7 @@ import { Auction } from './auctions.entity';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
-import { Bid } from '../bid/bid.entity';
+import { Bid } from '../bids/bids.entity';
 import { JwtUser } from '../../common/auth';
 
 function toMoneyString(value: number): string {

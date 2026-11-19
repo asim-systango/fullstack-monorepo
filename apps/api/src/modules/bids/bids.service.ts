@@ -7,7 +7,7 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Auction } from '../auctions/auctions.entity';
-import { Bid } from './bid.entity';
+import { Bid } from './bids.entity';
 import { CreateBidDto } from './dto/create-bid.dto';
 
 function toMoneyString(value: number): string {

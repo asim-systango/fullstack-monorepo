@@ -2,7 +2,7 @@ import '../load-env';
 import 'reflect-metadata';
 import dataSource from './data-source';
 import { Auction } from '../modules/auctions/auctions.entity';
-import { Bid } from '../modules/bid/bid.entity';
+import { Bid } from '../modules/bids/bids.entity';
 import { User } from '../modules/users/user.entity';
 
 const SEED_MARKER = '[seed] Vintage Film Camera';
