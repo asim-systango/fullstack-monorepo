@@ -39,7 +39,7 @@ export class GetAuctionQueryDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  search?: string;
+  q?: string;
 
   @ApiPropertyOptional({ example: 'electronics' })
   @IsOptional()

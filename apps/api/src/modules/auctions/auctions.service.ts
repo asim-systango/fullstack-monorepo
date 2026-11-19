@@ -58,8 +58,8 @@ export class AuctionsService {
     const qb = this.auctionsRepository.createQueryBuilder('auction');
     // QueryBuilder does not auto-apply soft-delete filters
     qb.andWhere('auction.deletedAt IS NULL');
-    if (query.search?.trim()) {
-      const term = `%${query.search.trim()}%`;
+    if (query.q?.trim()) {
+      const term = `%${query.q.trim()}%`;
       qb.andWhere('(auction.title ILIKE :search OR auction.description ILIKE :search)', {
         search: term,
       });
