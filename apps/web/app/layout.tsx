@@ -18,8 +18,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'Online Auction House',
+  description: 'Browse, bid, and sell in the Online Auction House',
 };
 
 export default function RootLayout({

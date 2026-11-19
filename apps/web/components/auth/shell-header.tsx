@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from './auth-provider';
-import { Button } from '@shared/ui/components';
+import { Badge, Button } from '@shared/ui/components';
 
 function AuthNav() {
   const { user, loading, logout } = useAuth();
@@ -14,9 +14,9 @@ function AuthNav() {
   if (user) {
     return (
       <>
-        <span className="font-mono text-xs text-muted-foreground">
+        <Badge tone="neutral">
           {user.name} · {user.role}
-        </span>
+        </Badge>
         <Button variant="ghost" size="sm" onClick={() => void logout()}>
           Log out
         </Button>
@@ -37,9 +37,33 @@ function AuthNav() {
   );
 }
 
+function RoleLinks() {
+  const { user, loading } = useAuth();
+
+  if (loading || !user) {
+    return null;
+  }
+
+  return (
+    <>
+      {user.role === 'user' ? <Link href="/my/bids">My bids</Link> : null}
+      {user.role === 'user' || user.role === 'staff' ? (
+        <Link href="/watchlist">Watchlist</Link>
+      ) : null}
+      {user.role === 'staff' ? (
+        <>
+          <Link href="/seller">Seller</Link>
+          <Link href="/seller/auctions/new">New auction</Link>
+        </>
+      ) : null}
+      {user.role === 'admin' ? <Link href="/admin/auctions">Admin</Link> : null}
+    </>
+  );
+}
+
 export function ShellHeader({
   title,
-  subtitle = 'App starter — add your domain UI here',
+  subtitle = 'Online Auction House',
 }: Readonly<{ title: string; subtitle?: string }>) {
   return (
     <header className="ui-shell-header">
@@ -49,7 +73,8 @@ export function ShellHeader({
       </div>
       <nav className="ui-shell-nav">
         <Link href="/">Home</Link>
-        <Link href="/ui">UI kit</Link>
+        <Link href="/auctions">Auctions</Link>
+        <RoleLinks />
         <AuthNav />
       </nav>
     </header>
