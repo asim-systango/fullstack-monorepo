@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -12,6 +13,10 @@ import { User } from '../users/user.entity';
 
 export type AuctionStatus = 'open' | 'closed' | 'cancelled';
 
+@Check('CHK_auctions_status', `"status" IN ('open', 'closed', 'cancelled')`)
+@Check('CHK_auctions_starting_price', `"starting_price" > 0`)
+@Check('CHK_auctions_min_increment', `"min_increment" > 0`)
+@Check('CHK_auctions_current_price', `"current_price" >= "starting_price"`)
 @Entity({ name: 'auctions' })
 export class Auction {
   @PrimaryGeneratedColumn('uuid')

@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -9,6 +10,7 @@ import {
 import { Auction } from '../auctions/auctions.entity';
 import { User } from '../users/user.entity';
 
+@Check('CHK_bids_bid_amount', `"bid_amount" > 0`)
 @Entity({ name: 'bids' })
 export class Bid {
   @PrimaryGeneratedColumn('uuid')

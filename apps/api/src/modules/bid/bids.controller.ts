@@ -17,7 +17,7 @@ export class BidsController {
     return this.bidsService.listBids(id);
   }
 
-  @Roles('user', 'staff')
+  @Roles('user')
   @Post()
   @ApiOperation({ summary: 'Place a bid on an auction (bidder / user only)' })
   placeBid(
