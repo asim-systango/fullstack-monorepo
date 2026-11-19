@@ -72,6 +72,9 @@ export class AuctionsService {
     if (query.status) {
       qb.andWhere('auction.status = :status', { status: query.status });
     }
+    if (query.sellerId) {
+      qb.andWhere('auction.sellerId = :sellerId', { sellerId: query.sellerId });
+    }
     if (query.minPrice != null) {
       qb.andWhere('auction.currentPrice >= :minPrice', {
         minPrice: query.minPrice,

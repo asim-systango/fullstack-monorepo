@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -53,6 +54,14 @@ export class GetAuctionQueryDto {
   @IsOptional()
   @IsIn([...AUCTION_STATUSES])
   status?: AuctionStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter to auctions sold by this seller (UUID)',
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID()
+  sellerId?: string;
 
   @ApiPropertyOptional({
     description: 'Minimum current price (inclusive)',
