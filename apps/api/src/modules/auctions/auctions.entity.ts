@@ -72,6 +72,10 @@ export class Auction {
   @Column({ name: 'seller_id', type: 'uuid' })
   sellerId!: string;
 
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL', onUpdate: 'CASCADE' })
+  @JoinColumn({ name: 'winner_id' })
+  winner!: User | null;
+
   @Column({ name: 'winner_id', type: 'uuid', nullable: true })
   winnerId!: string | null;
 
