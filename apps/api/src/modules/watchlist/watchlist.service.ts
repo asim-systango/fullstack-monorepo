@@ -53,6 +53,7 @@ export class WatchlistService {
 
     return {
       message: 'Auction removed from watchlist',
+      auctionId,
     };
   }
 

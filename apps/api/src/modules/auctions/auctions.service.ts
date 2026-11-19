@@ -150,7 +150,7 @@ export class AuctionsService {
 
     return {
       message: 'Auction updated successfully',
-      data: savedAuction,
+      auction: savedAuction,
     };
   }
 
@@ -197,7 +197,7 @@ export class AuctionsService {
 
     return {
       message: 'Auction Closed Successfully',
-      data: savedAuction,
+      auction: savedAuction,
     };
   }
 
@@ -213,7 +213,7 @@ export class AuctionsService {
 
     return {
       message: 'Auction cancelled successfully',
-      data: savedAuction,
+      auction: savedAuction,
     };
   }
 

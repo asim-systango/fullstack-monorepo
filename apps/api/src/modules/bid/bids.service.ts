@@ -80,7 +80,7 @@ export class BidsService {
 
       return {
         message: 'Bid created successfully!',
-        Bid: savedBid,
+        bid: savedBid,
       };
     });
   }
