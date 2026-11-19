@@ -99,9 +99,47 @@ export class BidsService {
   }
 
   async myBids(bidderId: string) {
-    return this.bidRepository.find({
+    const bids = await this.bidRepository.find({
       where: { bidderId },
+      relations: { auction: true },
       order: { createdAt: 'DESC' },
+    });
+
+    const highestBids = await Promise.all(
+      [...new Set(bids.map((bid) => bid.auctionId))].map((auctionId) =>
+        this.bidRepository.findOne({
+          where: { auctionId },
+          order: {
+            bidAmount: 'DESC',
+            createdAt: 'DESC',
+          },
+        }),
+      ),
+    );
+
+    const highestBidMap = new Map(
+      highestBids.filter(Boolean).map((bid) => [bid?.auctionId, bid?.bidderId]),
+    );
+
+    return bids.map((bid) => {
+      const auction = bid.auction;
+
+      let status: string;
+
+      if (auction.status === 'closed') {
+        status = auction.winnerId === bidderId ? 'Won' : 'Lost';
+      } else if (auction.status === 'cancelled') {
+        status = 'Lost';
+      } else if (auction.status === 'open') {
+        status = highestBidMap.get(bid.auctionId) === bidderId ? 'Winning' : 'Outbid';
+      } else {
+        status = 'Pending';
+      }
+
+      return {
+        ...bid,
+        status,
+      };
     });
   }
 }
