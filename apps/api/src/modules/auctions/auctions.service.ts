@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
@@ -214,6 +214,41 @@ export class AuctionsService {
     return {
       message: 'Auction cancelled successfully',
       data: savedAuction,
+    };
+  }
+
+  async getAuctionDashboard(sellerId: string) {
+    const openAuctions = await this.auctionsRepository.count({
+      where: {
+        sellerId,
+        status: 'open',
+      },
+    });
+
+    const itemsSold = await this.auctionsRepository.count({
+      where: {
+        sellerId,
+        status: 'closed',
+        winnerId: Not(IsNull()),
+      },
+    });
+
+    const sellerAuctions = await this.auctionsRepository.find({
+      where: { sellerId },
+      select: { id: true },
+    });
+    const auctionIds = sellerAuctions.map((auction) => auction.id);
+    const totalBids =
+      auctionIds.length === 0
+        ? 0
+        : await this.bidRepository.count({
+            where: { auctionId: In(auctionIds) },
+          });
+
+    return {
+      openAuctions,
+      totalBids,
+      itemsSold,
     };
   }
 }

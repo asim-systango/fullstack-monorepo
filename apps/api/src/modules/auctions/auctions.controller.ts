@@ -36,6 +36,13 @@ export class AuctionsController {
     return this.auctionsService.findAll(query);
   }
 
+  @Roles('staff')
+  @Get('me/dashboard')
+  @ApiOperation({ summary: 'Seller dashboard counts' })
+  getSellerAuctionDashboard(@CurrentUser() user: JwtUser) {
+    return this.auctionsService.getAuctionDashboard(user.id);
+  }
+
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get auction by ID' })
