@@ -97,4 +97,11 @@ export class BidsService {
       order: { bidAmount: 'DESC', createdAt: 'DESC' },
     });
   }
+
+  async myBids(bidderId: string) {
+    return this.bidRepository.find({
+      where: { bidderId },
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

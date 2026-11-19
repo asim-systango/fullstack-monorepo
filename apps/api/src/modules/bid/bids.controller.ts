@@ -17,7 +17,7 @@ export class BidsController {
     return this.bidsService.listBids(id);
   }
 
-  @Roles('user')
+  @Roles('user', 'staff')
   @Post()
   @ApiOperation({ summary: 'Place a bid on an auction (bidder / user only)' })
   placeBid(
@@ -26,5 +26,19 @@ export class BidsController {
     @Body() dto: CreateBidDto,
   ) {
     return this.bidsService.placeBid(id, user.id, dto);
+  }
+}
+
+@ApiTags('bids')
+@ApiBearerAuth()
+@Controller('bids')
+export class MyBidsController {
+  constructor(private readonly bidsService: BidsService) {}
+
+  @Roles('user', 'staff')
+  @Get('me')
+  @ApiOperation({ summary: 'Get my bids' })
+  getMyBids(@CurrentUser() user: JwtUser) {
+    return this.bidsService.myBids(user.id);
   }
 }
