@@ -39,7 +39,7 @@ export class AuctionsService {
     const auction = this.auctionsRepository.create({
       title: dto.title,
       description,
-      category: dto.category,
+      category: dto.category.trim().toLowerCase(),
       startingPrice,
       minIncrement: toMoneyString(dto.minIncrement),
       currentPrice: startingPrice,
@@ -130,7 +130,7 @@ export class AuctionsService {
           : dto.description.trim();
     }
     if (dto.category !== undefined) {
-      auction.category = dto.category;
+      auction.category = dto.category.trim().toLowerCase();
     }
     if (dto.startingPrice !== undefined) {
       auction.startingPrice = toMoneyString(dto.startingPrice);
