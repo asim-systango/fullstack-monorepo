@@ -134,22 +134,24 @@ export class BidsService {
     }
 
     const uniqueBids = [...latestByAuctionId.values()];
+    const auctionIds = uniqueBids.map((bid) => bid.auctionId);
 
-    const highestBids = await Promise.all(
-      uniqueBids.map((bid) =>
-        this.bidRepository.findOne({
-          where: { auctionId: bid.auctionId },
-          order: {
-            bidAmount: 'DESC',
-            createdAt: 'DESC',
-          },
-        }),
-      ),
-    );
+    const highestBidMap = new Map<string, string>();
+    if (auctionIds.length > 0) {
+      const highestRows = await this.bidRepository
+        .createQueryBuilder('bid')
+        .select(['bid.auctionId', 'bid.bidderId'])
+        .distinctOn(['bid.auctionId'])
+        .where('bid.auctionId IN (:...auctionIds)', { auctionIds })
+        .orderBy('bid.auctionId', 'ASC')
+        .addOrderBy('bid.bidAmount', 'DESC')
+        .addOrderBy('bid.createdAt', 'DESC')
+        .getMany();
 
-    const highestBidMap = new Map(
-      highestBids.flatMap((bid) => (bid ? [[bid.auctionId, bid.bidderId] as const] : [])),
-    );
+      for (const bid of highestRows) {
+        highestBidMap.set(bid.auctionId, bid.bidderId);
+      }
+    }
 
     return uniqueBids.map((bid) => {
       const auction = bid.auction;
