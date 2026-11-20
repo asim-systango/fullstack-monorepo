@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiClientError } from '@shared/api-client';
 import { Button, StatusMessage } from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
+import { ButtonLink } from '@/components/ui/button-link';
 import { watchlistApi, watchlistQueryKeys } from '@/lib/api';
 import { useState } from 'react';
 
@@ -62,17 +63,20 @@ export function WatchButton({
   }
 
   if (!user) {
+    if (compact) {
+      return (
+        <Link
+          href={loginHref}
+          className="text-sm text-accent underline-offset-4 hover:underline"
+        >
+          Sign in to watch
+        </Link>
+      );
+    }
     return (
-      <Link
-        href={loginHref}
-        className={
-          compact
-            ? 'text-sm text-accent underline-offset-4 hover:underline'
-            : 'ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline'
-        }
-      >
+      <ButtonLink href={loginHref} variant="secondary" size="sm">
         Sign in to watch
-      </Link>
+      </ButtonLink>
     );
   }
 

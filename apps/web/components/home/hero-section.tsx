@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
 import { Button, TextInput } from '@shared/ui/components';
 import { useAuth } from '@/components/auth';
+import { ButtonLink } from '@/components/ui/button-link';
 
 export function HeroSection() {
   const { user } = useAuth();
@@ -63,27 +63,12 @@ export function HeroSection() {
         </form>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <Link
-            href="/auctions"
-            className="ui-button ui-button-md ui-button-secondary no-underline hover:no-underline"
-          >
+          <ButtonLink href="/auctions" variant="secondary">
             Browse Auctions
-          </Link>
-          {!user ? (
-            <Link
-              href="/login"
-              className="ui-button ui-button-md ui-button-primary no-underline hover:no-underline"
-            >
-              Sign in
-            </Link>
-          ) : null}
+          </ButtonLink>
+          {!user ? <ButtonLink href="/login">Sign in</ButtonLink> : null}
           {user?.role === 'staff' ? (
-            <Link
-              href="/seller/auctions/new"
-              className="ui-button ui-button-md ui-button-primary no-underline hover:no-underline"
-            >
-              Create Auction
-            </Link>
+            <ButtonLink href="/seller/auctions/new">Create Auction</ButtonLink>
           ) : null}
         </div>
       </div>

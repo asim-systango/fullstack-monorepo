@@ -18,6 +18,7 @@ import {
   CloseAuctionDialog,
   WatchButton,
 } from '@/components/auctions';
+import { ButtonLink } from '@/components/ui/button-link';
 import { auctionQueryKeys, auctionsApi, bidQueryKeys, bidsApi } from '@/lib/api';
 import {
   formatEndsAt,
@@ -103,12 +104,13 @@ export default function AuctionDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={statusBadgeTone(auction.status)}>{auction.status}</Badge>
             {canEdit && !hasBids ? (
-              <Link
+              <ButtonLink
                 href={`/seller/auctions/${auction.id}/edit`}
-                className="ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline"
+                variant="secondary"
+                size="sm"
               >
                 Edit
-              </Link>
+              </ButtonLink>
             ) : null}
             {canEdit && hasBids ? (
               <>

@@ -1,10 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Button, Field, Select, TextInput } from '@shared/ui/components';
 import { AUCTION_CATEGORIES } from '@/lib/auction-utils';
 import {
   applyFilter,
   clearFilters,
+  filtersToSearchParams,
   setFilterField,
   useAppDispatch,
   useAppSelector,
@@ -12,6 +14,7 @@ import {
 
 export function AuctionFilters() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const draft = useAppSelector((s) => s.ui.filterDraft);
 
   return (
@@ -20,6 +23,8 @@ export function AuctionFilters() {
       onSubmit={(e) => {
         e.preventDefault();
         dispatch(applyFilter());
+        const qs = filtersToSearchParams(draft);
+        router.replace(qs ? `/auctions?${qs}` : '/auctions');
       }}
     >
       <Field label="Search" htmlFor="filter-q">
@@ -94,7 +99,10 @@ export function AuctionFilters() {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => dispatch(clearFilters())}
+          onClick={() => {
+            dispatch(clearFilters());
+            router.replace('/auctions');
+          }}
         >
           Clear
         </Button>

@@ -6,4 +6,5 @@ export { BidHistory } from './bid-history';
 export { BidForm } from './bid-form';
 export { WatchButton } from './watch-button';
 export { CloseAuctionDialog } from './close-auction-dialog';
+export { ConfirmActionDialog } from './confirm-action-dialog';
 export { AuctionForm } from './auction-form';

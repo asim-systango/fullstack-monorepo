@@ -1,13 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiClientError } from '@shared/api-client';
 import {
   Alert,
   Badge,
-  Button,
   EmptyState,
   LoadingState,
   Page,
@@ -20,12 +17,12 @@ import {
   TableRow,
 } from '@shared/ui/components';
 import { RequireAuth, ShellHeader } from '@/components/auth';
+import { ConfirmActionDialog } from '@/components/auctions';
 import { auctionQueryKeys, auctionsApi } from '@/lib/api';
 import { formatMoney, statusBadgeTone } from '@/lib/auction-utils';
 
 function AdminAuctions() {
   const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
 
   const listQuery = useQuery({
     queryKey: auctionQueryKeys.list({ limit: 50, status: undefined }),
@@ -38,24 +35,12 @@ function AdminAuctions() {
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => auctionsApi.cancel(id),
-    onSuccess: async () => {
-      setError(null);
-      await invalidate();
-    },
-    onError: (err) => {
-      setError(err instanceof ApiClientError ? err.message : 'Cancel failed');
-    },
+    onSuccess: invalidate,
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => auctionsApi.softDelete(id),
-    onSuccess: async () => {
-      setError(null);
-      await invalidate();
-    },
-    onError: (err) => {
-      setError(err instanceof ApiClientError ? err.message : 'Delete failed');
-    },
+    onSuccess: invalidate,
   });
 
   return (
@@ -66,11 +51,6 @@ function AdminAuctions() {
         description="Cancel open auctions or soft-delete any listing."
       />
 
-      {error ? (
-        <Alert tone="danger" title="Action failed">
-          {error}
-        </Alert>
-      ) : null}
       {listQuery.isLoading ? <LoadingState label="Loading auctions…" /> : null}
       {listQuery.isError ? (
         <Alert tone="danger" title="Could not load auctions">
@@ -103,33 +83,27 @@ function AdminAuctions() {
                 <TableCell>
                   <div className="flex flex-wrap gap-2">
                     {auction.status === 'open' ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        loading={cancelMutation.isPending}
-                        onClick={() => {
-                          if (window.confirm('Cancel this open auction?')) {
-                            cancelMutation.mutate(auction.id);
-                          }
-                        }}
-                      >
-                        Cancel
-                      </Button>
+                      <ConfirmActionDialog
+                        triggerLabel="Cancel"
+                        triggerVariant="secondary"
+                        title="Cancel this open auction?"
+                        description="The auction will be cancelled and bidding will stop."
+                        confirmLabel="Confirm cancel"
+                        confirmVariant="secondary"
+                        loadingText="Cancelling…"
+                        onConfirm={() => cancelMutation.mutateAsync(auction.id)}
+                      />
                     ) : null}
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      loading={deleteMutation.isPending}
-                      onClick={() => {
-                        if (
-                          window.confirm('Soft-delete this auction from public listings?')
-                        ) {
-                          deleteMutation.mutate(auction.id);
-                        }
-                      }}
-                    >
-                      Delete
-                    </Button>
+                    <ConfirmActionDialog
+                      triggerLabel="Delete"
+                      triggerVariant="danger"
+                      title="Soft-delete this auction?"
+                      description="It will disappear from public listings."
+                      confirmLabel="Delete"
+                      confirmVariant="danger"
+                      loadingText="Deleting…"
+                      onConfirm={() => deleteMutation.mutateAsync(auction.id)}
+                    />
                   </div>
                 </TableCell>
               </TableRow>

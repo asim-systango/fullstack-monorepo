@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useAuth } from './auth-provider';
 import { Badge, Button } from '@shared/ui/components';
 import type { User } from '@shared/api-client';
+import { ButtonLink } from '@/components/ui/button-link';
 
 function roleLabel(role: User['role']): string {
   switch (role) {
@@ -179,12 +180,9 @@ function AuthControls() {
       <Link href="/login" className="font-medium">
         Login
       </Link>
-      <Link
-        href="/register"
-        className="ui-button ui-button-sm ui-button-primary no-underline hover:no-underline"
-      >
+      <ButtonLink href="/register" size="sm">
         Register
-      </Link>
+      </ButtonLink>
     </>
   );
 }

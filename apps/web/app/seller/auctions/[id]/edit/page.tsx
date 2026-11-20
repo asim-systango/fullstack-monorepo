@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, LoadingState, Page, PageHeader } from '@shared/ui/components';
@@ -17,6 +18,10 @@ function EditAuctionPage() {
     queryKey: auctionQueryKeys.detail(id),
     queryFn: () => auctionsApi.getById(id),
     enabled: Boolean(id),
+    retry: (failureCount, error) => {
+      if ((error as { statusCode?: number }).statusCode === 404) return false;
+      return failureCount < 1;
+    },
   });
 
   const bidsQuery = useQuery({
@@ -35,11 +40,22 @@ function EditAuctionPage() {
   }
 
   if (auctionQuery.isError || !auctionQuery.data) {
+    const status = (auctionQuery.error as { statusCode?: number } | null)?.statusCode;
     return (
       <Page>
         <ShellHeader title="Edit auction" />
-        <Alert tone="danger" title="Could not load auction">
-          {(auctionQuery.error as Error)?.message ?? 'Not found'}
+        <Alert
+          tone="danger"
+          title={
+            status === 404
+              ? 'This auction is no longer available'
+              : 'Could not load auction'
+          }
+        >
+          {(auctionQuery.error as Error | null)?.message ?? 'Auction not found'}
+          <p className="mt-2">
+            <Link href="/seller">Back to seller dashboard</Link>
+          </p>
         </Alert>
       </Page>
     );

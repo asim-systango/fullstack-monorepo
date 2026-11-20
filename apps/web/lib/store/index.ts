@@ -123,3 +123,15 @@ export function filtersToListParams(
   }
   return params;
 }
+
+/** Build a query string (no leading `?`) from filter draft; omits empty fields. */
+export function filtersToSearchParams(filters: AuctionFilterDraft): string {
+  const params = new URLSearchParams();
+  const q = filters.q.trim();
+  if (q) params.set('q', q);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.minPrice.trim()) params.set('minPrice', filters.minPrice.trim());
+  if (filters.maxPrice.trim()) params.set('maxPrice', filters.maxPrice.trim());
+  return params.toString();
+}

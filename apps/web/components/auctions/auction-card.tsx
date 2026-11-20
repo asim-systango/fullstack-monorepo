@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@shared/ui/components';
+import { ButtonLink } from '@/components/ui/button-link';
 import type { Auction } from '@/lib/schemas/auction';
 import {
   categoryLabel,
@@ -101,12 +102,9 @@ export function AuctionCard({
 
         <div className="mt-auto flex flex-col gap-2 pt-3">
           <WatchButton auctionId={auction.id} compact />
-          <Link
-            href={`/auctions/${auction.id}`}
-            className="ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline"
-          >
+          <ButtonLink href={`/auctions/${auction.id}`} variant="secondary" size="sm">
             View Details
-          </Link>
+          </ButtonLink>
         </div>
       </CardBody>
     </Card>

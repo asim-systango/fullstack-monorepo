@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { Alert, Button, EmptyState } from '@shared/ui/components';
 import { AuctionCard, AuctionCardSkeleton } from '@/components/auctions';
+import { ButtonLink } from '@/components/ui/button-link';
 import type { Auction, AuctionListResponse } from '@/lib/schemas/auction';
+import Link from 'next/link';
 
 export function AuctionSection({
   id,
@@ -62,12 +63,9 @@ export function AuctionSection({
           title="No auctions available"
           description="Check back soon for new open lots, or browse the full listings."
           action={
-            <Link
-              href="/auctions"
-              className="ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline"
-            >
+            <ButtonLink href="/auctions" variant="secondary" size="sm">
               Browse Auctions
-            </Link>
+            </ButtonLink>
           }
         />
       ) : null}

@@ -2,11 +2,9 @@
 
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiClientError } from '@shared/api-client';
 import {
   Alert,
   Badge,
-  Button,
   EmptyState,
   LoadingState,
   Page,
@@ -19,15 +17,14 @@ import {
   TableRow,
 } from '@shared/ui/components';
 import { RequireAuth, ShellHeader, useAuth } from '@/components/auth';
-import { CloseAuctionDialog } from '@/components/auctions';
+import { CloseAuctionDialog, ConfirmActionDialog } from '@/components/auctions';
+import { ButtonLink } from '@/components/ui/button-link';
 import { auctionQueryKeys, auctionsApi } from '@/lib/api';
 import { formatMoney, statusBadgeTone } from '@/lib/auction-utils';
-import { useState } from 'react';
 
 function SellerDashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const dashboardQuery = useQuery({
     queryKey: auctionQueryKeys.dashboard(),
@@ -43,14 +40,10 @@ function SellerDashboard() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => auctionsApi.softDelete(id),
     onSuccess: async () => {
-      setActionError(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: auctionQueryKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: auctionQueryKeys.dashboard() }),
       ]);
-    },
-    onError: (err) => {
-      setActionError(err instanceof ApiClientError ? err.message : 'Delete failed');
     },
   });
 
@@ -60,14 +53,7 @@ function SellerDashboard() {
       <PageHeader
         title="Seller dashboard"
         description="Open lots, total bids received, and items sold."
-        actions={
-          <Link
-            href="/seller/auctions/new"
-            className="ui-button ui-button-md ui-button-primary no-underline hover:no-underline"
-          >
-            New auction
-          </Link>
-        }
+        actions={<ButtonLink href="/seller/auctions/new">New auction</ButtonLink>}
       />
 
       {dashboardQuery.isLoading ? <LoadingState label="Loading dashboard…" /> : null}
@@ -93,12 +79,6 @@ function SellerDashboard() {
         </div>
       ) : null}
 
-      {actionError ? (
-        <Alert tone="danger" title="Action failed">
-          {actionError}
-        </Alert>
-      ) : null}
-
       <h2 className="mb-3 text-lg font-medium">My auctions</h2>
       {listQuery.isLoading ? <LoadingState label="Loading your auctions…" /> : null}
       {listQuery.isError ? (
@@ -110,14 +90,7 @@ function SellerDashboard() {
         <EmptyState
           title="No auctions yet"
           description="Create your first listing to start receiving bids."
-          action={
-            <Link
-              href="/seller/auctions/new"
-              className="ui-button ui-button-md ui-button-primary no-underline hover:no-underline"
-            >
-              Create auction
-            </Link>
-          }
+          action={<ButtonLink href="/seller/auctions/new">Create auction</ButtonLink>}
         />
       ) : null}
       {listQuery.isSuccess && listQuery.data.items.length > 0 ? (
@@ -142,31 +115,26 @@ function SellerDashboard() {
                 <TableCell>{formatMoney(auction.currentPrice)}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-2">
-                    <Link
+                    <ButtonLink
                       href={`/seller/auctions/${auction.id}/edit`}
-                      className="ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline"
+                      variant="secondary"
+                      size="sm"
                     >
                       Edit
-                    </Link>
+                    </ButtonLink>
                     {auction.status === 'open' ? (
                       <CloseAuctionDialog auctionId={auction.id} />
                     ) : null}
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      loading={deleteMutation.isPending}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            'Soft-delete this auction? It will disappear from public lists.',
-                          )
-                        ) {
-                          deleteMutation.mutate(auction.id);
-                        }
-                      }}
-                    >
-                      Delete
-                    </Button>
+                    <ConfirmActionDialog
+                      triggerLabel="Delete"
+                      triggerVariant="danger"
+                      title="Soft-delete this auction?"
+                      description="It will disappear from public lists."
+                      confirmLabel="Delete"
+                      confirmVariant="danger"
+                      loadingText="Deleting…"
+                      onConfirm={() => deleteMutation.mutateAsync(auction.id)}
+                    />
                   </div>
                 </TableCell>
               </TableRow>
