@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
@@ -20,6 +20,9 @@ function toMoneyString(value: number): string {
 @Injectable()
 export class AuctionsService {
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+
     @InjectRepository(Auction)
     private readonly auctionsRepository: Repository<Auction>,
 
@@ -167,38 +170,52 @@ export class AuctionsService {
       message: 'Auction deleted successfully',
     };
   }
-
-  async closeAuction(id: string, user: JwtUser) {
-    const auction = await this.findAuctionById(id);
-
-    if (user.role !== 'admin' && auction.sellerId !== user.id) {
-      throw new ForbiddenException('You are not authorized to close this auction');
-    }
-
-    if (auction.status !== 'open') {
-      throw new BadRequestException('This auction is already closed or cancelled.');
-    }
-
-    auction.status = 'closed';
-
-    const bid = await this.bidRepository.findOne({
-      where: {
-        auctionId: auction.id,
-      },
+  async finalizeAsClosed(
+    auction: Auction,
+    auctionRepo: Repository<Auction>,
+    bidRepo: Repository<Bid>,
+  ): Promise<Auction> {
+    const winningBid = await bidRepo.findOne({
+      where: { auctionId: auction.id },
       order: {
         bidAmount: 'DESC',
-        createdAt: 'DESC',
+        createdAt: 'ASC',
       },
     });
 
-    auction.winnerId = bid?.bidderId ?? null;
+    auction.status = 'closed';
+    auction.winnerId = winningBid?.bidderId ?? null;
+    return auctionRepo.save(auction);
+  }
 
-    const savedAuction = await this.auctionsRepository.save(auction);
+  async closeAuction(id: string, user: JwtUser) {
+    return this.dataSource.transaction(async (manager) => {
+      const auctionRepo = manager.getRepository(Auction);
+      const bidRepo = manager.getRepository(Bid);
 
-    return {
-      message: 'Auction Closed Successfully',
-      auction: savedAuction,
-    };
+      const auction = await auctionRepo.findOne({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!auction) {
+        throw new NotFoundException('This auction is no longer available');
+      }
+
+      if (user.role !== 'admin' && auction.sellerId !== user.id) {
+        throw new ForbiddenException('You are not authorized to close this auction');
+      }
+
+      if (auction.status !== 'open') {
+        throw new BadRequestException('This auction is already closed or cancelled.');
+      }
+
+      const savedAuction = await this.finalizeAsClosed(auction, auctionRepo, bidRepo);
+
+      return {
+        message: 'Auction Closed Successfully',
+        auction: savedAuction,
+      };
+    });
   }
 
   async cancelAuction(id: string) {

@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import type { Repository } from 'typeorm';
+import type { DataSource, Repository } from 'typeorm';
 import type { JwtUser } from '../../common/auth';
 import { Bid } from '../bids/bids.entity';
 import { Auction } from './auctions.entity';
@@ -58,11 +58,33 @@ describe('AuctionsService', () => {
     findOne: jest.fn(),
   };
 
+  const txAuctionRepo = {
+    findOne: jest.fn(),
+    save: jest.fn(),
+  };
+  const txBidRepo = {
+    findOne: jest.fn(),
+  };
+  const manager = {
+    getRepository: jest.fn((entity: unknown) =>
+      entity === Auction ? txAuctionRepo : txBidRepo,
+    ),
+  };
+  const dataSource = {
+    transaction: jest.fn(async (fn: (m: typeof manager) => Promise<unknown>) =>
+      fn(manager),
+    ),
+  };
+
   let service: AuctionsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    dataSource.transaction.mockImplementation(
+      async (fn: (m: typeof manager) => Promise<unknown>) => fn(manager),
+    );
     service = new AuctionsService(
+      dataSource as unknown as DataSource,
       auctionsRepository as unknown as Repository<Auction>,
       bidRepository as unknown as Repository<Bid>,
     );
@@ -227,9 +249,59 @@ describe('AuctionsService', () => {
     });
   });
 
+  describe('finalizeAsClosed', () => {
+    it('picks the highest bidder and uses earliest createdAt on ties', async () => {
+      const auction = makeAuction();
+      const auctionRepo = {
+        save: jest.fn(async (a: Auction) => a),
+      };
+      const bidRepo = {
+        findOne: jest.fn().mockResolvedValue({
+          id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+          auctionId: AUCTION_ID,
+          bidderId: WINNER,
+          bidAmount: '150.00',
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        }),
+      };
+
+      const result = await service.finalizeAsClosed(
+        auction,
+        auctionRepo as unknown as Repository<Auction>,
+        bidRepo as unknown as Repository<Bid>,
+      );
+
+      expect(bidRepo.findOne).toHaveBeenCalledWith({
+        where: { auctionId: AUCTION_ID },
+        order: { bidAmount: 'DESC', createdAt: 'ASC' },
+      });
+      expect(result.status).toBe('closed');
+      expect(result.winnerId).toBe(WINNER);
+    });
+
+    it('sets winnerId to null when there are no bids', async () => {
+      const auction = makeAuction();
+      const auctionRepo = {
+        save: jest.fn(async (a: Auction) => a),
+      };
+      const bidRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+      };
+
+      const result = await service.finalizeAsClosed(
+        auction,
+        auctionRepo as unknown as Repository<Auction>,
+        bidRepo as unknown as Repository<Bid>,
+      );
+
+      expect(result.status).toBe('closed');
+      expect(result.winnerId).toBeNull();
+    });
+  });
+
   describe('closeAuction', () => {
     it('forbids a non-owner non-admin', async () => {
-      auctionsRepository.findOne.mockResolvedValue(makeAuction());
+      txAuctionRepo.findOne.mockResolvedValue(makeAuction());
 
       await expect(
         service.closeAuction(AUCTION_ID, makeUser({ id: OTHER, role: 'staff' })),
@@ -238,32 +310,36 @@ describe('AuctionsService', () => {
 
     it('sets winnerId to the highest bidder', async () => {
       const auction = makeAuction();
-      auctionsRepository.findOne.mockResolvedValue(auction);
-      bidRepository.findOne.mockResolvedValue({
+      txAuctionRepo.findOne.mockResolvedValue(auction);
+      txBidRepo.findOne.mockResolvedValue({
         id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
         auctionId: AUCTION_ID,
         bidderId: WINNER,
         bidAmount: '150.00',
         createdAt: new Date(),
       });
-      auctionsRepository.save.mockImplementation(async (a: Auction) => a);
+      txAuctionRepo.save.mockImplementation(async (a: Auction) => a);
 
       const result = await service.closeAuction(AUCTION_ID, makeUser());
 
+      expect(txAuctionRepo.findOne).toHaveBeenCalledWith({
+        where: { id: AUCTION_ID },
+        lock: { mode: 'pessimistic_write' },
+      });
       expect(auction.status).toBe('closed');
       expect(auction.winnerId).toBe(WINNER);
       expect(result.auction.winnerId).toBe(WINNER);
-      expect(bidRepository.findOne).toHaveBeenCalledWith({
+      expect(txBidRepo.findOne).toHaveBeenCalledWith({
         where: { auctionId: AUCTION_ID },
-        order: { bidAmount: 'DESC', createdAt: 'DESC' },
+        order: { bidAmount: 'DESC', createdAt: 'ASC' },
       });
     });
 
     it('sets winnerId to null when there are no bids', async () => {
       const auction = makeAuction();
-      auctionsRepository.findOne.mockResolvedValue(auction);
-      bidRepository.findOne.mockResolvedValue(null);
-      auctionsRepository.save.mockImplementation(async (a: Auction) => a);
+      txAuctionRepo.findOne.mockResolvedValue(auction);
+      txBidRepo.findOne.mockResolvedValue(null);
+      txAuctionRepo.save.mockImplementation(async (a: Auction) => a);
 
       const result = await service.closeAuction(AUCTION_ID, makeUser());
 
@@ -272,7 +348,7 @@ describe('AuctionsService', () => {
     });
 
     it('rejects closing an already closed auction', async () => {
-      auctionsRepository.findOne.mockResolvedValue(makeAuction({ status: 'closed' }));
+      txAuctionRepo.findOne.mockResolvedValue(makeAuction({ status: 'closed' }));
 
       await expect(service.closeAuction(AUCTION_ID, makeUser())).rejects.toThrow(
         /already closed or cancelled/,
