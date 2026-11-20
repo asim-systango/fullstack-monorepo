@@ -4,6 +4,7 @@ import dataSource from './data-source';
 import { Auction } from '../modules/auctions/auctions.entity';
 import { Bid } from '../modules/bids/bids.entity';
 import { User } from '../modules/users/user.entity';
+import { Watchlist } from '../modules/watchlist/watchlist.entity';
 
 const SEED_MARKER = '[seed] Vintage Film Camera';
 
@@ -12,6 +13,7 @@ async function seed() {
   const users = dataSource.getRepository(User);
   const auctions = dataSource.getRepository(Auction);
   const bids = dataSource.getRepository(Bid);
+  const watchlists = dataSource.getRepository(Watchlist);
 
   const seller = await users.findOne({ where: { email: 'staff@demo.local' } });
   const bidder = await users.findOne({ where: { email: 'user@demo.local' } });
@@ -132,6 +134,19 @@ async function seed() {
     await bids.save(bids.create(row));
   }
 
+  // Watchlist: demo user watches open auctions; admin watches open1 + closed
+  const watchlistRows: Array<{ userId: string; auctionId: string }> = [
+    { userId: bidder.id, auctionId: open1.id },
+    { userId: bidder.id, auctionId: open2.id },
+    { userId: bidder.id, auctionId: open3.id },
+    { userId: bidder2.id, auctionId: open1.id },
+    { userId: bidder2.id, auctionId: closed.id },
+  ];
+
+  for (const row of watchlistRows) {
+    await watchlists.save(watchlists.create(row));
+  }
+
   console.log('Domain seed complete', {
     auctions: [open1, open2, open3, closed, cancelled].map((a) => ({
       id: a.id,
@@ -139,6 +154,7 @@ async function seed() {
       status: a.status,
     })),
     bids: bidRows.length,
+    watchlists: watchlistRows.length,
     seller: seller.email,
     bidders: [bidder.email, bidder2.email],
   });
