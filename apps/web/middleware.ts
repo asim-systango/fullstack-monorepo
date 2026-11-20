@@ -12,11 +12,9 @@ function isProtected(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // Cookie presence ≠ valid session — logged-in /login|/register redirect is
+  // handled client-side after /auth/me succeeds (see LoginForm / RegisterForm).
   const hasSession = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
-
-  // if ((pathname === '/login' || pathname === '/register') && hasSession) {
-  //   return NextResponse.redirect(new URL('/', request.url));
-  // }
 
   if (isProtected(pathname) && !hasSession) {
     const loginUrl = new URL('/login', request.url);
@@ -30,8 +28,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/login',
-    '/register',
     '/my/:path*',
     '/seller/:path*',
     '/admin/:path*',

@@ -2,12 +2,19 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type SyntheticEvent } from 'react';
-import { Button, Field, Form, StatusMessage, TextInput } from '@shared/ui/components';
+import { useEffect, useState, type SyntheticEvent } from 'react';
+import {
+  Button,
+  Field,
+  Form,
+  LoadingState,
+  StatusMessage,
+  TextInput,
+} from '@shared/ui/components';
 import { ApiClientError } from '@shared/api-client';
 import { useAuth } from './auth-provider';
 import { authApi } from '@/lib/api';
-import { postLoginPath } from '@/lib/auth-redirect';
+import { authPathWithNext, postLoginPath } from '@/lib/auth-redirect';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -62,13 +69,20 @@ function friendlyLoginError(err: unknown): string {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refresh } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const [email, setEmail] = useState(isProd ? '' : 'user@demo.local');
   const [password, setPassword] = useState(isProd ? '' : 'password123');
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const nextRaw = searchParams.get('next');
+
+  useEffect(() => {
+    if (loading || !user) return;
+    router.replace(postLoginPath(nextRaw, user.role));
+  }, [loading, user, nextRaw, router]);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -87,12 +101,16 @@ export function LoginForm() {
         password,
       });
       await refresh();
-      router.push(postLoginPath(searchParams.get('next'), user.role));
+      router.push(postLoginPath(nextRaw, user.role));
     } catch (err) {
       setError(friendlyLoginError(err));
     } finally {
       setPending(false);
     }
+  }
+
+  if (!loading && user) {
+    return <LoadingState label="Redirecting…" />;
   }
 
   return (
@@ -178,7 +196,8 @@ export function LoginForm() {
       </Form>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Don&apos;t have an account? <Link href="/register">Register</Link>
+        Don&apos;t have an account?{' '}
+        <Link href={authPathWithNext('/register', nextRaw)}>Register</Link>
       </p>
     </div>
   );
