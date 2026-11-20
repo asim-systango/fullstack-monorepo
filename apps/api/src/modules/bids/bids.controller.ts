@@ -17,9 +17,11 @@ export class BidsController {
     return this.bidsService.listBids(id);
   }
 
-  @Roles('user')
+  @Roles('user', 'staff')
   @Post()
-  @ApiOperation({ summary: 'Place a bid on an auction (bidder / user only)' })
+  @ApiOperation({
+    summary: 'Place a bid (user; staff blocked on own auctions by service)',
+  })
   placeBid(
     @CurrentUser() user: JwtUser,
     @Param('id', ParseUUIDPipe) id: string,
