@@ -52,7 +52,7 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         name: dto.name,
-        role: 'user',
+        role: dto.role ?? 'user',
       });
       return this.usersService.toPublic(user);
     } catch (err) {
