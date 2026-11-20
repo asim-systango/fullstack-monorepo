@@ -1,25 +1,50 @@
 import type { Metadata } from 'next';
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import { AppProviders } from '@/components/providers';
 import '../styles/globals.css';
 
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
+const ibmPlexSans = localFont({
+  src: [
+    {
+      path: '../fonts/IBMPlexSans-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/IBMPlexSans-Medium.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/IBMPlexSans-SemiBold.woff2',
+      weight: '600',
+      style: 'normal',
+    },
+  ],
   variable: '--font-ibm-plex-sans',
   display: 'swap',
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500'],
+const ibmPlexMono = localFont({
+  src: [
+    {
+      path: '../fonts/IBMPlexMono-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/IBMPlexMono-Medium.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+  ],
   variable: '--font-ibm-plex-mono',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'App starter',
-  description: 'Nest + Next monorepo starter',
+  title: 'Online Auction House',
+  description: 'Browse, bid, and sell in the Online Auction House',
 };
 
 export default function RootLayout({

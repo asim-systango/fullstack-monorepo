@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard, RolesGuard } from './common/auth';
 import { databaseConfig } from './config';
 import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
+import { AuctionsModule } from './modules/auctions/auctions.module';
+import { BidsModule } from './modules/bids/bids.module';
+import { WatchlistModule } from './modules/watchlist/watchlist.module';
 
 const db = databaseConfig();
 
@@ -15,11 +19,15 @@ const db = databaseConfig();
  */
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       ...db,
     }),
     AuthModule,
     HealthModule,
+    AuctionsModule,
+    BidsModule,
+    WatchlistModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

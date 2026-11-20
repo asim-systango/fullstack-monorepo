@@ -58,9 +58,51 @@ Optional Stretch microservice: [adding-a-service.md](./adding-a-service.md).
 
 ## Domain notes
 
-_Describe your ERD and key invariants here._
+**Project:** Online Auction House (`apps/api` + gateway auth).
+
+**Ownership**
+
+- Gateway owns `users` (register / login / cookie JWT) and roles `admin` | `staff` | `user`.
+- Domain API owns `auctions`, `bids`, and `watchlists`. Domain tables store UUID FKs to `users.id` only (`sellerId`, `winnerId`, `bidderId`, watchlist `userId`).
+
+**Role mapping**
+
+| Gateway role | Domain persona |
+| ------------ | -------------- |
+| `staff`      | Seller         |
+| `user`       | Bidder         |
+| `admin`      | Admin          |
+
+**ERD**
+
+```mermaid
+erDiagram
+  User ||--o{ Auction : sells
+  User ||--o{ Auction : wins
+  User ||--o{ Bid : places
+  Auction ||--o{ Bid : receives
+  User ||--o{ Watchlist : watches
+  Auction ||--o{ Watchlist : watched
+```
+
+- **Auction:** title, description, category, `startingPrice`, `minIncrement`, `currentPrice`, `endsAt`, status (`open` | `closed` | `cancelled`), `sellerId`, `winnerId`, soft-delete `deletedAt`
+- **Bid:** `auctionId`, `bidderId`, `bidAmount`, `createdAt` — placed in a DB transaction that also updates `Auction.currentPrice`
+- **Watchlist:** unique `(userId, auctionId)`
+
+**Key invariants**
+
+- A bid is accepted only when the auction is `open`, now is before `endsAt`, the bidder is not the seller, and the amount is at least `startingPrice` (first bid) or `currentPrice + minIncrement` (later bids).
+- Sellers create/edit/soft-delete **their own** auctions; edit is blocked once any bid exists.
+- Close (owner or admin) sets `status = closed` and `winnerId` to the highest bidder (or `null` if none).
+- Cancel is admin-only and only for `open` auctions.
+- Soft-deleted auctions are omitted from list/get (404 when opened by id).
+- Money columns use Postgres `numeric(10,2)` (not float).
 
 ## Demo script
 
-1. Register / login
-2. …
+Demo users (after `pnpm seed` / `pnpm seed:api`): `staff@demo.local` (seller), `user@demo.local` (bidder), `admin@demo.local` (admin) — password `password123`.
+
+1. **Roles (30s):** Log in as staff → seller create/list/close. Log in as user → browse/bid/`GET /bids/me`. Log in as admin → cancel/soft-delete any listing.
+2. **Happy path (2m):** Staff creates an open auction → user places two valid bids (price rises) → staff closes → `winnerId` is the highest bidder; bid form no longer accepted.
+3. **Invariant (30s):** Bid below minimum → **400**. Seller (staff) tries to bid on own auction → **403**. Bid on a closed auction → **400**.
+4. **Lists (1m):** `GET /auctions` with `q`, `category`, and price filters; soft-delete an auction and show it disappears from the list / returns **404** by id.

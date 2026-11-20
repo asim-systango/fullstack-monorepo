@@ -28,6 +28,7 @@ async function bootstrap() {
       transform: true,
       transformOptions: { enableImplicitConversion: true },
       exceptionFactory: validationExceptionFactory,
+      stopAtFirstError: true,
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
