@@ -77,8 +77,7 @@ function roleNavLinks(role: User['role']): NavLink[] {
       return [
         { href: '/', label: 'Home' },
         { href: '/auctions', label: 'Browse Auctions' },
-        { href: '/admin/auctions', label: 'Admin Dashboard' },
-        { href: '/admin/auctions', label: 'Auction Management' },
+        { href: '/admin/auctions', label: 'Admin Auctions' },
       ];
     default:
       return guestLinks();

@@ -6,12 +6,14 @@ import {
   IsString,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 export class UpdateAuctionDto {
   @ApiPropertyOptional({ example: 'New Auction Title' })
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(255)
   title?: string;
 

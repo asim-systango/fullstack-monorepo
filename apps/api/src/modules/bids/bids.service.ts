@@ -14,8 +14,15 @@ function toMoneyString(value: number): string {
   return value.toFixed(2);
 }
 
-function toMoneyNumber(value: string): number {
-  return Number(value);
+/** Convert money to integer cents to avoid float drift on numeric(10,2). */
+function toCents(value: string | number): number {
+  const normalized =
+    typeof value === 'number' ? value.toFixed(2) : Number(value).toFixed(2);
+  return Math.round(Number(normalized) * 100);
+}
+
+function centsToMoneyString(cents: number): string {
+  return (cents / 100).toFixed(2);
 }
 
 @Injectable()
@@ -57,16 +64,14 @@ export class BidsService {
       }
 
       const bidCount = await bidRepo.count({ where: { auctionId } });
-      const startingPrice = toMoneyNumber(auction.startingPrice);
-      const currentPrice = toMoneyNumber(auction.currentPrice);
-      const minIncrement = toMoneyNumber(auction.minIncrement);
+      const minRequiredCents =
+        bidCount === 0
+          ? toCents(auction.startingPrice)
+          : toCents(auction.currentPrice) + toCents(auction.minIncrement);
 
-      const minRequired = bidCount === 0 ? startingPrice : currentPrice + minIncrement;
-      const minRequiredRounded = Number(minRequired.toFixed(2));
-
-      if (dto.bidAmount < minRequiredRounded) {
+      if (toCents(dto.bidAmount) < minRequiredCents) {
         throw new BadRequestException(
-          `Bid must be at least ${toMoneyString(minRequiredRounded)}`,
+          `Bid must be at least ${centsToMoneyString(minRequiredCents)}`,
         );
       }
 
@@ -117,10 +122,23 @@ export class BidsService {
       order: { createdAt: 'DESC' },
     });
 
+    // One row per auction (latest bid); skip soft-deleted / missing auctions.
+    const latestByAuctionId = new Map<string, (typeof bids)[number]>();
+    for (const bid of bids) {
+      if (!bid.auction) {
+        continue;
+      }
+      if (!latestByAuctionId.has(bid.auctionId)) {
+        latestByAuctionId.set(bid.auctionId, bid);
+      }
+    }
+
+    const uniqueBids = [...latestByAuctionId.values()];
+
     const highestBids = await Promise.all(
-      [...new Set(bids.map((bid) => bid.auctionId))].map((auctionId) =>
+      uniqueBids.map((bid) =>
         this.bidRepository.findOne({
-          where: { auctionId },
+          where: { auctionId: bid.auctionId },
           order: {
             bidAmount: 'DESC',
             createdAt: 'DESC',
@@ -130,10 +148,10 @@ export class BidsService {
     );
 
     const highestBidMap = new Map(
-      highestBids.filter(Boolean).map((bid) => [bid?.auctionId, bid?.bidderId]),
+      highestBids.flatMap((bid) => (bid ? [[bid.auctionId, bid.bidderId] as const] : [])),
     );
 
-    return bids.map((bid) => {
+    return uniqueBids.map((bid) => {
       const auction = bid.auction;
 
       let status: string;
