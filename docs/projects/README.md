@@ -416,6 +416,9 @@ Handle these in API **and** reflect them in UI where relevant. Each brief adds d
 | 15  | Fitness Tracker       | `fitness-tracker`       | Workouts, goals, progress                   | [15](./15-fitness-tracker.md)       |
 | 16  | Finance Tracker       | `finance-tracker`       | Accounts, budgets, transactions             | [16](./16-finance-tracker.md)       |
 | 17  | Library               | `library-management`    | Catalog, borrow, fines                      | [17](./17-library-management.md)    |
+| 18  | Auction House         | `auction-house`         | Auctions, bids, winners                     | [18](./18-auction-house.md)         |
+| 19  | Leave Management      | `leave-management`      | Leave requests, balances, approvals         | [19](./19-leave-management.md)      |
+| 20  | Resume Builder        | `resume-builder`        | Resume editor, live preview, public link    | [20](./20-resume-builder.md)        |
 
 Each brief includes:
 
