@@ -1,8 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Auction } from '../auctions/auctions.entity';
 import { Watchlist } from './watchlist.entity';
+
+function isUniqueViolation(err: unknown): boolean {
+  if (!(err instanceof QueryFailedError)) return false;
+  const driverError = err.driverError as { code?: string } | undefined;
+  return driverError?.code === '23505';
+}
 
 @Injectable()
 export class WatchlistService {
@@ -33,12 +39,18 @@ export class WatchlistService {
       userId,
       auctionId,
     });
-    const saved = await this.watchlistRepository.save(watchlist);
-
-    return {
-      message: 'Auction added to watchlist',
-      watchlist: saved,
-    };
+    try {
+      const saved = await this.watchlistRepository.save(watchlist);
+      return {
+        message: 'Auction added to watchlist',
+        watchlist: saved,
+      };
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Auction is already on your watchlist');
+      }
+      throw err;
+    }
   }
 
   async removeWatch(auctionId: string, userId: string) {
