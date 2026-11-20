@@ -6,8 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { commonMessages } from '../../common/messages';
 import { Auction } from '../auctions/auctions.entity';
 import { Bid } from './bids.entity';
+import { bidsMessages } from './bids.messages';
 import { CreateBidDto } from './dto/create-bid.dto';
 
 function toMoneyString(value: number): string {
@@ -48,19 +50,19 @@ export class BidsService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!auction) {
-        throw new NotFoundException('This auction is no longer available');
+        throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
       }
 
       if (auction.status !== 'open') {
-        throw new BadRequestException('Only open auctions accept bids');
+        throw new BadRequestException(bidsMessages.ONLY_OPEN_ACCEPT_BIDS);
       }
 
       if (auction.endsAt <= new Date()) {
-        throw new BadRequestException('This auction has ended');
+        throw new BadRequestException(bidsMessages.AUCTION_HAS_ENDED);
       }
 
       if (auction.sellerId === bidderId) {
-        throw new ForbiddenException('You cannot bid on your own auction');
+        throw new ForbiddenException(bidsMessages.CANNOT_BID_OWN);
       }
 
       const bidCount = await bidRepo.count({ where: { auctionId } });
@@ -71,7 +73,7 @@ export class BidsService {
 
       if (toCents(dto.bidAmount) < minRequiredCents) {
         throw new BadRequestException(
-          `Bid must be at least ${centsToMoneyString(minRequiredCents)}`,
+          bidsMessages.bidTooLow(centsToMoneyString(minRequiredCents)),
         );
       }
 
@@ -87,7 +89,7 @@ export class BidsService {
       await auctionRepo.save(auction);
 
       return {
-        message: 'Bid created successfully!',
+        message: bidsMessages.CREATED_SUCCESS,
         bid: savedBid,
       };
     });
@@ -98,7 +100,7 @@ export class BidsService {
       where: { id: auctionId },
     });
     if (!auction) {
-      throw new NotFoundException('This auction is no longer available');
+      throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
     }
     const bids = await this.bidRepository.find({
       where: { auctionId },

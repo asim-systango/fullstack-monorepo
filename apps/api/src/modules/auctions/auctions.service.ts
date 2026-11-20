@@ -7,11 +7,13 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
+import { auctionsMessages } from './auctions.messages';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
 import { Bid } from '../bids/bids.entity';
 import { JwtUser } from '../../common/auth';
+import { commonMessages } from '../../common/messages';
 
 function toMoneyString(value: number): string {
   return value.toFixed(2);
@@ -33,7 +35,7 @@ export class AuctionsService {
   async create(dto: CreateAuctionDto, sellerId: string): Promise<Auction> {
     const endsAt = new Date(dto.endsAt);
     if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date()) {
-      throw new BadRequestException('End time must be in the future');
+      throw new BadRequestException(auctionsMessages.END_TIME_MUST_BE_FUTURE);
     }
 
     const startingPrice = toMoneyString(dto.startingPrice);
@@ -100,7 +102,7 @@ export class AuctionsService {
   async findAuctionById(id: string) {
     const auction = await this.auctionsRepository.findOne({ where: { id } });
     if (!auction) {
-      throw new NotFoundException('This auction is no longer available');
+      throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
     }
     return auction;
   }
@@ -109,18 +111,18 @@ export class AuctionsService {
     const auction = await this.findAuctionById(id);
 
     if (auction.sellerId !== userId) {
-      throw new ForbiddenException('You are not authorized to update this auction');
+      throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_UPDATE);
     }
 
     if (auction.status !== 'open') {
-      throw new BadRequestException('Only open auctions can be updated');
+      throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_UPDATE);
     }
 
     const bidCount = await this.bidRepository.count({
       where: { auctionId: id },
     });
     if (bidCount > 0) {
-      throw new BadRequestException('This auction already has bids');
+      throw new BadRequestException(auctionsMessages.ALREADY_HAS_BIDS);
     }
 
     if (dto.title !== undefined) {
@@ -145,14 +147,14 @@ export class AuctionsService {
     if (dto.endsAt !== undefined) {
       const endsAt = new Date(dto.endsAt);
       if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date()) {
-        throw new BadRequestException('End time must be in the future');
+        throw new BadRequestException(auctionsMessages.END_TIME_MUST_BE_FUTURE);
       }
       auction.endsAt = endsAt;
     }
     const savedAuction = await this.auctionsRepository.save(auction);
 
     return {
-      message: 'Auction updated successfully',
+      message: auctionsMessages.UPDATED_SUCCESS,
       auction: savedAuction,
     };
   }
@@ -161,13 +163,13 @@ export class AuctionsService {
     const auction = await this.findAuctionById(id);
 
     if (user.role !== 'admin' && auction.sellerId !== user.id) {
-      throw new ForbiddenException('You are not authorized to delete this auction');
+      throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_DELETE);
     }
 
     await this.auctionsRepository.softDelete(id);
 
     return {
-      message: 'Auction deleted successfully',
+      message: auctionsMessages.DELETED_SUCCESS,
     };
   }
   async finalizeAsClosed(
@@ -198,21 +200,21 @@ export class AuctionsService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!auction) {
-        throw new NotFoundException('This auction is no longer available');
+        throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
       }
 
       if (user.role !== 'admin' && auction.sellerId !== user.id) {
-        throw new ForbiddenException('You are not authorized to close this auction');
+        throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_CLOSE);
       }
 
       if (auction.status !== 'open') {
-        throw new BadRequestException('This auction is already closed or cancelled.');
+        throw new BadRequestException(auctionsMessages.ALREADY_CLOSED_OR_CANCELLED);
       }
 
       const savedAuction = await this.finalizeAsClosed(auction, auctionRepo, bidRepo);
 
       return {
-        message: 'Auction Closed Successfully',
+        message: auctionsMessages.CLOSED_SUCCESS,
         auction: savedAuction,
       };
     });
@@ -222,14 +224,14 @@ export class AuctionsService {
     const auction = await this.findAuctionById(id);
 
     if (auction.status !== 'open') {
-      throw new BadRequestException('Only open auctions can be cancelled');
+      throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_CANCEL);
     }
 
     auction.status = 'cancelled';
     const savedAuction = await this.auctionsRepository.save(auction);
 
     return {
-      message: 'Auction cancelled successfully',
+      message: auctionsMessages.CANCELLED_SUCCESS,
       auction: savedAuction,
     };
   }

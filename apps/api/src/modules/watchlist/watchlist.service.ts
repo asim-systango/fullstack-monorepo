@@ -1,8 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
+import { commonMessages } from '../../common/messages';
 import { Auction } from '../auctions/auctions.entity';
 import { Watchlist } from './watchlist.entity';
+import { watchlistMessages } from './watchlist.messages';
 
 function isUniqueViolation(err: unknown): boolean {
   if (!(err instanceof QueryFailedError)) return false;
@@ -25,14 +27,14 @@ export class WatchlistService {
       where: { id: auctionId },
     });
     if (!auction) {
-      throw new NotFoundException('This auction is no longer available');
+      throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
     }
 
     const existing = await this.watchlistRepository.findOne({
       where: { userId, auctionId },
     });
     if (existing) {
-      throw new ConflictException('Auction is already on your watchlist');
+      throw new ConflictException(watchlistMessages.ALREADY_ON_WATCHLIST);
     }
 
     const watchlist = this.watchlistRepository.create({
@@ -42,12 +44,12 @@ export class WatchlistService {
     try {
       const saved = await this.watchlistRepository.save(watchlist);
       return {
-        message: 'Auction added to watchlist',
+        message: watchlistMessages.ADDED_SUCCESS,
         watchlist: saved,
       };
     } catch (err) {
       if (isUniqueViolation(err)) {
-        throw new ConflictException('Auction is already on your watchlist');
+        throw new ConflictException(watchlistMessages.ALREADY_ON_WATCHLIST);
       }
       throw err;
     }
@@ -58,13 +60,13 @@ export class WatchlistService {
       where: { userId, auctionId },
     });
     if (!existing) {
-      throw new NotFoundException('Auction is not on your watchlist');
+      throw new NotFoundException(watchlistMessages.NOT_ON_WATCHLIST);
     }
 
     await this.watchlistRepository.remove(existing);
 
     return {
-      message: 'Auction removed from watchlist',
+      message: watchlistMessages.REMOVED_SUCCESS,
       auctionId,
     };
   }
