@@ -58,6 +58,8 @@ export type Bid = {
   bidderId: string;
   bidAmount: string;
   createdAt: string;
+  /** Present on auction bid history (`GET /auctions/:id/bids`). */
+  bidderName?: string;
 };
 
 export type MyBidStatus = 'Winning' | 'Outbid' | 'Won' | 'Lost' | 'Pending';

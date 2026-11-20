@@ -13,7 +13,7 @@ import {
 } from '@shared/ui/components';
 import { auctionQueryKeys, bidQueryKeys, bidsApi } from '@/lib/api';
 import type { Auction } from '@/lib/schemas/auction';
-import { formatMoney, minNextBid } from '@/lib/auction-utils';
+import { formatMoney, minNextBid, roundMoney, toMoneyNumber } from '@/lib/auction-utils';
 
 export function BidForm({
   auction,
@@ -29,7 +29,7 @@ export function BidForm({
 
   const mutation = useMutation({
     mutationFn: (bidAmount: number) => bidsApi.place(auction.id, bidAmount),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       setError(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: auctionQueryKeys.detail(auction.id) }),
@@ -37,7 +37,13 @@ export function BidForm({
         queryClient.invalidateQueries({ queryKey: auctionQueryKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: bidQueryKeys.me() }),
       ]);
-      setAmount(String(minNextBid(auction, true)));
+      setAmount(
+        String(
+          roundMoney(
+            toMoneyNumber(result.bid.bidAmount) + toMoneyNumber(auction.minIncrement),
+          ),
+        ),
+      );
     },
     onError: (err) => {
       setError(err instanceof ApiClientError ? err.message : 'Could not place bid');

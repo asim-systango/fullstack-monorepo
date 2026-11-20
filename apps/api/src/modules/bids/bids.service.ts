@@ -95,10 +95,19 @@ export class BidsService {
     if (!auction) {
       throw new NotFoundException('This auction is no longer available');
     }
-    return this.bidRepository.find({
+    const bids = await this.bidRepository.find({
       where: { auctionId },
+      relations: { bidder: true },
       order: { bidAmount: 'DESC', createdAt: 'DESC' },
     });
+    return bids.map(({ id, auctionId: aid, bidderId, bidAmount, createdAt, bidder }) => ({
+      id,
+      auctionId: aid,
+      bidderId,
+      bidAmount,
+      createdAt,
+      bidderName: bidder.name,
+    }));
   }
 
   async myBids(bidderId: string) {

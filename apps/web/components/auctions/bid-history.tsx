@@ -46,9 +46,7 @@ export function BidHistory({
                 <span className="ml-2 text-xs text-muted-foreground">(winner)</span>
               ) : null}
             </TableCell>
-            <TableCell className="font-mono text-xs">
-              {bid.bidderId.slice(0, 8)}…
-            </TableCell>
+            <TableCell>{bid.bidderName ?? `${bid.bidderId.slice(0, 8)}…`}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
               {new Date(bid.createdAt).toLocaleString()}
             </TableCell>

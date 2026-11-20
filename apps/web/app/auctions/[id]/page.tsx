@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Badge, LoadingState, Page, PageHeader } from '@shared/ui/components';
+import {
+  Alert,
+  Badge,
+  Button,
+  LoadingState,
+  Page,
+  PageHeader,
+} from '@shared/ui/components';
 import { ShellHeader, useAuth } from '@/components/auth';
 import {
   BidForm,
@@ -81,6 +88,10 @@ export default function AuctionDetailPage() {
     auction.status === 'open' &&
     ((user?.role === 'staff' && isSeller) || user?.role === 'admin');
   const canEdit = user?.role === 'staff' && isSeller && auction.status === 'open';
+  const hasBids = bids.length > 0;
+  const winnerName = auction.winnerId
+    ? bids.find((bid) => bid.bidderId === auction.winnerId)?.bidderName
+    : undefined;
 
   return (
     <Page>
@@ -89,9 +100,9 @@ export default function AuctionDetailPage() {
         title={auction.title}
         description={auction.description ?? 'No description provided.'}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge tone={statusBadgeTone(auction.status)}>{auction.status}</Badge>
-            {canEdit ? (
+            {canEdit && !hasBids ? (
               <Link
                 href={`/seller/auctions/${auction.id}/edit`}
                 className="ui-button ui-button-sm ui-button-secondary no-underline hover:no-underline"
@@ -99,9 +110,17 @@ export default function AuctionDetailPage() {
                 Edit
               </Link>
             ) : null}
-            {canClose && user?.role === 'staff' ? (
-              <CloseAuctionDialog auctionId={auction.id} />
+            {canEdit && hasBids ? (
+              <>
+                <Button variant="secondary" size="sm" disabled>
+                  Edit
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Editing locked — this auction has bids
+                </span>
+              </>
             ) : null}
+            {canClose ? <CloseAuctionDialog auctionId={auction.id} /> : null}
           </div>
         }
       />
@@ -132,7 +151,7 @@ export default function AuctionDetailPage() {
           {auction.status === 'closed' ? (
             <Alert tone="success" title="Auction closed">
               {auction.winnerId
-                ? `Won by bidder ${auction.winnerId.slice(0, 8)}…`
+                ? `Won by ${winnerName ?? 'bidder'}`
                 : 'Closed with no bids.'}
             </Alert>
           ) : null}
@@ -158,8 +177,8 @@ export default function AuctionDetailPage() {
         </div>
 
         <div>
-          {canBid ? <BidForm auction={auction} hasBids={bids.length > 0} /> : null}
-          {!canBid && (auction.status !== 'open' || ended) ? (
+          {canBid ? <BidForm auction={auction} hasBids={hasBids} /> : null}
+          {user?.role === 'user' && !canBid && (auction.status !== 'open' || ended) ? (
             <Alert tone="neutral" title="Bidding closed">
               The bid form is hidden because this auction is not accepting bids.
             </Alert>
