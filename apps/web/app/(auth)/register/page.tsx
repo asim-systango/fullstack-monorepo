@@ -13,7 +13,6 @@ import {
   Form,
   LoadingState,
   Page,
-  Select,
   TextInput,
   StatusMessage,
 } from '@shared/ui/components';
@@ -22,8 +21,6 @@ import { ShellHeader, useAuth } from '@/components/auth';
 import { authApi } from '@/lib/api';
 import { authPathWithNext, postLoginPath } from '@/lib/auth-redirect';
 
-type RegisterRole = 'user' | 'staff';
-
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,7 +28,6 @@ function RegisterForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<RegisterRole>('user');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -47,7 +43,7 @@ function RegisterForm() {
     setPending(true);
     setError(null);
     try {
-      await authApi.register({ name, email, password, role });
+      await authApi.register({ name, email, password });
       const loggedIn = await authApi.login({ email, password });
       await refresh();
       router.push(postLoginPath(nextRaw, loggedIn.role));
@@ -106,18 +102,6 @@ function RegisterForm() {
             minLength={8}
             autoComplete="new-password"
           />
-        </Field>
-        <Field label="Account type" htmlFor="register-role" required disabled={pending}>
-          <Select
-            id="register-role"
-            name="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as RegisterRole)}
-            required
-          >
-            <option value="user">Bidder</option>
-            <option value="staff">Seller</option>
-          </Select>
         </Field>
         {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
         <Button type="submit" loading={pending} loadingText="Creating…">
