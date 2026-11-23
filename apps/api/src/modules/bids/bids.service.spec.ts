@@ -247,6 +247,19 @@ describe('BidsService', () => {
         NotFoundException,
       );
     });
+
+    it('orders by amount DESC then createdAt ASC (same tie-break as close)', async () => {
+      auctionsRepository.findOne.mockResolvedValue(makeAuction());
+      bidRepository.find.mockResolvedValue([]);
+
+      await service.listBids(AUCTION_ID);
+
+      expect(bidRepository.find).toHaveBeenCalledWith({
+        where: { auctionId: AUCTION_ID },
+        relations: { bidder: true },
+        order: { bidAmount: 'DESC', createdAt: 'ASC' },
+      });
+    });
   });
 
   describe('myBids', () => {
@@ -283,6 +296,8 @@ describe('BidsService', () => {
       expect(qb.where).toHaveBeenCalledWith('bid.auctionId IN (:...auctionIds)', {
         auctionIds: [AUCTION_ID],
       });
+      expect(qb.addOrderBy).toHaveBeenCalledWith('bid.bidAmount', 'DESC');
+      expect(qb.addOrderBy).toHaveBeenCalledWith('bid.createdAt', 'ASC');
     });
 
     it('marks an open auction as Outbid when someone else is highest', async () => {

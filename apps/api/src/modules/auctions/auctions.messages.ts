@@ -6,7 +6,10 @@ export const auctionsMessages = {
   ONLY_OPEN_CAN_UPDATE: 'Only open auctions can be updated',
   ONLY_OPEN_CAN_CANCEL: 'Only open auctions can be cancelled',
   ALREADY_HAS_BIDS: 'This auction already has bids',
+  CANNOT_DELETE_OPEN_WITH_BIDS:
+    'Close or cancel this auction before deleting it — it still has bids',
   ALREADY_CLOSED_OR_CANCELLED: 'This auction is already closed or cancelled.',
+  INVALID_PRICE_RANGE: 'minPrice must be less than or equal to maxPrice',
   UPDATED_SUCCESS: 'Auction updated successfully',
   DELETED_SUCCESS: 'Auction deleted successfully',
   CLOSED_SUCCESS: 'Auction Closed Successfully',

@@ -5,19 +5,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
+import { DataSource, IsNull, Not, Repository } from 'typeorm';
 import { Auction } from './auctions.entity';
 import { auctionsMessages } from './auctions.messages';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { GetAuctionQueryDto } from './dto/get-auction-query.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
 import { Bid } from '../bids/bids.entity';
+import { Watchlist } from '../watchlist/watchlist.entity';
 import { JwtUser } from '../../common/auth';
+import { toMoneyString } from '../../common/money';
 import { commonMessages } from '../../common/messages';
-
-function toMoneyString(value: number): string {
-  return value.toFixed(2);
-}
 
 @Injectable()
 export class AuctionsService {
@@ -42,7 +40,7 @@ export class AuctionsService {
     const description =
       dto.description == null || !dto.description.trim() ? null : dto.description.trim();
     const auction = this.auctionsRepository.create({
-      title: dto.title,
+      title: dto.title.trim(),
       description,
       category: dto.category.trim().toLowerCase(),
       startingPrice,
@@ -58,6 +56,14 @@ export class AuctionsService {
   }
 
   async findAll(query: GetAuctionQueryDto) {
+    if (
+      query.minPrice != null &&
+      query.maxPrice != null &&
+      query.minPrice > query.maxPrice
+    ) {
+      throw new BadRequestException(auctionsMessages.INVALID_PRICE_RANGE);
+    }
+
     const page = query.page;
     const limit = query.limit;
     const qb = this.auctionsRepository.createQueryBuilder('auction');
@@ -108,69 +114,101 @@ export class AuctionsService {
   }
 
   async updateAuction(id: string, dto: UpdateAuctionDto, userId: string) {
-    const auction = await this.findAuctionById(id);
+    return this.dataSource.transaction(async (manager) => {
+      const auctionRepo = manager.getRepository(Auction);
+      const bidRepo = manager.getRepository(Bid);
 
-    if (auction.sellerId !== userId) {
-      throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_UPDATE);
-    }
-
-    if (auction.status !== 'open') {
-      throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_UPDATE);
-    }
-
-    const bidCount = await this.bidRepository.count({
-      where: { auctionId: id },
-    });
-    if (bidCount > 0) {
-      throw new BadRequestException(auctionsMessages.ALREADY_HAS_BIDS);
-    }
-
-    if (dto.title !== undefined) {
-      auction.title = dto.title;
-    }
-    if (dto.description !== undefined) {
-      auction.description =
-        dto.description == null || !dto.description.trim()
-          ? null
-          : dto.description.trim();
-    }
-    if (dto.category !== undefined) {
-      auction.category = dto.category.trim().toLowerCase();
-    }
-    if (dto.startingPrice !== undefined) {
-      auction.startingPrice = toMoneyString(dto.startingPrice);
-      auction.currentPrice = auction.startingPrice;
-    }
-    if (dto.minIncrement !== undefined) {
-      auction.minIncrement = toMoneyString(dto.minIncrement);
-    }
-    if (dto.endsAt !== undefined) {
-      const endsAt = new Date(dto.endsAt);
-      if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date()) {
-        throw new BadRequestException(auctionsMessages.END_TIME_MUST_BE_FUTURE);
+      const auction = await auctionRepo.findOne({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!auction) {
+        throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
       }
-      auction.endsAt = endsAt;
-    }
-    const savedAuction = await this.auctionsRepository.save(auction);
 
-    return {
-      message: auctionsMessages.UPDATED_SUCCESS,
-      auction: savedAuction,
-    };
+      if (auction.sellerId !== userId) {
+        throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_UPDATE);
+      }
+
+      if (auction.status !== 'open') {
+        throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_UPDATE);
+      }
+
+      const bidCount = await bidRepo.count({
+        where: { auctionId: id },
+      });
+      if (bidCount > 0) {
+        throw new BadRequestException(auctionsMessages.ALREADY_HAS_BIDS);
+      }
+
+      if (dto.title !== undefined) {
+        auction.title = dto.title.trim();
+      }
+      if (dto.description !== undefined) {
+        auction.description =
+          dto.description == null || !dto.description.trim()
+            ? null
+            : dto.description.trim();
+      }
+      if (dto.category !== undefined) {
+        auction.category = dto.category.trim().toLowerCase();
+      }
+      if (dto.startingPrice !== undefined) {
+        auction.startingPrice = toMoneyString(dto.startingPrice);
+        auction.currentPrice = auction.startingPrice;
+      }
+      if (dto.minIncrement !== undefined) {
+        auction.minIncrement = toMoneyString(dto.minIncrement);
+      }
+      if (dto.endsAt !== undefined) {
+        const endsAt = new Date(dto.endsAt);
+        if (Number.isNaN(endsAt.getTime()) || endsAt <= new Date()) {
+          throw new BadRequestException(auctionsMessages.END_TIME_MUST_BE_FUTURE);
+        }
+        auction.endsAt = endsAt;
+      }
+
+      const savedAuction = await auctionRepo.save(auction);
+
+      return {
+        message: auctionsMessages.UPDATED_SUCCESS,
+        auction: savedAuction,
+      };
+    });
   }
 
   async softDeleteAuction(id: string, user: JwtUser) {
-    const auction = await this.findAuctionById(id);
+    return this.dataSource.transaction(async (manager) => {
+      const auctionRepo = manager.getRepository(Auction);
+      const bidRepo = manager.getRepository(Bid);
+      const watchlistRepo = manager.getRepository(Watchlist);
 
-    if (user.role !== 'admin' && auction.sellerId !== user.id) {
-      throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_DELETE);
-    }
+      const auction = await auctionRepo.findOne({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!auction) {
+        throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
+      }
 
-    await this.auctionsRepository.softDelete(id);
+      if (user.role !== 'admin' && auction.sellerId !== user.id) {
+        throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_DELETE);
+      }
 
-    return {
-      message: auctionsMessages.DELETED_SUCCESS,
-    };
+      if (auction.status === 'open') {
+        const bidCount = await bidRepo.count({ where: { auctionId: id } });
+        if (bidCount > 0) {
+          throw new BadRequestException(auctionsMessages.CANNOT_DELETE_OPEN_WITH_BIDS);
+        }
+      }
+
+      await watchlistRepo.delete({ auctionId: id });
+      await auctionRepo.softDelete(id);
+
+      return {
+        message: auctionsMessages.DELETED_SUCCESS,
+      };
+    });
   }
   async finalizeAsClosed(
     auction: Auction,
@@ -221,19 +259,29 @@ export class AuctionsService {
   }
 
   async cancelAuction(id: string) {
-    const auction = await this.findAuctionById(id);
+    return this.dataSource.transaction(async (manager) => {
+      const auctionRepo = manager.getRepository(Auction);
 
-    if (auction.status !== 'open') {
-      throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_CANCEL);
-    }
+      const auction = await auctionRepo.findOne({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!auction) {
+        throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
+      }
 
-    auction.status = 'cancelled';
-    const savedAuction = await this.auctionsRepository.save(auction);
+      if (auction.status !== 'open') {
+        throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_CANCEL);
+      }
 
-    return {
-      message: auctionsMessages.CANCELLED_SUCCESS,
-      auction: savedAuction,
-    };
+      auction.status = 'cancelled';
+      const savedAuction = await auctionRepo.save(auction);
+
+      return {
+        message: auctionsMessages.CANCELLED_SUCCESS,
+        auction: savedAuction,
+      };
+    });
   }
 
   async getAuctionDashboard(sellerId: string) {
@@ -252,17 +300,12 @@ export class AuctionsService {
       },
     });
 
-    const sellerAuctions = await this.auctionsRepository.find({
-      where: { sellerId },
-      select: { id: true },
-    });
-    const auctionIds = sellerAuctions.map((auction) => auction.id);
-    const totalBids =
-      auctionIds.length === 0
-        ? 0
-        : await this.bidRepository.count({
-            where: { auctionId: In(auctionIds) },
-          });
+    const totalBids = await this.bidRepository
+      .createQueryBuilder('bid')
+      .innerJoin('bid.auction', 'auction')
+      .where('auction.sellerId = :sellerId', { sellerId })
+      .andWhere('auction.deletedAt IS NULL')
+      .getCount();
 
     return {
       openAuctions,

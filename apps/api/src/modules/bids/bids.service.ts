@@ -6,26 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { centsToMoneyString, toCents, toMoneyString } from '../../common/money';
 import { commonMessages } from '../../common/messages';
 import { Auction } from '../auctions/auctions.entity';
 import { Bid } from './bids.entity';
 import { bidsMessages } from './bids.messages';
 import { CreateBidDto } from './dto/create-bid.dto';
 
-function toMoneyString(value: number): string {
-  return value.toFixed(2);
-}
-
-/** Convert money to integer cents to avoid float drift on numeric(10,2). */
-function toCents(value: string | number): number {
-  const normalized =
-    typeof value === 'number' ? value.toFixed(2) : Number(value).toFixed(2);
-  return Math.round(Number(normalized) * 100);
-}
-
-function centsToMoneyString(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
+export type MyBidStatus = 'Winning' | 'Outbid' | 'Won' | 'Lost';
 
 @Injectable()
 export class BidsService {
@@ -105,7 +93,8 @@ export class BidsService {
     const bids = await this.bidRepository.find({
       where: { auctionId },
       relations: { bidder: true },
-      order: { bidAmount: 'DESC', createdAt: 'DESC' },
+      // Match finalizeAsClosed: highest amount wins; earliest bid wins ties.
+      order: { bidAmount: 'DESC', createdAt: 'ASC' },
     });
     return bids.map(({ id, auctionId: aid, bidderId, bidAmount, createdAt, bidder }) => ({
       id,
@@ -147,7 +136,8 @@ export class BidsService {
         .where('bid.auctionId IN (:...auctionIds)', { auctionIds })
         .orderBy('bid.auctionId', 'ASC')
         .addOrderBy('bid.bidAmount', 'DESC')
-        .addOrderBy('bid.createdAt', 'DESC')
+        // Match finalizeAsClosed: earliest equal high bid wins (Winning ≡ Won).
+        .addOrderBy('bid.createdAt', 'ASC')
         .getMany();
 
       for (const bid of highestRows) {
@@ -158,16 +148,14 @@ export class BidsService {
     return uniqueBids.map((bid) => {
       const auction = bid.auction;
 
-      let status: string;
+      let status: MyBidStatus;
 
       if (auction.status === 'closed') {
         status = auction.winnerId === bidderId ? 'Won' : 'Lost';
       } else if (auction.status === 'cancelled') {
         status = 'Lost';
-      } else if (auction.status === 'open') {
-        status = highestBidMap.get(bid.auctionId) === bidderId ? 'Winning' : 'Outbid';
       } else {
-        status = 'Pending';
+        status = highestBidMap.get(bid.auctionId) === bidderId ? 'Winning' : 'Outbid';
       }
 
       return {

@@ -92,6 +92,24 @@ describe('AuthService', () => {
       });
     });
 
+    it('always assigns role user even if a client sends staff', async () => {
+      const created = makeUser({ passwordHash: 'hash' });
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue(created);
+
+      await service.register({
+        email: 'user@example.com',
+        password: 'password123',
+        name: 'Demo',
+        // @ts-expect-error — role is no longer on RegisterDto; guard against regression
+        role: 'staff',
+      });
+
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'user' }),
+      );
+    });
+
     it('throws ConflictException when email already exists', async () => {
       usersService.findByEmail.mockResolvedValue(makeUser());
 

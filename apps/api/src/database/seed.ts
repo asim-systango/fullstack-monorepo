@@ -17,11 +17,11 @@ async function seed() {
 
   const seller = await users.findOne({ where: { email: 'staff@demo.local' } });
   const bidder = await users.findOne({ where: { email: 'user@demo.local' } });
-  const bidder2 = await users.findOne({ where: { email: 'admin@demo.local' } });
+  const bidder2 = await users.findOne({ where: { email: 'user2@demo.local' } });
 
   if (!seller || !bidder || !bidder2) {
     throw new Error(
-      'Demo users missing. Run `pnpm seed` (gateway) first so staff@demo.local, user@demo.local, and admin@demo.local exist.',
+      'Demo users missing. Run `pnpm seed` (gateway) first so staff@demo.local, user@demo.local, and user2@demo.local exist.',
     );
   }
 
