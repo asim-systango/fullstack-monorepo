@@ -361,8 +361,38 @@ describe('AuctionsService', () => {
       expect(result.message).toMatch(/deleted/i);
     });
 
-    it('allows soft-delete of a closed auction and clears watchlist rows', async () => {
-      txAuctionRepo.findOne.mockResolvedValue(makeAuction({ status: 'closed' }));
+    it('rejects seller soft-delete of a closed auction that has a winner', async () => {
+      txAuctionRepo.findOne.mockResolvedValue(
+        makeAuction({ status: 'closed', winnerId: WINNER }),
+      );
+
+      await expect(
+        service.softDeleteAuction(AUCTION_ID, makeUser()),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.softDeleteAuction(AUCTION_ID, makeUser())).rejects.toThrow(
+        auctionsMessages.CANNOT_DELETE_SOLD,
+      );
+      expect(txAuctionRepo.softDelete).not.toHaveBeenCalled();
+      expect(txWatchlistRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it('rejects seller soft-delete of a cancelled auction', async () => {
+      txAuctionRepo.findOne.mockResolvedValue(makeAuction({ status: 'cancelled' }));
+
+      await expect(
+        service.softDeleteAuction(AUCTION_ID, makeUser()),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.softDeleteAuction(AUCTION_ID, makeUser())).rejects.toThrow(
+        auctionsMessages.CANNOT_DELETE_CANCELLED,
+      );
+      expect(txAuctionRepo.softDelete).not.toHaveBeenCalled();
+      expect(txWatchlistRepo.delete).not.toHaveBeenCalled();
+    });
+
+    it('allows seller soft-delete of a closed auction with no winner and clears watchlist', async () => {
+      txAuctionRepo.findOne.mockResolvedValue(
+        makeAuction({ status: 'closed', winnerId: null }),
+      );
       txWatchlistRepo.delete.mockResolvedValue({ affected: 2 });
       txAuctionRepo.softDelete.mockResolvedValue({ affected: 1 });
 
@@ -373,8 +403,24 @@ describe('AuctionsService', () => {
       expect(txAuctionRepo.softDelete).toHaveBeenCalledWith(AUCTION_ID);
     });
 
-    it('allows an admin to soft-delete any auction without open bids', async () => {
+    it('allows an admin to soft-delete a cancelled auction', async () => {
       txAuctionRepo.findOne.mockResolvedValue(makeAuction({ status: 'cancelled' }));
+      txWatchlistRepo.delete.mockResolvedValue({ affected: 0 });
+      txAuctionRepo.softDelete.mockResolvedValue({ affected: 1 });
+
+      await service.softDeleteAuction(
+        AUCTION_ID,
+        makeUser({ id: OTHER, role: 'admin', email: 'admin@demo.local' }),
+      );
+
+      expect(txWatchlistRepo.delete).toHaveBeenCalledWith({ auctionId: AUCTION_ID });
+      expect(txAuctionRepo.softDelete).toHaveBeenCalledWith(AUCTION_ID);
+    });
+
+    it('allows an admin to soft-delete a sold auction', async () => {
+      txAuctionRepo.findOne.mockResolvedValue(
+        makeAuction({ status: 'closed', winnerId: WINNER }),
+      );
       txWatchlistRepo.delete.mockResolvedValue({ affected: 0 });
       txAuctionRepo.softDelete.mockResolvedValue({ affected: 1 });
 

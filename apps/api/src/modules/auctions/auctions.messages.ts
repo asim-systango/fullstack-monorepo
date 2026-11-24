@@ -8,6 +8,8 @@ export const auctionsMessages = {
   ALREADY_HAS_BIDS: 'This auction already has bids',
   CANNOT_DELETE_OPEN_WITH_BIDS:
     'Close or cancel this auction before deleting it — it still has bids',
+  CANNOT_DELETE_SOLD: 'Cannot delete a sold auction that has a winner',
+  CANNOT_DELETE_CANCELLED: 'Cannot delete a cancelled auction',
   ALREADY_CLOSED_OR_CANCELLED: 'This auction is already closed or cancelled.',
   INVALID_PRICE_RANGE: 'minPrice must be less than or equal to maxPrice',
   UPDATED_SUCCESS: 'Auction updated successfully',

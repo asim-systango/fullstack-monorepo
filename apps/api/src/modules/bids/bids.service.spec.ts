@@ -280,6 +280,12 @@ describe('BidsService', () => {
       bidRepository.find.mockResolvedValue([]);
 
       await expect(service.myBids(BIDDER)).resolves.toEqual([]);
+      expect(bidRepository.find).toHaveBeenCalledWith({
+        where: { bidderId: BIDDER },
+        relations: { auction: true },
+        withDeleted: true,
+        order: { createdAt: 'DESC' },
+      });
       expect(bidRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
@@ -291,6 +297,12 @@ describe('BidsService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]?.status).toBe('Winning');
+      expect(bidRepository.find).toHaveBeenCalledWith({
+        where: { bidderId: BIDDER },
+        relations: { auction: true },
+        withDeleted: true,
+        order: { createdAt: 'DESC' },
+      });
       expect(bidRepository.createQueryBuilder).toHaveBeenCalledWith('bid');
       expect(qb.distinctOn).toHaveBeenCalledWith(['bid.auctionId']);
       expect(qb.where).toHaveBeenCalledWith('bid.auctionId IN (:...auctionIds)', {
@@ -298,6 +310,22 @@ describe('BidsService', () => {
       });
       expect(qb.addOrderBy).toHaveBeenCalledWith('bid.bidAmount', 'DESC');
       expect(qb.addOrderBy).toHaveBeenCalledWith('bid.createdAt', 'ASC');
+    });
+
+    it('keeps Won for a soft-deleted closed auction', async () => {
+      const softDeletedWon = makeAuction({
+        status: 'closed',
+        winnerId: BIDDER,
+        deletedAt: new Date('2026-01-04T00:00:00.000Z'),
+      });
+      bidRepository.find.mockResolvedValue([makeUserBid({ auction: softDeletedWon })]);
+      qb.getMany.mockResolvedValue([{ auctionId: AUCTION_ID, bidderId: BIDDER }]);
+
+      const result = await service.myBids(BIDDER);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.status).toBe('Won');
+      expect(result[0]?.auction.deletedAt).toEqual(softDeletedWon.deletedAt);
     });
 
     it('marks an open auction as Outbid when someone else is highest', async () => {

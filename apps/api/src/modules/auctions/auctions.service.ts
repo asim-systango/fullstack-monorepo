@@ -195,6 +195,16 @@ export class AuctionsService {
         throw new ForbiddenException(auctionsMessages.NOT_AUTHORIZED_DELETE);
       }
 
+      // Sellers must not erase sold or cancelled outcomes; admin may still clean up.
+      if (user.role !== 'admin') {
+        if (auction.status === 'cancelled') {
+          throw new BadRequestException(auctionsMessages.CANNOT_DELETE_CANCELLED);
+        }
+        if (auction.status === 'closed' && auction.winnerId != null) {
+          throw new BadRequestException(auctionsMessages.CANNOT_DELETE_SOLD);
+        }
+      }
+
       if (auction.status === 'open') {
         const bidCount = await bidRepo.count({ where: { auctionId: id } });
         if (bidCount > 0) {

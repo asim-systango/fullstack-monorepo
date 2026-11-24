@@ -110,10 +110,12 @@ export class BidsService {
     const bids = await this.bidRepository.find({
       where: { bidderId },
       relations: { auction: true },
+      // Keep soft-deleted auctions so Won/Lost remain after admin cleanup.
+      withDeleted: true,
       order: { createdAt: 'DESC' },
     });
 
-    // One row per auction (latest bid); skip soft-deleted / missing auctions.
+    // One row per auction (latest bid); skip only if the auction row is missing.
     const latestByAuctionId = new Map<string, (typeof bids)[number]>();
     for (const bid of bids) {
       if (!bid.auction) {
