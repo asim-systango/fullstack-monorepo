@@ -22,7 +22,7 @@ export class AuctionExpiryService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async closeExpiredAuctions(): Promise<void> {
-    this.logger.log('Auction expiry cron started');
+    this.logger.debug('Auction expiry cron started');
 
     const now = new Date();
     const expired = await this.auctionsRepository.find({
@@ -33,7 +33,7 @@ export class AuctionExpiryService {
       select: { id: true },
     });
 
-    this.logger.log(`Found ${expired.length} expired open auction(s)`);
+    this.logger.debug(`Found ${expired.length} expired open auction(s)`);
 
     for (const { id } of expired) {
       try {
@@ -47,7 +47,7 @@ export class AuctionExpiryService {
       }
     }
 
-    this.logger.log('Auction expiry cron completed');
+    this.logger.debug('Auction expiry cron completed');
   }
 
   /**

@@ -57,6 +57,7 @@ describe('AuctionExpiryService', () => {
 
   let service: AuctionExpiryService;
   let logSpy: jest.SpyInstance;
+  let debugSpy: jest.SpyInstance;
   let errorSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -69,18 +70,19 @@ describe('AuctionExpiryService', () => {
       auctionsRepository as unknown as Repository<Auction>,
       auctionsService as unknown as AuctionsService,
     );
-    logSpy = jest.spyOn(
-      (service as unknown as { logger: { log: () => void } }).logger,
-      'log',
-    );
-    errorSpy = jest.spyOn(
-      (service as unknown as { logger: { error: () => void } }).logger,
-      'error',
-    );
+    const logger = (
+      service as unknown as {
+        logger: { log: () => void; debug: () => void; error: () => void };
+      }
+    ).logger;
+    logSpy = jest.spyOn(logger, 'log');
+    debugSpy = jest.spyOn(logger, 'debug');
+    errorSpy = jest.spyOn(logger, 'error');
   });
 
   afterEach(() => {
     logSpy.mockRestore();
+    debugSpy.mockRestore();
     errorSpy.mockRestore();
   });
 
@@ -215,7 +217,9 @@ describe('AuctionExpiryService', () => {
       expect(closeOneSpy).toHaveBeenCalledWith(AUCTION_B);
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining(AUCTION_A));
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(AUCTION_B));
-      expect(logSpy).toHaveBeenCalledWith('Auction expiry cron completed');
+      expect(debugSpy).toHaveBeenCalledWith('Auction expiry cron started');
+      expect(debugSpy).toHaveBeenCalledWith('Found 2 expired open auction(s)');
+      expect(debugSpy).toHaveBeenCalledWith('Auction expiry cron completed');
 
       closeOneSpy.mockRestore();
     });
