@@ -1,34 +1,18 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-/** Mirror of api-gateway User — needed so apps/api TypeORM can relate auctions.seller. */
-export type UserRole = 'admin' | 'user' | 'staff';
-
-@Entity({ name: 'users' })
+/**
+ * Read-only mirror of gateway `users` — domain does not own this table.
+ * Needed so apps/api TypeORM can relate auctions/bids to users (e.g. bidder.name).
+ * `synchronize: false` keeps migration:generate from altering gateway columns.
+ */
+@Entity({ name: 'users', synchronize: false })
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id!: string;
-
-  @Column({ unique: true })
-  email!: string;
-
-  @Column({ name: 'password_hash' })
-  passwordHash!: string;
 
   @Column()
   name!: string;
 
-  @Column({ type: 'varchar', length: 20, default: 'user' })
-  role!: UserRole;
-
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
+  @Column()
+  email!: string;
 }
