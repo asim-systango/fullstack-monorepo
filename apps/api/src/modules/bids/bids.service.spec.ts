@@ -75,6 +75,7 @@ describe('BidsService', () => {
 
   const bidRepository = {
     find: jest.fn(),
+    findAndCount: jest.fn(),
     findOne: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
@@ -248,17 +249,20 @@ describe('BidsService', () => {
       );
     });
 
-    it('orders by amount DESC then createdAt ASC (same tie-break as close)', async () => {
+    it('orders by amount DESC then createdAt ASC and paginates', async () => {
       auctionsRepository.findOne.mockResolvedValue(makeAuction());
-      bidRepository.find.mockResolvedValue([]);
+      bidRepository.findAndCount.mockResolvedValue([[], 0]);
 
-      await service.listBids(AUCTION_ID);
+      const result = await service.listBids(AUCTION_ID, { page: 2, limit: 10 });
 
-      expect(bidRepository.find).toHaveBeenCalledWith({
+      expect(bidRepository.findAndCount).toHaveBeenCalledWith({
         where: { auctionId: AUCTION_ID },
         relations: { bidder: true },
         order: { bidAmount: 'DESC', createdAt: 'ASC' },
+        skip: 10,
+        take: 10,
       });
+      expect(result).toEqual({ items: [], total: 0, page: 2, limit: 10 });
     });
   });
 
@@ -276,10 +280,15 @@ describe('BidsService', () => {
       } as Bid & { auction: Auction | null };
     }
 
-    it('returns an empty list and skips the highest-bid query when there are no bids', async () => {
+    it('returns an empty envelope and skips the highest-bid query when there are no bids', async () => {
       bidRepository.find.mockResolvedValue([]);
 
-      await expect(service.myBids(BIDDER)).resolves.toEqual([]);
+      await expect(service.myBids(BIDDER)).resolves.toEqual({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+      });
       expect(bidRepository.find).toHaveBeenCalledWith({
         where: { bidderId: BIDDER },
         relations: { auction: true },
@@ -295,8 +304,9 @@ describe('BidsService', () => {
 
       const result = await service.myBids(BIDDER);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]?.status).toBe('Winning');
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.status).toBe('Winning');
+      expect(result.total).toBe(1);
       expect(bidRepository.find).toHaveBeenCalledWith({
         where: { bidderId: BIDDER },
         relations: { auction: true },
@@ -323,9 +333,9 @@ describe('BidsService', () => {
 
       const result = await service.myBids(BIDDER);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]?.status).toBe('Won');
-      expect(result[0]?.auction.deletedAt).toEqual(softDeletedWon.deletedAt);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.status).toBe('Won');
+      expect(result.items[0]?.auction.deletedAt).toEqual(softDeletedWon.deletedAt);
     });
 
     it('marks an open auction as Outbid when someone else is highest', async () => {
@@ -334,7 +344,7 @@ describe('BidsService', () => {
 
       const result = await service.myBids(BIDDER);
 
-      expect(result[0]?.status).toBe('Outbid');
+      expect(result.items[0]?.status).toBe('Outbid');
     });
 
     it('marks closed auctions as Won or Lost from winnerId', async () => {
@@ -368,10 +378,11 @@ describe('BidsService', () => {
       ]);
 
       const result = await service.myBids(BIDDER);
-      const byAuction = new Map(result.map((row) => [row.auctionId, row.status]));
+      const byAuction = new Map(result.items.map((row) => [row.auctionId, row.status]));
 
       expect(byAuction.get(AUCTION_ID)).toBe('Won');
       expect(byAuction.get(AUCTION_ID_B)).toBe('Lost');
+      expect(result.total).toBe(2);
     });
   });
 });

@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public, Roles, type JwtUser } from '../../common/auth';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
 
@@ -13,8 +14,8 @@ export class BidsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List bids for an auction (highest first)' })
-  listBids(@Param('id', ParseUUIDPipe) id: string) {
-    return this.bidsService.listBids(id);
+  listBids(@Param('id', ParseUUIDPipe) id: string, @Query() query: PaginationQueryDto) {
+    return this.bidsService.listBids(id, query);
   }
 
   @Roles('user')
@@ -40,7 +41,7 @@ export class MyBidsController {
   @Roles('user')
   @Get('me')
   @ApiOperation({ summary: 'Get my bids (one row per auction with status badge)' })
-  getMyBids(@CurrentUser() user: JwtUser) {
-    return this.bidsService.myBids(user.id);
+  getMyBids(@CurrentUser() user: JwtUser, @Query() query: PaginationQueryDto) {
+    return this.bidsService.myBids(user.id, query);
   }
 }

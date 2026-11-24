@@ -13,6 +13,7 @@ describe('WatchlistService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    findAndCount: jest.fn(),
     remove: jest.fn(),
   };
 
@@ -91,6 +92,30 @@ describe('WatchlistService', () => {
 
       expect(result.watchlist).toEqual(saved);
       expect(result.message).toMatch(/added to watchlist/i);
+    });
+  });
+
+  describe('getMyWatchlist', () => {
+    it('paginates with findAndCount and returns an envelope', async () => {
+      const items = [
+        {
+          id: 'wwwwwwww-wwww-wwww-wwww-wwwwwwwwwwww',
+          userId: USER_ID,
+          auctionId: AUCTION_ID,
+        },
+      ];
+      watchlistRepository.findAndCount.mockResolvedValue([items, 1]);
+
+      const result = await service.getMyWatchlist(USER_ID, { page: 1, limit: 10 });
+
+      expect(watchlistRepository.findAndCount).toHaveBeenCalledWith({
+        where: { userId: USER_ID },
+        relations: { auction: true },
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 10,
+      });
+      expect(result).toEqual({ items, total: 1, page: 1, limit: 10 });
     });
   });
 });

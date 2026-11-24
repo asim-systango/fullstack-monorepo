@@ -1,6 +1,15 @@
-import { Controller, Delete, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Roles, type JwtUser } from '../../common/auth';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { WatchlistService } from './watchlist.service';
 
 @ApiTags('watchlist')
@@ -33,7 +42,7 @@ export class MyWatchlistController {
   @Roles('user', 'staff')
   @Get('watchlist')
   @ApiOperation({ summary: "Get authenticated user's watchlist" })
-  getMyWatchlist(@CurrentUser() user: JwtUser) {
-    return this.watchlistService.getMyWatchlist(user.id);
+  getMyWatchlist(@CurrentUser() user: JwtUser, @Query() query: PaginationQueryDto) {
+    return this.watchlistService.getMyWatchlist(user.id, query);
   }
 }

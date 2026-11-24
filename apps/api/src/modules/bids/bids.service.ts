@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { centsToMoneyString, toCents, toMoneyString } from '../../common/money';
 import { commonMessages } from '../../common/messages';
 import { Auction } from '../auctions/auctions.entity';
@@ -83,30 +84,42 @@ export class BidsService {
     });
   }
 
-  async listBids(auctionId: string) {
+  async listBids(
+    auctionId: string,
+    query: PaginationQueryDto = new PaginationQueryDto(),
+  ) {
+    const page = query.page;
+    const limit = query.limit;
     const auction = await this.auctionsRepository.findOne({
       where: { id: auctionId },
     });
     if (!auction) {
       throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
     }
-    const bids = await this.bidRepository.find({
+    const [bids, total] = await this.bidRepository.findAndCount({
       where: { auctionId },
       relations: { bidder: true },
       // Match finalizeAsClosed: highest amount wins; earliest bid wins ties.
       order: { bidAmount: 'DESC', createdAt: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    return bids.map(({ id, auctionId: aid, bidderId, bidAmount, createdAt, bidder }) => ({
-      id,
-      auctionId: aid,
-      bidderId,
-      bidAmount,
-      createdAt,
-      bidderName: bidder.name,
-    }));
+    const items = bids.map(
+      ({ id, auctionId: aid, bidderId, bidAmount, createdAt, bidder }) => ({
+        id,
+        auctionId: aid,
+        bidderId,
+        bidAmount,
+        createdAt,
+        bidderName: bidder.name,
+      }),
+    );
+    return { items, total, page, limit };
   }
 
-  async myBids(bidderId: string) {
+  async myBids(bidderId: string, query: PaginationQueryDto = new PaginationQueryDto()) {
+    const page = query.page;
+    const limit = query.limit;
     const bids = await this.bidRepository.find({
       where: { bidderId },
       relations: { auction: true },
@@ -147,7 +160,7 @@ export class BidsService {
       }
     }
 
-    return uniqueBids.map((bid) => {
+    const allItems = uniqueBids.map((bid) => {
       const auction = bid.auction;
 
       let status: MyBidStatus;
@@ -165,5 +178,9 @@ export class BidsService {
         status,
       };
     });
+
+    const total = allItems.length;
+    const items = allItems.slice((page - 1) * limit, page * limit);
+    return { items, total, page, limit };
   }
 }

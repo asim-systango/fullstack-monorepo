@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { commonMessages } from '../../common/messages';
 import { Auction } from '../auctions/auctions.entity';
 import { Watchlist } from './watchlist.entity';
@@ -71,11 +72,19 @@ export class WatchlistService {
     };
   }
 
-  async getMyWatchlist(userId: string) {
-    return this.watchlistRepository.find({
+  async getMyWatchlist(
+    userId: string,
+    query: PaginationQueryDto = new PaginationQueryDto(),
+  ) {
+    const page = query.page;
+    const limit = query.limit;
+    const [items, total] = await this.watchlistRepository.findAndCount({
       where: { userId },
       relations: { auction: true },
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { items, total, page, limit };
   }
 }
