@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -19,7 +20,7 @@ export class GetAuctionQueryDto {
   @IsOptional()
   @Transform(({ value }) => (value === undefined || value === '' ? 1 : value))
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   page: number = 1;
 
@@ -27,7 +28,7 @@ export class GetAuctionQueryDto {
   @IsOptional()
   @Transform(({ value }) => (value === undefined || value === '' ? 20 : value))
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   @Min(1)
   @Max(100)
   limit: number = 20;
