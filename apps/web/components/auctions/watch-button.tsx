@@ -25,7 +25,7 @@ export function WatchButton({
 
   const watchlistQuery = useQuery({
     queryKey: watchlistQueryKeys.me(),
-    queryFn: () => watchlistApi.list(),
+    queryFn: () => watchlistApi.list({ limit: 100 }),
     enabled: canWatch,
   });
 

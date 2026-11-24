@@ -29,7 +29,7 @@ function WatchlistPage() {
 
   const query = useQuery({
     queryKey: watchlistQueryKeys.me(),
-    queryFn: () => watchlistApi.list(),
+    queryFn: () => watchlistApi.list({ limit: 100 }),
   });
 
   const removeMutation = useMutation({

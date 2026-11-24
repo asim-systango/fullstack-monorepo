@@ -44,7 +44,7 @@ export default function AuctionDetailPage() {
 
   const bidsQuery = useQuery({
     queryKey: bidQueryKeys.forAuction(id),
-    queryFn: () => bidsApi.listForAuction(id),
+    queryFn: () => bidsApi.listForAuction(id, { limit: 100 }),
     enabled: Boolean(id) && auctionQuery.isSuccess,
   });
 

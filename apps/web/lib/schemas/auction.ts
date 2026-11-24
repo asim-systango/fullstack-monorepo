@@ -77,6 +77,32 @@ export type WatchlistItem = {
   auction: Auction;
 };
 
+export type PaginationParams = {
+  page?: number;
+  limit?: number;
+};
+
+export type BidListResponse = {
+  items: Bid[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type MyBidListResponse = {
+  items: MyBid[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type WatchlistListResponse = {
+  items: WatchlistItem[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 export type AuctionMutationResult = {
   message: string;
   auction: Auction;

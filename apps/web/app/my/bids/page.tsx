@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -19,15 +18,15 @@ import {
 } from '@shared/ui/components';
 import { RequireAuth, ShellHeader } from '@/components/auth';
 import { bidQueryKeys, bidsApi } from '@/lib/api';
-import { dedupeMyBids, formatMoney, statusBadgeTone } from '@/lib/auction-utils';
+import { formatMoney, statusBadgeTone } from '@/lib/auction-utils';
 
 function MyBidsPage() {
   const query = useQuery({
     queryKey: bidQueryKeys.me(),
-    queryFn: () => bidsApi.me(),
+    queryFn: () => bidsApi.me({ limit: 100 }),
   });
 
-  const rows = useMemo(() => (query.data ? dedupeMyBids(query.data) : []), [query.data]);
+  const rows = query.data ?? [];
 
   return (
     <Page>
