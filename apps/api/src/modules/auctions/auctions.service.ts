@@ -71,7 +71,7 @@ export class AuctionsService {
     qb.andWhere('auction.deletedAt IS NULL');
     if (query.q?.trim()) {
       const term = `%${query.q.trim()}%`;
-      qb.andWhere('(auction.title ILIKE :search OR auction.description ILIKE :search)', {
+      qb.andWhere('(auction.title ILIKE :search)', {
         search: term,
       });
     }

@@ -122,12 +122,33 @@ describe('AuctionsService', () => {
       expect(listQb.andWhere).toHaveBeenCalledWith('auction.deletedAt IS NULL');
     });
 
-    it('applies trimmed q search on title and description', async () => {
+    it('applies trimmed q search on title only', async () => {
       await service.findAll({ page: 1, limit: 20, q: '  camera  ' });
 
       expect(listQb.andWhere).toHaveBeenCalledWith(
-        '(auction.title ILIKE :search OR auction.description ILIKE :search)',
-        { search: '%camera%' },
+        `auction.title ILIKE :search ESCAPE '\\'`,
+        {
+          search: '%camera%',
+        },
+      );
+    });
+
+    it('escapes LIKE wildcards in q so % and _ are literal', async () => {
+      await service.findAll({ page: 1, limit: 20, q: '%' });
+      expect(listQb.andWhere).toHaveBeenCalledWith(
+        `auction.title ILIKE :search ESCAPE '\\'`,
+        {
+          search: '%\\%%',
+        },
+      );
+
+      listQb.andWhere.mockClear();
+      await service.findAll({ page: 1, limit: 20, q: '_' });
+      expect(listQb.andWhere).toHaveBeenCalledWith(
+        `auction.title ILIKE :search ESCAPE '\\'`,
+        {
+          search: '%\\_%',
+        },
       );
     });
 
