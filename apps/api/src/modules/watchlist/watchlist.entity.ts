@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -12,6 +13,7 @@ import { User } from '../users/user.entity';
 
 @Entity({ name: 'watchlists' })
 @Unique(['userId', 'auctionId'])
+@Index('IDX_watchlists_auction_id', ['auctionId'])
 export class Watchlist {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

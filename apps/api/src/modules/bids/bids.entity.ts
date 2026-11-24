@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -11,6 +12,8 @@ import { Auction } from '../auctions/auctions.entity';
 import { User } from '../users/user.entity';
 
 @Check('CHK_bids_bid_amount', `"bid_amount" > 0`)
+@Index('IDX_bids_auction_id', ['auctionId'])
+@Index('IDX_bids_bidder_id', ['bidderId'])
 @Entity({ name: 'bids' })
 export class Bid {
   @PrimaryGeneratedColumn('uuid')
