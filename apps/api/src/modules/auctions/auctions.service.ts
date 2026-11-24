@@ -284,6 +284,11 @@ export class AuctionsService {
         throw new BadRequestException(auctionsMessages.ONLY_OPEN_CAN_CANCEL);
       }
 
+      // Do not void a finished sale while status is still open awaiting close/cron.
+      if (auction.endsAt <= new Date()) {
+        throw new BadRequestException(auctionsMessages.CANNOT_CANCEL_ENDED);
+      }
+
       auction.status = 'cancelled';
       const savedAuction = await auctionRepo.save(auction);
 

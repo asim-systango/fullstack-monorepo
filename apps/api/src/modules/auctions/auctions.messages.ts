@@ -5,6 +5,7 @@ export const auctionsMessages = {
   NOT_AUTHORIZED_CLOSE: 'You are not authorized to close this auction',
   ONLY_OPEN_CAN_UPDATE: 'Only open auctions can be updated',
   ONLY_OPEN_CAN_CANCEL: 'Only open auctions can be cancelled',
+  CANNOT_CANCEL_ENDED: 'This auction has already ended — it can not be cancelled',
   ALREADY_HAS_BIDS: 'This auction already has bids',
   CANNOT_DELETE_OPEN_WITH_BIDS:
     'Close or cancel this auction before deleting it — it still has bids',

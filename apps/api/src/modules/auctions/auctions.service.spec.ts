@@ -577,5 +577,19 @@ describe('AuctionsService', () => {
         /Only open auctions can be cancelled/,
       );
     });
+
+    it('rejects cancelling an open auction after endsAt', async () => {
+      txAuctionRepo.findOne.mockResolvedValue(
+        makeAuction({ status: 'open', endsAt: new Date(Date.now() - 60_000) }),
+      );
+
+      await expect(service.cancelAuction(AUCTION_ID)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      await expect(service.cancelAuction(AUCTION_ID)).rejects.toThrow(
+        auctionsMessages.CANNOT_CANCEL_ENDED,
+      );
+      expect(txAuctionRepo.save).not.toHaveBeenCalled();
+    });
   });
 });
