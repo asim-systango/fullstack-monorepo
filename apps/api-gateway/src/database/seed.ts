@@ -12,6 +12,7 @@ async function seed() {
   const seeds: Array<{ email: string; name: string; role: User['role'] }> = [
     { email: 'admin@demo.local', name: 'Demo Admin', role: 'admin' },
     { email: 'user@demo.local', name: 'Demo User', role: 'user' },
+    { email: 'user2@demo.local', name: 'Demo User 2', role: 'user' },
     { email: 'staff@demo.local', name: 'Demo Staff', role: 'staff' },
   ];
 

@@ -52,6 +52,7 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         name: dto.name,
+        // Registration always creates `user`; staff/admin come from seed or admin promotion.
         role: 'user',
       });
       return this.usersService.toPublic(user);

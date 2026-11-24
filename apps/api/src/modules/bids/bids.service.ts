@@ -1,0 +1,186 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { centsToMoneyString, toCents, toMoneyString } from '../../common/money';
+import { commonMessages } from '../../common/messages';
+import { Auction } from '../auctions/auctions.entity';
+import { Bid } from './bids.entity';
+import { bidsMessages } from './bids.messages';
+import { CreateBidDto } from './dto/create-bid.dto';
+
+export type MyBidStatus = 'Winning' | 'Outbid' | 'Won' | 'Lost';
+
+@Injectable()
+export class BidsService {
+  constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+
+    @InjectRepository(Auction)
+    private readonly auctionsRepository: Repository<Auction>,
+
+    @InjectRepository(Bid)
+    private readonly bidRepository: Repository<Bid>,
+  ) {}
+
+  async placeBid(auctionId: string, bidderId: string, dto: CreateBidDto) {
+    return this.dataSource.transaction(async (manager) => {
+      const auctionRepo = manager.getRepository(Auction);
+      const bidRepo = manager.getRepository(Bid);
+
+      const auction = await auctionRepo.findOne({
+        where: { id: auctionId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!auction) {
+        throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
+      }
+
+      if (auction.status !== 'open') {
+        throw new BadRequestException(bidsMessages.ONLY_OPEN_ACCEPT_BIDS);
+      }
+
+      if (auction.endsAt <= new Date()) {
+        throw new BadRequestException(bidsMessages.AUCTION_HAS_ENDED);
+      }
+
+      if (auction.sellerId === bidderId) {
+        throw new ForbiddenException(bidsMessages.CANNOT_BID_OWN);
+      }
+
+      const bidCount = await bidRepo.count({ where: { auctionId } });
+      const minRequiredCents =
+        bidCount === 0
+          ? toCents(auction.startingPrice)
+          : toCents(auction.currentPrice) + toCents(auction.minIncrement);
+
+      if (toCents(dto.bidAmount) < minRequiredCents) {
+        throw new BadRequestException(
+          bidsMessages.bidTooLow(centsToMoneyString(minRequiredCents)),
+        );
+      }
+
+      const bidAmount = toMoneyString(dto.bidAmount);
+      const bid = bidRepo.create({
+        auctionId,
+        bidderId,
+        bidAmount,
+      });
+      const savedBid = await bidRepo.save(bid);
+
+      auction.currentPrice = bidAmount;
+      await auctionRepo.save(auction);
+
+      return {
+        message: bidsMessages.CREATED_SUCCESS,
+        bid: savedBid,
+      };
+    });
+  }
+
+  async listBids(
+    auctionId: string,
+    query: PaginationQueryDto = new PaginationQueryDto(),
+  ) {
+    const page = query.page;
+    const limit = query.limit;
+    const auction = await this.auctionsRepository.findOne({
+      where: { id: auctionId },
+    });
+    if (!auction) {
+      throw new NotFoundException(commonMessages.AUCTION_NOT_FOUND);
+    }
+    const [bids, total] = await this.bidRepository.findAndCount({
+      where: { auctionId },
+      relations: { bidder: true },
+      // Match finalizeAsClosed: highest amount wins; earliest bid wins ties.
+      order: { bidAmount: 'DESC', createdAt: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    const items = bids.map(
+      ({ id, auctionId: aid, bidderId, bidAmount, createdAt, bidder }) => ({
+        id,
+        auctionId: aid,
+        bidderId,
+        bidAmount,
+        createdAt,
+        bidderName: bidder.name,
+      }),
+    );
+    return { items, total, page, limit };
+  }
+
+  async myBids(bidderId: string, query: PaginationQueryDto = new PaginationQueryDto()) {
+    const page = query.page;
+    const limit = query.limit;
+    const bids = await this.bidRepository.find({
+      where: { bidderId },
+      relations: { auction: true },
+      // Keep soft-deleted auctions so Won/Lost remain after admin cleanup.
+      withDeleted: true,
+      order: { createdAt: 'DESC' },
+    });
+
+    // One row per auction (latest bid); skip only if the auction row is missing.
+    const latestByAuctionId = new Map<string, (typeof bids)[number]>();
+    for (const bid of bids) {
+      if (!bid.auction) {
+        continue;
+      }
+      if (!latestByAuctionId.has(bid.auctionId)) {
+        latestByAuctionId.set(bid.auctionId, bid);
+      }
+    }
+
+    const uniqueBids = [...latestByAuctionId.values()];
+    const auctionIds = uniqueBids.map((bid) => bid.auctionId);
+
+    const highestBidMap = new Map<string, string>();
+    if (auctionIds.length > 0) {
+      const highestRows = await this.bidRepository
+        .createQueryBuilder('bid')
+        .select(['bid.auctionId', 'bid.bidderId'])
+        .distinctOn(['bid.auctionId'])
+        .where('bid.auctionId IN (:...auctionIds)', { auctionIds })
+        .orderBy('bid.auctionId', 'ASC')
+        .addOrderBy('bid.bidAmount', 'DESC')
+        // Match finalizeAsClosed: earliest equal high bid wins (Winning ≡ Won).
+        .addOrderBy('bid.createdAt', 'ASC')
+        .getMany();
+
+      for (const bid of highestRows) {
+        highestBidMap.set(bid.auctionId, bid.bidderId);
+      }
+    }
+
+    const allItems = uniqueBids.map((bid) => {
+      const auction = bid.auction;
+
+      let status: MyBidStatus;
+
+      if (auction.status === 'closed') {
+        status = auction.winnerId === bidderId ? 'Won' : 'Lost';
+      } else if (auction.status === 'cancelled') {
+        status = 'Lost';
+      } else {
+        status = highestBidMap.get(bid.auctionId) === bidderId ? 'Winning' : 'Outbid';
+      }
+
+      return {
+        ...bid,
+        status,
+      };
+    });
+
+    const total = allItems.length;
+    const items = allItems.slice((page - 1) * limit, page * limit);
+    return { items, total, page, limit };
+  }
+}
