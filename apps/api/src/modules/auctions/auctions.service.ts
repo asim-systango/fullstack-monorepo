@@ -70,9 +70,10 @@ export class AuctionsService {
     // QueryBuilder does not auto-apply soft-delete filters
     qb.andWhere('auction.deletedAt IS NULL');
     if (query.q?.trim()) {
-      const term = `%${query.q.trim()}%`;
-      qb.andWhere('(auction.title ILIKE :search)', {
-        search: term,
+      const raw = query.q.trim();
+      const escaped = raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+      qb.andWhere(`auction.title ILIKE :search ESCAPE '\\'`, {
+        search: `%${escaped}%`,
       });
     }
     if (query.category?.trim()) {
